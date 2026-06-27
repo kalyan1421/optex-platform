@@ -11,7 +11,15 @@
 # Install all workspace dependencies (run once, or after any package.json change)
 pnpm install
 
-# Link to a hosted Supabase project (one-time — uses project ref from Supabase dashboard)
+# Copy env files (pre-filled with local dev keys — no editing needed for local dev)
+cp apps/web/.env.example   apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.local
+cp apps/api/.env.example   apps/api/.env
+
+# Start local Supabase + API via Docker (first run builds images, runs migrations + seed)
+pnpm docker:up
+
+# Link to a hosted Supabase project (one-time — for remote/production pushes only)
 cd Backend
 supabase link --project-ref <your-project-ref>
 cd ..
@@ -79,27 +87,28 @@ pnpm --filter @optex/admin start    # http://localhost:3001
 
 ---
 
-## 4. Supabase (Local)
+## 4. Supabase (Local via Docker)
 
-### Start local Supabase stack (Postgres + Auth + Storage + Studio)
+> Local Supabase runs entirely through Docker Compose — no `supabase start` needed.
+> Migrations in `Backend/supabase/migrations/` run automatically via `docker/migrate.sh`.
+
+### Start local Supabase stack + API
 ```bash
-cd Backend
-supabase start
+pnpm docker:up          # first run: builds images, runs migrations + seed
 ```
-- **API:** http://127.0.0.1:54321
-- **Studio:** http://127.0.0.1:54323
-- **DB connection:** `postgresql://postgres:postgres@localhost:54322/postgres`
+- **Supabase gateway (Kong):** http://localhost:54321
+- **Studio:** http://localhost:54323
+- **Postgres direct:** `localhost:54322` (user: `postgres`, password: `your-super-secret-and-long-postgres-password`)
+- **NestJS API:** http://localhost:4000
 
-### Stop local Supabase
+### Stop all services (data preserved)
 ```bash
-cd Backend
-supabase stop
+pnpm docker:down
 ```
 
-### Apply all pending migrations to local DB
+### Wipe volumes + restart (fresh database)
 ```bash
-cd Backend
-supabase db push
+pnpm docker:reset
 ```
 
 ### Apply migrations to the hosted (production) project
@@ -108,26 +117,20 @@ cd Backend
 supabase db push --linked
 ```
 
-### Reset local DB (wipes all data, re-runs migrations, then seeds)
-```bash
-cd Backend
-supabase db reset
-```
-
 ### Seed the local database manually
 ```bash
-psql "postgresql://postgres:postgres@localhost:54322/postgres" \
+psql "postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres" \
   -f Backend/supabase/seed.sql
 ```
 
 ### Open local Supabase Studio in browser
 ```bash
-open http://127.0.0.1:54323
+open http://localhost:54323
 ```
 
 ### Connect to local DB with psql
 ```bash
-psql "postgresql://postgres:postgres@localhost:54322/postgres"
+psql "postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres"
 ```
 
 ### Run a one-off SQL file against local DB
@@ -296,15 +299,11 @@ psql "postgresql://postgres:postgres@localhost:54322/postgres" -c \
 ### Required `.env.local` for `apps/web` and `apps/admin`
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key — from supabase start output>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key — see apps/web/.env.example>
 SUPABASE_SERVICE_ROLE_KEY=<service role key — server-side only, never expose>
 ```
 
-### Get local keys
-```bash
-cd Backend && supabase status
-# Outputs: API URL, anon key, service_role key, Studio URL, DB URL
-```
+The standard local dev keys are pre-filled in each app's `.env.example`.
 
 ---
 
@@ -315,10 +314,10 @@ To verify or inspect them locally:
 
 ```bash
 # Via Studio
-open http://127.0.0.1:54323/project/default/storage/buckets
+open http://localhost:54323/project/default/storage/buckets
 
 # Via psql
-psql "postgresql://postgres:postgres@localhost:54322/postgres" \
+psql "postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres" \
   -c "SELECT id, name, public FROM storage.buckets;"
 ```
 
@@ -333,19 +332,22 @@ Bucket layout:
 
 ---
 
-## 13. Git (Legacy Frontend only)
-
-> The `.git` repo lives inside `Frontend/` (legacy CRA/Vite apps).
-> The new `apps/` and `packages/` trees are not yet under version control.
+## 13. Git
 
 ```bash
-cd Frontend
-
+# All new development — run from repo root (OPTEX/)
 git status
 git pull origin main
-git add -p
-git commit -m "message"
-git push origin main
+git checkout -b feat/<scope>-<desc>
+git add <files>
+git commit -m "feat(scope): description"
+git push -u origin feat/<scope>-<desc>
+```
+
+### Legacy Frontend/ (read-only reference — frozen)
+```bash
+# Frontend/ has its own .git — only touch if inspecting legacy history
+git -C Frontend/ log --oneline -10
 ```
 
 ---
@@ -421,11 +423,10 @@ pnpm update -r <package-name>
 | Lint all | `pnpm lint` |
 | Type-check all | `pnpm typecheck` |
 | Format code | `pnpm format` |
-| Start local Supabase | `cd Backend && supabase start` |
-| Stop local Supabase | `cd Backend && supabase stop` |
-| Push migrations (local) | `cd Backend && supabase db push` |
+| **Start Supabase (Docker)** | `pnpm docker:up` |
+| Stop Supabase | `pnpm docker:down` |
+| Reset local DB | `pnpm docker:reset` |
 | Push migrations (prod) | `cd Backend && supabase db push --linked` |
-| Reset local DB | `cd Backend && supabase db reset` |
-| Regen DB types | `pnpm db:types` |
+| Regen DB types | `pnpm db:types:docker` |
 | Install deps | `pnpm install` |
 | Add dep to web app | `pnpm --filter @optex/web add <pkg>` |
