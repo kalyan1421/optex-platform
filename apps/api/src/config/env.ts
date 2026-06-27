@@ -29,31 +29,34 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
 
   // --- M-Pesa (Daraja) — optional until payments module ships ---
-  MPESA_CONSUMER_KEY: z.string().optional().default(''),
-  MPESA_CONSUMER_SECRET: z.string().optional().default(''),
-  MPESA_SHORTCODE: z.string().optional().default(''),
-  MPESA_PASSKEY: z.string().optional().default(''),
-  MPESA_CALLBACK_URL: z.string().optional().default(''),
+  // L-1 FIX: use .optional() without .default('') so callers can distinguish
+  // "credential not set" (undefined) from "credential intentionally empty" ('').
+  // MpesaService.isConfigured() / requireCreds() both treat falsy as missing.
+  MPESA_CONSUMER_KEY: z.string().optional(),
+  MPESA_CONSUMER_SECRET: z.string().optional(),
+  MPESA_SHORTCODE: z.string().optional(),
+  MPESA_PASSKEY: z.string().optional(),
+  MPESA_CALLBACK_URL: z.string().optional(),
 
   // --- Pesapal — optional until payments module ships ---
-  PESAPAL_CONSUMER_KEY: z.string().optional().default(''),
-  PESAPAL_CONSUMER_SECRET: z.string().optional().default(''),
-  PESAPAL_IPN_URL: z.string().optional().default(''),
+  PESAPAL_CONSUMER_KEY: z.string().optional(),
+  PESAPAL_CONSUMER_SECRET: z.string().optional(),
+  PESAPAL_IPN_URL: z.string().optional(),
   // Registered Pesapal IPN id (returned by RegisterIPN; required by
   // SubmitOrderRequest as `notification_id`). Optional so the app still boots
   // without Pesapal wired; the initiate endpoint throws cleanly if absent.
-  PESAPAL_IPN_ID: z.string().optional().default(''),
+  PESAPAL_IPN_ID: z.string().optional(),
   // Browser redirect target after a Pesapal payment completes. Falls back to
   // the storefront origin when unset.
-  PESAPAL_CALLBACK_URL: z.string().optional().default(''),
+  PESAPAL_CALLBACK_URL: z.string().optional(),
 
   // --- Africa's Talking (SMS) — optional until notifications module ships ---
-  AT_USERNAME: z.string().optional().default(''),
-  AT_API_KEY: z.string().optional().default(''),
-  AT_SENDER_ID: z.string().optional().default(''),
+  AT_USERNAME: z.string().optional(),
+  AT_API_KEY: z.string().optional(),
+  AT_SENDER_ID: z.string().optional(),
 
   // --- Resend (transactional email) — optional ---
-  RESEND_API_KEY: z.string().optional().default(''),
+  RESEND_API_KEY: z.string().optional(),
   // Sender identity for Resend, e.g. `Optex <noreply@optexopticians.com>`.
   RESEND_FROM: z.string().optional(),
   // Destination inbox for contact-form submissions.

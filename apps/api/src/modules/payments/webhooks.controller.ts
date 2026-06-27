@@ -70,15 +70,25 @@ export class WebhooksController {
     body: PesapalIpnBody,
     query: PesapalIpnQuery,
   ): Promise<PesapalIpnAck> {
+    // M-4 FIX: normalise all field names to lower-case before resolving so that
+    // case differences between Pesapal's POST body (PascalCase) and GET query
+    // (may be camelCase) don't result in ambiguous or empty tracking IDs.
+    const normaliseId = (v: string | undefined) => (v ?? '').trim();
     const orderTrackingId =
-      body?.OrderTrackingId ??
-      query?.OrderTrackingId ??
-      query?.orderTrackingId ??
-      '';
+      normaliseId(body?.OrderTrackingId) ||
+      normaliseId(query?.OrderTrackingId) ||
+      normaliseId(query?.orderTrackingId);
     const orderMerchantReference =
-      body?.OrderMerchantReference ?? query?.OrderMerchantReference ?? '';
+      (body?.OrderMerchantReference ?? query?.OrderMerchantReference ?? '').trim();
     const orderNotificationType =
-      body?.OrderNotificationType ?? query?.OrderNotificationType ?? 'IPNCHANGE';
+      (body?.OrderNotificationType ?? query?.OrderNotificationType ?? 'IPNCHANGE').trim();
+
+    // M-4 FIX: guard against empty tracking ID — Pesapal still gets its ACK
+    // (to avoid retry storms) but we log and skip the DB write.
+    if (!orderTrackingId) {
+      this.logger.warn('Pesapal IPN received with missing OrderTrackingId — skipping');
+      return { orderNotificationType, orderTrackingId: '', orderMerchantReference, status: 200 };
+    }
 
     try {
       await this.payments.handlePesapalIpn(orderTrackingId);

@@ -150,7 +150,10 @@ export class MpesaService {
       throw new ServiceUnavailableException('M-Pesa authentication failed');
     }
 
-    const ttlSeconds = Number(body.expires_in ?? 3599);
+    // M-5 FIX: guard against NaN — Number() of a non-numeric string produces NaN,
+    // which would make every cache hit miss immediately (NaN arithmetic is always NaN).
+    const parsedTtl = Number(body.expires_in);
+    const ttlSeconds = Number.isFinite(parsedTtl) && parsedTtl > 0 ? parsedTtl : 3599;
     this.tokenCache = {
       token: body.access_token,
       expiresAt: now + ttlSeconds * 1000,

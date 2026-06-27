@@ -258,7 +258,21 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     );
   }
 
-  // Normalize to `<origin>/api`, tolerating a trailing slash on baseUrl.
+  // M-6 FIX: validate baseUrl is a real URL before using it to prevent XSS via
+  // javascript: or data: URIs being used as a request origin.
+  let parsedBase: URL;
+  try {
+    parsedBase = new URL(options.baseUrl);
+  } catch {
+    throw new Error(
+      `@optex/api-client: baseUrl must be a valid URL, got: ${JSON.stringify(options.baseUrl)}`,
+    );
+  }
+  if (parsedBase.protocol !== 'http:' && parsedBase.protocol !== 'https:') {
+    throw new Error(
+      `@optex/api-client: baseUrl must use http or https, got: ${parsedBase.protocol}`,
+    );
+  }
   const origin = options.baseUrl.replace(/\/+$/, '');
   const apiBase = `${origin}/api`;
 

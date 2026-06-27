@@ -62,7 +62,7 @@ const KENYA_COUNTIES = [
 export default function Page() {
   const router = useRouter();
   const { items } = useCart();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [activeStep, setActiveStep] = useState(1);
   const [shipping, setShipping] = useState({
@@ -73,10 +73,11 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Redirect to login immediately if not authenticated
+  // H-3 FIX: guard on authLoading so we don't redirect while the session is
+  // still being resolved (user starts as undefined, not null, during load).
   useEffect(() => {
-    if (user === null) router.push('/login?redirect=/checkout');
-  }, [user, router]);
+    if (!authLoading && user === null) router.push('/login?redirect=/checkout');
+  }, [authLoading, user, router]);
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   const shippingKes = DELIVERY_FEE_KES;
@@ -149,7 +150,6 @@ export default function Page() {
 
       // Fallback (shouldn't happen): rely on the payment instruction.
       router.push(`/order-confirmation/${order.id}`);
-      void payment;
     } catch (err) {
       console.error('checkout error:', err);
       setError(err?.message || 'Failed to place order. Please try again.');

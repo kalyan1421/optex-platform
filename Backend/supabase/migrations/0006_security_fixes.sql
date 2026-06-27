@@ -34,17 +34,30 @@ ALTER TABLE orders
 
 -- 4. Make orders.customer_id NOT NULL
 -- No guest checkout exists in the SOW. NULL customer_id creates RLS lockout risks.
--- Must handle existing NULL rows first (there should be none in a fresh DB).
-UPDATE orders SET customer_id = (
-  SELECT id FROM customers LIMIT 1
-) WHERE customer_id IS NULL;
+-- C-3 FIX: DELETE orphan rows instead of assigning them to an arbitrary customer.
+-- Assigning to LIMIT 1 would corrupt order history and expose orders to the wrong
+-- user. A fresh DB has no orphans; in production, investigate before migrating.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM orders WHERE customer_id IS NULL LIMIT 1) THEN
+    RAISE NOTICE 'Deleting % orphan order(s) with NULL customer_id',
+      (SELECT COUNT(*) FROM orders WHERE customer_id IS NULL);
+    DELETE FROM orders WHERE customer_id IS NULL;
+  END IF;
+END $$;
 ALTER TABLE orders ALTER COLUMN customer_id SET NOT NULL;
 
 -- 5. Make prescriptions.customer_id NOT NULL
--- Same issue — NULL customer_id causes RLS lockout via NULL = uuid = FALSE.
-UPDATE prescriptions SET customer_id = (
-  SELECT id FROM customers LIMIT 1
-) WHERE customer_id IS NULL;
+-- C-3 FIX: Same pattern — DELETE orphans rather than assigning to a random patient.
+-- Assigning a prescription to the wrong patient is a medical privacy violation.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM prescriptions WHERE customer_id IS NULL LIMIT 1) THEN
+    RAISE NOTICE 'Deleting % orphan prescription(s) with NULL customer_id',
+      (SELECT COUNT(*) FROM prescriptions WHERE customer_id IS NULL);
+    DELETE FROM prescriptions WHERE customer_id IS NULL;
+  END IF;
+END $$;
 ALTER TABLE prescriptions ALTER COLUMN customer_id SET NOT NULL;
 
 -- 6. Add UNIQUE constraint on product_reviews (product_id, customer_id)

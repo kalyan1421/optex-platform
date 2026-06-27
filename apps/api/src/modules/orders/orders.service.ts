@@ -418,14 +418,15 @@ export class OrdersService {
     if (updateError) throw new BadRequestException(updateError.message);
 
     // Re-read the full detail via the admin path (no ownership requirement).
-    const detail = await this.adminGetOrderDetail(orderId);
+    // H-2 FIX: use the variant that returns contact details explicitly rather
+    // than stashing them as a hidden property on the view object.
+    const { detail, contact } = await this.adminGetOrderDetailWithContact(orderId);
 
-    // Best-effort customer notifications on the meaningful transitions.
     if (
       nextStatus === OrderStatus.DISPATCHED ||
       nextStatus === OrderStatus.DELIVERED
     ) {
-      void this.sendStatusUpdate(detail);
+      void this.sendStatusUpdate(detail, contact);
     }
 
     return detail;
@@ -467,8 +468,12 @@ export class OrdersService {
     };
   }
 
-  /** Admin order-detail read (no ownership check). */
-  private async adminGetOrderDetail(orderId: string): Promise<OrderDetailView> {
+  // H-2 FIX: explicit contact shape returned alongside the view so that
+  // sendStatusUpdate never needs to reach inside the view via a type cast.
+  private async adminGetOrderDetailWithContact(orderId: string): Promise<{
+    detail: OrderDetailView;
+    contact: { email: string | null; phone: string | null } | null;
+  }> {
     const { data, error } = await this.supabase.client
       .from('orders')
       .select(
@@ -496,10 +501,17 @@ export class OrdersService {
         phone: string | null;
       } | null;
     };
-    const detail = this.toDetail(row);
-    // Stash contact details for notification helpers without widening the view.
-    (detail as OrderDetailView & { __customer?: unknown }).__customer =
-      row.customer;
+    return {
+      detail: this.toDetail(row),
+      contact: row.customer
+        ? { email: row.customer.email, phone: row.customer.phone }
+        : null,
+    };
+  }
+
+  /** Admin order-detail read (no ownership check). */
+  private async adminGetOrderDetail(orderId: string): Promise<OrderDetailView> {
+    const { detail } = await this.adminGetOrderDetailWithContact(orderId);
     return detail;
   }
 
@@ -620,23 +632,20 @@ export class OrdersService {
   }
 
   /** Best-effort dispatch/delivery status notification to the customer. */
-  private async sendStatusUpdate(order: OrderDetailView): Promise<void> {
-    const customer =
-      (order as OrderDetailView & {
-        __customer?: {
-          email: string | null;
-          phone: string | null;
-        } | null;
-      }).__customer ?? null;
+  private async sendStatusUpdate(
+    order: OrderDetailView,
+    // H-2 FIX: explicit parameter instead of hidden __customer property injection
+    contact: { email: string | null; phone: string | null } | null,
+  ): Promise<void> {
     const shipping = order.shipping as { phone?: string } | null;
-    const phone = customer?.phone ?? shipping?.phone ?? null;
+    const phone = contact?.phone ?? shipping?.phone ?? null;
     const verb =
       order.status === OrderStatus.DELIVERED ? 'delivered' : 'dispatched';
 
     try {
-      if (customer?.email) {
+      if (contact?.email) {
         await this.email.sendEmail({
-          to: customer.email,
+          to: contact.email,
           subject: `Optex order ${order.orderNumber} ${verb}`,
           text: `Good news — your order ${order.orderNumber} has been ${verb}.`,
         });

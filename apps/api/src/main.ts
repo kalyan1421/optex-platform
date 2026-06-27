@@ -19,6 +19,14 @@ function parseCorsOrigins(raw?: string): string[] {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+  // H-8 FIX: wildcard + credentials is a security misconfiguration — any origin
+  // could make authenticated requests. Fail loudly at startup rather than silently.
+  if (origins.includes('*')) {
+    throw new Error(
+      'CORS_ORIGINS must not include "*" when credentials are enabled. ' +
+        'Specify explicit origins instead.',
+    );
+  }
   return origins.length > 0 ? origins : DEFAULT_CORS_ORIGINS;
 }
 
@@ -56,7 +64,9 @@ async function bootstrap(): Promise<void> {
     new ValidationPipe({
       transform: true,
       whitelist: true,
-      forbidNonWhitelisted: false,
+      // H-8 FIX: reject requests with undeclared fields so API contract
+      // violations surface immediately rather than being silently stripped.
+      forbidNonWhitelisted: true,
       transformOptions: { enableImplicitConversion: true },
     }),
   );

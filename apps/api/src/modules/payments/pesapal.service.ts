@@ -202,11 +202,12 @@ export class PesapalService {
       unknown
     > & { order_tracking_id?: string; redirect_url?: string };
 
-    // Pesapal returns 200 with an `error` object on logical failures.
+    // M-6 FIX: treat any non-null error object as a failure, including {} (empty
+    // object). The previous check missed {} because Object.keys({}).length === 0.
     const hasError =
-      body.error &&
-      typeof body.error === 'object' &&
-      Object.keys(body.error as object).length > 0;
+      body.error !== null &&
+      body.error !== undefined &&
+      typeof body.error === 'object';
 
     if (!response.ok || hasError || !body.order_tracking_id || !body.redirect_url) {
       this.logger.error(

@@ -52,7 +52,10 @@ const Cart = () => {
         .eq('is_active', true)
         .maybeSingle();
       if (!data) { setPromoError('Invalid or expired promo code.'); return; }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      // M-3 FIX: compare timestamps as numbers (ms since epoch) so timezone
+      // differences between the DB (UTC) and the client locale don't cause
+      // valid codes to appear expired in UTC+N timezones.
+      if (data.expires_at && Date.parse(data.expires_at) < Date.now()) {
         setPromoError('This promo code has expired.');
         return;
       }
@@ -66,6 +69,10 @@ const Cart = () => {
       setPromoDiscount(Math.min(discount, subtotal));
       setPromoApplied(data.code);
       setPromoInput('');
+    } catch {
+      // M-3 FIX: catch DB / network errors and show a friendly message rather
+      // than letting the unhandled rejection surface as a blank error state.
+      setPromoError('Could not validate promo code. Please try again.');
     } finally {
       setPromoLoading(false);
     }

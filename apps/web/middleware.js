@@ -18,9 +18,13 @@ export async function middleware(request) {
           response.cookies.set({ name, value, ...options })
         },
         remove(name, options) {
-          request.cookies.set({ name, value: '', ...options })
+          // H-6 FIX: expire the cookie via maxAge: 0 rather than setting an
+          // empty value — an empty-value cookie persists in some browsers and
+          // continues to be sent with subsequent requests, preventing true logout.
+          const deleteOptions = { ...options, maxAge: 0 }
+          request.cookies.set({ name, value: '', ...deleteOptions })
           response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value: '', ...options })
+          response.cookies.set({ name, value: '', ...deleteOptions })
         },
       },
     },

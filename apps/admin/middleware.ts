@@ -19,9 +19,11 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value, ...options })
         },
         remove(name, options) {
-          request.cookies.set({ name, value: '', ...options })
+          // H-6 FIX: expire via maxAge: 0 to ensure the cookie is truly deleted.
+          const deleteOptions = { ...options, maxAge: 0 }
+          request.cookies.set({ name, value: '', ...deleteOptions })
           response = NextResponse.next({ request: { headers: request.headers } })
-          response.cookies.set({ name, value: '', ...options })
+          response.cookies.set({ name, value: '', ...deleteOptions })
         },
       },
     },

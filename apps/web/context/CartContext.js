@@ -81,12 +81,19 @@ export const CartProvider = ({ children }) => {
         console.error('addCartItem error:', err)
       }
     } else {
-      // Guest — in-memory only
+      // Guest — in-memory only.
+      // M-2 FIX: include the variant (lens option) in the match key so the same
+      // frame with different lens options is not collapsed into one cart item.
       setItems((prev) => {
-        const existing = prev.find((i) => i.id === product.id)
+        const variantKey = product.variant ?? ''
+        const existing = prev.find(
+          (i) => i.id === product.id && (i.variant ?? '') === variantKey,
+        )
         if (existing) {
           return prev.map((i) =>
-            i.id === product.id ? { ...i, quantity: i.quantity + (product.quantity ?? 1) } : i,
+            i.id === product.id && (i.variant ?? '') === variantKey
+              ? { ...i, quantity: i.quantity + (product.quantity ?? 1) }
+              : i,
           )
         }
         return [...prev, { ...product, quantity: product.quantity ?? 1 }]

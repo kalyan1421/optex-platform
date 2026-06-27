@@ -101,8 +101,16 @@ export class AuthFlowService {
       throw new BadRequestException('Auth service is unavailable.');
     }
 
-    const text = await res.text();
-    const json = (text ? JSON.parse(text) : {}) as Record<string, unknown>;
+    // H-1 FIX: Parse response JSON inside its own try-catch. A non-JSON body
+    // (e.g. a 503 HTML error page from a proxy) must not crash the endpoint.
+    let json: Record<string, unknown> = {};
+    try {
+      const text = await res.text();
+      if (text) json = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      // Non-JSON or empty body — fall through with empty object so the
+      // !res.ok branch below raises a generic error message.
+    }
 
     if (!res.ok) {
       const msg =

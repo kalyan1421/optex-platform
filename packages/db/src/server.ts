@@ -24,17 +24,22 @@ export function createServerSupabase(cookieStore: {
       set(name, value, options) {
         try {
           cookieStore.set?.(name, value, options)
-        } catch {
-          // Server Components can't write cookies — silently no-op so that
-          // server-side reads still work; cookie writes happen in Route
-          // Handlers / middleware where `cookieStore.set` is defined.
+        } catch (e) {
+          // H-7 FIX: log unexpected errors so misconfiguration is visible.
+          // Expected no-op: Server Components cannot write cookies — writes
+          // happen in Route Handlers / middleware where set() is defined.
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[db/server] cookieStore.set failed:', e)
+          }
         }
       },
       remove(name, options) {
         try {
           cookieStore.delete?.(name, options)
-        } catch {
-          // see comment above
+        } catch (e) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[db/server] cookieStore.delete failed:', e)
+          }
         }
       },
     },

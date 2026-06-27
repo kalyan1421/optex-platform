@@ -127,8 +127,14 @@ BEGIN
     RAISE EXCEPTION 'Your cart is empty.';
   END IF;
 
+  -- ── Lock cart_items rows before computing the subtotal ──
+  -- H-5 FIX: PostgreSQL disallows FOR UPDATE with aggregate queries. Lock
+  -- cart_items first via a separate SELECT, then compute the aggregate.
+  -- This prevents a concurrent request (e.g. two checkout tabs) from modifying
+  -- quantities between the subtotal read and the order INSERT.
+  PERFORM id FROM cart_items WHERE cart_id = v_cart_id FOR UPDATE;
+
   -- ── Subtotal over purchasable (active) lines, snapshotting live prices ──
-  -- Lock the product rows so prices can't shift mid-checkout.
   SELECT round(coalesce(sum(p.price_kes * ci.quantity), 0), 2)
   INTO   v_subtotal
   FROM   cart_items ci

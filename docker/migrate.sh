@@ -23,15 +23,21 @@ run_file() {
   local filename
   filename=$(basename "$filepath")
 
-  count=$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -t -c \
-    "SELECT COUNT(*) FROM _docker_migrations WHERE filename = '$filename';" | tr -d ' \n')
+  # C-1 FIX: Use -v to pass filename as a psql variable, preventing SQL injection
+  # from specially-crafted filenames containing single quotes or semicolons.
+  count=$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -t \
+    -v "fname=$filename" \
+    -c "SELECT COUNT(*) FROM _docker_migrations WHERE filename = :'fname';" \
+    | tr -d ' \n')
 
   if [ "$count" = "0" ]; then
     echo "  ▸ $filename"
     if psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
         -v ON_ERROR_STOP=1 -f "$filepath"; then
-      psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -c \
-        "INSERT INTO _docker_migrations (filename) VALUES ('$filename') ON CONFLICT DO NOTHING;" > /dev/null
+      psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
+        -v "fname=$filename" \
+        -c "INSERT INTO _docker_migrations (filename) VALUES (:'fname') ON CONFLICT DO NOTHING;" \
+        > /dev/null
     else
       echo "  ✗ $filename failed — aborting"
       exit 1
