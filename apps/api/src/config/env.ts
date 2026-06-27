@@ -1,0 +1,81 @@
+import { z } from 'zod';
+
+/**
+ * Environment schema for the OPTEX API.
+ *
+ * Required secrets fail fast at boot. Payment / messaging provider keys are
+ * intentionally optional (allow-empty) so the foundation boots in dev before
+ * M-Pesa (Daraja), Pesapal, Africa's Talking, and Resend are wired up.
+ */
+export const envSchema = z.object({
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
+  PORT: z.coerce.number().int().positive().default(4000),
+
+  // --- Supabase (required) ---
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Anon (public) key — used by the API's auth module to proxy GoTrue
+  // sign-in/sign-up/refresh on the frontend's behalf, so the apps never talk to
+  // Supabase directly.
+  SUPABASE_ANON_KEY: z.string().min(1),
+  // Only needed for local JWT verification without a network round-trip; the
+  // foundation verifies tokens via the Supabase Auth API, so this is optional.
+  SUPABASE_JWT_SECRET: z.string().optional(),
+
+  // --- CORS ---
+  // Comma-separated list of allowed origins. Falls back to web+admin dev hosts.
+  CORS_ORIGINS: z.string().optional(),
+
+  // --- M-Pesa (Daraja) — optional until payments module ships ---
+  MPESA_CONSUMER_KEY: z.string().optional().default(''),
+  MPESA_CONSUMER_SECRET: z.string().optional().default(''),
+  MPESA_SHORTCODE: z.string().optional().default(''),
+  MPESA_PASSKEY: z.string().optional().default(''),
+  MPESA_CALLBACK_URL: z.string().optional().default(''),
+
+  // --- Pesapal — optional until payments module ships ---
+  PESAPAL_CONSUMER_KEY: z.string().optional().default(''),
+  PESAPAL_CONSUMER_SECRET: z.string().optional().default(''),
+  PESAPAL_IPN_URL: z.string().optional().default(''),
+  // Registered Pesapal IPN id (returned by RegisterIPN; required by
+  // SubmitOrderRequest as `notification_id`). Optional so the app still boots
+  // without Pesapal wired; the initiate endpoint throws cleanly if absent.
+  PESAPAL_IPN_ID: z.string().optional().default(''),
+  // Browser redirect target after a Pesapal payment completes. Falls back to
+  // the storefront origin when unset.
+  PESAPAL_CALLBACK_URL: z.string().optional().default(''),
+
+  // --- Africa's Talking (SMS) — optional until notifications module ships ---
+  AT_USERNAME: z.string().optional().default(''),
+  AT_API_KEY: z.string().optional().default(''),
+  AT_SENDER_ID: z.string().optional().default(''),
+
+  // --- Resend (transactional email) — optional ---
+  RESEND_API_KEY: z.string().optional().default(''),
+  // Sender identity for Resend, e.g. `Optex <noreply@optexopticians.com>`.
+  RESEND_FROM: z.string().optional(),
+  // Destination inbox for contact-form submissions.
+  CONTACT_INBOX: z.string().optional(),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+/**
+ * Validation hook for `@nestjs/config`'s `ConfigModule.forRoot({ validate })`.
+ * Throws (with a readable message) if required env vars are missing/invalid so
+ * the process refuses to start in a misconfigured state.
+ */
+export function validate(config: Record<string, unknown>): Env {
+  const parsed = envSchema.safeParse(config);
+
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+      .join('\n');
+    throw new Error(`Invalid environment configuration:\n${issues}`);
+  }
+
+  return parsed.data;
+}

@@ -1,0 +1,266 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OPTEX — full local dev stack
+#
+# Brings up:
+#   • Supabase (postgres, auth, rest, storage, meta, kong gateway, studio)
+#   • supabase-migrate   — one-shot idempotent migration runner
+#   • api                — NestJS backend on :4000
+#
+# Usage:
+#   docker compose up --build          # first run (builds api image)
+#   docker compose up                  # subsequent runs
+#   docker compose up supabase-studio  # open Studio UI at :54323
+#   docker compose down -v             # tear down + wipe volumes
+#
+# Supabase local endpoints:
+#   API gateway  http://localhost:54321   (set NEXT_PUBLIC_SUPABASE_URL)
+#   Studio       http://localhost:54323
+#   Postgres     localhost:54322 (user: postgres, password: see POSTGRES_PASSWORD)
+#
+# Standard local-dev credentials (safe to commit — these are the well-known
+# Supabase demo keys, identical to what `supabase start` generates):
+#   JWT secret   super-secret-jwt-token-with-at-least-32-characters-long
+#   anon key     eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOIh8bpR79vVmEA4Qrgqp7JFWSteSIWHs
+#   service key  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-supabase-common: &supabase-common
+  POSTGRES_PASSWORD: your-super-secret-and-long-postgres-password
+  POSTGRES_HOST: supabase-db
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: postgres
+  JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+  ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOIh8bpR79vVmEA4Qrgqp7JFWSteSIWHs
+  SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+
+services:
+  # ─── POSTGRES ───────────────────────────────────────────────────────────────
+  supabase-db:
+    image: supabase/postgres:15.1.0.117
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready -U postgres -h localhost
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: "5432"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: your-super-secret-and-long-postgres-password
+      PGPASSWORD: your-super-secret-and-long-postgres-password
+      JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      JWT_EXP: "3600"
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+
+  # ─── MIGRATIONS (one-shot, idempotent) ────────────────────────────────────
+  supabase-migrate:
+    image: postgres:15-alpine
+    restart: on-failure
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PGHOST: supabase-db
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: your-super-secret-and-long-postgres-password
+    volumes:
+      - ./Backend/supabase/migrations:/migrations:ro
+      - ./Backend/supabase/seed.sql:/seed.sql:ro
+      - ./docker/migrate.sh:/migrate.sh:ro
+    command: ["sh", "/migrate.sh"]
+
+  # ─── GOTRUE AUTH ────────────────────────────────────────────────────────────
+  supabase-auth:
+    image: supabase/gotrue:v2.143.0
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: "9999"
+      API_EXTERNAL_URL: http://localhost:54321
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_URI_ALLOW_LIST: "http://localhost:3000,http://localhost:3001,https://optex-staging.vercel.app"
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_LOG_LEVEL: ERROR
+      GOTRUE_MAILER_URLPATHS_INVITE: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+
+  # ─── POSTGREST ────────────────────────────────────────────────────────────
+  supabase-rest:
+    image: postgrest/postgrest:v12.0.2
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      PGRST_APP_SETTINGS_JWT_EXP: "3600"
+    command: postgrest
+
+  # ─── STORAGE ──────────────────────────────────────────────────────────────
+  supabase-storage:
+    image: supabase/storage-api:v0.46.4
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    environment:
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOIh8bpR79vVmEA4Qrgqp7JFWSteSIWHs
+      SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      DATABASE_URL: postgres://supabase_storage_admin:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
+      FILE_SIZE_LIMIT: "52428800"
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: local
+      GLOBAL_S3_BUCKET: local
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - supabase-storage-data:/var/lib/storage
+
+  # ─── POSTGRES META ────────────────────────────────────────────────────────
+  supabase-meta:
+    image: supabase/postgres-meta:v0.80.0
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: "8080"
+      PG_META_DB_HOST: supabase-db
+      PG_META_DB_PORT: "5432"
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: your-super-secret-and-long-postgres-password
+
+  # ─── KONG API GATEWAY (port 54321 = Supabase local URL) ──────────────────
+  supabase-kong:
+    image: kong:2.8.1
+    restart: unless-stopped
+    depends_on:
+      supabase-auth:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+    ports:
+      - "54321:8000/tcp"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DEFAULT_ERROR_MESSAGE_FORMAT: json
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_STATUS_LISTEN: 0.0.0.0:8001
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_LOG_LEVEL: warn
+    volumes:
+      - ./docker/kong.yml:/var/lib/kong/kong.yml:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  # ─── SUPABASE STUDIO (optional admin UI at :54323) ─────────────────────────
+  supabase-studio:
+    image: supabase/studio:20240514-7c09b25
+    restart: unless-stopped
+    depends_on:
+      supabase-kong:
+        condition: service_healthy
+    ports:
+      - "54323:3000"
+    environment:
+      HOSTNAME: 0.0.0.0
+      STUDIO_PG_META_URL: http://supabase-meta:8080
+      POSTGRES_PASSWORD: your-super-secret-and-long-postgres-password
+      DEFAULT_ORGANIZATION_NAME: OPTEX Opticians
+      DEFAULT_PROJECT_NAME: optex-local
+      SUPABASE_URL: http://supabase-kong:8000
+      SUPABASE_PUBLIC_URL: http://localhost:54321
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOIh8bpR79vVmEA4Qrgqp7JFWSteSIWHs
+      SUPABASE_SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+      AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      LOGFLARE_LOGGER_BACKEND_API_KEY: ""
+      LOGFLARE_API_URL: http://localhost
+
+  # ─── OPTEX NESTJS API ─────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: optex-api:local
+    restart: unless-stopped
+    depends_on:
+      supabase-kong:
+        condition: service_healthy
+      supabase-migrate:
+        condition: service_completed_successfully
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+    init: true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+
+volumes:
+  supabase-db-data:
+  supabase-storage-data:

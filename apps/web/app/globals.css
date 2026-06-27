@@ -1,0 +1,152 @@
+@import 'tailwindcss';
+@source "../app/**/*.{js,jsx,ts,tsx}";
+@source "../components/**/*.{js,jsx,ts,tsx}";
+@source "../context/**/*.{js,jsx,ts,tsx}";
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+@import 'aos/dist/aos.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* ── OPTEX brand tokens ─────────────────────────────────────────────── */
+  --color-brand-blue: #2A3182;
+  --color-brand-red: #E53935;
+  --color-brand-dark: #1A1A2E;
+
+  /* ── Primary font ───────────────────────────────────────────────────── */
+  --font-sans: 'Montserrat', sans-serif;
+
+  /* ── Semantic color utilities (wired to CSS custom properties) ───────── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ── Border radius ──────────────────────────────────────────────────── */
+  --radius: 0.5rem;
+
+  /* ── Container ──────────────────────────────────────────────────────── */
+  --container-2xl: 1440px;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #2A3182;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #111827;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+  --destructive: #E53935;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #2A3182;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background-color: #ffffff;
+  color: #111827;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@layer utilities {
+  .site-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 1440px;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .site-container { padding-inline: 2.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .site-container { padding-inline: 5rem; }
+  }
+
+  .section-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 1440px;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .section-container { padding-inline: 2.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .section-container { padding-inline: 5rem; }
+  }
+
+  .page-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 1440px;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .page-container { padding-inline: 2.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .page-container { padding-inline: 5rem; }
+  }
+}

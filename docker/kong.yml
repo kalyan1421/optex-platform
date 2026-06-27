@@ -1,0 +1,127 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Kong declarative config — routes the Supabase local API gateway.
+# Kong 2.8.1, DB-less mode (KONG_DATABASE=off).
+#
+# Port 54321 (Kong HTTP) maps:
+#   /auth/v1/*     → supabase-auth:9999   (GoTrue)
+#   /rest/v1/*     → supabase-rest:3000   (PostgREST)
+#   /storage/v1/*  → supabase-storage:5000
+#   /pg/*          → supabase-meta:8080   (admin only)
+#
+# Credentials (well-known local-dev keys — same as `supabase start` defaults):
+#   anon key     : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOIh8bpR79vVmEA4Qrgqp7JFWSteSIWHs
+#   service key  : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+# ─────────────────────────────────────────────────────────────────────────────
+_format_version: "1.1"
+
+consumers:
+  - username: anon
+    keyauth_credentials:
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOIh8bpR79vVmEA4Qrgqp7JFWSteSIWHs
+  - username: service_role
+    keyauth_credentials:
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+
+acls:
+  - consumer: anon
+    group: anon
+  - consumer: service_role
+    group: admin
+
+services:
+  # ── Auth open routes (OAuth callbacks / email verify — no key required) ──
+  - name: auth-v1-open
+    url: http://supabase-auth:9999/
+    routes:
+      - name: auth-v1-open-callback
+        strip_path: true
+        paths:
+          - /auth/v1/callback
+      - name: auth-v1-open-verify
+        strip_path: true
+        paths:
+          - /auth/v1/verify
+      - name: auth-v1-open-authorize
+        strip_path: true
+        paths:
+          - /auth/v1/authorize
+    plugins:
+      - name: cors
+
+  # ── Auth protected routes ────────────────────────────────────────────────
+  - name: auth-v1
+    url: http://supabase-auth:9999/
+    routes:
+      - name: auth-v1-all
+        strip_path: true
+        paths:
+          - /auth/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          whitelist:
+            - anon
+            - admin
+
+  # ── PostgREST ────────────────────────────────────────────────────────────
+  - name: rest-v1
+    url: http://supabase-rest:3000/
+    routes:
+      - name: rest-v1-all
+        strip_path: true
+        paths:
+          - /rest/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: acl
+        config:
+          hide_groups_header: true
+          whitelist:
+            - anon
+            - admin
+
+  # ── Storage ──────────────────────────────────────────────────────────────
+  - name: storage-v1
+    url: http://supabase-storage:5000/
+    routes:
+      - name: storage-v1-all
+        strip_path: true
+        paths:
+          - /storage/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: acl
+        config:
+          hide_groups_header: true
+          whitelist:
+            - anon
+            - admin
+
+  # ── Postgres Meta (admin only) ────────────────────────────────────────────
+  - name: meta
+    url: http://supabase-meta:8080/
+    routes:
+      - name: meta-all
+        strip_path: true
+        paths:
+          - /pg/
+    plugins:
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: acl
+        config:
+          hide_groups_header: true
+          whitelist:
+            - admin
