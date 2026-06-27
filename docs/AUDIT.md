@@ -514,3 +514,25 @@ This re-orders the Notion plan against the current state — **the current code 
 3. **Webhook isolation matters**: Daraja and Pesapal callbacks need a stable public URL distinct from the Next.js app deploy URL. Use Vercel serverless functions under a fixed path (`/api/webhooks/mpesa`, `/api/webhooks/pesapal`).
 4. **Mobile-first is non-negotiable** — 70%+ of Kenyan traffic is on mobile, and the SOW pins LCP < 2.5s. CRA cannot deliver this.
 5. **Two SOW versions exist** — implement against the **Kenya v3.0**. If you reference the India v1.0 by mistake, you'll build Razorpay/UPI instead of M-Pesa/Pesapal and lose the entire payment integration.
+
+---
+
+## 11. Legacy `Frontend/` — archived as read-only reference
+
+`Frontend/optex-admin/` (Vite 6 SPA) and `Frontend/optex-web/` (CRA) are **frozen**. They exist in this repo as a visual/component reference only.
+
+**Do not add features, fix bugs, or deploy from `Frontend/`.** All active development happens in `apps/web/`, `apps/admin/`, `apps/api/`, and `packages/`.
+
+The `Frontend/` directory has its own `.git` repository (`.git` lives at `Frontend/`, not the repo root) and is excluded from the root `.gitignore` to prevent it from being tracked twice. Do not run git commands from the root for changes inside `Frontend/` — use `git -C Frontend/` if you need to inspect its history.
+
+**What to mine from `Frontend/` (read-only):**
+- Visual layout and spacing from page components (`src/app/components/admin/*.tsx`, `src/pages/*.jsx`)
+- shadcn `ui/*` primitives already adapted to the OPTEX colour palette
+- TypeScript interfaces for `Product`, `Order`, `Appointment`, `Customer`
+
+**What to ignore:**
+- Build pipeline (Vite, react-scripts, Firebase Hosting config)
+- `src/imports/` (raw Figma-Make export, never integrated into App.tsx)
+- `figma:asset/` Vite plugin and the missing `src/assets/` directory
+- MUI dependency (unused, dead weight)
+- State-machine routing in `App.tsx` (`currentPage` union + switch)

@@ -9,6 +9,7 @@
     "dev:web": "pnpm --filter @optex/web dev",
     "dev:admin": "pnpm --filter @optex/admin dev",
     "dev:api": "pnpm --filter @optex/api dev",
+    "prebuild": "pnpm db:types:docker",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
