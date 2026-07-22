@@ -82,7 +82,7 @@ export class MpesaService {
     consumerSecret: string;
     shortcode: string;
     passkey: string;
-    callbackUrl: string;
+    callbackUrl: string | undefined;
   } {
     const consumerKey = this.config.get('MPESA_CONSUMER_KEY', { infer: true });
     const consumerSecret = this.config.get('MPESA_CONSUMER_SECRET', {
