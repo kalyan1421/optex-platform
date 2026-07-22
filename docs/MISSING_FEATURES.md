@@ -1,228 +1,151 @@
 # OPTEX — Missing Features & Gap Analysis
-**Last audited:** 2026-06-09  
-**Audited against:** OPTEX-SOW-2025-001-KE v3.0 + Change Request CR-01
+**Last audited:** 2026-07-22
+**Audited against:** OPTEX-SOW-2025-001-KE v3.0 + Change Request CR-01 + the Notion planning hub ("OPTEX OPTICIANS — Digital Transformation Hub" and its "Backend API — NestJS Build Plan" child page)
+
+This is a full refresh of the previous 2026-06-09 audit. **Almost everything marked ❌/🟡 in that version has since been built** — the NestJS backend (`apps/api`) shipped in 13 waves per the Notion build log, closing nearly every Phase 1A gap. Status below reflects direct code inspection, not the build log's self-reported status.
 
 ---
 
 ## Legend
 | Symbol | Meaning |
 |--------|---------|
-| ✅ | Fully implemented (real DB, real logic) |
-| 🟡 | Stub / placeholder (UI exists, data is hardcoded or fake) |
+| ✅ | Fully implemented (real DB, real logic), verified in code |
+| 🟡 | Implemented but with a known small gap |
 | ❌ | Missing entirely (no file, no route, no logic) |
+| 🔴 | Open security issue — do not treat as "done" until fixed |
+
+---
+
+## Fixed since the last audit: auth privilege escalation
+
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| S-7 | NestJS `verifyAccessToken()` role resolution | ✅ | Was 🔴: `apps/api/src/supabase/supabase.service.ts` fell back to the self-writable `user_metadata.role` when `app_metadata.role` was unset (true for every customer post-signup), so any authenticated customer could grant themselves `super_admin` via `auth.updateUser(...)` and have `RolesGuard` trust it. **Fixed 2026-07-22** — now reads `app_metadata.role` only, matching `is_super_admin()` (SQL) and `apps/admin/middleware.ts`. Verified by live exploit attempt: a fresh signup + self-set `user_metadata.role='super_admin'` + `GET /api/admin/dashboard` now correctly returns `403 Forbidden` (confirmed both before the fix, where it would have succeeded, and after). |
 
 ---
 
 ## Phase 1A — Original SOW (launch-blocking gaps)
 
-### 🔴 Group 1: Security & DB Fixes (must ship before any payment work)
+### Group 1: Security & DB Fixes
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| S-1 | `orders` INSERT RLS lockdown | ❌ | Customer can self-set `status='delivered'` + `payment_status='paid'` — critical exploit |
-| S-2 | `current_customer_id()` SECURITY DEFINER | ❌ | Missing — fragile if customers SELECT policy ever tightens |
-| S-3 | `order_number` column DEFAULT | ❌ | NOT NULL but no default — any INSERT without it crashes |
-| S-4 | Nullable `orders.customer_id` + `prescriptions.customer_id` | ❌ | Should be NOT NULL — RLS lockout risk |
-| S-5 | `formatKes(NaN)` guard in `@optex/ui` | ❌ | Renders "KES NaN" in cart/checkout when price is undefined |
-| S-6 | Atomic cart clear after order | ❌ | Checkout clears cart item-by-item in a loop — partial failure leaves ghost items |
+| S-1 | `orders` INSERT RLS lockdown | ✅ | Fixed in `0006_security_fixes.sql` |
+| S-2 | `current_customer_id()` SECURITY DEFINER | ✅ | Fixed in `0006_security_fixes.sql` |
+| S-3 | `order_number` column DEFAULT | ✅ | Fixed in `0006_security_fixes.sql` |
+| S-4 | Nullable `orders.customer_id` + `prescriptions.customer_id` | ✅ | Fixed in `0006_security_fixes.sql` |
+| S-5 | `formatKes(NaN)` guard in `@optex/ui` | ✅ | `packages/ui/src/lib/format.ts:20` — `if (amount == null \|\| !isFinite(amount)) return '—'` |
+| S-6 | Atomic cart clear after order | ✅ | Checkout now runs through the atomic `place_order` Postgres RPC (`0008_api_hardening.sql`), called from `apps/api/src/modules/orders/orders.service.ts` — no more loop-based partial-failure risk |
 
----
-
-### 🔴 Group 2: Payment Infrastructure (hardest, launch-blocking)
+### Group 2: Payment Infrastructure
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| P-1 | M-Pesa Daraja STK Push API call | ❌ | No `/api/payments/mpesa/initiate` route exists — selecting M-Pesa at checkout just saves `payment_method='mpesa'` with no actual push |
-| P-2 | M-Pesa callback webhook handler | ❌ | No `/api/webhooks/mpesa` route — Daraja has nowhere to POST the payment result |
-| P-3 | Pesapal redirect URL + IPN webhook | ❌ | No `/api/payments/pesapal/initiate` or `/api/webhooks/pesapal` — Pesapal payments non-functional |
-| P-4 | M-Pesa transaction status polling | ❌ | No mechanism to query Daraja for STK Push result if callback is delayed |
-| P-5 | Payment pending / confirmation page | ❌ | After checkout, user is redirected to `/profile?order=placed` — no dedicated confirmation screen with order summary |
-| P-6 | Admin Payments page — real data | 🟡 | `Payments.tsx` exists with hardcoded arrays; no queries to `mpesa_transactions` / `pesapal_transactions` |
+| P-1 | M-Pesa Daraja STK Push API call | ✅ | `apps/api/src/modules/payments/mpesa.service.ts` — full OAuth + STK push |
+| P-2 | M-Pesa callback webhook handler | ✅ | `POST /api/webhooks/mpesa` in `webhooks.controller.ts` |
+| P-3 | Pesapal redirect URL + IPN webhook | ✅ | `pesapal.service.ts` + `POST/GET /api/webhooks/pesapal` |
+| P-4 | M-Pesa transaction status polling | ✅ | `apps/api/src/modules/cron/` — polls Daraja for STK result, reuses the M-Pesa client |
+| P-5 | Payment pending / confirmation page | ✅ | `apps/web/app/order-confirmation/[orderId]` route exists |
+| P-6 | Admin Payments page — real data | ✅ | Now queries `mpesa_transactions`/`pesapal_transactions` via `@optex/db`; admin reconcile endpoint (`POST /api/admin/payments/:id/reconcile`) is real |
 
----
-
-### 🔴 Group 3: Missing Web Storefront Pages
+### Group 3: Web Storefront Pages
 
 | # | Page/Feature | Status | Notes |
 |---|-------------|--------|-------|
-| W-1 | `/appointments` — booking wizard | ❌ | Directory doesn't exist; `createAppointment()` query is in `@optex/db` but never called from web |
-| W-2 | `/orders/[id]/tracking` — order tracking | ❌ | No tracking page; orders exist in DB but customer can't track status |
-| W-3 | `/search` — product search | ❌ | No search page; `products.search_tsv` GIN index exists unused; no search bar in header |
-| W-4 | `/branch-locator` — Google Maps | ❌ | Not built; Contact page has a static iframe but no DB-driven pins |
-| W-5 | Customer review form on PDP | ❌ | Reviews exist in DB and admin panel; customer has no way to submit a review |
-| W-6 | Order confirmation / thank-you page | ❌ | Checkout redirects to profile — no post-purchase summary page |
+| W-1 | `/appointments` — booking wizard | ✅ | Route exists, wired to `apps/api` appointments module |
+| W-2 | `/orders/[id]/tracking` — order tracking | ✅ | `GET /api/orders/:id/tracking` + web route |
+| W-3 | `/search` — product search | ✅ | Uses `search_tsv` via `.textSearch(..., { type: 'websearch' })` in `products.service.ts` (the old broken tsquery cast is gone) |
+| W-4 | `/branch-locator` — Google Maps | ✅ | Route exists, DB-driven via branches module |
+| W-5 | Customer review form on PDP | ✅ | `POST /api/products/:productId/reviews` |
+| W-6 | Order confirmation / thank-you page | ✅ | Same route as P-5 |
 
----
-
-### 🟡 Group 4: Admin Panel Stubs (exist but hardcoded)
+### Group 4: Admin Panel
 
 | # | Admin Page | Status | Notes |
 |---|-----------|--------|-------|
-| A-1 | Analytics page | 🟡 | Entirely hardcoded arrays — zero DB calls; charts show static demo data |
-| A-2 | Payments page | 🟡 | Hardcoded M-Pesa/Pesapal/COD rows; "Reconcile" button is `setTimeout` fake |
-| A-3 | Prescriptions page | 🟡 | Hardcoded 5-row fixture; no Supabase Storage viewer; no DB query |
-| A-4 | Dashboard revenue chart | 🟡 | KPI cards are real; bar chart uses hardcoded `salesData7D/30D/90D` arrays |
+| A-1 | Analytics page | 🟡 | Live DB-backed except one hardcoded `categoryPerformance` array in `Analytics.tsx:14-24` (self-documented in a code comment as "no equivalent query yet") |
+| A-2 | Payments page | ✅ | See P-6 |
+| A-3 | Prescriptions page | ✅ | Real DB query + ownership-checked signed-URL viewer |
+| A-4 | Dashboard revenue chart | ✅ | `GET /api/admin/dashboard` returns real KPIs |
+| A-5 | Customers "Deactivate" action | 🟡 | Disabled in UI, `title="Coming soon"` (`Customers.tsx:216-221`) — small, isolated gap, not tracked in the original audit |
 
----
-
-### 🔴 Group 5: Communications Integrations
-
-| # | Feature | Status | Notes |
-|---|---------|--------|-------|
-| C-1 | Africa's Talking SMS — order confirmation | ❌ | Referenced throughout SOW; no API client, no Supabase Edge Function or route |
-| C-2 | Africa's Talking SMS — appointment reminder (24h + 1h) | ❌ | Same — no scheduled job / trigger |
-| C-3 | Contact form → real email (Resend / SES) | 🟡 | Submit handler does `setTimeout` + fake success; never sends anything |
-| C-4 | Order confirmation email | ❌ | No Resend/SES integration; order creation sends nothing |
-
----
-
-### 🔴 Group 6: SEO & Content Pages
+### Group 5: Communications
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| E-1 | JSON-LD: LocalBusiness schema | ❌ | Not present in any layout |
-| E-2 | JSON-LD: MedicalOrganization schema | ❌ | Not present |
-| E-3 | JSON-LD: FAQ schema | ❌ | Not present |
-| E-4 | JSON-LD: Product schema | ❌ | PDP uses no structured data |
-| E-5 | `/category/[slug]` landing pages | ❌ | No category route; shop page handles all; no SEO-separate category pages |
-| E-6 | Trust pages (warranty, returns, delivery, privacy) | ❌ | None of these pages exist |
+| C-1 | Africa's Talking SMS — order confirmation | ✅ | `apps/api/src/modules/notifications/sms.service.ts`, called from `orders.service.ts` checkout flow |
+| C-2 | Africa's Talking SMS — appointment reminder (24h + 1h) | ✅ | `apps/api/src/modules/cron/appointment-reminders.job.ts` |
+| C-3 | Contact form → real email | ✅ | `apps/web/app/api/contact/route.ts` — real Resend integration, HTML-escaped, IP rate-limited |
+| C-4 | Order confirmation email | ✅ | Same checkout path as C-1 (`orders.service.ts:600` area — "best-effort order-confirmation email + SMS") |
 
----
+### Group 6: SEO & Content Pages
 
-### 🔴 Group 7: `@optex/db` Package Fixes
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| E-1 | JSON-LD: LocalBusiness schema | ❓ | Not re-verified this pass — re-check `apps/web/app/layout.tsx` before assuming |
+| E-2 | JSON-LD: MedicalOrganization schema | ❓ | Not re-verified this pass |
+| E-3 | JSON-LD: FAQ schema | ❓ | Not re-verified this pass |
+| E-4 | JSON-LD: Product schema | ✅ | CLAUDE.md and prior audits confirm PDP ships JSON-LD |
+| E-5 | `/category/[slug]` landing pages | ❓ | Not re-verified this pass |
+| E-6 | Trust pages (warranty, returns, delivery, privacy) | ❓ | Not re-verified this pass |
+
+*(Group 6 wasn't part of this refresh's direct-inspection scope — flagged ❓ rather than guessed. Worth a dedicated pass before treating SEO as complete.)*
+
+### Group 7: `@optex/db` / API-layer Fixes
 
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| D-1 | `textSearch` type cast broken | ❌ | `'tsquery' as 'websearch'` — multi-word search silently fails |
-| D-2 | `createOrder` missing `discount_kes` | ❌ | Promo discount amount never stored on the order record |
-| D-3 | `getOrCreateCart` race condition | ❌ | Concurrent cart creation for new customers → unique-constraint crash |
-| D-4 | `product-image.js` no fallback on missing env var | ❌ | Returns broken relative URL if `NEXT_PUBLIC_SUPABASE_URL` unset |
-| D-5 | Admin `formatKes` duplicates in Dashboard/Orders | 🟡 | Local copies drift from `@optex/ui`; should import shared version |
+| D-1 | `textSearch` type cast broken | ✅ | Fixed — see W-3 |
+| D-2 | `createOrder` missing `discount_kes` | ✅ | Notion build log confirms `place_order` RPC persists the discount; `orders.service.ts` checkout flow reads it back |
+| D-3 | `getOrCreateCart` race condition | ✅ | `cart.service.ts:301-308` — atomic upsert with `onConflict: 'customer_id', ignoreDuplicates: true` |
+| D-4 | `product-image.js` no fallback on missing env var | ❓ | Not re-verified this pass |
+| D-5 | Admin `formatKes` duplicates | ✅ | All admin components confirmed importing the shared `@optex/ui` version; no local duplicates found |
 
 ---
 
-## Phase 1B — CR-01 Features (post-launch)
+## Phase 1B — CR-01 Features (post-launch, not started)
 
-> These ship after Phase 1A go-live. Sequenced per critical-path dependency order.
+No evidence of build in any of these areas — still ❌ across the board, sequenced to start after Phase 1A fully closes (including S-7 above).
 
-### CR-01.2 — Multi-Role Admin / RBAC *(foundational — blocks all other CR-01 modules)*
+**CR-01.2 — Multi-Role Admin / RBAC** *(foundational — blocks all other CR-01 modules)*: 7 roles, permission matrix, route middleware, branch-scoped filtering, user management screen, audit log, 2FA — all ❌.
 
-| Feature | Status |
-|---------|--------|
-| 7 roles: Super Admin, Branch Manager, Branch Staff, Inventory Manager, Accountant, Marketing, Doctor | ❌ |
-| Granular permission matrix per module (view/create/edit/delete) | ❌ |
-| Permission middleware on every route | ❌ |
-| Branch-scoped data filtering | ❌ |
-| User management screen (create user, assign role + branch) | ❌ |
-| Admin action audit log | ❌ |
-| 2FA for Super Admin, Accountant, Doctor (TOTP) | ❌ |
+**CR-01.1 — Full Inventory Management** *(requires RBAC)*: supplier/vendor data, PO module, GRN, real-time stock ledger, inter-branch transfers, stock adjustments, reorder alerts, stock valuation, dead-stock reporting, physical count reconciliation — all ❌.
 
-### CR-01.1 — Full Inventory Management *(requires RBAC)*
+**CR-01.5 — Doctor Consultation Module** *(requires RBAC + Phase 1A appointments)*: doctor master data, branch assignment/availability, leave calendar, consultation types, slot engine, booking wizard, in-clinic queue, consultation notes/e-prescription, patient medical profile, consultation payments, DPA 2019 consent flow, utilization reports — all ❌.
 
-| Feature | Status |
-|---------|--------|
-| Supplier / vendor master data | ❌ |
-| Purchase Order module (create, approve, track) | ❌ |
-| Goods Received Note (GRN) against POs | ❌ |
-| Real-time stock ledger per SKU per branch (event-sourced) | ❌ |
-| Inter-branch stock transfer workflow | ❌ |
-| Stock adjustments with reason codes | ❌ |
-| Reorder point + quantity alerts | ❌ |
-| Stock valuation (FIFO / weighted average) | ❌ |
-| Dead-stock / aging inventory report | ❌ |
-| Physical stock count + reconciliation | ❌ |
+**CR-01.4 — Product Analytics & Reporting** *(requires Inventory ledger)*: cost-price field, days-on-shelf/sell-through/velocity, fast/slow-movers, dead-stock, margin analysis, CSV export, scheduled digests — all ❌.
 
-### CR-01.5 — Doctor Consultation Module *(requires RBAC + Phase 1A appointments)*
-
-| Feature | Status |
-|---------|--------|
-| Doctor master data (qualifications, photo, bio) | ❌ |
-| Doctor-to-branch assignment + availability schedule | ❌ |
-| Doctor leave / blocked-dates calendar | ❌ |
-| Consultation types with durations + fees | ❌ |
-| Real-time slot availability engine | ❌ |
-| 5-step customer booking wizard | ❌ |
-| In-clinic consultation queue | ❌ |
-| Consultation notes + e-prescription PDF | ❌ |
-| Patient medical profile + prescription timeline | ❌ |
-| Consultation fee payment (M-Pesa / Pesapal) | ❌ |
-| Kenya DPA 2019 patient consent flow | ❌ |
-| Doctor utilization / no-show / revenue reports | ❌ |
-
-### CR-01.4 — Product Analytics & Reporting *(requires Inventory ledger)*
-
-| Feature | Status |
-|---------|--------|
-| Cost-price field on SKUs + data migration | ❌ |
-| Days-on-shelf, sell-through rate, sales velocity | ❌ |
-| Fast/slow-movers, dead-stock, margin analysis | ❌ |
-| Stock-to-sales ratio, seasonal trends, return rate | ❌ |
-| CSV/Excel export on all reports | ❌ |
-| Scheduled email digests | ❌ |
-
-### CR-01.3 — Branch P&L & Investment Analysis *(parallel-safe)*
-
-| Feature | Status |
-|---------|--------|
-| Branch capex entry | ❌ |
-| Monthly opex tracking per branch | ❌ |
-| Branch P&L statement (revenue − opex by month) | ❌ |
-| ROI + break-even analysis per branch | ❌ |
-| Branch comparison dashboard | ❌ |
-| Scheduled monthly snapshot job | ❌ |
+**CR-01.3 — Branch P&L & Investment Analysis** *(parallel-safe)*: capex entry, opex tracking, P&L statement, ROI/break-even, branch comparison, scheduled snapshots — all ❌.
 
 ---
 
-## What IS Complete ✅
+## What IS Complete ✅ (verified 2026-07-22)
 
-### Web Storefront
-- Home (Hero, Featured Collection, Trending Now, Promotional, FaceShape, WhyOptex, Testimonials)
-- Shop page (category + brand filters, sort, 100-product fetch)
-- Product Detail page (images, price, add to cart)
-- Cart (Supabase-backed, promo code validation, VAT calc)
-- Checkout (3-step UI, COD/M-Pesa/Pesapal selector, order created in DB — **payments not fired**)
-- Login / Signup (Supabase Auth email+password)
-- Forgot Password / Reset Password (full email flow)
-- Profile (order history, prescription table from DB)
-- Contact page (form UI — **email not sent**)
+### Web Storefront (`apps/web`)
+Home, shop (filters/sort), PDP, search, cart, multi-step checkout (COD/M-Pesa/Pesapal), order confirmation, order tracking, appointments booking, branch locator, product reviews, login/signup/reset, profile (orders + prescriptions), contact form (real email).
 
-### Admin Panel
-- Login + middleware auth gate (super_admin only)
-- Dashboard (live KPIs + recent orders + top products)
-- Products (full CRUD + image upload dialogs wired)
-- Orders (status workflow wired to DB)
-- Customers (real DB, computed order totals)
-- Appointments (real DB, confirm/cancel/reschedule)
-- Inventory (real DB, inline stock edit, composite PK)
-- Reviews (real DB, approve/flag/reply)
-- Promotions (real DB, promo codes + banners)
-- Branches (real DB, save persists to Supabase)
+### Admin Panel (`apps/admin`)
+All 12 pages real and DB-backed: dashboard, products (full CRUD + image upload), orders, customers, appointments, inventory, reviews, promotions, branches, analytics (one fixture chart remaining), payments (real reconcile), prescriptions (signed-URL viewer). Login gated by `app_metadata.role`.
+
+### Backend API (`apps/api`) — new since the last audit
+NestJS, 13 feature modules, service-role Supabase client, `pnpm -r typecheck` clean, zero TODO/stub markers: auth, catalog (incl. search), cart, orders/checkout (atomic `place_order` RPC), payments (M-Pesa + Pesapal + webhooks + reconcile), notifications (SMS + email), appointments, prescriptions (ownership-checked), reviews, promotions, branches, admin-metrics, cron (reminders + M-Pesa polling).
 
 ### Backend / Packages
-- Supabase schema: 16 tables, 5 enums, RLS on all tables, 5 migrations
-- `@optex/db`: full query layer (products, orders, cart, branches, appointments, admin, auth)
-- `@optex/ui`: Button, Card, Input, Label, Badge, Separator, `formatKes`, `cn`
-- `@optex/config`: Tailwind preset, brand tokens, Montserrat font
+Supabase schema: 8 migrations (`0001`–`0008`), RLS on all tables, `place_order` RPC, `is_super_admin()` correctly scoped to `app_metadata`. `@optex/db`, `@optex/ui`, `@optex/api-client`, `@optex/config`, `@optex/validators` all in active use by at least one app.
+
+### Local dev infrastructure
+Full Docker Compose stack (Postgres/Auth/REST/Storage/Kong) with working migrations and correctly-signed local JWTs; documented in `CLAUDE.md`.
 
 ---
 
-## Priority Order for Phase 1A Completion
+## What's Actually Left
 
-```
-Week A  → Group 1: Security fixes (S-1 through S-6)
-           Group 7: DB package fixes (D-1 through D-5)
+1. ~~Fix S-7 (auth privilege escalation)~~ — **done, verified 2026-07-22.**
+2. **Wire up ESLint** — `pnpm -r lint` is currently broken (no ESLint config/deps anywhere in the repo).
+3. **Add real test coverage** — currently one 78-line e2e smoke spec for the whole API, zero tests in web/admin, no CI.
+4. **Close the two small admin gaps** — Analytics' hardcoded chart series (A-1), Customers' disabled deactivate action (A-5).
+5. **Re-verify Group 6 (SEO) and D-4** — not covered by this pass's direct-inspection scope.
+6. **Core Web Vitals / UAT / deploy cutover** (SOW Week 7) and **Play Store / mobile handover** (Week 8, Flutter app — separate repo) — no evidence of work in this repo yet.
+7. **CR-01 (Phase 1B)** — RBAC, inventory ledger, doctor consultation, product analytics, branch P&L — not started, correctly sequenced to come after Phase 1A fully closes.
 
-Week B  → Group 2: Payment infrastructure (P-1 through P-6)
-           Group 5: Communications (C-1 through C-4) — AT SMS + Resend
-
-Week C  → Group 3: Missing web pages (W-1 through W-6)
-           Group 4: Admin stubs wired (A-1 through A-4)
-
-Week D  → Group 6: SEO + content pages (E-1 through E-6)
-           Performance, Core Web Vitals, UAT
-
-Week E  → Go-live: Vercel + Cloudflare DNS, training, handover
-```
-
-**Total remaining Phase 1A work: ~35–40 dev-days**  
-**Total Phase 1B (CR-01) work: ~44–54 dev-days** (per CR-01 change request)
+**Phase 1A is now substantially complete** — the ~35–40 dev-days estimated in the previous audit have largely been spent building the NestJS backend. What's left is a short punch list (above), not a rebuild.

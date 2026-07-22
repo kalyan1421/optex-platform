@@ -54,8 +54,14 @@ export class SupabaseService implements OnModuleInit {
    * Verifies a Supabase access token (JWT) by resolving it to a user via the
    * Auth API, and normalizes the identity for guards/decorators.
    *
-   * The role is read from `app_metadata.role` first (server-controlled, the
-   * trusted source) and falls back to `user_metadata.role`.
+   * The role is read from `app_metadata.role` ONLY. `app_metadata` is
+   * server-controlled (writable only via the service-role Admin API);
+   * `user_metadata` is writable by the authenticated user themselves via the
+   * client SDK (`auth.updateUser`), so it must never be trusted for
+   * authorization — falling back to it would let any signed-up customer grant
+   * themselves `super_admin`. This matches `is_super_admin()` (Postgres RLS,
+   * migration 0007_security_meta.sql) and `apps/admin/middleware.ts`, which
+   * both correctly check `app_metadata.role` only.
    */
   async verifyAccessToken(token: string): Promise<VerifiedUser> {
     if (!token) {
@@ -69,9 +75,7 @@ export class SupabaseService implements OnModuleInit {
     }
 
     const { user } = data;
-    const role =
-      (user.app_metadata?.role as string | undefined) ??
-      (user.user_metadata?.role as string | undefined);
+    const role = user.app_metadata?.role as string | undefined;
 
     return {
       id: user.id,

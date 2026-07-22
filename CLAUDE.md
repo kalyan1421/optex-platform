@@ -2,74 +2,51 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Last refreshed:** 2026-07-22, against actual code state + the Notion planning hub (see [docs/MISSING_FEATURES.md](docs/MISSING_FEATURES.md) for the detailed feature-by-feature audit this refresh was based on).
+
 ## Repository layout
 
-OPTEX is an eyewear retail platform for **Optex Opticians (Kenya)**. The binding contract is **OPTEX-SOW-2025-001-KE v3.0** — see [docs/AUDIT.md](docs/AUDIT.md) for the full audit; the India v1 SOW in the client's docs folder is **superseded** (different payment stack — Razorpay/UPI vs M-Pesa/Pesapal/COD).
+OPTEX is an eyewear retail platform for **Optex Opticians (Kenya)**. The binding contract is **OPTEX-SOW-2025-001-KE v3.0** (8-week Kenya build + a later Phase 3 Virtual Try-On) — see [docs/AUDIT.md](docs/AUDIT.md) and [docs/MISSING_FEATURES.md](docs/MISSING_FEATURES.md). The India v1 SOW is **superseded** (different payment stack — Razorpay/UPI vs M-Pesa/Pesapal/COD). The legacy `Frontend/` CRA+Vite mockup trees (visual reference only) have been **deleted from this repo** — they were a separate git repo, fully preserved on GitHub at `kalyan1421/Optex-frontend`, not referenced by any code here.
 
 Repo siblings at the root:
 
-- `apps/web/` — Next.js 14 storefront (**new**, primary). Home, shop, PDP with JSON-LD, cart, login, signup. Server Components query Supabase via `@optex/db`. Middleware refreshes the Supabase session on every request.
-- `apps/admin/` — Next.js 14 super-admin panel (**new**, primary). `(authed)` route group gated by `middleware.ts` requiring `user_metadata.role === 'super_admin'`. Dashboard, products, orders implemented; analytics/inventory/appointments/customers/prescriptions/reviews/promotions/branches/payments are placeholder pages pointing at the SOW week they ship.
-- `packages/ui/` — shadcn primitives (Button, Card, Input, Label, Badge, Separator) + `cn` + `formatKes`, shared by both apps.
-- `packages/db/` — Hand-derived Supabase types, browser/server/service client factories, query helpers. **Service client throws if imported on the client.**
+- `apps/web/` — Next.js 14 customer storefront. Home, shop, PDP with JSON-LD, cart, checkout, order tracking, appointments, search, branch locator, login/signup. Server Components read Supabase **directly** for SSR/SEO pages; all writes go through `apps/api`.
+- `apps/admin/` — Next.js 14 super-admin panel. `(authed)` route group gated by `middleware.ts` requiring `app_metadata.role === 'super_admin'` (note: `app_metadata`, not `user_metadata` — the latter is user-writable and must never be trusted for authorization; see the Auth section below for a known gap where this rule isn't yet applied consistently). **All 12 admin pages are real, DB-backed implementations** — dashboard, products, orders, customers, appointments, inventory, reviews, promotions, branches, analytics, payments, prescriptions. Only two small gaps remain: `Customers.tsx`'s "Deactivate" action is disabled ("coming soon"), and `Analytics.tsx` has one hardcoded `categoryPerformance` chart series pending its own query.
+- `apps/api/` — NestJS backend (Node/Express under the hood). Owns all writes, payments, webhooks, comms, admin mutations, and cron jobs; will also serve the future Flutter app. Uses the Supabase **service-role client** (bypasses RLS; RLS stays as defense-in-depth). 13 feature modules: auth, catalog, cart, orders/checkout, payments (M-Pesa Daraja + Pesapal), notifications (Africa's Talking SMS + Resend email), appointments, prescriptions, reviews, promotions, branches, admin-metrics, cron. `pnpm -r typecheck` passes clean; no TODO/stub markers found in `src/`.
+- `packages/ui/` — shadcn primitives (Button, Card, Input, Label, Badge, Separator) + `cn` + `formatKes` (NaN/null-safe), shared by web and admin.
+- `packages/db/` — Hand-derived Supabase types, browser/server/service client factories, query helpers for the Next.js-direct-read paths. **Service client throws if imported on the client.**
+- `packages/api-client/` — Typed client for `apps/web`/`apps/admin` to call `apps/api`.
+- `packages/validators/` — Shared zod (or similar) validation schemas.
 - `packages/config/` — Tailwind preset with brand tokens (`brand.blue #2A3182`, `brand.red #E53935`, `brand.dark #1A1A2E`) + Montserrat font + CSS-variable theme tokens.
-- `Backend/supabase/` — Schema, RLS, storage migrations, seed (0001-0003 + `seed.sql`).
-- `docs/AUDIT.md` — Consolidated tech-debt audit, Figma-to-code comparison, Supabase plan, 8-week ship plan.
-- `Frontend/optex-{web,admin}/` — **Legacy reference** (CRA + Vite). Do **not** add new features here. Mine for visual reference and shadcn primitives only; everything else has moved to `apps/` and `packages/`.
+- `Backend/supabase/` — Schema, RLS, storage migrations (`0001` through `0008`), seed. See [Backend/README.md](Backend/README.md).
+- `docker-compose.yml` + `docker/` — Full local dev stack (Supabase Postgres/Auth/REST/Storage/Kong + the API), see "Local dev" below.
+- `docs/AUDIT.md` — Consolidated tech-debt audit, Figma-to-code comparison, 8-week ship plan.
+- `docs/MISSING_FEATURES.md` — Feature-by-feature gap analysis against the SOW + CR-01, refreshed 2026-07-22.
 
-Pnpm workspace: `pnpm-workspace.yaml` lists `apps/*` and `packages/*`. Bootstrap with `pnpm install` from the repo root. Dev servers: `pnpm dev:web` (port 3000) and `pnpm dev:admin` (port 3001).
+Pnpm workspace: `pnpm-workspace.yaml` lists `apps/*` and `packages/*`. Bootstrap with `pnpm install` from the repo root.
 
-**Both legacy frontends are misaligned with the SOW stack** (SOW requires Next.js 14 + Node/Express + Supabase + Vercel; legacy has CRA web + Vite admin + Firebase Hosting). See AUDIT.md for the migration rationale.
+## Local dev
 
-The two frontends are **independent apps with different tooling stacks** — do not assume conventions in one carry over to the other. They are also deployed to **different Firebase Hosting projects**: admin → `optex-adminpanel`, web → `optex-65423` (see each app's `.firebaserc`).
+Dev server ports (set in each app's `package.json` and mirrored in `.claude/launch.json`):
+- `pnpm dev:api` → **`http://localhost:1111`** (NestJS, routes under `/api`, Swagger at `/api/docs`)
+- `pnpm dev:web` → **`http://localhost:1112`**
+- `pnpm dev:admin` → **`http://localhost:1113`**
 
-Only the `Frontend/` tree is a git repo (`.git` lives at `Frontend/`, not the repo root). Run git commands from `Frontend/`. The new `Backend/` and `docs/` trees are not yet under version control.
+(These were moved off 3000/3001/4000 to avoid collisions with other local processes — if you see those ports referenced in older docs/scripts, they're stale.)
+
+Local Supabase stack: `docker compose up -d supabase-kong` brings up Postgres + Auth + REST + Storage + Kong (gateway at `:54321`, Postgres at `:54322`). `docker/migrate.sh` idempotently applies `Backend/supabase/migrations/*.sql` + `seed.sql` on every `supabase-migrate` run. Each app's `.env.example` ships working local-dev defaults (Kong URL, anon/service-role JWTs signed with the shared local JWT secret) — copy to `.env`/`.env.local` to run against the Docker stack.
 
 ## Backend (Supabase)
 
-Schema, RLS, and Storage buckets live in `Backend/supabase/migrations/` (`0001_init_schema.sql`, `0002_rls_policies.sql`, `0003_storage_buckets.sql`) with dev seed in `Backend/supabase/seed.sql`. See [Backend/README.md](Backend/README.md) for the Supabase CLI workflow (`supabase link` → `supabase db push`).
+Schema, RLS, and Storage buckets live in `Backend/supabase/migrations/` (`0001_init_schema.sql` → `0008_api_hardening.sql`) with dev seed in `Backend/supabase/seed.sql`. Notable later migrations: `0006_security_fixes.sql` (RLS lockdown on `orders` INSERT, `current_customer_id()` SECURITY DEFINER, `order_number` default, NOT NULL customer_id columns), `0007_security_meta.sql` (redefines `is_super_admin()` to check **`app_metadata.role`** only — the original `0001` version incorrectly checked `user_metadata.role`), `0008_api_hardening.sql` (atomic `place_order` RPC, promo-code column, `increment_promo_uses`, appointment reminder flags).
 
-Auth model: Supabase Auth for customers; Super Admin is a single Supabase user with `user_metadata.role = 'super_admin'` checked by the `is_super_admin()` SQL helper. Payment webhooks (M-Pesa Daraja, Pesapal IPN) will use the service-role key to bypass RLS and write to `mpesa_transactions` / `pesapal_transactions`. Prescription files are namespaced by customer id under the private `prescriptions` bucket.
+Auth model: Supabase Auth for customers; Super Admin is a Supabase user with `app_metadata.role = 'super_admin'` (server-set only, via the admin API — **not** `user_metadata`, which any authenticated user can rewrite via the client SDK). All three authorization checks in the codebase — `is_super_admin()` (SQL, RLS), `apps/admin/middleware.ts`, and `apps/api/src/supabase/supabase.service.ts`'s `verifyAccessToken()` — correctly check `app_metadata.role` only, with no `user_metadata` fallback anywhere. (This was fixed 2026-07-22 after a self-escalation path was found and verified: a signed-up customer could call `auth.updateUser({ data: { role: 'super_admin' } })` and have the NestJS `RolesGuard` trust the resulting `user_metadata.role`. Confirmed closed — a live exploit attempt against `/api/admin/dashboard` now correctly returns 403.)
 
-## optex-admin (admin panel)
-
-Stack: **Vite 6 + React 18 + TypeScript + Tailwind CSS v4 + Radix UI + shadcn-style components + MUI**. Originally generated from Figma Make — see [Frontend/optex-admin/README.md](Frontend/optex-admin/README.md).
-
-Commands (run from `Frontend/optex-admin/`):
-- `npm run dev` — start Vite dev server
-- `npm run build` — production build into `dist/`
-- No test or lint script is configured.
-
-Architecture notes:
-- Entry: [src/main.tsx](Frontend/optex-admin/src/main.tsx) → [src/app/App.tsx](Frontend/optex-admin/src/app/App.tsx).
-- **No router.** `App.tsx` holds a `currentPage` union-typed state and renders one of the page components from [src/app/components/admin/](Frontend/optex-admin/src/app/components/admin/) via a `switch`. To add an admin page: add the literal to the `Page` union, the case in `renderPage()`, and a corresponding entry in `AdminSidebar`.
-- UI primitives live in `src/app/components/ui/` (shadcn-style wrappers around Radix). `@/` is aliased to `src/` in [vite.config.ts](Frontend/optex-admin/vite.config.ts).
-- A custom Vite plugin `figmaAssetResolver` rewrites `figma:asset/<filename>` imports to `src/assets/<filename>`. **`src/assets/` does not currently exist** — any code using a `figma:asset/...` import will fail to build until those assets are added.
-- Generated Figma exports live under `src/imports/` (one folder per screen, plus raw `.png` assets). Treat these as scaffolding; the canonical components are in `src/app/components/admin/`.
-- Tailwind v4 is wired via `@tailwindcss/vite` (no `tailwind.config`). Theme tokens / CSS variables live in [src/styles/theme.css](Frontend/optex-admin/src/styles/theme.css) (light + `.dark` blocks); entry CSS is [src/styles/index.css](Frontend/optex-admin/src/styles/index.css).
-- Deploy: `npm run build` then `firebase deploy` (hosts `dist/`).
-
-## optex-web (customer storefront)
-
-Stack: **Create React App (react-scripts 5) + React 19 + JavaScript/JSX + Tailwind CSS v3 + react-router-dom v7 + AOS scroll animations**. See [Frontend/optex-web/README.md](Frontend/optex-web/README.md).
-
-Commands (run from `Frontend/optex-web/`):
-- `npm start` — dev server on :3000
-- `npm run build` — production build into `build/`
-- `npm test` — Jest in watch mode (CRA). Run a single test with `npm test -- --testPathPattern=<name>` or `npm test -- -t "<test name>"`. No tests exist beyond the CRA default [App.test.js](Frontend/optex-web/src/App.test.js).
-
-Architecture notes:
-- Entry: `src/index.js` → [src/App.js](Frontend/optex-web/src/App.js). `App` initializes AOS once and wraps everything in `CartProvider` + `AppRoutes`.
-- Routing: [src/routes/AppRoutes.jsx](Frontend/optex-web/src/routes/AppRoutes.jsx) defines all routes inside [MainLayout](Frontend/optex-web/src/layouts/MainLayout.jsx). A `ScrollToTop` effect resets scroll on route change.
-- `MainLayout` conditionally hides `Header`/`Footer` on `/login` and `/signup`, and adjusts top padding for `/cart`, `/profile`, `/product` vs other inner pages vs `/` — when editing layout, check these branches together.
-- **Global state**: [src/context/CartContext.js](Frontend/optex-web/src/context/CartContext.js) is the only context. It is seeded with three hard-coded cart items on every mount (no persistence, no API). When wiring real data, replace the `useState` seed and add persistence here rather than threading props.
-- Pages live in `src/pages/<Name>/<Name>.jsx`; home-specific sub-sections live under `src/pages/Home/components/`. Shared layout chrome is under `src/components/layout/` (note `Footer.js` is JS; siblings are JSX — both work under CRA).
-- Tailwind v3 config: [tailwind.config.js](Frontend/optex-web/tailwind.config.js) extends with brand tokens (`brand.blue #2A3182`, `brand.red #E53935`, `brand.dark #1A1A2E`) and Montserrat as the sans font. Prefer these tokens over raw hex when adding UI.
-- `skills-lock.json` and `.agents/skills/` are Firebase Studio agent-skill metadata — they are not used at runtime.
-- Deploy: `npm run build` then `firebase deploy` (hosts `build/`, SPA rewrite to `/index.html`).
+Payment webhooks (M-Pesa Daraja, Pesapal IPN) use the service-role key to bypass RLS and write to `mpesa_transactions` / `pesapal_transactions`. Prescription files are namespaced by customer id under the private `prescriptions` bucket; downloads are ownership-checked server-side (`prescriptions.service.ts`) before issuing a 60s signed URL.
 
 ## Cross-cutting
 
-- No shared package, monorepo tooling, or workspace setup ties the two frontends together. Changes are independent.
-- No backend / API client exists in either app. All product, cart, and user data is fixture data. Any "save"/"submit" UI is non-functional today.
-- The admin app's components were generated from a separate Figma file ("Complete Admin Panel Screens") than the storefront. The two apps do not share a design system in code.
+- No CI is wired up (no `.github/workflows/`). `apps/api/test/app.e2e-spec.ts` is the only automated test in the repo (health/products/categories/branches smoke checks) — web and admin have zero tests. Treat this as the top risk area when making changes; verify manually via the running dev servers.
+- `pnpm -r lint` is currently broken: `apps/web`/`apps/admin` call `next lint` but no ESLint config or dependency exists anywhere in the repo. `apps/api`'s `"lint"` script is just an alias for `tsc --noEmit` (there's no real linter in the monorepo yet).
+- `pnpm -r typecheck` passes clean across all packages that define it. `apps/web` doesn't currently have a `typecheck` script (its siblings do).
+- CR-01 (RBAC with 7 roles, full inventory ledger, doctor consultation module, product analytics, branch P&L) is **Phase 1B, not started** — see `docs/MISSING_FEATURES.md` for the full breakdown. It's sequenced to build on top of Phase 1A, which is itself already substantially complete (see that doc for exact status per feature).
