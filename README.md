@@ -22,11 +22,11 @@ optex/
 │   ├── kong.yml      Kong 2.8.1 declarative gateway config
 │   └── migrate.sh    Idempotent SQL migration runner
 ├── docker-compose.yml  Full local Supabase stack (9 services)
+├── RUNBOOK.md        Run everything — local + production
 ├── Backend/
 │   └── supabase/     SQL migrations + seed
 └── docs/
     ├── AUDIT.md      Tech-debt audit + SOW alignment
-    ├── RUNBOOK.md    Production operations runbook
     └── PLAN.md       8-week ship plan
 ```
 
@@ -277,7 +277,7 @@ docker build -f apps/api/Dockerfile -t optex-api .
 docker run -p 4000:4000 --env-file apps/api/.env optex-api
 ```
 
-See [docs/RUNBOOK.md](docs/RUNBOOK.md) for full production deployment steps.
+See [RUNBOOK.md](RUNBOOK.md) for full local + production run steps.
 
 ---
 
@@ -285,9 +285,9 @@ See [docs/RUNBOOK.md](docs/RUNBOOK.md) for full production deployment steps.
 
 | Document | Description |
 |----------|-------------|
+| [RUNBOOK.md](RUNBOOK.md) | How to run everything — Docker, API, Web, Admin — in local dev and production |
 | [docs/AUDIT.md](docs/AUDIT.md) | Full tech-debt audit, Figma-to-code comparison, SOW alignment |
 | [docs/PLAN.md](docs/PLAN.md) | 8-week ship plan |
-| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Production operations + incident response |
 | [docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md) | NestJS module map + API contract |
 | [docs/MISSING_FEATURES.md](docs/MISSING_FEATURES.md) | SOW features not yet implemented |
 | [COMMANDS.md](COMMANDS.md) | Every dev command in one place |
