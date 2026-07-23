@@ -11,6 +11,9 @@
 FROM node:20-alpine AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
+# No TTY during `docker build` — CI=true skips pnpm's interactive
+# confirmation prompt (e.g. removing node_modules before a --prod install).
+ENV CI=true
 RUN corepack enable
 WORKDIR /repo
 

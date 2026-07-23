@@ -48,8 +48,14 @@ run_file() {
 
   if [ "$count" = "0" ]; then
     echo "  ▸ $filename"
+    # --single-transaction wraps the whole file in BEGIN/COMMIT so a failure
+    # partway through rolls back cleanly instead of leaving partially-applied
+    # DDL committed — without this, a retry re-runs the file from the top and
+    # immediately dies on "already exists" for whatever committed before the
+    # original failure, permanently wedging the migration until the volume
+    # is wiped by hand.
     if psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
-        -v ON_ERROR_STOP=1 -f "$filepath"; then
+        --single-transaction -v ON_ERROR_STOP=1 -f "$filepath"; then
       psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
         -c "INSERT INTO _docker_migrations (filename) VALUES ('$escaped') ON CONFLICT DO NOTHING;" \
         > /dev/null

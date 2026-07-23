@@ -144,7 +144,9 @@ services:
       supabase-rest:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/status"]
+      # 127.0.0.1, not localhost — this image resolves localhost to ::1 first,
+      # but the server only binds IPv4 0.0.0.0, so ::1 gets connection refused.
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/status"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -166,7 +168,7 @@ services:
 
   # ─── POSTGRES META ────────────────────────────────────────────────────────
   supabase-meta:
-    image: supabase/postgres-meta:v0.80.0
+    image: supabase/postgres-meta:v0.96.6
     restart: unless-stopped
     depends_on:
       supabase-db:
@@ -207,7 +209,7 @@ services:
 
   # ─── SUPABASE STUDIO (optional admin UI at :54323) ─────────────────────────
   supabase-studio:
-    image: supabase/studio:20240514-7c09b25
+    image: supabase/studio:2026.07.20-sha-74a0848
     restart: unless-stopped
     depends_on:
       supabase-kong:
