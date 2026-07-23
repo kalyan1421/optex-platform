@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, DollarSign, ShoppingBag, Users, CalendarCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
+import { TableSkeleton } from '../ui/table-skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -62,6 +64,7 @@ export function Dashboard() {
   const [chartData, setChartData] = useState<RevenuePoint[]>([]);
   const [paymentData, setPaymentData] = useState<PaymentMethodBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
 
   useEffect(() => {
     // H-5 FIX: getRevenueByPeriod is NOT included here because the period-change
@@ -88,9 +91,11 @@ export function Dashboard() {
 
   useEffect(() => {
     const db = createBrowserSupabase();
+    setChartLoading(true);
     getRevenueByPeriod(db, period)
       .then(setChartData)
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setChartLoading(false));
   }, [period]);
 
   const kpiCards = [
@@ -145,9 +150,11 @@ export function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">{stat.title}</p>
-                    <h3 className={`font-bold text-xl mt-2 ${loading ? 'animate-pulse text-gray-300' : ''}`}>
-                      {stat.value}
-                    </h3>
+                    {loading ? (
+                      <Skeleton className="h-7 w-20 mt-2" />
+                    ) : (
+                      <h3 className="font-bold text-xl mt-2">{stat.value}</h3>
+                    )}
                     <p className="text-sm text-green-600 mt-1">{stat.change}</p>
                   </div>
                   <div className={`${stat.bgColor} p-3 rounded-full`}>
@@ -185,18 +192,22 @@ export function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart key={period} data={chartData.length > 0 ? chartData : fallbackSalesData7D}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(20,23,118,0.05)' }}
-                  formatter={(value: number) => [`KES ${Number(value).toLocaleString()}`, 'Revenue']}
-                />
-                <Bar dataKey="revenue" fill="#141776" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartLoading ? (
+              <Skeleton className="h-[280px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart key={period} data={chartData.length > 0 ? chartData : fallbackSalesData7D}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(20,23,118,0.05)' }}
+                    formatter={(value: number) => [`KES ${Number(value).toLocaleString()}`, 'Revenue']}
+                  />
+                  <Bar dataKey="revenue" fill="#141776" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -241,11 +252,18 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
-                ))}
-              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Order</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Date</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Amount</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Pay</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Status</th>
+                  </tr>
+                </thead>
+                <TableSkeleton cols={5} />
+              </table>
             ) : recentOrders.length === 0 ? (
               <p className="text-sm text-gray-400 py-4 text-center">No orders yet.</p>
             ) : (
@@ -291,11 +309,16 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
-                ))}
-              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Product</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Units</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Revenue</th>
+                  </tr>
+                </thead>
+                <TableSkeleton cols={3} />
+              </table>
             ) : topProducts.length === 0 ? (
               <p className="text-sm text-gray-400 py-4 text-center">No sales data yet.</p>
             ) : (

@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
+import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
 
 type ReviewStatus = 'Pending' | 'Approved' | 'Flagged';
@@ -141,10 +142,10 @@ export function Reviews() {
           {[1, 2, 3].map(i => (
             <Card key={i}>
               <CardContent className="p-5">
-                <div className="animate-pulse space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-100 rounded w-2/3" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
               </CardContent>
             </Card>

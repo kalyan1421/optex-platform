@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { Search, Eye, Download, CheckCircle } from 'lucide-react';
+import { Search, Eye, Download, CheckCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { api } from '@/lib/api';
 import type { AdminOrderSummary, OrderDetail, OrderStatus } from '@optex/api-client';
 import { formatKes } from '@optex/ui';
+import { Skeleton } from '../ui/skeleton';
+import { TableSkeleton } from '../ui/table-skeleton';
 
 const STATUS_TABS: { key: string; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -162,8 +164,21 @@ export function Orders() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order ID</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Customer</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Amount (KES)</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Payment</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Action</th>
+                  </tr>
+                </thead>
+                <TableSkeleton cols={7} />
+              </table>
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -266,7 +281,10 @@ export function Orders() {
               <div>
                 <p className="font-medium mb-2">Order Items</p>
                 {detailLoading || !detail ? (
-                  <div className="h-16 bg-gray-100 rounded animate-pulse" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
                 ) : detail.items.length === 0 ? (
                   <p className="text-sm text-gray-400 p-4 border rounded-lg">No items found.</p>
                 ) : (
@@ -345,7 +363,14 @@ export function Orders() {
                   disabled={!newStatus || newStatus === selected.status || updating}
                   className="bg-[#141776] hover:bg-[#0f1258]"
                 >
-                  {updating ? 'Saving...' : 'Update'}
+                  {updating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Update'
+                  )}
                 </Button>
                 <Button variant="outline" onClick={() => setSelected(null)}>Close</Button>
               </div>

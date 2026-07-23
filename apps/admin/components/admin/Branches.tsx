@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
 
 interface Branch {
@@ -118,18 +119,18 @@ function EditBranchDialog({ branch, open, onOpenChange, onSave }: {
 function BranchCardSkeleton() {
   return (
     <Card className="overflow-hidden">
-      <div className="h-48 bg-gray-200 animate-pulse" />
+      <Skeleton className="h-48 rounded-none" />
       <CardContent className="p-5 space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-32" />
-            <div className="h-3 bg-gray-100 rounded animate-pulse w-16" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-16" />
           </div>
-          <div className="h-8 bg-gray-200 rounded animate-pulse w-16" />
+          <Skeleton className="h-8 w-16" />
         </div>
         <div className="space-y-2.5">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-3 bg-gray-100 rounded animate-pulse w-full" />
+            <Skeleton key={i} className="h-3 w-full" />
           ))}
         </div>
       </CardContent>

@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, BarChart2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Skeleton } from '../ui/skeleton';
+import { TableSkeleton } from '../ui/table-skeleton';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
@@ -106,9 +108,11 @@ export function Analytics() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">{kpi.title}</p>
-                    <h3 className={`font-bold text-xl mt-2 ${loading ? 'animate-pulse text-gray-300' : ''}`}>
-                      {kpi.value}
-                    </h3>
+                    {loading ? (
+                      <Skeleton className="h-7 w-20 mt-2" />
+                    ) : (
+                      <h3 className="font-bold text-xl mt-2">{kpi.value}</h3>
+                    )}
                     <div className="flex items-center gap-1 mt-1">
                       {kpi.up
                         ? <TrendingUp className="w-3.5 h-3.5 text-green-600" />
@@ -134,7 +138,7 @@ export function Analytics() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="h-[320px] bg-gray-50 rounded animate-pulse" />
+            <Skeleton className="h-[320px] w-full" />
           ) : (
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={revenueData}>
@@ -158,7 +162,7 @@ export function Analytics() {
           [...Array(3)].map((_, i) => (
             <Card key={i}>
               <CardContent className="p-6">
-                <div className="h-24 bg-gray-100 rounded animate-pulse" />
+                <Skeleton className="h-24 w-full" />
               </CardContent>
             </Card>
           ))
@@ -196,11 +200,18 @@ export function Analytics() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
-              ))}
-            </div>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">#</th>
+                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Product</th>
+                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">SKU</th>
+                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Units</th>
+                  <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Revenue</th>
+                </tr>
+              </thead>
+              <TableSkeleton cols={5} />
+            </table>
           ) : topProducts.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">No sales data yet.</p>
           ) : (

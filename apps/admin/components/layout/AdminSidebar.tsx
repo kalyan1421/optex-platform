@@ -61,11 +61,11 @@ export default function AdminSidebar() {
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col overflow-y-auto">
-      <div className="border-b border-gray-200 shrink-0 px-3 py-3">
+      <div className="border-b border-gray-200 shrink-0 px-3 py-3 flex justify-center">
         <img
           alt="Optex Opticians Ltd"
           src="/images/Logo.png"
-          className="w-full h-auto object-contain"
+          className="h-10 w-auto object-contain"
         />
       </div>
 

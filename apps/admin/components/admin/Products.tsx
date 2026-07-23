@@ -13,6 +13,7 @@ import { createBrowserSupabase } from '@optex/db/browser';
 import { listAllProducts, listCategories } from '@optex/db';
 import type { AdminProduct } from '@optex/db';
 import type { Category as DbCategory } from '@optex/db';
+import { TableSkeleton } from '../ui/table-skeleton';
 
 type CategoryFilter = 'All' | string;
 
@@ -287,24 +288,22 @@ export function Products() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />)}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Product</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">SKU</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Category</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Brand</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Price (KES)</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Status</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Actions</th>
-                  </tr>
-                </thead>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Product</th>
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">SKU</th>
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Category</th>
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Brand</th>
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Price (KES)</th>
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Status</th>
+                  <th className="text-left py-3 px-3 font-medium text-gray-700 text-sm">Actions</th>
+                </tr>
+              </thead>
+              {loading ? (
+                <TableSkeleton cols={7} />
+              ) : (
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
@@ -345,9 +344,9 @@ export function Products() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
-          )}
+              )}
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>

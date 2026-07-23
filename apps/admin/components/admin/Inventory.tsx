@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Download, Edit2, Check, X, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
 
 interface BranchMeta {
@@ -83,7 +84,7 @@ function SkeletonRow() {
     <tr className="border-b">
       {Array.from({ length: 8 }).map((_, i) => (
         <td key={i} className="py-3 px-3">
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
+          <Skeleton className="h-4 w-16" />
         </td>
       ))}
     </tr>
@@ -238,9 +239,11 @@ export function Inventory() {
       <Card>
         <CardHeader>
           <CardTitle>Stock Levels</CardTitle>
-          <CardDescription>
-            {loading ? 'Loading…' : `${items.length} products · ${branches.length} branches`}
-          </CardDescription>
+          {loading ? (
+            <Skeleton className="h-4 w-32" />
+          ) : (
+            <CardDescription>{`${items.length} products · ${branches.length} branches`}</CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

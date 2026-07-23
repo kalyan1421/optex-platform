@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { DatePicker } from '../ui/date-picker';
+import { Skeleton } from '../ui/skeleton';
+import { TableSkeleton } from '../ui/table-skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
 
 type DiscountType = 'percentage' | 'fixed';
@@ -52,6 +55,9 @@ export function Promotions() {
   const [newMaxUses, setNewMaxUses] = useState('');
   const [newExpiry, setNewExpiry] = useState('');
   const [newCategories, setNewCategories] = useState<string[]>([]);
+
+  const [newBannerStart, setNewBannerStart] = useState('');
+  const [newBannerEnd, setNewBannerEnd] = useState('');
 
   useEffect(() => {
     const db = createBrowserSupabase();
@@ -183,26 +189,22 @@ export function Promotions() {
               <CardDescription>{promos.length} promo codes</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="space-y-3 animate-pulse">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-10 bg-gray-100 rounded" />
-                  ))}
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Code</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Description</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Discount</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Usage</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Expiry</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Actions</th>
-                      </tr>
-                    </thead>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Code</th>
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Description</th>
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Discount</th>
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Usage</th>
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Expiry</th>
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
+                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  {loading ? (
+                    <TableSkeleton cols={7} />
+                  ) : (
                     <tbody>
                       {promos.map(p => (
                         <tr key={p.id} className="border-b hover:bg-gray-50">
@@ -239,9 +241,9 @@ export function Promotions() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
-                </div>
-              )}
+                  )}
+                </table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -255,14 +257,14 @@ export function Promotions() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2].map(i => (
                 <Card key={i}>
                   <CardContent className="p-0">
-                    <div className="w-full h-40 bg-gray-200 rounded-t-lg" />
+                    <Skeleton className="w-full h-40 rounded-t-lg rounded-b-none" />
                     <div className="p-4 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-1/2" />
-                      <div className="h-3 bg-gray-100 rounded w-2/3" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-3 w-2/3" />
                     </div>
                   </CardContent>
                 </Card>
@@ -333,7 +335,7 @@ export function Promotions() {
             </div>
             <div className="space-y-1.5">
               <Label>Expiry Date</Label>
-              <Input type="date" value={newExpiry} onChange={e => setNewExpiry(e.target.value)} />
+              <DatePicker value={newExpiry} onChange={setNewExpiry} disablePast />
             </div>
             <div className="space-y-1.5">
               <Label>Applicable Categories</Label>
@@ -383,11 +385,11 @@ export function Promotions() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Start Date</Label>
-                <Input type="date" />
+                <DatePicker value={newBannerStart} onChange={setNewBannerStart} disablePast />
               </div>
               <div className="space-y-1.5">
                 <Label>End Date</Label>
-                <Input type="date" />
+                <DatePicker value={newBannerEnd} onChange={setNewBannerEnd} disablePast />
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">

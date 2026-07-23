@@ -4,9 +4,10 @@ import { CalendarCheck, Clock, MapPin, Check, RefreshCw, X } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { DatePicker } from '../ui/date-picker';
+import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
 
 type AppointmentStatus = 'Pending' | 'Confirmed' | 'Rescheduled' | 'Cancelled' | 'Completed';
@@ -69,7 +70,7 @@ function SkeletonRow() {
     <tr className="border-b">
       {[...Array(7)].map((_, i) => (
         <td key={i} className="py-3 px-3">
-          <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
+          <Skeleton className="h-4 w-3/4" />
         </td>
       ))}
     </tr>
@@ -232,7 +233,7 @@ export function Appointments() {
               <div>
                 <p className="text-sm text-gray-500">Today</p>
                 {loading
-                  ? <div className="h-8 w-10 bg-gray-100 rounded animate-pulse mt-0.5" />
+                  ? <Skeleton className="h-8 w-10 mt-0.5" />
                   : <p className="font-bold text-2xl">{todayCount}</p>
                 }
               </div>
@@ -246,7 +247,7 @@ export function Appointments() {
               <div>
                 <p className="text-sm text-gray-500">Pending</p>
                 {loading
-                  ? <div className="h-8 w-10 bg-gray-100 rounded animate-pulse mt-0.5" />
+                  ? <Skeleton className="h-8 w-10 mt-0.5" />
                   : <p className="font-bold text-2xl">{pendingCount}</p>
                 }
               </div>
@@ -260,7 +261,7 @@ export function Appointments() {
               <div>
                 <p className="text-sm text-gray-500">Confirmed</p>
                 {loading
-                  ? <div className="h-8 w-10 bg-gray-100 rounded animate-pulse mt-0.5" />
+                  ? <Skeleton className="h-8 w-10 mt-0.5" />
                   : <p className="font-bold text-2xl">{confirmedCount}</p>
                 }
               </div>
@@ -287,7 +288,11 @@ export function Appointments() {
       <Card>
         <CardHeader>
           <CardTitle>Appointment List</CardTitle>
-          <CardDescription>{loading ? 'Loading…' : `${filtered.length} appointments`}</CardDescription>
+          {loading ? (
+            <Skeleton className="h-4 w-32" />
+          ) : (
+            <CardDescription>{`${filtered.length} appointments`}</CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -369,7 +374,7 @@ export function Appointments() {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>New Date</Label>
-              <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} />
+              <DatePicker value={newDate} onChange={setNewDate} disablePast />
             </div>
             <div className="space-y-1.5">
               <Label>New Time</Label>

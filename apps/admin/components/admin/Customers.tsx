@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
 
 interface DbOrder {
@@ -47,7 +48,7 @@ function SkeletonRow() {
     <tr className="border-b">
       {[...Array(7)].map((_, i) => (
         <td key={i} className="py-3 px-3">
-          <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
+          <Skeleton className="h-4 w-3/4" />
         </td>
       ))}
     </tr>
@@ -123,7 +124,7 @@ export function Customers() {
           <CardContent className="p-5">
             <p className="text-sm text-gray-500">Total Customers</p>
             {loading
-              ? <div className="h-8 w-12 bg-gray-100 rounded animate-pulse mt-1" />
+              ? <Skeleton className="h-8 w-12 mt-1" />
               : <p className="font-bold text-2xl mt-1">{customers.length}</p>
             }
           </CardContent>
@@ -132,7 +133,7 @@ export function Customers() {
           <CardContent className="p-5">
             <p className="text-sm text-gray-500">Active</p>
             {loading
-              ? <div className="h-8 w-12 bg-gray-100 rounded animate-pulse mt-1" />
+              ? <Skeleton className="h-8 w-12 mt-1" />
               : <p className="font-bold text-2xl mt-1">{customers.length}</p>
             }
           </CardContent>
@@ -141,7 +142,7 @@ export function Customers() {
           <CardContent className="p-5">
             <p className="text-sm text-gray-500">Total Revenue</p>
             {loading
-              ? <div className="h-8 w-24 bg-gray-100 rounded animate-pulse mt-1" />
+              ? <Skeleton className="h-8 w-24 mt-1" />
               : <p className="font-bold text-xl mt-1">KES {totalRevenue.toLocaleString()}</p>
             }
           </CardContent>
@@ -153,7 +154,11 @@ export function Customers() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Customer List</CardTitle>
-              <CardDescription>{loading ? 'Loading…' : `${filtered.length} customers`}</CardDescription>
+              {loading ? (
+                <Skeleton className="h-4 w-32" />
+              ) : (
+                <CardDescription>{`${filtered.length} customers`}</CardDescription>
+              )}
             </div>
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
