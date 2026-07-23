@@ -24,7 +24,9 @@ export default function LoginPage() {
       setError(authError.message)
       return
     }
-    const role = (data.user?.user_metadata as Record<string, unknown> | null)?.role
+    // Role lives in app_metadata only (server-set, not user-writable) — see
+    // middleware.ts, which gates on the same field.
+    const role = (data.user?.app_metadata as Record<string, unknown> | null)?.role
     if (role !== 'super_admin') {
       await supabase.auth.signOut()
       setError('Access denied. Super admin credentials required.')
