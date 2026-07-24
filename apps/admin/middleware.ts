@@ -34,8 +34,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const isLoginPage = request.nextUrl.pathname === '/login'
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
 
-  if (!isLoginPage) {
+  if (!isLoginPage && !isApiRoute) {
     // C-1 FIX: Read role from app_metadata, which is only writable via the
     // service-role Admin API. user_metadata is user-writable and must NOT be
     // trusted for authorization decisions.

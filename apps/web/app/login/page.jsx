@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '../../lib/api';
 
 const MailIcon = () => (
   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -58,14 +59,21 @@ const Login = () => {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (authError) {
-      setError(authError.message);
-    } else {
-      router.push('/');
-      router.refresh();
+    try {
+      setLoading(true);
+      const { session } = await api.auth.login({ email, password });
+      if (session) {
+        await supabase.auth.setSession({
+          access_token: session.accessToken,
+          refresh_token: session.refreshToken,
+        });
+        router.push('/');
+        router.refresh();
+      }
+    } catch (err) {
+      setError(err.message || 'Invalid login credentials');
+    } finally {
+      setLoading(false);
     }
   }
 

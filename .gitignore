@@ -23,3 +23,6 @@ Backend/supabase/.temp/
 
 # Frontend/ has its own .git — exclude from this repo
 Frontend/
+
+# Agent instructions
+.agents/

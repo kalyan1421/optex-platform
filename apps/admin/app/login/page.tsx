@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createBrowserSupabase } from '@optex/db/browser'
+import { api } from '../../lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,23 +18,32 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setLoading(true)
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (authError) {
-      setError(authError.message)
-      return
+    try {
+      setLoading(true)
+      const { session, user } = await api.auth.login({ email, password })
+      
+      const role = user?.role
+      if (role !== 'super_admin') {
+        // Just clear browser session if they are not super_admin
+        await supabase.auth.signOut()
+        setError('Access denied. Super admin credentials required.')
+        return
+      }
+
+      if (session) {
+        await supabase.auth.setSession({
+          access_token: session.accessToken,
+          refresh_token: session.refreshToken,
+        })
+      }
+      
+      router.push('/dashboard')
+      router.refresh()
+    } catch (err: any) {
+      setError(err.message || 'Invalid login credentials')
+    } finally {
+      setLoading(false)
     }
-    // Role lives in app_metadata only (server-set, not user-writable) — see
-    // middleware.ts, which gates on the same field.
-    const role = (data.user?.app_metadata as Record<string, unknown> | null)?.role
-    if (role !== 'super_admin') {
-      await supabase.auth.signOut()
-      setError('Access denied. Super admin credentials required.')
-      return
-    }
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (

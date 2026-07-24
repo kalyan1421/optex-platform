@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '../../lib/api';
 
 const UserIcon = () => (
   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -83,17 +84,30 @@ const Signup = () => {
       setError('Please agree to the Terms of Service and Privacy Policy.');
       return;
     }
-    setLoading(true);
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: name } },
-    });
-    setLoading(false);
-    if (authError) {
-      setError(authError.message);
-    } else {
-      setSuccess('Account created! Check your email to confirm before signing in.');
+    try {
+      setLoading(true);
+      const { session } = await api.auth.signup({
+        email,
+        password,
+        fullName: name,
+      });
+      
+      if (session) {
+        await supabase.auth.setSession({
+          access_token: session.accessToken,
+          refresh_token: session.refreshToken,
+        });
+        setSuccess('Account created! Logging you in...');
+        setTimeout(() => {
+          router.push('/profile');
+        }, 1000);
+      } else {
+        setSuccess('Account created! Please check your email to confirm.');
+      }
+    } catch (err) {
+      setError(err.message || 'Signup failed');
+    } finally {
+      setLoading(false);
     }
   }
 

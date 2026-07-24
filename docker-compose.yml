@@ -247,6 +247,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: "4000"
+      SUPABASE_URL: http://supabase-kong:8000
     ports:
       - "4000:4000"
     init: true

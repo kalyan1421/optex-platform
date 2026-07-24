@@ -17,6 +17,15 @@ const nextConfig = {
       { protocol: 'https', hostname: 'placehold.co' },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        // Use 127.0.0.1 to avoid Node IPv6 resolution quirks with Docker
+        destination: 'http://127.0.0.1:4000/api/:path*',
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig

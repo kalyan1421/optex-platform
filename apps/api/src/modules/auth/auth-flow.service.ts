@@ -98,7 +98,7 @@ export class AuthFlowService {
       });
     } catch (e) {
       this.logger.error(`GoTrue request failed: ${(e as Error).message}`);
-      throw new BadRequestException('Auth service is unavailable.');
+      throw new BadRequestException(`Auth service fetch failed: ${(e as Error).message}`);
     }
 
     // H-1 FIX: Parse response JSON inside its own try-catch. A non-JSON body
