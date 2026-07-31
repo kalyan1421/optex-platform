@@ -22,6 +22,8 @@ import { BranchesModule } from './modules/branches/branches.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CronModule } from './modules/cron/cron.module';
+import { CustomersModule } from './modules/customers/customers.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -86,6 +88,9 @@ import { SupabaseModule } from './supabase/supabase.module';
     OrdersModule,
     PaymentsModule,
     CronModule,
+    // Admin surfaces that replaced direct browser-to-Supabase access
+    CustomersModule,
+    InventoryModule,
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorize.

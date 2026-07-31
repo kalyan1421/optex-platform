@@ -19,6 +19,10 @@
 import type {
   AddCartItemInput,
   AdminAppointmentQuery,
+  AdminCustomer,
+  InventoryResponse,
+  InventoryStock,
+  SetStockInput,
   AuthResult,
   AuthUser,
   LoginInput,
@@ -594,6 +598,20 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       download: (id) =>
         request<SignedDownloadUrl>(`/admin/prescriptions/${encodeURIComponent(id)}/download`),
     },
+    customers: {
+      list: (search) =>
+        request<AdminCustomer[]>('/admin/customers', {
+          query: search ? { search } : undefined,
+        }),
+    },
+    inventory: {
+      list: () => request<InventoryResponse>('/admin/inventory'),
+      setStock: (input) =>
+        request<InventoryStock>('/admin/inventory', {
+          method: 'PATCH',
+          body: input,
+        }),
+    },
     dashboard: (query) =>
       request<DashboardResponse>('/admin/dashboard', {
         query: query as QueryParams | undefined,
@@ -830,6 +848,16 @@ export interface AdminApi {
     list: (query?: PrescriptionQuery) => Promise<Prescription[]>;
     /** `GET /admin/prescriptions/:id/download` */
     download: (id: string) => Promise<SignedDownloadUrl>;
+  };
+  customers: {
+    /** `GET /admin/customers?search=` */
+    list: (search?: string) => Promise<AdminCustomer[]>;
+  };
+  inventory: {
+    /** `GET /admin/inventory` */
+    list: () => Promise<InventoryResponse>;
+    /** `PATCH /admin/inventory` */
+    setStock: (input: SetStockInput) => Promise<InventoryStock>;
   };
   /** `GET /admin/dashboard` */
   dashboard: (query?: DashboardQuery) => Promise<DashboardResponse>;

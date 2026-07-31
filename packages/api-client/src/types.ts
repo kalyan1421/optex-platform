@@ -976,3 +976,71 @@ export interface AnalyticsResponse {
   orderVolumeByDay: OrderVolumePoint[];
   revenueByCategory: CategoryRevenue[];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin customers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** An order as embedded in the admin customer list (`CustomerOrderSummaryDto`). */
+export interface CustomerOrderSummary {
+  id: string;
+  order_number: string;
+  total_kes: number;
+  status: string;
+}
+
+/** A `customers` row with orders embedded (`AdminCustomerDto`). */
+export interface AdminCustomer {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+  orders: CustomerOrderSummary[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin inventory
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A branch column in the inventory grid (`InventoryBranchDto`). */
+export interface InventoryBranch {
+  id: string;
+  name: string;
+}
+
+/** The product an inventory row belongs to (`InventoryProductDto`). */
+export interface InventoryProduct {
+  id: string;
+  name: string;
+  sku: string;
+  category_name: string | null;
+}
+
+/** One `inventory` row: stock of a product at a branch (`InventoryItemDto`). */
+export interface InventoryItem {
+  product_id: string;
+  branch_id: string;
+  stock: number;
+  product: InventoryProduct;
+}
+
+/** `GET /admin/inventory` payload (`InventoryResponseDto`). */
+export interface InventoryResponse {
+  branches: InventoryBranch[];
+  items: InventoryItem[];
+}
+
+/** The stock row returned by `PATCH /admin/inventory`. */
+export interface InventoryStock {
+  product_id: string;
+  branch_id: string;
+  stock: number;
+}
+
+/** Body for `PATCH /admin/inventory` (`UpdateStockDto`). */
+export interface SetStockInput {
+  product_id: string;
+  branch_id: string;
+  stock: number;
+}
