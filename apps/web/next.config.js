@@ -1,3 +1,9 @@
+// Origin the /api/* rewrite proxies to. Defaults to the `pnpm dev:api` port
+// (1111); override with API_PROXY_ORIGIN when the API is elsewhere, e.g.
+// http://127.0.0.1:4000 for the Docker container or an internal service URL.
+// 127.0.0.1 rather than localhost to avoid Node IPv6 resolution quirks.
+const API_PROXY_ORIGIN = process.env.API_PROXY_ORIGIN || 'http://127.0.0.1:1111';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -27,8 +33,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        // Use 127.0.0.1 to avoid Node IPv6 resolution quirks with Docker
-        destination: 'http://127.0.0.1:4000/api/:path*',
+        destination: `${API_PROXY_ORIGIN}/api/:path*`,
       },
     ];
   },
