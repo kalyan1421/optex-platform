@@ -298,6 +298,29 @@ curl -s -X POST http://127.0.0.1:54321/auth/v1/admin/users \
   }'
 ```
 
+### Migrate an existing dev DB to the current seeded admin (run once)
+
+`seed.sql` is tracked in `_docker.migrations`, so changing the seeded admin
+does **not** affect a database that already ran it — `docker:up` skips the
+file, and re-running it by hand is a no-op too because both inserts are
+`on conflict … do nothing` keyed on a fixed UUID. If your local DB still has
+the old `admin@optexopticians.co.ke`, either `pnpm docker:reset` (wipes all
+data) or run this in-place update:
+
+```bash
+psql "postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres" -c \
+  "UPDATE auth.users
+      SET email              = 'admin@gmail.com',
+          encrypted_password = extensions.crypt('admin@123', extensions.gen_salt('bf'))
+    WHERE id = 'aaaaaaaa-0000-0000-0000-000000000001';
+   UPDATE auth.identities
+      SET identity_data = jsonb_set(identity_data, '{email}', '\"admin@gmail.com\"')
+    WHERE user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+   UPDATE public.customers
+      SET email = 'admin@gmail.com'
+    WHERE auth_user_id = 'aaaaaaaa-0000-0000-0000-000000000001';"
+```
+
 ### Promote an existing user to super_admin (local psql)
 
 ```bash

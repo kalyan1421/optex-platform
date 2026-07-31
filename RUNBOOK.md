@@ -96,6 +96,19 @@ pnpm dev:web      # http://localhost:1112
 pnpm dev:admin    # http://localhost:1113
 ```
 
+> **If the API is running in Docker (`:4000`), set `API_PROXY_ORIGIN` in both
+> `apps/web/.env.local` and `apps/admin/.env.local` before starting them:**
+>
+> ```
+> API_PROXY_ORIGIN=http://127.0.0.1:4000
+> ```
+>
+> Web/Admin proxy `/api/*` server-side to this origin and it defaults to
+> `:1111` (the `pnpm dev:api` port). Leave it at the default only if you run
+> the API outside Docker per §1.4. Getting this wrong is silent on the web
+> app and shows as a bare "Internal Server Error" on admin sign-in — the real
+> `ECONNREFUSED` appears only in the Next.js dev-server log.
+
 If you'd rather run the API outside Docker (e.g. for faster iteration with
 hot-reload), stop the Docker `api` service and run it separately on `:1111`:
 
