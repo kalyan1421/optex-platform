@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '@/lib/api';
 
 interface DbOrder {
   id: string;
@@ -67,26 +67,15 @@ export function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        const { data, error } = await db
-          .from('customers')
-          .select(
-            'id, full_name, email, phone, created_at, orders(id, total_kes, status, order_number)',
-          )
-          .order('created_at', { ascending: false });
+        const data = await api.admin.customers.list();
 
-        if (error) {
-          console.error('Failed to fetch customers:', error);
-          return;
-        }
-
-        const mapped: Customer[] = (data ?? []).map((row) => {
+        const mapped: Customer[] = data.map((row) => {
           const orders: DbOrder[] = Array.isArray(row.orders) ? row.orders : [];
           const totalSpent = orders.reduce((sum, o) => sum + (o.total_kes ?? 0), 0);
           return {
-            id: row.id as string,
+            id: row.id,
             full_name: row.full_name ?? '',
             email: row.email ?? '',
             phone: row.phone ?? null,

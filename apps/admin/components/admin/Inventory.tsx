@@ -4,7 +4,7 @@ import { Download, Edit2, Check, X, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '@/lib/api';
 
 interface BranchMeta {
   id: string;
@@ -108,21 +108,13 @@ export function Inventory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        const [branchesRes, inventoryRes] = await Promise.all([
-          db.from('branches').select('id, name').eq('is_active', true),
-          db
-            .from('inventory')
-            .select(
-              'product_id, branch_id, stock, product:products(id, name, sku, category:categories(name))',
-            ),
-        ]);
+        const inventory = await api.admin.inventory.list();
 
-        const fetchedBranches: BranchMeta[] = (branchesRes.data ?? []).slice(0, 3).map((b) => ({
-          id: b.id as string,
-          name: b.name as string,
+        const fetchedBranches: BranchMeta[] = inventory.branches.slice(0, 3).map((b) => ({
+          id: b.id,
+          name: b.name,
         }));
         setBranches(fetchedBranches);
 
@@ -133,25 +125,18 @@ export function Inventory() {
           branchNameMap[b.id] = b.name;
         });
 
-        // Pivot: group rows by product_id
+        // Pivot: group rows by product_id. The API already flattens the product
+        // and category joins, so there is no array-or-object shape to normalise.
         const productMap: Record<string, PivotedItem> = {};
-        for (const row of inventoryRes.data ?? []) {
-          const productId = row.product_id as string;
-          const branchId = row.branch_id as string;
-          const stock = row.stock as number;
-          // row.product may be an array (Supabase returns joined rows as arrays) or object
-          const productRaw = Array.isArray(row.product) ? row.product[0] : row.product;
-          const categoryRaw = productRaw?.category;
-          const categoryName: string = Array.isArray(categoryRaw)
-            ? (categoryRaw[0]?.name ?? '')
-            : (categoryRaw?.name ?? '');
+        for (const row of inventory.items) {
+          const { product_id: productId, branch_id: branchId, stock } = row;
 
           if (!productMap[productId]) {
             productMap[productId] = {
               productId,
-              name: productRaw?.name ?? productId,
-              sku: productRaw?.sku ?? '',
-              category: categoryName,
+              name: row.product.name,
+              sku: row.product.sku,
+              category: row.product.category_name ?? '',
               stocks: {},
             };
           }
@@ -198,17 +183,19 @@ export function Inventory() {
       ),
     );
 
-    // Persist to DB
-    const db = createBrowserSupabase();
+    // Persist to DB. The API 404s when no (product_id, branch_id) row exists,
+    // which the previous browser-direct UPDATE reported as success while
+    // matching zero rows — so surface it instead of leaving the optimistic
+    // value on screen unbacked.
     void (async () => {
       try {
-        await db
-          .from('inventory')
-          .update({ stock: value })
-          .eq('product_id', productId)
-          .eq('branch_id', branchId);
+        await api.admin.inventory.setStock({
+          product_id: productId,
+          branch_id: branchId,
+          stock: value,
+        });
       } catch (e) {
-        console.error(e);
+        console.error('Failed to update stock:', e);
       }
     })();
   }
