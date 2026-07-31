@@ -120,8 +120,8 @@ curl -s -X POST http://localhost:54321/auth/v1/admin/users \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@optexopticians.co.ke",
-    "password": "Admin@Optex2025!",
+    "email": "admin@gmail.com",
+    "password": "admin@123",
     "email_confirm": true,
     "app_metadata": { "role": "super_admin" }
   }'

@@ -53,7 +53,14 @@ select p.id, b.id, 10
   from products p cross join branches b
 on conflict do nothing;
 
--- Super admin user (dev only — see COMMANDS.md §10 for the actual password)
+-- Super admin user.
+--
+-- !! LOCAL DEV SEED ONLY. The credentials below (admin@gmail.com / admin@123)
+-- !! are weak by design for convenience and are committed in a git repo, so
+-- !! treat them as public. NEVER run this seed against staging or production,
+-- !! and never reuse this password there — create prod admins with a generated
+-- !! password via the Auth Admin API (COMMANDS.md §10) instead.
+--
 -- C-1 FIX: role is stored in raw_app_meta_data (only writable via service-role
 -- Admin API) rather than raw_user_meta_data (user-writable). Any existing seed
 -- or prod user still on user_metadata must run the migration 0007 data fix.
@@ -73,8 +80,8 @@ insert into auth.users (
   'aaaaaaaa-0000-0000-0000-000000000001',
   'authenticated',
   'authenticated',
-  'admin@optexopticians.co.ke',
-  extensions.crypt('Admin@Optex2025!', extensions.gen_salt('bf')),
+  'admin@gmail.com',
+  extensions.crypt('admin@123', extensions.gen_salt('bf')),
   now(), now(), now(),
   '{"full_name": "Optex Admin"}'::jsonb,
   '{"provider": "email", "providers": ["email"], "role": "super_admin"}'::jsonb,
@@ -89,7 +96,7 @@ insert into auth.identities (
 ) values (
   'aaaaaaaa-0000-0000-0000-000000000001',
   'aaaaaaaa-0000-0000-0000-000000000001',
-  jsonb_build_object('sub', 'aaaaaaaa-0000-0000-0000-000000000001', 'email', 'admin@optexopticians.co.ke'),
+  jsonb_build_object('sub', 'aaaaaaaa-0000-0000-0000-000000000001', 'email', 'admin@gmail.com'),
   'email',
   now(), now(), now()
 ) on conflict (provider, provider_id) do nothing;

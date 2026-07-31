@@ -290,8 +290,8 @@ curl -s -X POST http://127.0.0.1:54321/auth/v1/admin/users \
   -H "Authorization: Bearer <service_role_key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@optexopticians.co.ke",
-    "password": "Admin@Optex2025!",
+    "email": "admin@gmail.com",
+    "password": "admin@123",
     "email_confirm": true,
     "app_metadata": { "role": "super_admin" },
     "user_metadata": { "full_name": "Optex Admin" }
@@ -306,7 +306,7 @@ psql "postgresql://postgres:postgres@localhost:54322/postgres" -c \
   "UPDATE auth.users
    SET raw_app_meta_data  = raw_app_meta_data  || '{\"role\":\"super_admin\"}'::jsonb,
        raw_user_meta_data = raw_user_meta_data - 'role'
-   WHERE email = 'admin@optexopticians.co.ke';"
+   WHERE email = 'admin@gmail.com';"
 ```
 
 ### Fix existing super_admin users after migration 0007 (run once on any environment)

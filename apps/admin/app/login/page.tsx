@@ -76,7 +76,7 @@ export default function LoginPage() {
             <label className="mb-1.5 block text-sm font-semibold text-gray-700">Email</label>
             <input
               type="email"
-              placeholder="admin@optexopticians.co.ke"
+              placeholder="admin@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
