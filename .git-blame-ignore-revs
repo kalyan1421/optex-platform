@@ -1,0 +1,14 @@
+# Revisions to skip in `git blame` — bulk reformatting and other mechanical
+# rewrites that would otherwise attribute every touched line to whoever ran the
+# tool, burying the real author.
+#
+# GitHub honours this file automatically. For local git, enable it once per
+# clone:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Only add commits that are provably no-ops in behaviour. Entries must be full
+# 40-character SHAs; abbreviated ones are rejected.
+
+# style: apply prettier across the tree (228 files, formatting only)
+8b83ac17974755dab5585a805b1d42e1ceec2628

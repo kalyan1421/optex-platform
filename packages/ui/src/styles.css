@@ -1,0 +1,72 @@
+/*
+ * Shared design tokens. Imported by each app's globals.css AFTER the three
+ * @tailwind directives, so plain CSS is enough — no `@layer base` wrapper.
+ * (Wrapping these rules in `@layer base` made the file unparseable when
+ * webpack's css-loader processed it standalone, because the surrounding
+ * `@tailwind base` declaration only exists in the consuming file.)
+ */
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 17% 14%; /* #1A1A2E brand-dark */
+
+  --card: 0 0% 100%;
+  --card-foreground: 240 17% 14%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 17% 14%;
+
+  --primary: 235 51% 34%; /* #2A3182 brand-blue */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 17% 14%;
+
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+
+  --accent: 240 5% 96%;
+  --accent-foreground: 240 17% 14%;
+
+  --destructive: 1 77% 56%; /* #E53935 brand-red */
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 235 51% 34%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 17% 14%;
+  --foreground: 0 0% 100%;
+  --card: 240 17% 14%;
+  --card-foreground: 0 0% 100%;
+  --popover: 240 17% 14%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 240 17% 14%;
+  --secondary: 240 5% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 5% 20%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 240 5% 20%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 1 77% 56%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5% 20%;
+  --input: 240 5% 20%;
+  --ring: 235 51% 60%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings:
+    'rlig' 1,
+    'calt' 1;
+}

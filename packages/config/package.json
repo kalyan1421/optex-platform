@@ -1,0 +1,16 @@
+{
+  "name": "@optex/config",
+  "private": true,
+  "version": "0.0.0",
+  "main": "tailwind.preset.js",
+  "files": [
+    "tailwind.preset.js",
+    "postcss.config.js"
+  ],
+  "dependencies": {
+    "tailwindcss": "3.4.13",
+    "tailwindcss-animate": "1.0.7",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47"
+  }
+}
