@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, CheckCircle, AlertCircle, Download, Link2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -67,16 +67,12 @@ function StatusBadge({ status }: { status: string }) {
     s === 'matched' || s === 'paid' || s === 'completed'
       ? 'bg-green-100 text-green-700'
       : s === 'failed'
-      ? 'bg-red-100 text-red-700'
-      : s === 'pending'
-      ? 'bg-blue-100 text-blue-700'
-      : 'bg-amber-100 text-amber-700'; // unmatched / unknown
+        ? 'bg-red-100 text-red-700'
+        : s === 'pending'
+          ? 'bg-blue-100 text-blue-700'
+          : 'bg-amber-100 text-amber-700'; // unmatched / unknown
 
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {status}
-    </span>
-  );
+  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{status}</span>;
 }
 
 // ── Table skeleton ────────────────────────────────────────────────────────────
@@ -87,7 +83,7 @@ function TableSkeleton({ cols, rows = 5 }: { cols: number; rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <tr key={i} className="border-b">
           {Array.from({ length: cols }).map((_, j) => (
-            <td key={j} className="py-3 px-3">
+            <td key={j} className="px-3 py-3">
               <Skeleton className="h-4 w-full" />
             </td>
           ))}
@@ -136,9 +132,7 @@ export function Payments() {
           order_id: p.orderId,
           status: p.status,
           received_at: p.receivedAt,
-          order: p.orderNumber
-            ? { order_number: p.orderNumber, total_kes: 0 }
-            : null,
+          order: p.orderNumber ? { order_number: p.orderNumber, total_kes: 0 } : null,
         })),
       );
       setPesapal(
@@ -150,9 +144,7 @@ export function Payments() {
           order_id: p.orderId,
           status: p.status,
           received_at: p.receivedAt,
-          order: p.orderNumber
-            ? { order_number: p.orderNumber, total_kes: 0 }
-            : null,
+          order: p.orderNumber ? { order_number: p.orderNumber, total_kes: 0 } : null,
         })),
       );
       setCod(
@@ -180,21 +172,21 @@ export function Payments() {
 
   const totalCollected =
     mpesa
-      .filter(r => r.status === 'matched' || r.status === 'paid')
+      .filter((r) => r.status === 'matched' || r.status === 'paid')
       .reduce((s, r) => s + r.amount_kes, 0) +
     pesapal
-      .filter(r => r.status === 'completed' || r.status === 'paid')
+      .filter((r) => r.status === 'completed' || r.status === 'paid')
       .reduce((s, r) => s + (r.amount_kes ?? 0), 0);
 
   const pendingCount =
-    mpesa.filter(r => r.status === 'unmatched' || r.status === 'pending').length +
-    pesapal.filter(r => r.status === 'pending' || r.status === 'unmatched').length;
+    mpesa.filter((r) => r.status === 'unmatched' || r.status === 'pending').length +
+    pesapal.filter((r) => r.status === 'pending' || r.status === 'unmatched').length;
 
   const failedCount =
-    mpesa.filter(r => r.status === 'failed').length +
-    pesapal.filter(r => r.status === 'failed').length;
+    mpesa.filter((r) => r.status === 'failed').length +
+    pesapal.filter((r) => r.status === 'failed').length;
 
-  const unmatchedMpesa = mpesa.filter(r => !r.order_id);
+  const unmatchedMpesa = mpesa.filter((r) => !r.order_id);
 
   // ── Reconcile handler ─────────────────────────────────────────────────────
 
@@ -238,13 +230,13 @@ export function Payments() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-bold text-2xl text-gray-900">Payments & Reconciliation</h2>
-        <p className="text-gray-500 mt-1">M-Pesa, Pesapal, and Cash on Delivery tracking</p>
+        <h2 className="text-2xl font-bold text-gray-900">Payments & Reconciliation</h2>
+        <p className="mt-1 text-gray-500">M-Pesa, Pesapal, and Cash on Delivery tracking</p>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <Button variant="ghost" size="sm" onClick={fetchAll} className="ml-auto">
             Retry
@@ -253,17 +245,17 @@ export function Payments() {
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full bg-green-600 shrink-0" />
+              <div className="h-10 w-3 shrink-0 rounded-full bg-green-600" />
               <div>
                 <p className="text-sm text-gray-500">Total Collected</p>
                 {loading ? (
-                  <Skeleton className="h-6 w-32 mt-1" />
+                  <Skeleton className="mt-1 h-6 w-32" />
                 ) : (
-                  <p className="font-bold text-xl">KES {fmtKes(totalCollected)}</p>
+                  <p className="text-xl font-bold">KES {fmtKes(totalCollected)}</p>
                 )}
                 <p className="text-xs text-gray-400">M-Pesa + Pesapal matched</p>
               </div>
@@ -273,13 +265,13 @@ export function Payments() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full bg-amber-500 shrink-0" />
+              <div className="h-10 w-3 shrink-0 rounded-full bg-amber-500" />
               <div>
                 <p className="text-sm text-gray-500">Pending / Unmatched</p>
                 {loading ? (
-                  <Skeleton className="h-6 w-16 mt-1" />
+                  <Skeleton className="mt-1 h-6 w-16" />
                 ) : (
-                  <p className="font-bold text-xl">{pendingCount}</p>
+                  <p className="text-xl font-bold">{pendingCount}</p>
                 )}
                 <p className="text-xs text-gray-400">Transactions needing review</p>
               </div>
@@ -289,13 +281,13 @@ export function Payments() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full bg-red-500 shrink-0" />
+              <div className="h-10 w-3 shrink-0 rounded-full bg-red-500" />
               <div>
                 <p className="text-sm text-gray-500">Failed</p>
                 {loading ? (
-                  <Skeleton className="h-6 w-16 mt-1" />
+                  <Skeleton className="mt-1 h-6 w-16" />
                 ) : (
-                  <p className="font-bold text-xl">{failedCount}</p>
+                  <p className="text-xl font-bold">{failedCount}</p>
                 )}
                 <p className="text-xs text-gray-400">Failed transactions</p>
               </div>
@@ -309,7 +301,7 @@ export function Payments() {
           <TabsTrigger value="mpesa">
             M-Pesa Log
             {unmatchedMpesa.length > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">
+              <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-600">
                 {unmatchedMpesa.length}
               </span>
             )}
@@ -320,10 +312,10 @@ export function Payments() {
 
         {/* ── M-Pesa tab ── */}
         <TabsContent value="mpesa" className="mt-6 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             {unmatchedMpesa.length > 0 && (
-              <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-sm">
-                <AlertCircle className="w-4 h-4" />
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+                <AlertCircle className="h-4 w-4" />
                 <span>
                   {unmatchedMpesa.length} unmatched M-Pesa transaction(s) require manual review
                 </span>
@@ -331,11 +323,11 @@ export function Payments() {
             )}
             <div className="ml-auto flex gap-2">
               <Button variant="outline" onClick={fetchAll} disabled={loading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
               <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
             </div>
@@ -351,13 +343,27 @@ export function Payments() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">M-Pesa Ref</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Phone</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Amount (KES)</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order #</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Action</th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Date
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        M-Pesa Ref
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Phone
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Amount (KES)
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Order #
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Status
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   {loading ? (
@@ -371,31 +377,35 @@ export function Payments() {
                           </td>
                         </tr>
                       ) : (
-                        mpesa.map(t => (
+                        mpesa.map((t) => (
                           <tr
                             key={t.id}
                             className={`border-b ${!t.order_id ? 'bg-amber-50' : 'hover:bg-gray-50'}`}
                           >
-                            <td className="py-3 px-3 text-xs text-gray-500 whitespace-nowrap">
+                            <td className="whitespace-nowrap px-3 py-3 text-xs text-gray-500">
                               {fmtDate(t.received_at)}
                             </td>
-                            <td className="py-3 px-3 font-mono text-sm font-medium">{t.mpesa_ref}</td>
-                            <td className="py-3 px-3 text-sm">{t.customer_phone ?? '—'}</td>
-                            <td className="py-3 px-3 font-medium text-sm">{fmtKes(t.amount_kes)}</td>
-                            <td className="py-3 px-3 text-sm text-[#141776] font-medium">
+                            <td className="px-3 py-3 font-mono text-sm font-medium">
+                              {t.mpesa_ref}
+                            </td>
+                            <td className="px-3 py-3 text-sm">{t.customer_phone ?? '—'}</td>
+                            <td className="px-3 py-3 text-sm font-medium">
+                              {fmtKes(t.amount_kes)}
+                            </td>
+                            <td className="px-3 py-3 text-sm font-medium text-[#141776]">
                               {t.order?.order_number ?? '—'}
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="px-3 py-3">
                               <div className="flex items-center gap-1.5">
                                 {t.order_id ? (
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
                                 ) : (
-                                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                                  <AlertCircle className="h-4 w-4 text-amber-500" />
                                 )}
                                 <StatusBadge status={t.status} />
                               </div>
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="px-3 py-3">
                               {!t.order_id && (
                                 <Button
                                   size="sm"
@@ -403,7 +413,7 @@ export function Payments() {
                                   onClick={() => openReconcile(t)}
                                   className="h-7 px-2 text-xs"
                                 >
-                                  <Link2 className="w-3.5 h-3.5 mr-1" />
+                                  <Link2 className="mr-1 h-3.5 w-3.5" />
                                   Reconcile
                                 </Button>
                               )}
@@ -431,12 +441,24 @@ export function Payments() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Pesapal Ref</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Method</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Amount (KES)</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order #</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Date
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Pesapal Ref
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Method
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Amount (KES)
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Order #
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   {loading ? (
@@ -450,28 +472,30 @@ export function Payments() {
                           </td>
                         </tr>
                       ) : (
-                        pesapal.map(t => (
+                        pesapal.map((t) => (
                           <tr key={t.id} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-3 text-xs text-gray-500 whitespace-nowrap">
+                            <td className="whitespace-nowrap px-3 py-3 text-xs text-gray-500">
                               {fmtDate(t.received_at)}
                             </td>
-                            <td className="py-3 px-3 font-mono text-sm font-medium text-[#141776]">
+                            <td className="px-3 py-3 font-mono text-sm font-medium text-[#141776]">
                               {t.pesapal_order_id}
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="px-3 py-3">
                               {t.method ? (
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                                   {t.method}
                                 </span>
                               ) : (
                                 '—'
                               )}
                             </td>
-                            <td className="py-3 px-3 font-medium text-sm">{fmtKes(t.amount_kes)}</td>
-                            <td className="py-3 px-3 text-sm text-[#141776] font-medium">
+                            <td className="px-3 py-3 text-sm font-medium">
+                              {fmtKes(t.amount_kes)}
+                            </td>
+                            <td className="px-3 py-3 text-sm font-medium text-[#141776]">
                               {t.order?.order_number ?? '—'}
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="px-3 py-3">
                               <StatusBadge status={t.status ?? 'unknown'} />
                             </td>
                           </tr>
@@ -497,11 +521,21 @@ export function Payments() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order #</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Amount (KES)</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order Status</th>
-                      <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Payment Status</th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Date
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Order #
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Amount (KES)
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Order Status
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Payment Status
+                      </th>
                     </tr>
                   </thead>
                   {loading ? (
@@ -515,19 +549,19 @@ export function Payments() {
                           </td>
                         </tr>
                       ) : (
-                        cod.map(c => (
+                        cod.map((c) => (
                           <tr key={c.id} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-3 text-xs text-gray-500 whitespace-nowrap">
+                            <td className="whitespace-nowrap px-3 py-3 text-xs text-gray-500">
                               {fmtDate(c.created_at)}
                             </td>
-                            <td className="py-3 px-3 font-medium text-[#141776] text-sm">
+                            <td className="px-3 py-3 text-sm font-medium text-[#141776]">
                               {c.order_number}
                             </td>
-                            <td className="py-3 px-3 font-medium text-sm">{fmtKes(c.total_kes)}</td>
-                            <td className="py-3 px-3">
+                            <td className="px-3 py-3 text-sm font-medium">{fmtKes(c.total_kes)}</td>
+                            <td className="px-3 py-3">
                               <StatusBadge status={c.status} />
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="px-3 py-3">
                               <StatusBadge status={c.payment_status} />
                             </td>
                           </tr>
@@ -543,13 +577,12 @@ export function Payments() {
       </Tabs>
 
       {/* ── Reconcile dialog ── */}
-      <Dialog open={!!reconcileRow} onOpenChange={open => !open && closeReconcile()}>
+      <Dialog open={!!reconcileRow} onOpenChange={(open) => !open && closeReconcile()}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Reconcile M-Pesa Transaction</DialogTitle>
             <DialogDescription>
-              Link{' '}
-              <span className="font-mono font-semibold">{reconcileRow?.mpesa_ref}</span> (KES{' '}
+              Link <span className="font-mono font-semibold">{reconcileRow?.mpesa_ref}</span> (KES{' '}
               {fmtKes(reconcileRow?.amount_kes ?? null)}) to an order.
             </DialogDescription>
           </DialogHeader>
@@ -559,13 +592,13 @@ export function Payments() {
               <Input
                 placeholder="e.g. ORD-00042"
                 value={reconcileOrderNum}
-                onChange={e => setReconcileOrderNum(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submitReconcile()}
+                onChange={(e) => setReconcileOrderNum(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && submitReconcile()}
               />
             </div>
             {reconcileError && (
-              <p className="text-sm text-red-600 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <p className="flex items-center gap-1.5 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4 shrink-0" />
                 {reconcileError}
               </p>
             )}
@@ -580,12 +613,12 @@ export function Payments() {
               >
                 {reconciling ? (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                     Linking…
                   </>
                 ) : (
                   <>
-                    <Link2 className="w-4 h-4 mr-2" />
+                    <Link2 className="mr-2 h-4 w-4" />
                     Link Order
                   </>
                 )}

@@ -1,21 +1,9 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators';
 import { AdminListOrdersQueryDto } from './dto/admin-list-orders-query.dto';
 import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
-import {
-  AdminOrderSummaryView,
-  OrderDetailView,
-  PaginatedOrders,
-} from './dto/order-views';
+import { AdminOrderSummaryView, OrderDetailView, PaginatedOrders } from './dto/order-views';
 import { OrdersService } from './orders.service';
 
 /**
@@ -43,9 +31,7 @@ export class OrdersAdminController {
   @Get('orders/:id')
   @ApiOperation({ summary: 'Full detail for any order (items, shipping, totals)' })
   @ApiOkResponse({ description: 'The order detail' })
-  getOrder(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<OrderDetailView> {
+  getOrder(@Param('id', new ParseUUIDPipe()) id: string): Promise<OrderDetailView> {
     return this.orders.adminOrderDetail(id);
   }
 

@@ -17,23 +17,31 @@ export default function FeaturedProducts() {
   }, []);
 
   return (
-    <section className="bg-white py-16 overflow-hidden">
+    <section className="overflow-hidden bg-white py-16">
       <div className="site-container">
-
         {/* Header Row */}
-        <div data-aos="fade-up" className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div
+          data-aos="fade-up"
+          className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+        >
           <div>
-            <h2 className="section-heading mb-2">
-              Featured Products
-            </h2>
-            <p className="section-copy">
-              Discover our handpicked collection of premium eyewear.
-            </p>
+            <h2 className="section-heading mb-2">Featured Products</h2>
+            <p className="section-copy">Discover our handpicked collection of premium eyewear.</p>
           </div>
           <div className="pb-1">
-            <Link href="/shop" className="text-brand-blue font-bold text-[16px] flex items-center gap-2 hover:underline">
+            <Link
+              href="/shop"
+              className="text-brand-blue flex items-center gap-2 text-[16px] font-bold hover:underline"
+            >
               See More
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
@@ -54,20 +62,20 @@ export default function FeaturedProducts() {
                 <img
                   src={getProductImageUrl(product)}
                   alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               </div>
 
               {/* Product Info */}
               <div className="flex flex-grow flex-col p-5">
-                <h3 className="mb-1 text-[17px] font-bold leading-tight text-brand-dark transition-colors group-hover:text-brand-blue sm:text-[18px]">
+                <h3 className="text-brand-dark group-hover:text-brand-blue mb-1 text-[17px] font-bold leading-tight transition-colors sm:text-[18px]">
                   {product.name}
                 </h3>
-                <p className="text-gray-400 text-[13px] mb-5 leading-relaxed line-clamp-2">
+                <p className="mb-5 line-clamp-2 text-[13px] leading-relaxed text-gray-400">
                   {product.description}
                 </p>
                 <div className="mt-auto flex items-center justify-between gap-2">
-                  <p className="text-[18px] font-black text-brand-blue whitespace-nowrap">
+                  <p className="text-brand-blue whitespace-nowrap text-[18px] font-black">
                     {formatKes(Number(product.price_kes))}
                   </p>
                   <button
@@ -81,7 +89,7 @@ export default function FeaturedProducts() {
                         quantity: 1,
                       });
                     }}
-                    className="whitespace-nowrap rounded-xl bg-brand-red px-4 py-2 text-[13px] font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
+                    className="bg-brand-red whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
                   >
                     Add to Cart
                   </button>
@@ -90,7 +98,6 @@ export default function FeaturedProducts() {
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

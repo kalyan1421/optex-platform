@@ -12,25 +12,39 @@ import { useCart } from '@/context/CartContext';
 // ── Icons ──────────────────────────────────────────────────────────────────
 
 const SearchIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+    />
   </svg>
 );
 
 const GridIcon = () => (
-  <svg className="w-5 h-5 text-[#2A3182]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+  <svg
+    className="h-5 w-5 text-[#2A3182]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+    />
   </svg>
 );
 
 const ArrowRightIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
   </svg>
 );
 
 const XIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
@@ -39,15 +53,15 @@ const XIcon = () => (
 
 function SkeletonCard() {
   return (
-    <div className="rounded-[25px] border border-[#ddd] bg-white p-2.5 animate-pulse">
-      <div className="aspect-square rounded-[20px] bg-gray-200 mb-3" />
-      <div className="p-2 space-y-2">
-        <div className="h-4 bg-gray-200 rounded-full w-3/4" />
-        <div className="h-3 bg-gray-100 rounded-full w-full" />
-        <div className="h-3 bg-gray-100 rounded-full w-2/3" />
-        <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-100">
-          <div className="h-5 bg-gray-200 rounded-full w-1/3" />
-          <div className="h-8 bg-gray-100 rounded-full w-1/4" />
+    <div className="animate-pulse rounded-[25px] border border-[#ddd] bg-white p-2.5">
+      <div className="mb-3 aspect-square rounded-[20px] bg-gray-200" />
+      <div className="space-y-2 p-2">
+        <div className="h-4 w-3/4 rounded-full bg-gray-200" />
+        <div className="h-3 w-full rounded-full bg-gray-100" />
+        <div className="h-3 w-2/3 rounded-full bg-gray-100" />
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-2">
+          <div className="h-5 w-1/3 rounded-full bg-gray-200" />
+          <div className="h-8 w-1/4 rounded-full bg-gray-100" />
         </div>
       </div>
     </div>
@@ -60,10 +74,10 @@ function ProductCard({ product }) {
   const { addToCart } = useCart();
   return (
     <div className="group flex flex-col rounded-[25px] border border-[#ddd] bg-white p-2.5 transition-all duration-500 hover:shadow-xl">
-      <div className="relative aspect-square rounded-[20px] overflow-hidden bg-[#f8f9fa]">
-        <div className="absolute top-3 right-3 z-10">
-          <div className="bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-[#ddd]">
-            <span className="text-[9px] font-black text-[#2A3182] uppercase tracking-tighter">
+      <div className="relative aspect-square overflow-hidden rounded-[20px] bg-[#f8f9fa]">
+        <div className="absolute right-3 top-3 z-10">
+          <div className="rounded-full border border-[#ddd] bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
+            <span className="text-[9px] font-black uppercase tracking-tighter text-[#2A3182]">
               {product.frame_shape ?? product.brand}
             </span>
           </div>
@@ -72,36 +86,38 @@ function ProductCard({ product }) {
           <img
             src={getProductImageUrl(product)}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
         </Link>
       </div>
       <div className="flex flex-1 flex-col p-4 pt-4">
         <div className="mb-1 flex items-start justify-between gap-3">
           <Link href={`/product/${product.slug}`}>
-            <h3 className="text-[16px] font-bold text-gray-900 group-hover:text-[#2A3182] transition-colors leading-tight">
+            <h3 className="text-[16px] font-bold leading-tight text-gray-900 transition-colors group-hover:text-[#2A3182]">
               {product.name}
             </h3>
           </Link>
-          <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest mt-1">
+          <span className="mt-1 text-[9px] font-bold uppercase tracking-widest text-gray-300">
             {product.brand}
           </span>
         </div>
-        <p className="text-[12px] text-gray-400 line-clamp-2 mb-4 leading-relaxed flex-1">
+        <p className="mb-4 line-clamp-2 flex-1 text-[12px] leading-relaxed text-gray-400">
           {product.description}
         </p>
         <div className="flex items-center justify-between gap-3 border-t border-[#ddd] pt-2">
-          <p className="text-[18px] font-black text-[#2A3182] tracking-tight">
+          <p className="text-[18px] font-black tracking-tight text-[#2A3182]">
             {formatKes(Number(product.price_kes))}
           </p>
           <button
-            onClick={() => addToCart({
-              id: product.id,
-              title: product.name,
-              price: String(product.price_kes),
-              image: getProductImageUrl(product),
-              quantity: 1,
-            })}
+            onClick={() =>
+              addToCart({
+                id: product.id,
+                title: product.name,
+                price: String(product.price_kes),
+                image: getProductImageUrl(product),
+                quantity: 1,
+              })
+            }
             className="whitespace-nowrap rounded-full bg-[#EF4444] px-4 py-2 text-[11px] font-bold text-white shadow-md transition-all hover:bg-red-600 active:scale-95"
           >
             Add to Cart
@@ -163,17 +179,20 @@ function SearchInner() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] pb-16 sm:pb-24">
-
       {/* Hero search banner */}
       <section className="bg-[#2A3182] py-12 sm:py-16">
         <div className="site-container">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="mb-4 flex items-center gap-3">
             <GridIcon />
-            <span className="text-[10px] font-bold text-white/60 tracking-widest uppercase">Product Search</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">
+              Product Search
+            </span>
           </div>
-          <h1 className="text-[32px] sm:text-[42px] font-black text-white leading-tight mb-8">
+          <h1 className="mb-8 text-[32px] font-black leading-tight text-white sm:text-[42px]">
             {hasQuery ? (
-              <>Find: <span className="text-[#E53935]">&quot;{q}&quot;</span></>
+              <>
+                Find: <span className="text-[#E53935]">&quot;{q}&quot;</span>
+              </>
             ) : (
               'Search Products'
             )}
@@ -181,8 +200,8 @@ function SearchInner() {
 
           {/* Search form */}
           <form onSubmit={handleSubmit} className="relative max-w-2xl">
-            <div className="flex items-center bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-white/20 focus-within:border-[#E53935] transition-colors">
-              <div className="pl-5 pr-2 text-gray-400 flex-shrink-0">
+            <div className="flex items-center overflow-hidden rounded-2xl border-2 border-white/20 bg-white shadow-xl transition-colors focus-within:border-[#E53935]">
+              <div className="flex-shrink-0 pl-5 pr-2 text-gray-400">
                 <SearchIcon />
               </div>
               <input
@@ -191,13 +210,13 @@ function SearchInner() {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Search frames, sunglasses, brands…"
                 autoFocus={!hasQuery}
-                className="flex-1 py-4 px-3 text-[16px] font-medium text-[#1a1a1a] placeholder-gray-300 outline-none bg-transparent"
+                className="flex-1 bg-transparent px-3 py-4 text-[16px] font-medium text-[#1a1a1a] placeholder-gray-300 outline-none"
               />
               {inputValue && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="px-3 text-gray-300 hover:text-gray-500 transition-colors flex-shrink-0"
+                  className="flex-shrink-0 px-3 text-gray-300 transition-colors hover:text-gray-500"
                   aria-label="Clear search"
                 >
                   <XIcon />
@@ -205,7 +224,7 @@ function SearchInner() {
               )}
               <button
                 type="submit"
-                className="bg-[#E53935] text-white px-6 py-4 text-[14px] font-bold hover:bg-red-600 transition-colors flex-shrink-0 flex items-center gap-2"
+                className="flex flex-shrink-0 items-center gap-2 bg-[#E53935] px-6 py-4 text-[14px] font-bold text-white transition-colors hover:bg-red-600"
               >
                 Search
                 <ArrowRightIcon />
@@ -217,20 +236,22 @@ function SearchInner() {
 
       {/* Results area */}
       <div className="site-container pt-10">
-
         {/* No query state */}
         {!hasQuery && !loading && (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-full bg-white border border-gray-100 flex items-center justify-center mx-auto mb-6 shadow-sm text-gray-300">
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-300 shadow-sm">
               <SearchIcon />
             </div>
-            <h2 className="text-[22px] font-black text-[#1a1a1a] mb-3">What are you looking for?</h2>
-            <p className="text-[14px] text-gray-400 font-medium mb-8 max-w-sm mx-auto">
-              Type in the search box above to find frames, sunglasses, or brands from our collection.
+            <h2 className="mb-3 text-[22px] font-black text-[#1a1a1a]">
+              What are you looking for?
+            </h2>
+            <p className="mx-auto mb-8 max-w-sm text-[14px] font-medium text-gray-400">
+              Type in the search box above to find frames, sunglasses, or brands from our
+              collection.
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 bg-[#2A3182] text-white px-6 py-3 rounded-full text-[13px] font-bold hover:bg-[#1e2461] transition-colors shadow-md shadow-[#2A3182]/20"
+              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white shadow-md shadow-[#2A3182]/20 transition-colors hover:bg-[#1e2461]"
             >
               Browse All Products
               <ArrowRightIcon />
@@ -242,7 +263,7 @@ function SearchInner() {
         {loading && (
           <>
             <div className="mb-6">
-              <div className="h-4 bg-gray-200 rounded-full w-40 animate-pulse" />
+              <div className="h-4 w-40 animate-pulse rounded-full bg-gray-200" />
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -255,15 +276,15 @@ function SearchInner() {
         {/* Results */}
         {!loading && hasQuery && products.length > 0 && (
           <>
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <p className="text-[12px] font-bold uppercase tracking-widest text-gray-400">
-                <span className="text-[#2A3182] text-[16px] font-black">{products.length}</span>
-                {' '}result{products.length !== 1 ? 's' : ''} for{' '}
+                <span className="text-[16px] font-black text-[#2A3182]">{products.length}</span>{' '}
+                result{products.length !== 1 ? 's' : ''} for{' '}
                 <span className="text-[#1a1a1a]">&quot;{q}&quot;</span>
               </p>
               <Link
                 href="/shop"
-                className="text-[12px] font-bold text-[#2A3182] hover:underline uppercase tracking-widest"
+                className="text-[12px] font-bold uppercase tracking-widest text-[#2A3182] hover:underline"
               >
                 View All Products
               </Link>
@@ -278,24 +299,26 @@ function SearchInner() {
 
         {/* Empty state */}
         {!loading && hasQuery && products.length === 0 && (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-full bg-white border border-gray-100 flex items-center justify-center mx-auto mb-6 shadow-sm text-gray-200">
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-200 shadow-sm">
               <SearchIcon />
             </div>
-            <h2 className="text-[22px] font-black text-[#1a1a1a] mb-3">No results for &quot;{q}&quot;</h2>
-            <p className="text-[14px] text-gray-400 font-medium mb-8 max-w-sm mx-auto">
-              We couldn&apos;t find any products matching your search. Try different keywords or browse our full collection.
+            <h2 className="mb-3 text-[22px] font-black text-[#1a1a1a]">
+              No results for &quot;{q}&quot;
+            </h2>
+            <p className="mx-auto mb-8 max-w-sm text-[14px] font-medium text-gray-400">
+              We couldn&apos;t find any products matching your search. Try different keywords or
+              browse our full collection.
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 bg-[#2A3182] text-white px-6 py-3 rounded-full text-[13px] font-bold hover:bg-[#1e2461] transition-colors shadow-md shadow-[#2A3182]/20"
+              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white shadow-md shadow-[#2A3182]/20 transition-colors hover:bg-[#1e2461]"
             >
               Browse All Products
               <ArrowRightIcon />
             </Link>
           </div>
         )}
-
       </div>
     </div>
   );
@@ -304,11 +327,13 @@ function SearchInner() {
 // Wrap in Suspense because useSearchParams requires it in Next.js 14 app router
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#f4f6f8] flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-[#2A3182] border-t-transparent animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8]">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2A3182] border-t-transparent" />
+        </div>
+      }
+    >
       <SearchInner />
     </Suspense>
   );

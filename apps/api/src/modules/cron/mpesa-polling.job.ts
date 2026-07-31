@@ -3,10 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { PaymentsService } from '../payments/payments.service';
 import { MpesaService } from '../payments/mpesa.service';
-import {
-  FINAL_TX_STATUSES,
-  TX_STATUS,
-} from '../payments/payments.constants';
+import { FINAL_TX_STATUSES, TX_STATUS } from '../payments/payments.constants';
 import { ReconcileProvider } from '../payments/dto/reconcile-payment.dto';
 
 /**
@@ -95,9 +92,7 @@ export class MpesaPollingJob {
       }
       rows = (data ?? []) as PendingMpesaTxRow[];
     } catch (err) {
-      this.logger.error(
-        `M-Pesa polling query threw: ${(err as Error).message}`,
-      );
+      this.logger.error(`M-Pesa polling query threw: ${(err as Error).message}`);
       return;
     }
 
@@ -120,10 +115,7 @@ export class MpesaPollingJob {
       }
 
       try {
-        const result = await this.payments.adminReconcile(
-          tx.id,
-          ReconcileProvider.MPESA,
-        );
+        const result = await this.payments.adminReconcile(tx.id, ReconcileProvider.MPESA);
         if (result.changed) {
           reconciled += 1;
           if (result.status === TX_STATUS.MATCHED) matched += 1;
@@ -133,15 +125,11 @@ export class MpesaPollingJob {
         // ServiceUnavailableException — abandon the whole run quietly rather
         // than hammering Daraja per-row.
         if (err instanceof ServiceUnavailableException) {
-          this.logger.debug(
-            `M-Pesa unavailable mid-run — aborting STK polling: ${err.message}`,
-          );
+          this.logger.debug(`M-Pesa unavailable mid-run — aborting STK polling: ${err.message}`);
           return;
         }
         // Any other per-row failure (network blip, bad row) — log and move on.
-        this.logger.warn(
-          `Failed to reconcile M-Pesa tx ${tx.id}: ${(err as Error).message}`,
-        );
+        this.logger.warn(`Failed to reconcile M-Pesa tx ${tx.id}: ${(err as Error).message}`);
       }
     }
 
@@ -150,9 +138,7 @@ export class MpesaPollingJob {
         `M-Pesa polling: scanned ${rows.length}, reconciled ${reconciled} (${matched} now paid).`,
       );
     } else {
-      this.logger.debug(
-        `M-Pesa polling: scanned ${rows.length}, none resolved this run.`,
-      );
+      this.logger.debug(`M-Pesa polling: scanned ${rows.length}, none resolved this run.`);
     }
   }
 }

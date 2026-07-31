@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -43,9 +35,7 @@ export class AdminReviewsController {
   @ApiOkResponse({ type: [ReviewDto], description: 'Matching reviews' })
   list(@Query('status') status?: ReviewStatus): Promise<ReviewDto[]> {
     // Ignore any out-of-enum value rather than 400 — treated as "no filter".
-    const filter = REVIEW_STATUSES.includes(status as ReviewStatus)
-      ? status
-      : undefined;
+    const filter = REVIEW_STATUSES.includes(status as ReviewStatus) ? status : undefined;
     return this.reviews.listForAdmin(filter);
   }
 

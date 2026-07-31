@@ -30,16 +30,12 @@ export class WebhooksController {
   @Public()
   @SkipThrottle()
   @Post('mpesa')
-  async mpesaCallback(
-    @Body() body: unknown,
-  ): Promise<{ ResultCode: number; ResultDesc: string }> {
+  async mpesaCallback(@Body() body: unknown): Promise<{ ResultCode: number; ResultDesc: string }> {
     try {
       await this.payments.handleMpesaCallback(body);
     } catch (e) {
       // Swallow — we must still ack so Daraja stops retrying. Logged for recon.
-      this.logger.error(
-        `M-Pesa callback processing failed: ${(e as Error).message}`,
-      );
+      this.logger.error(`M-Pesa callback processing failed: ${(e as Error).message}`);
     }
     return { ResultCode: 0, ResultDesc: 'Accepted' };
   }
@@ -78,10 +74,16 @@ export class WebhooksController {
       normaliseId(body?.OrderTrackingId) ||
       normaliseId(query?.OrderTrackingId) ||
       normaliseId(query?.orderTrackingId);
-    const orderMerchantReference =
-      (body?.OrderMerchantReference ?? query?.OrderMerchantReference ?? '').trim();
-    const orderNotificationType =
-      (body?.OrderNotificationType ?? query?.OrderNotificationType ?? 'IPNCHANGE').trim();
+    const orderMerchantReference = (
+      body?.OrderMerchantReference ??
+      query?.OrderMerchantReference ??
+      ''
+    ).trim();
+    const orderNotificationType = (
+      body?.OrderNotificationType ??
+      query?.OrderNotificationType ??
+      'IPNCHANGE'
+    ).trim();
 
     // M-4 FIX: guard against empty tracking ID — Pesapal still gets its ACK
     // (to avoid retry storms) but we log and skip the DB write.
@@ -93,9 +95,7 @@ export class WebhooksController {
     try {
       await this.payments.handlePesapalIpn(orderTrackingId);
     } catch (e) {
-      this.logger.error(
-        `Pesapal IPN processing failed: ${(e as Error).message}`,
-      );
+      this.logger.error(`Pesapal IPN processing failed: ${(e as Error).message}`);
     }
 
     // Pesapal expects this exact acknowledgement shape so it marks the IPN sent.

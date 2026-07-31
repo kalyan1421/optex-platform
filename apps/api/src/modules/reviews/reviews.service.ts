@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import type { AuthUser } from '../../auth/auth-user';
 import type { CreateReviewDto } from './dto/create-review.dto';
@@ -15,8 +11,7 @@ import {
 } from './dto/review.dto';
 
 /** Columns selected from `product_reviews`. Mirrors the schema exactly. */
-const REVIEW_COLUMNS =
-  'id, product_id, customer_id, rating, body, status, admin_reply, created_at';
+const REVIEW_COLUMNS = 'id, product_id, customer_id, rating, body, status, admin_reply, created_at';
 
 /** Postgres unique-violation code, raised on the duplicate-review constraint. */
 const PG_UNIQUE_VIOLATION = '23505';
@@ -37,9 +32,7 @@ export class ReviewsService {
    * Lists approved reviews for a product plus an aggregate
    * `{ averageRating, count }`. Public — no auth, no pending/flagged rows.
    */
-  async listApprovedForProduct(
-    productId: string,
-  ): Promise<ProductReviewsResponseDto> {
+  async listApprovedForProduct(productId: string): Promise<ProductReviewsResponseDto> {
     const { data, error } = await this.supabase.client
       .from('product_reviews')
       .select(REVIEW_COLUMNS)
@@ -56,9 +49,7 @@ export class ReviewsService {
     const averageRating =
       count === 0
         ? null
-        : Math.round(
-            (reviews.reduce((sum, r) => sum + r.rating, 0) / count) * 10,
-          ) / 10;
+        : Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / count) * 10) / 10;
 
     return { reviews, aggregate: { averageRating, count } };
   }

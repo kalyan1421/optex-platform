@@ -8,7 +8,7 @@ const Testimonials = () => {
       role: 'Marketing Director',
       text: '"Best eyewear shopping experience ever! The virtual try-on feature helped me find the perfect frames, and the quality is outstanding. Highly recommend!"',
       image: 'https://i.pravatar.cc/150?u=sarah',
-      rating: 5
+      rating: 5,
     },
     {
       id: 2,
@@ -16,7 +16,7 @@ const Testimonials = () => {
       role: 'Software Engineer',
       text: '"The blue light blocking lenses have made a huge difference for my eye strain. Professional service and great product quality."',
       image: 'https://i.pravatar.cc/150?u=michael',
-      rating: 5
+      rating: 5,
     },
     {
       id: 3,
@@ -24,35 +24,35 @@ const Testimonials = () => {
       role: 'Graphic Designer',
       text: '"Love my new glasses! The staff helped me choose frames that perfectly match my style. The whole process was smooth and enjoyable."',
       image: 'https://i.pravatar.cc/150?u=emily',
-      rating: 5
-    }
+      rating: 5,
+    },
   ];
 
   return (
-    <section className="py-16 bg-[#F9FAFB] overflow-hidden">
+    <section className="overflow-hidden bg-[#F9FAFB] py-16">
       <div className="site-container">
-        <div data-aos="fade-up" className="text-center mb-12">
-          <span className="text-[#E53935] font-bold text-[11px] tracking-[0.2em] uppercase mb-4 block">
+        <div data-aos="fade-up" className="mb-12 text-center">
+          <span className="mb-4 block text-[11px] font-bold uppercase tracking-[0.2em] text-[#E53935]">
             Testimonials
           </span>
-          <h2 className="text-[28px] md:text-[36px] font-bold text-gray-900 leading-tight tracking-tight">
+          <h2 className="text-[28px] font-bold leading-tight tracking-tight text-gray-900 md:text-[36px]">
             What Our Customers Say
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
           {testimonials.map((item, index) => (
             <div
               key={item.id}
               data-aos="fade-up"
               data-aos-delay={index * 100}
-              className="bg-white p-8 md:p-10 rounded-[30px] shadow-sm hover:shadow-md transition-all duration-500 flex flex-col border border-gray-50 group"
+              className="group flex flex-col rounded-[30px] border border-gray-50 bg-white p-8 shadow-sm transition-all duration-500 hover:shadow-md md:p-10"
             >
-              <div className="flex mb-6">
+              <div className="mb-6 flex">
                 {[...Array(item.rating)].map((_, i) => (
                   <svg
                     key={i}
-                    className="w-4 h-4 text-[#FFC107] mr-1"
+                    className="mr-1 h-4 w-4 text-[#FFC107]"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -61,25 +61,23 @@ const Testimonials = () => {
                 ))}
               </div>
 
-              <p className="text-[#4B5563] text-[14px] md:text-[15px] leading-[1.6] mb-6 font-medium italic">
+              <p className="mb-6 text-[14px] font-medium italic leading-[1.6] text-[#4B5563] md:text-[15px]">
                 {item.text}
               </p>
 
               <div className="mt-auto">
-                <hr className="border-gray-100 mb-8" />
+                <hr className="mb-8 border-gray-100" />
                 <div className="flex items-center">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-10 h-10 rounded-full object-cover mr-3 border-2 border-transparent group-hover:border-[#E53935] transition-all duration-300"
+                    className="mr-3 h-10 w-10 rounded-full border-2 border-transparent object-cover transition-all duration-300 group-hover:border-[#E53935]"
                   />
                   <div>
-                    <h4 className="text-gray-900 font-bold text-[15px] leading-tight mb-0.5">
+                    <h4 className="mb-0.5 text-[15px] font-bold leading-tight text-gray-900">
                       {item.name}
                     </h4>
-                    <p className="text-[#6B7280] text-[12px] font-medium">
-                      {item.role}
-                    </p>
+                    <p className="text-[12px] font-medium text-[#6B7280]">{item.role}</p>
                   </div>
                 </div>
               </div>

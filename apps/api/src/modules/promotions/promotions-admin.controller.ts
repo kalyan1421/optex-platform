@@ -1,18 +1,5 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
 import { CreatePromoCodeDto } from './dto/create-promo-code.dto';
@@ -64,9 +51,7 @@ export class PromotionsAdminController {
   @Delete('promo-codes/:id')
   @ApiOperation({ summary: 'Delete a promo code' })
   @ApiOkResponse({ description: 'Deletion confirmation' })
-  deleteCode(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ id: string; deleted: true }> {
+  deleteCode(@Param('id', ParseUUIDPipe) id: string): Promise<{ id: string; deleted: true }> {
     return this.promotions.deleteCode(id);
   }
 
@@ -103,9 +88,7 @@ export class PromotionsAdminController {
   @Delete('promo-banners/:id')
   @ApiOperation({ summary: 'Delete a promo banner' })
   @ApiOkResponse({ description: 'Deletion confirmation' })
-  deleteBanner(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ id: string; deleted: true }> {
+  deleteBanner(@Param('id', ParseUUIDPipe) id: string): Promise<{ id: string; deleted: true }> {
     return this.promotions.deleteBanner(id);
   }
 }

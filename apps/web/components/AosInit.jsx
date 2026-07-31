@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import AOS from 'aos'
+import { useEffect } from 'react';
+import AOS from 'aos';
 
 export default function AosInit() {
   useEffect(() => {
@@ -12,8 +12,8 @@ export default function AosInit() {
       offset: 50,
       disableMutationObserver: false,
       anchorPlacement: 'top-bottom',
-    })
-  }, [])
+    });
+  }, []);
 
-  return null
+  return null;
 }

@@ -34,9 +34,7 @@ export class ProductReviewsController {
     type: ProductReviewsResponseDto,
     description: 'Approved reviews and rating aggregate',
   })
-  list(
-    @Param('productId', ParseUUIDPipe) productId: string,
-  ): Promise<ProductReviewsResponseDto> {
+  list(@Param('productId', ParseUUIDPipe) productId: string): Promise<ProductReviewsResponseDto> {
     return this.reviews.listApprovedForProduct(productId);
   }
 

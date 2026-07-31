@@ -14,8 +14,7 @@ export class MpesaStkPushDto {
   orderId!: string;
 
   @ApiProperty({
-    description:
-      'Payer MSISDN. Accepts 07XXXXXXXX, 2547XXXXXXXX, or +2547XXXXXXXX.',
+    description: 'Payer MSISDN. Accepts 07XXXXXXXX, 2547XXXXXXXX, or +2547XXXXXXXX.',
     example: '254712345678',
   })
   @IsString()

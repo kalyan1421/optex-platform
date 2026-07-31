@@ -24,12 +24,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import {
-  Paginated,
-  ProductRow,
-  ProductsService,
-  UploadedImage,
-} from './products.service';
+import { Paginated, ProductRow, ProductsService, UploadedImage } from './products.service';
 
 /**
  * Product catalog endpoints. Reads are public; writes require `super_admin`.
@@ -71,9 +66,7 @@ export class ProductsController {
   @Get(':id/related')
   @ApiOperation({ summary: 'Related products in the same category (max 8)' })
   @ApiOkResponse({ description: 'Up to 8 related products' })
-  related(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<ProductRow[]> {
+  related(@Param('id', new ParseUUIDPipe()) id: string): Promise<ProductRow[]> {
     return this.products.related(id);
   }
 

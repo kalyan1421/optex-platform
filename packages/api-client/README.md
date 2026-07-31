@@ -25,8 +25,7 @@ const supabase = createBrowserClient();
 
 export const api = createApiClient({
   baseUrl: process.env.NEXT_PUBLIC_API_URL!,
-  getAccessToken: async () =>
-    (await supabase.auth.getSession()).data.session?.access_token ?? null,
+  getAccessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
 });
 
 await api.cart.addItem({ productId, quantity: 1 });

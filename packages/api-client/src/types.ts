@@ -531,12 +531,7 @@ export interface ReconcileResult {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** `appt_status` enum. */
-export type AppointmentStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'rescheduled'
-  | 'cancelled'
-  | 'completed';
+export type AppointmentStatus = 'pending' | 'confirmed' | 'rescheduled' | 'cancelled' | 'completed';
 
 /** Recognized appointment kinds (`appointments.type` free-text column). */
 export type AppointmentType = 'eye_test' | 'frame_fitting' | 'consultation';

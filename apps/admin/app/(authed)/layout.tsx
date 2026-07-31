@@ -1,4 +1,4 @@
-import AdminSidebar from '@/components/layout/AdminSidebar'
+import AdminSidebar from '@/components/layout/AdminSidebar';
 
 export default function AuthedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,5 +8,5 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
         <div className="p-8">{children}</div>
       </div>
     </div>
-  )
+  );
 }

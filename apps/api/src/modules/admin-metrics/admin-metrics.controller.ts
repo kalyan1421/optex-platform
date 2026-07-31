@@ -1,18 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators';
 import { AdminMetricsService } from './admin-metrics.service';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import { DashboardQueryDto } from './dto/dashboard-query.dto';
-import {
-  AnalyticsResponse,
-  DashboardResponse,
-} from './dto/metrics-response.dto';
+import { AnalyticsResponse, DashboardResponse } from './dto/metrics-response.dto';
 
 /**
  * ADMIN METRICS endpoints — dashboard KPIs + analytics reporting.
@@ -30,8 +22,7 @@ export class AdminMetricsController {
 
   @Get('dashboard')
   @ApiOperation({
-    summary:
-      'Dashboard KPIs, recent orders, top products, and daily revenue series',
+    summary: 'Dashboard KPIs, recent orders, top products, and daily revenue series',
   })
   @ApiOkResponse({ description: 'Dashboard metrics for the requested range' })
   dashboard(@Query() query: DashboardQueryDto): Promise<DashboardResponse> {
@@ -40,8 +31,7 @@ export class AdminMetricsController {
 
   @Get('analytics')
   @ApiOperation({
-    summary:
-      'Sales summary, top products, order volume by day, and revenue by category',
+    summary: 'Sales summary, top products, order volume by day, and revenue by category',
   })
   @ApiOkResponse({ description: 'Analytics report for the requested date range' })
   analytics(@Query() query: AnalyticsQueryDto): Promise<AnalyticsResponse> {

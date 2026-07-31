@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Eye, CheckCircle, FileText, AlertCircle, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -55,7 +55,7 @@ function TableSkeleton({ cols, rows = 6 }: { cols: number; rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <tr key={i} className="border-b">
           {Array.from({ length: cols }).map((_, j) => (
-            <td key={j} className="py-3 px-3">
+            <td key={j} className="px-3 py-3">
               <Skeleton className="h-4 w-full" />
             </td>
           ))}
@@ -78,32 +78,32 @@ function LensGrid({ row }: { row: PrescriptionRow }) {
     row.pd != null;
 
   if (!hasAnyLensData) {
-    return <p className="text-sm text-gray-400 italic">No lens data recorded</p>;
+    return <p className="text-sm italic text-gray-400">No lens data recorded</p>;
   }
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm border rounded-lg overflow-hidden">
+      <table className="w-full overflow-hidden rounded-lg border text-sm">
         <thead className="bg-gray-50">
           <tr>
-            <th className="text-left py-2 px-3 text-xs font-medium text-gray-500">Eye</th>
-            <th className="text-center py-2 px-3 text-xs font-medium text-gray-500">Sphere</th>
-            <th className="text-center py-2 px-3 text-xs font-medium text-gray-500">Cyl</th>
-            <th className="text-center py-2 px-3 text-xs font-medium text-gray-500">Axis</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Eye</th>
+            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Sphere</th>
+            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Cyl</th>
+            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Axis</th>
           </tr>
         </thead>
         <tbody>
           <tr className="border-t">
-            <td className="py-2 px-3 font-medium text-gray-700">OD (Right)</td>
-            <td className="py-2 px-3 text-center font-mono">{fmtNum(row.sphere_od)}</td>
-            <td className="py-2 px-3 text-center font-mono">{fmtNum(row.cyl_od)}</td>
-            <td className="py-2 px-3 text-center font-mono">{fmtNum(row.axis_od, 0)}&deg;</td>
+            <td className="px-3 py-2 font-medium text-gray-700">OD (Right)</td>
+            <td className="px-3 py-2 text-center font-mono">{fmtNum(row.sphere_od)}</td>
+            <td className="px-3 py-2 text-center font-mono">{fmtNum(row.cyl_od)}</td>
+            <td className="px-3 py-2 text-center font-mono">{fmtNum(row.axis_od, 0)}&deg;</td>
           </tr>
           <tr className="border-t bg-gray-50/50">
-            <td className="py-2 px-3 font-medium text-gray-700">OS (Left)</td>
-            <td className="py-2 px-3 text-center font-mono">{fmtNum(row.sphere_os)}</td>
-            <td className="py-2 px-3 text-center font-mono">{fmtNum(row.cyl_os)}</td>
-            <td className="py-2 px-3 text-center font-mono">{fmtNum(row.axis_os, 0)}&deg;</td>
+            <td className="px-3 py-2 font-medium text-gray-700">OS (Left)</td>
+            <td className="px-3 py-2 text-center font-mono">{fmtNum(row.sphere_os)}</td>
+            <td className="px-3 py-2 text-center font-mono">{fmtNum(row.cyl_os)}</td>
+            <td className="px-3 py-2 text-center font-mono">{fmtNum(row.axis_os, 0)}&deg;</td>
           </tr>
         </tbody>
       </table>
@@ -155,7 +155,7 @@ export function Prescriptions() {
 
   // ── Filtered list ──────────────────────────────────────────────────────────
 
-  const filtered = prescriptions.filter(p => {
+  const filtered = prescriptions.filter((p) => {
     const name = p.customer?.full_name ?? '';
     const email = p.customer?.email ?? '';
     const matchSearch =
@@ -170,16 +170,16 @@ export function Prescriptions() {
   // ── Computed summary ───────────────────────────────────────────────────────
 
   const totalCount = prescriptions.length;
-  const pendingCount = prescriptions.filter(p => p.status === 'pending').length;
-  const processedCount = prescriptions.filter(p => p.status === 'processed').length;
+  const pendingCount = prescriptions.filter((p) => p.status === 'pending').length;
+  const processedCount = prescriptions.filter((p) => p.status === 'processed').length;
 
   // ── Mark processed ─────────────────────────────────────────────────────────
 
   function markProcessed(id: string) {
     const now = new Date().toISOString();
     // Optimistic update
-    setPrescriptions(prev =>
-      prev.map(p => (p.id === id ? { ...p, status: 'processed', processed_at: now } : p))
+    setPrescriptions((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, status: 'processed', processed_at: now } : p)),
     );
     void (async () => {
       try {
@@ -191,8 +191,8 @@ export function Prescriptions() {
         if (updateErr) throw new Error(updateErr.message);
       } catch (err) {
         // Rollback optimistic update
-        setPrescriptions(prev =>
-          prev.map(p => (p.id === id ? { ...p, status: 'pending', processed_at: null } : p))
+        setPrescriptions((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, status: 'pending', processed_at: null } : p)),
         );
         console.error('Failed to mark processed:', err);
       }
@@ -210,7 +210,8 @@ export function Prescriptions() {
         const { data, error: urlErr } = await db.storage
           .from('prescriptions')
           .createSignedUrl(row.file_url!, 60);
-        if (urlErr || !data?.signedUrl) throw new Error(urlErr?.message ?? 'Could not generate URL');
+        if (urlErr || !data?.signedUrl)
+          throw new Error(urlErr?.message ?? 'Could not generate URL');
         window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
       } catch (err) {
         console.error('View file error:', err);
@@ -225,13 +226,13 @@ export function Prescriptions() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-bold text-2xl text-gray-900">Prescriptions</h2>
-        <p className="text-gray-500 mt-1">Review and process uploaded customer prescriptions</p>
+        <h2 className="text-2xl font-bold text-gray-900">Prescriptions</h2>
+        <p className="mt-1 text-gray-500">Review and process uploaded customer prescriptions</p>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <Button variant="ghost" size="sm" onClick={fetchAll} className="ml-auto">
             Retry
@@ -240,23 +241,27 @@ export function Prescriptions() {
       )}
 
       {!loading && pendingCount > 0 && (
-        <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <FileText className="w-5 h-5 text-yellow-600 shrink-0" />
-          <p className="text-sm text-yellow-800 font-medium">
+        <div className="flex items-center gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <FileText className="h-5 w-5 shrink-0 text-yellow-600" />
+          <p className="text-sm font-medium text-yellow-800">
             {pendingCount} prescription(s) awaiting processing
           </p>
         </div>
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full bg-[#141776] shrink-0" />
+              <div className="h-10 w-3 shrink-0 rounded-full bg-[#141776]" />
               <div>
                 <p className="text-sm text-gray-500">Total</p>
-                {loading ? <Skeleton className="h-6 w-12 mt-1" /> : <p className="font-bold text-xl">{totalCount}</p>}
+                {loading ? (
+                  <Skeleton className="mt-1 h-6 w-12" />
+                ) : (
+                  <p className="text-xl font-bold">{totalCount}</p>
+                )}
                 <p className="text-xs text-gray-400">All prescriptions</p>
               </div>
             </div>
@@ -265,10 +270,14 @@ export function Prescriptions() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full bg-amber-500 shrink-0" />
+              <div className="h-10 w-3 shrink-0 rounded-full bg-amber-500" />
               <div>
                 <p className="text-sm text-gray-500">Pending</p>
-                {loading ? <Skeleton className="h-6 w-12 mt-1" /> : <p className="font-bold text-xl">{pendingCount}</p>}
+                {loading ? (
+                  <Skeleton className="mt-1 h-6 w-12" />
+                ) : (
+                  <p className="text-xl font-bold">{pendingCount}</p>
+                )}
                 <p className="text-xs text-gray-400">Awaiting review</p>
               </div>
             </div>
@@ -277,10 +286,14 @@ export function Prescriptions() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full bg-green-600 shrink-0" />
+              <div className="h-10 w-3 shrink-0 rounded-full bg-green-600" />
               <div>
                 <p className="text-sm text-gray-500">Processed</p>
-                {loading ? <Skeleton className="h-6 w-12 mt-1" /> : <p className="font-bold text-xl">{processedCount}</p>}
+                {loading ? (
+                  <Skeleton className="mt-1 h-6 w-12" />
+                ) : (
+                  <p className="text-xl font-bold">{processedCount}</p>
+                )}
                 <p className="text-xs text-gray-400">Reviewed and done</p>
               </div>
             </div>
@@ -290,18 +303,18 @@ export function Prescriptions() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <CardTitle>Prescription Queue</CardTitle>
               <CardDescription>{loading ? '…' : `${filtered.length} records`}</CardDescription>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex gap-1">
-                {(['All', 'pending', 'processed'] as const).map(s => (
+                {(['All', 'pending', 'processed'] as const).map((s) => (
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                       statusFilter === s
                         ? 'bg-[#141776] text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -312,12 +325,12 @@ export function Prescriptions() {
                 ))}
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   placeholder="Search name or email…"
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9 w-52"
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-52 pl-9"
                 />
               </div>
             </div>
@@ -328,11 +341,13 @@ export function Prescriptions() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Customer</th>
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Email</th>
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Actions</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Date</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                    Customer
+                  </th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -345,21 +360,23 @@ export function Prescriptions() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map(p => (
+                  filtered.map((p) => (
                     <tr key={p.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-3 text-xs text-gray-500 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-3 py-3 text-xs text-gray-500">
                         {fmtDate(p.created_at)}
                       </td>
-                      <td className="py-3 px-3">
-                        <p className="font-medium text-sm">{p.customer?.full_name ?? '—'}</p>
+                      <td className="px-3 py-3">
+                        <p className="text-sm font-medium">{p.customer?.full_name ?? '—'}</p>
                         {p.customer?.phone && (
                           <p className="text-xs text-gray-400">{p.customer.phone}</p>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-sm text-gray-600">{p.customer?.email ?? '—'}</td>
-                      <td className="py-3 px-3">
+                      <td className="px-3 py-3 text-sm text-gray-600">
+                        {p.customer?.email ?? '—'}
+                      </td>
+                      <td className="px-3 py-3">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                             p.status === 'processed'
                               ? 'bg-green-100 text-green-700'
                               : 'bg-yellow-100 text-yellow-700'
@@ -368,15 +385,15 @@ export function Prescriptions() {
                           {p.status}
                         </span>
                       </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-1 flex-wrap">
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setViewItem(p)}
                             className="h-7 px-2 text-xs"
                           >
-                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            <Eye className="mr-1 h-3.5 w-3.5" />
                             Details
                           </Button>
                           {p.file_url && (
@@ -387,7 +404,7 @@ export function Prescriptions() {
                               disabled={viewLoading}
                               className="h-7 px-2 text-xs"
                             >
-                              <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                              <ExternalLink className="mr-1 h-3.5 w-3.5" />
                               View File
                             </Button>
                           )}
@@ -395,9 +412,9 @@ export function Prescriptions() {
                             <Button
                               size="sm"
                               onClick={() => markProcessed(p.id)}
-                              className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700"
+                              className="h-7 bg-green-600 px-2 text-xs hover:bg-green-700"
                             >
-                              <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                              <CheckCircle className="mr-1 h-3.5 w-3.5" />
                               Mark Processed
                             </Button>
                           )}
@@ -413,7 +430,7 @@ export function Prescriptions() {
       </Card>
 
       {/* ── Detail / lens dialog ── */}
-      <Dialog open={!!viewItem} onOpenChange={open => !open && setViewItem(null)}>
+      <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
@@ -434,7 +451,7 @@ export function Prescriptions() {
           {viewItem && (
             <div className="space-y-4">
               {/* Customer info */}
-              <div className="p-3 bg-gray-50 rounded-lg space-y-1 text-sm">
+              <div className="space-y-1 rounded-lg bg-gray-50 p-3 text-sm">
                 {viewItem.customer?.email && (
                   <p>
                     <span className="font-medium text-gray-500">Email: </span>
@@ -457,16 +474,16 @@ export function Prescriptions() {
 
               {/* Lens data */}
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Lens Prescription Data</p>
+                <p className="mb-2 text-sm font-medium text-gray-700">Lens Prescription Data</p>
                 <LensGrid row={viewItem} />
               </div>
 
               {/* File placeholder if no URL */}
               {!viewItem.file_url && (
-                <div className="flex items-center justify-center h-24 bg-gray-100 rounded-lg">
+                <div className="flex h-24 items-center justify-center rounded-lg bg-gray-100">
                   <div className="text-center">
-                    <FileText className="w-8 h-8 text-gray-400 mx-auto" />
-                    <p className="text-xs text-gray-500 mt-1">No file uploaded</p>
+                    <FileText className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="mt-1 text-xs text-gray-500">No file uploaded</p>
                   </div>
                 </div>
               )}
@@ -481,7 +498,7 @@ export function Prescriptions() {
                     onClick={() => viewFile(viewItem)}
                     disabled={viewLoading}
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" />
+                    <ExternalLink className="mr-2 h-4 w-4" />
                     Open File
                   </Button>
                 )}
@@ -493,7 +510,7 @@ export function Prescriptions() {
                     }}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    <CheckCircle className="w-4 h-4 mr-2" />
+                    <CheckCircle className="mr-2 h-4 w-4" />
                     Mark as Processed
                   </Button>
                 )}

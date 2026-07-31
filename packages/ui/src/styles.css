@@ -8,7 +8,7 @@
 
 :root {
   --background: 0 0% 100%;
-  --foreground: 240 17% 14%;            /* #1A1A2E brand-dark */
+  --foreground: 240 17% 14%; /* #1A1A2E brand-dark */
 
   --card: 0 0% 100%;
   --card-foreground: 240 17% 14%;
@@ -16,7 +16,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 240 17% 14%;
 
-  --primary: 235 51% 34%;               /* #2A3182 brand-blue */
+  --primary: 235 51% 34%; /* #2A3182 brand-blue */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 240 5% 96%;
@@ -28,7 +28,7 @@
   --accent: 240 5% 96%;
   --accent-foreground: 240 17% 14%;
 
-  --destructive: 1 77% 56%;             /* #E53935 brand-red */
+  --destructive: 1 77% 56%; /* #E53935 brand-red */
   --destructive-foreground: 0 0% 100%;
 
   --border: 240 6% 90%;
@@ -66,5 +66,7 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-feature-settings: 'rlig' 1, 'calt' 1;
+  font-feature-settings:
+    'rlig' 1,
+    'calt' 1;
 }

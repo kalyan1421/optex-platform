@@ -175,9 +175,7 @@ export class AppointmentsService {
     const existing = await this.findOwned(id, customerId);
 
     if (existing.status === 'cancelled' || existing.status === 'completed') {
-      throw new ConflictException(
-        `A ${existing.status} appointment cannot be rescheduled`,
-      );
+      throw new ConflictException(`A ${existing.status} appointment cannot be rescheduled`);
     }
 
     await this.assertSlotBookable(existing.branch_id, dto.date, dto.time, id);
@@ -266,9 +264,7 @@ export class AppointmentsService {
 
     const candidates = this.generateSlots(window[0], window[1]);
     if (!candidates.includes(time)) {
-      throw new BadRequestException(
-        'The requested time is not an available slot for this branch',
-      );
+      throw new BadRequestException('The requested time is not an available slot for this branch');
     }
 
     const taken = await this.takenTimes(branchId, date, excludeId);
@@ -426,9 +422,7 @@ export class AppointmentsService {
       );
     } catch (err) {
       // Never let a notification failure roll back a successful booking.
-      this.logger.warn(
-        `Confirmation SMS skipped: ${(err as Error).message}`,
-      );
+      this.logger.warn(`Confirmation SMS skipped: ${(err as Error).message}`);
     }
   }
 

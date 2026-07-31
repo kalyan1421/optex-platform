@@ -11,10 +11,10 @@
 
 Two delivery models are on the table. Lock this before sprint planning:
 
-| Option | Description | Recommended for |
-|---|---|---|
+| Option                       | Description                                                                                            | Recommended for                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | **A. Split (Phase 1A + 1B)** | Ship original signed SOW first, go live with e-commerce. CR-01 features ship as Phase 1B after launch. | Recommended — protects launch date, lets us earn revenue while CR-01 modules are built. |
-| **B. Combined** | One single launch with all CR-01 items included. Longer build window before any revenue. | Only if Optex has no urgency to start trading online. |
+| **B. Combined**              | One single launch with all CR-01 items included. Longer build window before any revenue.               | Only if Optex has no urgency to start trading online.                                   |
 
 **Recommendation:** Option A. The remainder of this plan assumes A. If client picks B, Phases 1A and 1B fold into a single combined phase using the same module sequencing.
 
@@ -35,6 +35,7 @@ Two delivery models are on the table. Lock this before sprint planning:
 Closes out the signed scope. No CR-01 work in this phase. Targets the original Phase 1 milestone (production deployment + handover).
 
 ### Sprint 1A.1 — Catalogue & Storefront completion
+
 - PLP filters: price / brand / shape / gender / material — wire to Supabase queries
 - Product search + autocomplete (Supabase full-text search)
 - Category landing pages (Eyeglasses, Sunglasses, Kids, Computer, Reading) with SEO copy
@@ -44,6 +45,7 @@ Closes out the signed scope. No CR-01 work in this phase. Targets the original P
 **Exit:** Storefront browsable end-to-end on staging, Lighthouse mobile ≥ 90.
 
 ### Sprint 1A.2 — Cart → Checkout → Payment
+
 - Multi-step checkout: address, delivery, payment, review
 - Guest checkout path (no forced signup)
 - M-Pesa Daraja STK Push integration + callback handler
@@ -55,6 +57,7 @@ Closes out the signed scope. No CR-01 work in this phase. Targets the original P
 **Exit:** A test customer can buy a frame on staging via M-Pesa, Pesapal, and COD; admin sees the order; SMS + email arrive.
 
 ### Sprint 1A.3 — Account, Prescriptions, Reviews, Policies
+
 - Customer account: profile, order history, saved prescriptions
 - Multi-stage order tracking page (Received → Processing → Dispatched → Delivered)
 - Prescription upload flow (private Supabase Storage bucket, namespaced by customer id)
@@ -66,6 +69,7 @@ Closes out the signed scope. No CR-01 work in this phase. Targets the original P
 **Exit:** Full customer-side feature set per signed SOW is live on staging.
 
 ### Sprint 1A.4 — Admin v1 (Super-Admin-only, per signed SOW)
+
 - Products: full CRUD with image upload to Supabase Storage
 - Inventory: stock-level per branch + low-stock alerts (SOW-only scope — no PO/GRN yet)
 - Orders: status workflow + M-Pesa reference validation + SMS triggers
@@ -75,6 +79,7 @@ Closes out the signed scope. No CR-01 work in this phase. Targets the original P
 **Exit:** Single Super Admin can run the storefront end-to-end. All 13 SOW admin screens fully wired.
 
 ### Sprint 1A.5 — Go-live
+
 - GA4 + conversion tracking
 - UAT cycle with Optex SPOC on a staging snapshot of real data
 - Bug-fix burn-down
@@ -90,8 +95,10 @@ Closes out the signed scope. No CR-01 work in this phase. Targets the original P
 
 Sequenced per CR-01 §4 recommended build order. Each sprint is a vertical slice with DB + API + admin UI + tests.
 
-### Sprint 1B.1 — Multi-Role Admin (RBAC) — *foundational*
+### Sprint 1B.1 — Multi-Role Admin (RBAC) — _foundational_
+
 Every other CR-01 module depends on this.
+
 - DB: `roles`, `role_permissions`, `user_roles`, `audit_log` tables
 - 7 roles: Super Admin, Branch Manager, Branch Staff, Inventory Manager, Accountant/Finance, Marketing, Doctor/Optometrist
 - Granular permission matrix per module (view / create / edit / delete)
@@ -105,7 +112,9 @@ Every other CR-01 module depends on this.
 **Exit:** Login as each of 7 roles on staging → each sees only what their role permits. Audit log captures every mutation.
 
 ### Sprint 1B.2 — Inventory Management (full ledger)
+
 Prerequisite for product lifecycle analytics.
+
 - DB: `suppliers`, `purchase_orders`, `po_lines`, `grn`, `grn_lines`, `stock_transfers`, `stock_transfer_lines`, `stock_adjustments`, `stock_ledger`, `reorder_points` (~8–10 tables)
 - Real-time inventory ledger per SKU per branch (event-sourced — every PO, GRN, transfer, sale, adjustment is a ledger row)
 - Inter-branch stock transfer workflow (request → approve → dispatch → receive)
@@ -121,7 +130,9 @@ Prerequisite for product lifecycle analytics.
 **Exit:** A frame ordered from a supplier flows through PO → GRN → branch stock → transfer → customer sale, and every step is auditable from the ledger.
 
 ### Sprint 1B.3 — Eye Doctor Consultation (expands Appointments)
+
 Depends on RBAC (Doctor role) and the customer Appointments flow built in 1A.
+
 - DB: `doctors`, `doctor_branch_assignments`, `doctor_availability`, `doctor_leave`, `consultation_types`, `consultations`, `consultation_notes` (~7 tables)
 - Doctor / optometrist master data (qualifications, photo, bio)
 - Doctor-to-branch assignment + weekly availability schedule
@@ -141,6 +152,7 @@ Depends on RBAC (Doctor role) and the customer Appointments flow built in 1A.
 - Drag-and-drop admin rescheduling
 
 **Compliance (must ship inside this sprint, not after):**
+
 - Patient consent flow at booking (capture + store + version)
 - Privacy policy update covering medical-record handling
 - Retention rules for consultation records (configurable, default 7 years)
@@ -149,7 +161,9 @@ Depends on RBAC (Doctor role) and the customer Appointments flow built in 1A.
 **Exit:** A customer books a paid eye-test with a named doctor at a chosen branch, pays via M-Pesa, gets reminders, attends, doctor records notes + e-prescription, customer downloads the PDF from their account.
 
 ### Sprint 1B.4 — Product Analysis & Lifecycle Reporting
+
 Depends on Inventory ledger (1B.2) being live + cost-price field added to products.
+
 - DB: 2 new tables + materialized views (`mv_sales_velocity`, `mv_stock_to_sales`, etc.) refreshed nightly
 - Cost-price field on every SKU (data migration with client-provided spreadsheet)
 - Reports:
@@ -168,7 +182,9 @@ Depends on Inventory ledger (1B.2) being live + cost-price field added to produc
 **Exit:** Optex finance / merchandising team can answer "what's profitable, what's not, what should we reorder, what should we mark down" from the admin panel alone.
 
 ### Sprint 1B.5 — Branch Investment vs Revenue Analysis
+
 Independent track — can run in parallel with 1B.3/1B.4 if a second engineer is available.
+
 - DB: `branch_capex`, `branch_opex`, `branch_revenue_attribution` (3 tables)
 - Branch capex entry (setup cost, fit-out, equipment)
 - Monthly opex tracking per branch (rent, salaries, utilities, marketing, other) — entered by Accountant role
@@ -183,6 +199,7 @@ Independent track — can run in parallel with 1B.3/1B.4 if a second engineer is
 **Exit:** Optex management can see "which branch is making money, which is bleeding, when each broke even" without leaving the admin panel.
 
 ### Sprint 1B.6 — UAT, polish, training, go-live (1B)
+
 - UAT with role-specific test scripts (one per role)
 - Performance pass: report queries must return in < 2 seconds on a year of data
 - Updated admin training docs covering all new roles + modules
@@ -226,16 +243,16 @@ Phase 1A goes live  ────────────────────
 
 ## 6. Risks & mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Client picks Option B (combined) and pressures for original launch date | Medium | High — burns trust | Reconfirm scope vs. timeline in writing on Day 1; share this plan as the calibration |
-| Cost-price data missing for SKUs | High | Blocks 1B.4 entirely | Make cost-price a non-optional column in the onboarding spreadsheet (Part B Item 1 of the onboarding email) |
-| DPA 2019 compliance treated as docs-only | Medium | High — regulatory + reputational | Bake consent capture into 1B.3 build, not into a separate doc sprint |
-| Doctor list / schedules not provided in time | High | Blocks 1B.3 | Schedule the doctor-onboarding workshop **during** 1B.1 so data lands before 1B.3 starts |
-| Inventory ledger backfill from existing register books | High | Risk of garbage-in to 1B.4 reports | Agree a single "opening stock as of date X" cut-over; treat anything before as out-of-scope historical |
-| Two-factor auth UX friction for Doctors | Medium | Adoption risk | Default Doctor 2FA to optional, Super Admin + Accountant mandatory |
-| Performance — joined queries across ledger + sales | Medium | High once data grows | Materialized views refreshed nightly for 1B.4; index review at end of each sprint |
-| Audit-log table grows unbounded | Low | Medium (storage cost) | Partition by month; archive to cold storage after 24 months |
+| Risk                                                                    | Likelihood | Impact                             | Mitigation                                                                                                  |
+| ----------------------------------------------------------------------- | ---------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Client picks Option B (combined) and pressures for original launch date | Medium     | High — burns trust                 | Reconfirm scope vs. timeline in writing on Day 1; share this plan as the calibration                        |
+| Cost-price data missing for SKUs                                        | High       | Blocks 1B.4 entirely               | Make cost-price a non-optional column in the onboarding spreadsheet (Part B Item 1 of the onboarding email) |
+| DPA 2019 compliance treated as docs-only                                | Medium     | High — regulatory + reputational   | Bake consent capture into 1B.3 build, not into a separate doc sprint                                        |
+| Doctor list / schedules not provided in time                            | High       | Blocks 1B.3                        | Schedule the doctor-onboarding workshop **during** 1B.1 so data lands before 1B.3 starts                    |
+| Inventory ledger backfill from existing register books                  | High       | Risk of garbage-in to 1B.4 reports | Agree a single "opening stock as of date X" cut-over; treat anything before as out-of-scope historical      |
+| Two-factor auth UX friction for Doctors                                 | Medium     | Adoption risk                      | Default Doctor 2FA to optional, Super Admin + Accountant mandatory                                          |
+| Performance — joined queries across ledger + sales                      | Medium     | High once data grows               | Materialized views refreshed nightly for 1B.4; index review at end of each sprint                           |
+| Audit-log table grows unbounded                                         | Low        | Medium (storage cost)              | Partition by month; archive to cold storage after 24 months                                                 |
 
 ---
 
@@ -257,19 +274,19 @@ Phase 1A goes live  ────────────────────
 
 The following must be answered before each sprint can begin. Listed against the sprint they unblock.
 
-| # | Decision | Blocks |
-|---|---|---|
-| 1 | Delivery model A vs B | All of Phase 1B |
-| 2 | Stock valuation method (FIFO / weighted average) | 1B.2 |
-| 3 | Batch / serial tracking required or SKU-level only | 1B.2 |
-| 4 | Final role list + permission matrix sign-off | 1B.1 |
-| 5 | 2FA — which roles, mandatory or optional | 1B.1 |
-| 6 | Cost-price spreadsheet for every SKU | 1B.4 |
-| 7 | Doctor master list + qualifications + photos | 1B.3 |
-| 8 | Consultation types, durations, fees | 1B.3 |
-| 9 | Pre-payment policy for consultations | 1B.3 |
-| 10 | Patient consent flow + DPO designation | 1B.3 |
-| 11 | Branch capex baseline + opex categories | 1B.5 |
-| 12 | Revenue attribution rule (in-store sales source) | 1B.5 |
-| 13 | Report digest recipients + cadence | 1B.4 |
-| 14 | Commercial CR-01 quotation signed | All of Phase 1B |
+| #   | Decision                                           | Blocks          |
+| --- | -------------------------------------------------- | --------------- |
+| 1   | Delivery model A vs B                              | All of Phase 1B |
+| 2   | Stock valuation method (FIFO / weighted average)   | 1B.2            |
+| 3   | Batch / serial tracking required or SKU-level only | 1B.2            |
+| 4   | Final role list + permission matrix sign-off       | 1B.1            |
+| 5   | 2FA — which roles, mandatory or optional           | 1B.1            |
+| 6   | Cost-price spreadsheet for every SKU               | 1B.4            |
+| 7   | Doctor master list + qualifications + photos       | 1B.3            |
+| 8   | Consultation types, durations, fees                | 1B.3            |
+| 9   | Pre-payment policy for consultations               | 1B.3            |
+| 10  | Patient consent flow + DPO designation             | 1B.3            |
+| 11  | Branch capex baseline + opex categories            | 1B.5            |
+| 12  | Revenue attribution rule (in-store sales source)   | 1B.5            |
+| 13  | Report digest recipients + cadence                 | 1B.4            |
+| 14  | Commercial CR-01 quotation signed                  | All of Phase 1B |

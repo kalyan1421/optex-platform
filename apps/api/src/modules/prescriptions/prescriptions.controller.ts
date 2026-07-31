@@ -20,11 +20,7 @@ import {
 import type { AuthUser } from '../../auth/auth-user';
 import { CurrentUser } from '../../auth/decorators';
 import { UploadPrescriptionDto } from './dto/upload-prescription.dto';
-import {
-  PrescriptionRow,
-  PrescriptionsService,
-  UploadedFileLike,
-} from './prescriptions.service';
+import { PrescriptionRow, PrescriptionsService, UploadedFileLike } from './prescriptions.service';
 
 /**
  * Customer-facing prescription endpoints. Mounted at `/api/prescriptions`

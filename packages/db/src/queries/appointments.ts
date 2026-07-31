@@ -1,24 +1,24 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, Tables } from '../database.types'
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Tables } from '../database.types';
 
-export type Appointment = Tables<'appointments'>
+export type Appointment = Tables<'appointments'>;
 
 export const APPOINTMENT_TYPES = [
   { value: 'eye_test', label: 'Eye test' },
   { value: 'frame_fitting', label: 'Frame fitting' },
   { value: 'consultation', label: 'Consultation' },
-] as const
+] as const;
 
-export type AppointmentType = (typeof APPOINTMENT_TYPES)[number]['value']
+export type AppointmentType = (typeof APPOINTMENT_TYPES)[number]['value'];
 
 export interface CreateAppointmentInput {
-  branchId: string
-  type: AppointmentType
-  scheduledAt: Date
-  customerId?: string | null
-  contactName?: string | null
-  contactPhone?: string | null
-  notes?: string | null
+  branchId: string;
+  type: AppointmentType;
+  scheduledAt: Date;
+  customerId?: string | null;
+  contactName?: string | null;
+  contactPhone?: string | null;
+  notes?: string | null;
 }
 
 /**
@@ -42,7 +42,7 @@ export async function createAppointment(
       notes: input.notes ?? null,
     })
     .select()
-    .single()
-  if (error) throw error
-  return data
+    .single();
+  if (error) throw error;
+  return data;
 }

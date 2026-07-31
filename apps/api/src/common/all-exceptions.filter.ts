@@ -38,8 +38,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const { statusCode, code, error, message } = this.resolveError(exception);
 
     const requestId =
-      (request.id as string | undefined) ??
-      (request.headers['x-request-id'] as string | undefined);
+      (request.id as string | undefined) ?? (request.headers['x-request-id'] as string | undefined);
 
     const body: ErrorResponseBody = {
       statusCode,
@@ -57,9 +56,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : String(exception),
       );
     } else {
-      this.logger.warn(
-        `${request.method} ${request.url} -> ${statusCode} (${code})`,
-      );
+      this.logger.warn(`${request.method} ${request.url} -> ${statusCode} (${code})`);
     }
 
     response.status(statusCode).json(body);

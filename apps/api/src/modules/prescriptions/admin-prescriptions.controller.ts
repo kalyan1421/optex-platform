@@ -1,16 +1,8 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators';
 import { PrescriptionQueryDto } from './dto/prescription-query.dto';
-import {
-  PrescriptionRow,
-  PrescriptionsService,
-} from './prescriptions.service';
+import { PrescriptionRow, PrescriptionsService } from './prescriptions.service';
 
 /**
  * Admin prescription viewer. Mounted at `/api/admin/prescriptions` (global

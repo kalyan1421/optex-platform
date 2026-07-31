@@ -110,11 +110,7 @@ export class CartService {
   }
 
   /** Add a product to the caller's cart, or increment if already present. */
-  async addItem(
-    authUserId: string,
-    productId: string,
-    quantity: number,
-  ): Promise<CartView> {
+  async addItem(authUserId: string, productId: string, quantity: number): Promise<CartView> {
     const cartId = await this.getOrCreateCartId(authUserId);
     const qty = Math.max(1, Math.trunc(quantity || 1));
 
@@ -175,11 +171,7 @@ export class CartService {
   }
 
   /** Set the absolute quantity of a line (removing it when ≤ 0). */
-  async updateItem(
-    authUserId: string,
-    itemId: string,
-    quantity: number,
-  ): Promise<CartView> {
+  async updateItem(authUserId: string, itemId: string, quantity: number): Promise<CartView> {
     const cartId = await this.getOrCreateCartId(authUserId);
     await this.assertItemBelongsToCart(itemId, cartId);
 
@@ -253,9 +245,7 @@ export class CartService {
       throw new BadRequestException('This promo code has expired.');
     }
     if (promo.max_uses !== null && promo.uses >= promo.max_uses) {
-      throw new BadRequestException(
-        'This promo code has reached its usage limit.',
-      );
+      throw new BadRequestException('This promo code has reached its usage limit.');
     }
 
     this.appliedPromos.set(cartId, promo.code);
@@ -303,10 +293,7 @@ export class CartService {
 
     const { error: upsertError } = await this.supabase.client
       .from('carts')
-      .upsert(
-        { customer_id: customerId },
-        { onConflict: 'customer_id', ignoreDuplicates: true },
-      );
+      .upsert({ customer_id: customerId }, { onConflict: 'customer_id', ignoreDuplicates: true });
     if (upsertError) throw new BadRequestException(upsertError.message);
 
     const { data: cart, error } = await this.supabase.client
@@ -319,10 +306,7 @@ export class CartService {
   }
 
   /** Throw `ForbiddenException` if the item is not in the caller's cart. */
-  private async assertItemBelongsToCart(
-    itemId: string,
-    cartId: string,
-  ): Promise<void> {
+  private async assertItemBelongsToCart(itemId: string, cartId: string): Promise<void> {
     const { data, error } = await this.supabase.client
       .from('cart_items')
       .select('id, cart_id')
@@ -343,10 +327,10 @@ export class CartService {
    * never lose an increment (H-6 fix mirrored from cart.ts).
    */
   private async incrementItem(itemId: string, delta: number): Promise<void> {
-    const { error } = await this.supabase.client.rpc(
-      'increment_cart_item_qty',
-      { item_id: itemId, delta },
-    );
+    const { error } = await this.supabase.client.rpc('increment_cart_item_qty', {
+      item_id: itemId,
+      delta,
+    });
     if (error) throw new BadRequestException(error.message);
   }
 
@@ -417,15 +401,10 @@ export class CartService {
         };
       });
 
-    const subtotalKes = round2(
-      items.reduce((sum, i) => sum + i.product.priceKes * i.quantity, 0),
-    );
+    const subtotalKes = round2(items.reduce((sum, i) => sum + i.product.priceKes * i.quantity, 0));
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
-    const { promo, discountKes } = await this.resolveAppliedPromo(
-      cartId,
-      subtotalKes,
-    );
+    const { promo, discountKes } = await this.resolveAppliedPromo(cartId, subtotalKes);
 
     // VAT on the discounted taxable base; total = base + VAT (no shipping at
     // the cart stage — shipping is added at checkout in the orders module).
@@ -511,8 +490,7 @@ export class CartService {
     value: number,
     subtotalKes: number,
   ): number {
-    const raw =
-      discountType === 'percent' ? (subtotalKes * value) / 100 : value;
+    const raw = discountType === 'percent' ? (subtotalKes * value) / 100 : value;
     const clamped = Math.min(Math.max(raw, 0), subtotalKes);
     return round2(clamped);
   }

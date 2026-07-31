@@ -10,9 +10,9 @@
 
 @theme {
   /* ── OPTEX brand tokens ─────────────────────────────────────────────── */
-  --color-brand-blue: #2A3182;
-  --color-brand-red: #E53935;
-  --color-brand-dark: #1A1A2E;
+  --color-brand-blue: #2a3182;
+  --color-brand-red: #e53935;
+  --color-brand-dark: #1a1a2e;
 
   /* ── Primary font ───────────────────────────────────────────────────── */
   --font-sans: 'Montserrat', sans-serif;
@@ -52,7 +52,7 @@
   --card-foreground: #111827;
   --popover: #ffffff;
   --popover-foreground: #111827;
-  --primary: #2A3182;
+  --primary: #2a3182;
   --primary-foreground: #ffffff;
   --secondary: #f3f4f6;
   --secondary-foreground: #111827;
@@ -60,11 +60,11 @@
   --muted-foreground: #6b7280;
   --accent: #f3f4f6;
   --accent-foreground: #111827;
-  --destructive: #E53935;
+  --destructive: #e53935;
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #2A3182;
+  --ring: #2a3182;
 }
 
 html {
@@ -118,10 +118,14 @@ select {
     padding-inline: 1rem;
   }
   @media (min-width: 640px) {
-    .site-container { padding-inline: 2.5rem; }
+    .site-container {
+      padding-inline: 2.5rem;
+    }
   }
   @media (min-width: 1024px) {
-    .site-container { padding-inline: 5rem; }
+    .site-container {
+      padding-inline: 5rem;
+    }
   }
 
   .section-container {
@@ -131,10 +135,14 @@ select {
     padding-inline: 1rem;
   }
   @media (min-width: 640px) {
-    .section-container { padding-inline: 2.5rem; }
+    .section-container {
+      padding-inline: 2.5rem;
+    }
   }
   @media (min-width: 1024px) {
-    .section-container { padding-inline: 5rem; }
+    .section-container {
+      padding-inline: 5rem;
+    }
   }
 
   .page-container {
@@ -144,9 +152,13 @@ select {
     padding-inline: 1rem;
   }
   @media (min-width: 640px) {
-    .page-container { padding-inline: 2.5rem; }
+    .page-container {
+      padding-inline: 2.5rem;
+    }
   }
   @media (min-width: 1024px) {
-    .page-container { padding-inline: 5rem; }
+    .page-container {
+      padding-inline: 5rem;
+    }
   }
 }

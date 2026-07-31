@@ -83,10 +83,7 @@ export class BranchesController {
   @ApiOperation({ summary: 'Update a branch (super_admin)' })
   @ApiOkResponse({ description: 'The updated branch', type: BranchDto })
   @ApiNotFoundResponse({ description: 'Branch not found' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateBranchDto,
-  ): Promise<BranchRow> {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBranchDto): Promise<BranchRow> {
     return this.branches.update(id, dto);
   }
 

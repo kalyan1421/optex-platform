@@ -1,10 +1,5 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { AccountService } from './account.service';
@@ -33,10 +28,7 @@ export class MeController {
   @Patch()
   @ApiOperation({ summary: "Update the current customer's profile" })
   @ApiOkResponse({ type: MeProfileDto, description: 'Updated profile' })
-  updateMe(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: UpdateMeDto,
-  ): Promise<MeProfileDto> {
+  updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateMeDto): Promise<MeProfileDto> {
     return this.account.updateProfile(user, dto);
   }
 }

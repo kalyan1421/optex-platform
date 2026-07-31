@@ -18,8 +18,7 @@ export interface SmsResult {
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
-  private static readonly ENDPOINT =
-    'https://api.africastalking.com/version1/messaging';
+  private static readonly ENDPOINT = 'https://api.africastalking.com/version1/messaging';
 
   constructor(private readonly config: ConfigService<Env, true>) {}
 
@@ -37,7 +36,7 @@ export class SmsService {
 
     if (!username || !apiKey) {
       this.logger.warn(
-        'Africa\'s Talking credentials missing (AT_USERNAME/AT_API_KEY); skipping SMS send',
+        "Africa's Talking credentials missing (AT_USERNAME/AT_API_KEY); skipping SMS send",
       );
       return { ok: false };
     }
@@ -60,18 +59,14 @@ export class SmsService {
 
       if (!response.ok) {
         const detail = await response.text().catch(() => '');
-        this.logger.error(
-          `Africa's Talking SMS send failed (${response.status}): ${detail}`,
-        );
+        this.logger.error(`Africa's Talking SMS send failed (${response.status}): ${detail}`);
         return { ok: false };
       }
 
       this.logger.log(`SMS dispatched to ${to}`);
       return { ok: true };
     } catch (error) {
-      this.logger.error(
-        `Africa's Talking SMS send threw: ${(error as Error).message}`,
-      );
+      this.logger.error(`Africa's Talking SMS send threw: ${(error as Error).message}`);
       return { ok: false };
     }
   }

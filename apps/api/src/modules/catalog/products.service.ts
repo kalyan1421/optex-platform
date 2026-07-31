@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductQueryDto, ProductSort } from './dto/product-query.dto';
@@ -41,8 +37,7 @@ export interface Paginated<T> {
 }
 
 /** Loosely-typed UUID v4 / v1 matcher used to distinguish id from slug. */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Catalog read/write logic for products. Uses the service-role Supabase client
@@ -70,10 +65,8 @@ export class ProductsService {
     if (query.shape) builder = builder.eq('frame_shape', query.shape);
     if (query.gender) builder = builder.eq('gender', query.gender);
     if (query.material) builder = builder.eq('frame_material', query.material);
-    if (query.minPrice !== undefined)
-      builder = builder.gte('price_kes', query.minPrice);
-    if (query.maxPrice !== undefined)
-      builder = builder.lte('price_kes', query.maxPrice);
+    if (query.minPrice !== undefined) builder = builder.gte('price_kes', query.minPrice);
+    if (query.maxPrice !== undefined) builder = builder.lte('price_kes', query.maxPrice);
 
     if (query.category) {
       const categoryId = await this.resolveCategoryId(query.category);
@@ -259,10 +252,7 @@ export class ProductsService {
    * Upload an image to the `product-images` bucket, append its public URL to
    * the product's `images` array, and return the persisted product plus URL.
    */
-  async addImage(
-    id: string,
-    file: UploadedImage,
-  ): Promise<{ url: string; product: ProductRow }> {
+  async addImage(id: string, file: UploadedImage): Promise<{ url: string; product: ProductRow }> {
     if (!file?.buffer) {
       throw new BadRequestException('No image file provided');
     }
@@ -291,12 +281,9 @@ export class ProductsService {
 
     const {
       data: { publicUrl },
-    } = this.supabase.client.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .getPublicUrl(objectPath);
+    } = this.supabase.client.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(objectPath);
 
-    const currentImages =
-      ((existing as { images: string[] | null }).images ?? []) as string[];
+    const currentImages = ((existing as { images: string[] | null }).images ?? []) as string[];
     const nextImages = [...currentImages, publicUrl];
 
     const { data: updated, error: updateError } = await this.supabase.client

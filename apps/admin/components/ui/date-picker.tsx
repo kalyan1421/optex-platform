@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { format, parseISO, isValid } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import * as React from 'react';
+import { format, parseISO, isValid } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 
-import { cn } from "./utils";
-import { Button } from "./button";
-import { Calendar } from "./calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { cn } from './utils';
+import { Button } from './button';
+import { Calendar } from './calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 interface DatePickerProps {
   /** ISO date string ("yyyy-MM-dd") — same shape a native `<input type="date">` uses. */
@@ -23,7 +23,7 @@ interface DatePickerProps {
 function DatePicker({
   value,
   onChange,
-  placeholder = "Pick a date",
+  placeholder = 'Pick a date',
   disabled,
   disablePast,
   className,
@@ -40,13 +40,13 @@ function DatePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "w-full justify-start text-left font-normal",
-            !selected && "text-muted-foreground",
+            'w-full justify-start text-left font-normal',
+            !selected && 'text-muted-foreground',
             className,
           )}
         >
           <CalendarIcon className="mr-2 size-4 shrink-0" />
-          {selected ? format(selected, "PPP") : placeholder}
+          {selected ? format(selected, 'PPP') : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -55,14 +55,10 @@ function DatePicker({
           selected={selected}
           defaultMonth={selected}
           onSelect={(date) => {
-            if (date) onChange(format(date, "yyyy-MM-dd"));
+            if (date) onChange(format(date, 'yyyy-MM-dd'));
             setOpen(false);
           }}
-          disabled={
-            disablePast
-              ? { before: new Date(new Date().setHours(0, 0, 0, 0)) }
-              : undefined
-          }
+          disabled={disablePast ? { before: new Date(new Date().setHours(0, 0, 0, 0)) } : undefined}
           initialFocus
         />
       </PopoverContent>

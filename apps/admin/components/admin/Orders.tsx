@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useState, useEffect } from 'react';
 import { Search, Eye, Download, CheckCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -23,8 +23,21 @@ const STATUS_TABS: { key: string; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
-const DB_STATUSES: OrderStatus[] = ['pending_payment', 'received', 'processing', 'dispatched', 'delivered', 'cancelled'];
-const STATUS_TIMELINE: OrderStatus[] = ['pending_payment', 'received', 'processing', 'dispatched', 'delivered'];
+const DB_STATUSES: OrderStatus[] = [
+  'pending_payment',
+  'received',
+  'processing',
+  'dispatched',
+  'delivered',
+  'cancelled',
+];
+const STATUS_TIMELINE: OrderStatus[] = [
+  'pending_payment',
+  'received',
+  'processing',
+  'dispatched',
+  'delivered',
+];
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: 'Pending',
@@ -68,7 +81,11 @@ function customerName(order: AdminOrderSummary) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-KE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export function Orders() {
@@ -112,8 +129,10 @@ export function Orders() {
     try {
       const updated = await api.admin.orders.updateStatus(selected.id, { status: newStatus });
       setDetail(updated);
-      setOrders(prev => prev.map(o => (o.id === selected.id ? { ...o, status: newStatus } : o)));
-      setSelected(prev => (prev ? { ...prev, status: newStatus } : null));
+      setOrders((prev) =>
+        prev.map((o) => (o.id === selected.id ? { ...o, status: newStatus } : o)),
+      );
+      setSelected((prev) => (prev ? { ...prev, status: newStatus } : null));
       setNewStatus('');
     } catch (e) {
       console.error(e);
@@ -122,7 +141,7 @@ export function Orders() {
     }
   }
 
-  const filtered = orders.filter(o => {
+  const filtered = orders.filter((o) => {
     const name = customerName(o).toLowerCase();
     const matchSearch =
       o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -131,7 +150,8 @@ export function Orders() {
     return matchSearch && matchTab;
   });
 
-  const count = (key: string) => key === 'all' ? orders.length : orders.filter(o => o.status === key).length;
+  const count = (key: string) =>
+    key === 'all' ? orders.length : orders.filter((o) => o.status === key).length;
   const statusIndex = (s: string) => STATUS_TIMELINE.indexOf(s as OrderStatus);
 
   const detailShipping = (detail?.shipping as ShippingJSON | null) ?? null;
@@ -140,11 +160,11 @@ export function Orders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-bold text-2xl text-gray-900">Orders</h2>
-          <p className="text-gray-500 mt-1">Track and manage all customer orders</p>
+          <h2 className="text-2xl font-bold text-gray-900">Orders</h2>
+          <p className="mt-1 text-gray-500">Track and manage all customer orders</p>
         </div>
         <Button variant="outline">
-          <Download className="w-4 h-4 mr-2" />
+          <Download className="mr-2 h-4 w-4" />
           Export
         </Button>
       </div>
@@ -157,8 +177,13 @@ export function Orders() {
               <CardDescription>{filtered.length} orders</CardDescription>
             </div>
             <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input placeholder="Search orders..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
           </div>
         </CardHeader>
@@ -168,13 +193,25 @@ export function Orders() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order ID</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Customer</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Amount (KES)</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Payment</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Action</th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                      Order ID
+                    </th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                      Customer
+                    </th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Date</th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                      Amount (KES)
+                    </th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                      Payment
+                    </th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                      Status
+                    </th>
+                    <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <TableSkeleton cols={7} />
@@ -182,8 +219,8 @@ export function Orders() {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="flex-wrap h-auto gap-1">
-                {STATUS_TABS.map(t => (
+              <TabsList className="h-auto flex-wrap gap-1">
+                {STATUS_TABS.map((t) => (
                   <TabsTrigger key={t.key} value={t.key}>
                     {t.label} ({count(t.key)})
                   </TabsTrigger>
@@ -192,44 +229,77 @@ export function Orders() {
 
               <TabsContent value={activeTab} className="mt-6">
                 {filtered.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-8 text-center">No orders found.</p>
+                  <p className="py-8 text-center text-sm text-gray-400">No orders found.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Order ID</th>
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Customer</th>
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Date</th>
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Amount (KES)</th>
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Payment</th>
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Status</th>
-                          <th className="text-left py-3 px-3 text-sm font-medium text-gray-700">Action</th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Order ID
+                          </th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Customer
+                          </th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Date
+                          </th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Amount (KES)
+                          </th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Payment
+                          </th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Status
+                          </th>
+                          <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filtered.map(order => (
+                        {filtered.map((order) => (
                           <tr key={order.id} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-3 font-medium text-[#141776] text-sm">{order.orderNumber}</td>
-                            <td className="py-3 px-3">
-                              <div className="font-medium text-sm">{customerName(order)}</div>
-                              <div className="text-xs text-gray-500">{order.customer?.phone ?? '—'}</div>
+                            <td className="px-3 py-3 text-sm font-medium text-[#141776]">
+                              {order.orderNumber}
                             </td>
-                            <td className="py-3 px-3 text-sm text-gray-600">{formatDate(order.createdAt)}</td>
-                            <td className="py-3 px-3 font-medium text-sm">{Number(order.totalKes).toLocaleString()}</td>
-                            <td className="py-3 px-3">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${paymentColors[order.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}>
-                                {paymentLabels[order.paymentMethod ?? ''] ?? order.paymentMethod ?? '—'}
+                            <td className="px-3 py-3">
+                              <div className="text-sm font-medium">{customerName(order)}</div>
+                              <div className="text-xs text-gray-500">
+                                {order.customer?.phone ?? '—'}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-sm text-gray-600">
+                              {formatDate(order.createdAt)}
+                            </td>
+                            <td className="px-3 py-3 text-sm font-medium">
+                              {Number(order.totalKes).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-3">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${paymentColors[order.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
+                              >
+                                {paymentLabels[order.paymentMethod ?? ''] ??
+                                  order.paymentMethod ??
+                                  '—'}
                               </span>
                             </td>
-                            <td className="py-3 px-3">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                            <td className="px-3 py-3">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}`}
+                              >
                                 {STATUS_LABELS[order.status] ?? order.status}
                               </span>
                             </td>
-                            <td className="py-3 px-3">
-                              <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => openOrder(order)}>
-                                <Eye className="w-4 h-4" />
+                            <td className="px-3 py-3">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openOrder(order)}
+                              >
+                                <Eye className="h-4 w-4" />
                               </Button>
                             </td>
                           </tr>
@@ -246,7 +316,7 @@ export function Orders() {
 
       {/* Order Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Order {selected?.orderNumber}</DialogTitle>
             <DialogDescription>Full order details and status management</DialogDescription>
@@ -254,14 +324,16 @@ export function Orders() {
           {selected && (
             <div className="space-y-5">
               {/* Customer info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
                 <div>
                   <p className="text-xs text-gray-500">Customer</p>
                   <p className="font-medium">{customerName(selected)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Contact</p>
-                  <p className="font-medium">{selected.customer?.phone ?? detailShipping?.phone ?? '—'}</p>
+                  <p className="font-medium">
+                    {selected.customer?.phone ?? detailShipping?.phone ?? '—'}
+                  </p>
                   <p className="text-sm text-gray-500">{detailShipping?.city ?? ''}</p>
                 </div>
                 <div>
@@ -270,31 +342,34 @@ export function Orders() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Payment Method</p>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${paymentColors[selected.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${paymentColors[selected.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
+                  >
                     {paymentLabels[selected.paymentMethod ?? ''] ?? selected.paymentMethod ?? '—'}
                   </span>
-                  <p className="text-xs text-gray-400 mt-1">Payment: {selected.paymentStatus}</p>
+                  <p className="mt-1 text-xs text-gray-400">Payment: {selected.paymentStatus}</p>
                 </div>
               </div>
 
               {/* Order items */}
               <div>
-                <p className="font-medium mb-2">Order Items</p>
+                <p className="mb-2 font-medium">Order Items</p>
                 {detailLoading || !detail ? (
                   <div className="space-y-2">
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
                   </div>
                 ) : detail.items.length === 0 ? (
-                  <p className="text-sm text-gray-400 p-4 border rounded-lg">No items found.</p>
+                  <p className="rounded-lg border p-4 text-sm text-gray-400">No items found.</p>
                 ) : (
-                  <div className="border rounded-lg divide-y">
-                    {detail.items.map(item => (
-                      <div key={item.id} className="p-4 flex justify-between items-start">
+                  <div className="divide-y rounded-lg border">
+                    {detail.items.map((item) => (
+                      <div key={item.id} className="flex items-start justify-between p-4">
                         <div>
                           <p className="font-medium">{item.product?.name ?? 'Unknown product'}</p>
-                          <p className="text-sm text-gray-500 mt-0.5">
-                            {item.product?.brand ? `${item.product.brand} · ` : ''}Qty: {item.quantity}
+                          <p className="mt-0.5 text-sm text-gray-500">
+                            {item.product?.brand ? `${item.product.brand} · ` : ''}Qty:{' '}
+                            {item.quantity}
                           </p>
                         </div>
                         <p className="font-semibold">{formatKes(item.lineTotalKes)}</p>
@@ -303,15 +378,25 @@ export function Orders() {
                   </div>
                 )}
                 {detail && (
-                  <div className="flex justify-end mt-3 pt-3 border-t">
-                    <div className="text-right space-y-1">
-                      <p className="text-sm text-gray-500">Subtotal: {formatKes(Number(detail.subtotalKes))}</p>
+                  <div className="mt-3 flex justify-end border-t pt-3">
+                    <div className="space-y-1 text-right">
+                      <p className="text-sm text-gray-500">
+                        Subtotal: {formatKes(Number(detail.subtotalKes))}
+                      </p>
                       {detail.discountKes > 0 && (
-                        <p className="text-sm text-gray-500">Discount: −{formatKes(Number(detail.discountKes))}</p>
+                        <p className="text-sm text-gray-500">
+                          Discount: −{formatKes(Number(detail.discountKes))}
+                        </p>
                       )}
-                      <p className="text-sm text-gray-500">VAT (16%): {formatKes(Number(detail.vatKes))}</p>
-                      <p className="text-sm text-gray-500">Shipping: {formatKes(Number(detail.shippingKes))}</p>
-                      <p className="font-bold text-lg">Total: {formatKes(Number(detail.totalKes))}</p>
+                      <p className="text-sm text-gray-500">
+                        VAT (16%): {formatKes(Number(detail.vatKes))}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Shipping: {formatKes(Number(detail.shippingKes))}
+                      </p>
+                      <p className="text-lg font-bold">
+                        Total: {formatKes(Number(detail.totalKes))}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -320,24 +405,30 @@ export function Orders() {
               {/* Status timeline */}
               {selected.status !== 'cancelled' && (
                 <div>
-                  <p className="font-medium mb-3">Status Timeline</p>
+                  <p className="mb-3 font-medium">Status Timeline</p>
                   <div className="flex items-center gap-2">
                     {STATUS_TIMELINE.map((s, i) => {
                       const current = statusIndex(selected.status);
                       const done = i <= current;
                       const active = i === current;
                       return (
-                        <div key={s} className="flex items-center gap-2 flex-1">
+                        <div key={s} className="flex flex-1 items-center gap-2">
                           <div className="flex flex-col items-center gap-1">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center ${done ? 'bg-[#141776]' : 'bg-gray-200'}`}>
-                              {done && <CheckCircle className="w-4 h-4 text-white" />}
+                            <div
+                              className={`flex h-7 w-7 items-center justify-center rounded-full ${done ? 'bg-[#141776]' : 'bg-gray-200'}`}
+                            >
+                              {done && <CheckCircle className="h-4 w-4 text-white" />}
                             </div>
-                            <span className={`text-xs text-center ${active ? 'font-semibold text-[#141776]' : done ? 'text-gray-700' : 'text-gray-400'}`}>
+                            <span
+                              className={`text-center text-xs ${active ? 'font-semibold text-[#141776]' : done ? 'text-gray-700' : 'text-gray-400'}`}
+                            >
                               {STATUS_LABELS[s]}
                             </span>
                           </div>
                           {i < STATUS_TIMELINE.length - 1 && (
-                            <div className={`flex-1 h-0.5 mb-4 ${i < current ? 'bg-[#141776]' : 'bg-gray-200'}`} />
+                            <div
+                              className={`mb-4 h-0.5 flex-1 ${i < current ? 'bg-[#141776]' : 'bg-gray-200'}`}
+                            />
                           )}
                         </div>
                       );
@@ -348,13 +439,15 @@ export function Orders() {
 
               {/* Update status */}
               <div className="flex items-center gap-3 border-t pt-4">
-                <Select value={newStatus} onValueChange={v => setNewStatus(v as OrderStatus)}>
+                <Select value={newStatus} onValueChange={(v) => setNewStatus(v as OrderStatus)}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Update status..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {DB_STATUSES.map(s => (
-                      <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                    {DB_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -365,14 +458,16 @@ export function Orders() {
                 >
                   {updating ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     'Update'
                   )}
                 </Button>
-                <Button variant="outline" onClick={() => setSelected(null)}>Close</Button>
+                <Button variant="outline" onClick={() => setSelected(null)}>
+                  Close
+                </Button>
               </div>
             </div>
           )}

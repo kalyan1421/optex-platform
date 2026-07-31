@@ -1,15 +1,7 @@
-import {
-  Injectable,
-  Logger,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
-import {
-  MPESA_BASE_URL,
-  darajaTimestamp,
-  isProd,
-} from './payments.constants';
+import { MPESA_BASE_URL, darajaTimestamp, isProd } from './payments.constants';
 
 /** Cached Daraja OAuth token + its absolute expiry (epoch ms). */
 interface CachedToken {
@@ -115,22 +107,17 @@ export class MpesaService {
     }
 
     const { consumerKey, consumerSecret } = this.requireCreds();
-    const basic = Buffer.from(`${consumerKey}:${consumerSecret}`).toString(
-      'base64',
-    );
+    const basic = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
 
     let response: Response;
     try {
-      response = await fetch(
-        `${this.baseUrl()}/oauth/v1/generate?grant_type=client_credentials`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Basic ${basic}`,
-            Accept: 'application/json',
-          },
+      response = await fetch(`${this.baseUrl()}/oauth/v1/generate?grant_type=client_credentials`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Basic ${basic}`,
+          Accept: 'application/json',
         },
-      );
+      });
     } catch (e) {
       this.logger.error(`Daraja OAuth request threw: ${(e as Error).message}`);
       throw new ServiceUnavailableException('M-Pesa authentication failed');
@@ -175,9 +162,7 @@ export class MpesaService {
 
     const token = await this.getAccessToken();
     const timestamp = darajaTimestamp();
-    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString(
-      'base64',
-    );
+    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
     // Daraja rejects fractional amounts on the paybill rails; round to whole KES.
     const amount = Math.max(1, Math.round(params.amount));
@@ -198,27 +183,21 @@ export class MpesaService {
 
     let response: Response;
     try {
-      response = await fetch(
-        `${this.baseUrl()}/mpesa/stkpush/v1/processrequest`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify(payload),
+      response = await fetch(`${this.baseUrl()}/mpesa/stkpush/v1/processrequest`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
-      );
+        body: JSON.stringify(payload),
+      });
     } catch (e) {
       this.logger.error(`Daraja STK push threw: ${(e as Error).message}`);
       throw new ServiceUnavailableException('M-Pesa STK push failed');
     }
 
-    const body = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
 
     if (!response.ok || body.ResponseCode !== '0') {
       const desc =
@@ -241,9 +220,7 @@ export class MpesaService {
     const { shortcode, passkey } = this.requireCreds();
     const token = await this.getAccessToken();
     const timestamp = darajaTimestamp();
-    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString(
-      'base64',
-    );
+    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
     let response: Response;
     try {

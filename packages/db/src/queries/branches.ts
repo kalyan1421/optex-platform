@@ -1,18 +1,16 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, Tables } from '../database.types'
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Tables } from '../database.types';
 
-export type Branch = Tables<'branches'>
+export type Branch = Tables<'branches'>;
 
-export async function listBranches(
-  db: SupabaseClient<Database>,
-): Promise<Branch[]> {
+export async function listBranches(db: SupabaseClient<Database>): Promise<Branch[]> {
   const { data, error } = await db
     .from('branches')
     .select('*')
     .eq('is_active', true)
-    .order('name', { ascending: true })
-  if (error) throw error
-  return data ?? []
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getBranchBySlug(
@@ -24,14 +22,14 @@ export async function getBranchBySlug(
     .select('*')
     .eq('slug', slug)
     .eq('is_active', true)
-    .maybeSingle()
-  if (error) throw error
-  return data
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 export interface BranchHoursDay {
-  open: string
-  close: string
+  open: string;
+  close: string;
 }
 
 /**
@@ -51,11 +49,11 @@ export function formatBranchHours(
     ['fri', 'Friday'],
     ['sat', 'Saturday'],
     ['sun', 'Sunday'],
-  ] as const
-  const obj = (hours ?? {}) as Record<string, [string, string] | null | undefined>
+  ] as const;
+  const obj = (hours ?? {}) as Record<string, [string, string] | null | undefined>;
   return days.map(([key, label]) => {
-    const slot = obj[key]
-    if (!slot || !Array.isArray(slot)) return { day: label, closed: true as const }
-    return { day: label, open: slot[0] ?? '', close: slot[1] ?? '' }
-  })
+    const slot = obj[key];
+    if (!slot || !Array.isArray(slot)) return { day: label, closed: true as const };
+    return { day: label, open: slot[0] ?? '', close: slot[1] ?? '' };
+  });
 }

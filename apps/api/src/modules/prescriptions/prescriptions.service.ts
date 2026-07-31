@@ -21,12 +21,7 @@ const PRESCRIPTIONS_BUCKET = 'prescriptions';
 const SIGNED_URL_TTL = 60;
 
 /** Allowed upload MIME types (scan or photo of a paper prescription). */
-const ALLOWED_MIME = new Set([
-  'application/pdf',
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-]);
+const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']);
 
 /** Max upload size: 10 MB — a sane ceiling for a scan/photo. */
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -89,9 +84,7 @@ export class PrescriptionsService {
       throw new BadRequestException('No file provided');
     }
     if (!ALLOWED_MIME.has(file.mimetype)) {
-      throw new BadRequestException(
-        'Unsupported file type. Allowed: PDF, JPG, PNG',
-      );
+      throw new BadRequestException('Unsupported file type. Allowed: PDF, JPG, PNG');
     }
     if (file.size > MAX_FILE_BYTES) {
       throw new BadRequestException('File too large (max 10 MB)');
@@ -99,9 +92,7 @@ export class PrescriptionsService {
 
     const customerId = await this.resolveOrCreateCustomerId(user);
 
-    const objectPath = `${customerId}/${Date.now()}-${this.sanitizeName(
-      file.originalname,
-    )}`;
+    const objectPath = `${customerId}/${Date.now()}-${this.sanitizeName(file.originalname)}`;
 
     const { error: uploadError } = await this.supabase.client.storage
       .from(PRESCRIPTIONS_BUCKET)
@@ -136,12 +127,8 @@ export class PrescriptionsService {
 
     if (error || !data) {
       // Best-effort cleanup so we never orphan a stored object without a row.
-      await this.supabase.client.storage
-        .from(PRESCRIPTIONS_BUCKET)
-        .remove([objectPath]);
-      throw new BadRequestException(
-        error?.message ?? 'Failed to save prescription',
-      );
+      await this.supabase.client.storage.from(PRESCRIPTIONS_BUCKET).remove([objectPath]);
+      throw new BadRequestException(error?.message ?? 'Failed to save prescription');
     }
 
     return data;
@@ -167,10 +154,7 @@ export class PrescriptionsService {
    * Short-lived signed download URL for the caller's OWN prescription.
    * 404s if the prescription does not exist OR is not theirs (no info leak).
    */
-  async downloadMine(
-    user: AuthUser,
-    id: string,
-  ): Promise<{ url: string; expiresIn: number }> {
+  async downloadMine(user: AuthUser, id: string): Promise<{ url: string; expiresIn: number }> {
     const customerId = await this.resolveCustomerId(user);
     const row = await this.fetchById(id);
 
@@ -202,9 +186,7 @@ export class PrescriptionsService {
   }
 
   /** Short-lived signed download URL for any prescription (admin viewer). */
-  async downloadAsAdmin(
-    id: string,
-  ): Promise<{ url: string; expiresIn: number }> {
+  async downloadAsAdmin(id: string): Promise<{ url: string; expiresIn: number }> {
     const row = await this.fetchById(id);
     if (!row) {
       throw new NotFoundException('Prescription not found');
@@ -215,9 +197,7 @@ export class PrescriptionsService {
   // ── Internals ───────────────────────────────────────────────────────────────
 
   /** Creates a signed URL for a row's stored object path. */
-  private async signFor(
-    row: PrescriptionRow,
-  ): Promise<{ url: string; expiresIn: number }> {
+  private async signFor(row: PrescriptionRow): Promise<{ url: string; expiresIn: number }> {
     if (!row.file_url) {
       throw new NotFoundException('Prescription has no file');
     }
@@ -227,9 +207,7 @@ export class PrescriptionsService {
       .createSignedUrl(row.file_url, SIGNED_URL_TTL);
 
     if (error || !data?.signedUrl) {
-      throw new InternalServerErrorException(
-        'Failed to generate download URL',
-      );
+      throw new InternalServerErrorException('Failed to generate download URL');
     }
     return { url: data.signedUrl, expiresIn: SIGNED_URL_TTL };
   }
@@ -317,7 +295,10 @@ export class PrescriptionsService {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
         .slice(0, 60) || fallback;
-    const safeExt = ext.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8);
+    const safeExt = ext
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .slice(0, 8);
 
     return safeExt ? `${safeBase}.${safeExt}` : safeBase;
   }

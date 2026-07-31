@@ -1,10 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../auth/decorators';
 import type { Env } from '../../config/env';
 import { ContactDto } from './dto/contact.dto';
@@ -40,8 +36,7 @@ export class ContactController {
   })
   async submit(@Body() dto: ContactDto): Promise<ContactResponse> {
     const inbox =
-      this.config.get('CONTACT_INBOX', { infer: true }) ??
-      ContactController.DEFAULT_INBOX;
+      this.config.get('CONTACT_INBOX', { infer: true }) ?? ContactController.DEFAULT_INBOX;
 
     const subject = `[Contact] ${dto.subject ?? 'New enquiry'}`;
     const lines = [
@@ -53,9 +48,7 @@ export class ContactController {
       dto.message,
     ];
     const text = lines.join('\n');
-    const html = lines
-      .map((line) => (line === '' ? '<br/>' : escapeHtml(line)))
-      .join('<br/>');
+    const html = lines.map((line) => (line === '' ? '<br/>' : escapeHtml(line))).join('<br/>');
 
     await this.email.sendEmail({ to: inbox, subject, text, html });
 

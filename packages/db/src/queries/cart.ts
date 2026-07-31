@@ -1,21 +1,18 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, Json, Tables } from '../database.types'
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json, Tables } from '../database.types';
 
-export type Cart = Tables<'carts'>
-export type CartItem = Tables<'cart_items'>
+export type Cart = Tables<'carts'>;
+export type CartItem = Tables<'cart_items'>;
 
 export interface CartItemWithProduct extends CartItem {
-  product: Pick<
-    Tables<'products'>,
-    'id' | 'slug' | 'name' | 'brand' | 'images' | 'price_kes'
-  >
+  product: Pick<Tables<'products'>, 'id' | 'slug' | 'name' | 'brand' | 'images' | 'price_kes'>;
 }
 
 export interface CartView {
-  cartId: string
-  items: CartItemWithProduct[]
-  subtotalKes: number
-  itemCount: number
+  cartId: string;
+  items: CartItemWithProduct[];
+  subtotalKes: number;
+  itemCount: number;
 }
 
 /**
@@ -35,16 +32,16 @@ export async function getOrCreateCart(
   // ignoreDuplicates: true → ON CONFLICT DO NOTHING (safe for concurrent tabs)
   await db
     .from('carts')
-    .upsert({ customer_id: customerId }, { onConflict: 'customer_id', ignoreDuplicates: true })
+    .upsert({ customer_id: customerId }, { onConflict: 'customer_id', ignoreDuplicates: true });
 
   // Always re-select — works whether we just inserted or hit the conflict path.
   const { data: cart, error } = await db
     .from('carts')
     .select('*')
     .eq('customer_id', customerId)
-    .single()
-  if (error) throw error
-  return cart
+    .single();
+  if (error) throw error;
+  return cart;
 }
 
 /**
@@ -55,7 +52,7 @@ export async function getCartView(
   db: SupabaseClient<Database>,
   customerId: string,
 ): Promise<CartView | null> {
-  const cart = await getOrCreateCart(db, customerId)
+  const cart = await getOrCreateCart(db, customerId);
   const { data, error } = await db
     .from('cart_items')
     .select(
@@ -69,8 +66,8 @@ export async function getCartView(
       `,
     )
     .eq('cart_id', cart.id)
-    .order('id', { ascending: true })
-  if (error) throw error
+    .order('id', { ascending: true });
+  if (error) throw error;
 
   // PostgREST returns the implicit-join column either as an object (single
   // row) or null if the FK row was deleted out from under us. We use
@@ -79,20 +76,20 @@ export async function getCartView(
   // cart page on render.
   const rawItems = (data ?? []) as Array<
     CartItem & { product: CartItemWithProduct['product'] | null }
-  >
+  >;
   const items: CartItemWithProduct[] = rawItems.filter(
     (i): i is CartItemWithProduct => i.product !== null,
-  )
-  const subtotalKes = items.reduce((s, i) => s + Number(i.product.price_kes) * i.quantity, 0)
-  const itemCount = items.reduce((s, i) => s + i.quantity, 0)
-  return { cartId: cart.id, items, subtotalKes, itemCount }
+  );
+  const subtotalKes = items.reduce((s, i) => s + Number(i.product.price_kes) * i.quantity, 0);
+  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  return { cartId: cart.id, items, subtotalKes, itemCount };
 }
 
 export interface AddCartItemInput {
-  customerId: string
-  productId: string
-  quantity?: number
-  lensOption?: Json | null
+  customerId: string;
+  productId: string;
+  quantity?: number;
+  lensOption?: Json | null;
 }
 
 /**
@@ -104,8 +101,8 @@ export async function addCartItem(
   db: SupabaseClient<Database>,
   input: AddCartItemInput,
 ): Promise<CartItem> {
-  const cart = await getOrCreateCart(db, input.customerId)
-  const qty = Math.max(1, input.quantity ?? 1)
+  const cart = await getOrCreateCart(db, input.customerId);
+  const qty = Math.max(1, input.quantity ?? 1);
 
   // Find an existing line that matches BOTH product_id AND lens_option. The
   // unique key is (cart_id, product_id, lens_option), so two adds with
@@ -115,15 +112,16 @@ export async function addCartItem(
   // reliably for our schema. Instead we read-modify-write, and on the
   // off-chance two requests race and both try to INSERT, the unique
   // constraint catches one — we recover by re-selecting and incrementing.
-  const lensOption = input.lensOption ?? null
+  const lensOption = input.lensOption ?? null;
   let select = db
     .from('cart_items')
     .select('*')
     .eq('cart_id', cart.id)
-    .eq('product_id', input.productId)
-  select = lensOption === null ? select.is('lens_option', null) : select.eq('lens_option', lensOption)
-  const { data: existing, error: selectError } = await select.maybeSingle()
-  if (selectError) throw selectError
+    .eq('product_id', input.productId);
+  select =
+    lensOption === null ? select.is('lens_option', null) : select.eq('lens_option', lensOption);
+  const { data: existing, error: selectError } = await select.maybeSingle();
+  if (selectError) throw selectError;
 
   if (existing) {
     // H-6 FIX: Use the atomic DB function instead of a stale read-modify-write.
@@ -134,9 +132,9 @@ export async function addCartItem(
     const { data, error } = await (db as any).rpc('increment_cart_item_qty', {
       item_id: existing.id,
       delta: qty,
-    })
-    if (error) throw error
-    return (Array.isArray(data) ? data[0] : data) as CartItem
+    });
+    if (error) throw error;
+    return (Array.isArray(data) ? data[0] : data) as CartItem;
   }
 
   const { data, error } = await db
@@ -148,7 +146,7 @@ export async function addCartItem(
       lens_option: lensOption,
     })
     .select()
-    .single()
+    .single();
   if (error) {
     // 23505 = unique_violation. A concurrent request beat us to the insert;
     // use the atomic RPC to bump the winner's quantity rather than re-reading
@@ -158,22 +156,24 @@ export async function addCartItem(
         .from('cart_items')
         .select('id')
         .eq('cart_id', cart.id)
-        .eq('product_id', input.productId)
+        .eq('product_id', input.productId);
       raceSelect =
-        lensOption === null ? raceSelect.is('lens_option', null) : raceSelect.eq('lens_option', lensOption)
-      const { data: winner, error: raceError } = await raceSelect.maybeSingle()
-      if (raceError || !winner) throw raceError ?? error
+        lensOption === null
+          ? raceSelect.is('lens_option', null)
+          : raceSelect.eq('lens_option', lensOption);
+      const { data: winner, error: raceError } = await raceSelect.maybeSingle();
+      if (raceError || !winner) throw raceError ?? error;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: bumped, error: bumpError } = await (db as any).rpc('increment_cart_item_qty', {
         item_id: winner.id,
         delta: qty,
-      })
-      if (bumpError) throw bumpError
-      return (Array.isArray(bumped) ? bumped[0] : bumped) as CartItem
+      });
+      if (bumpError) throw bumpError;
+      return (Array.isArray(bumped) ? bumped[0] : bumped) as CartItem;
     }
-    throw error
+    throw error;
   }
-  return data
+  return data;
 }
 
 export async function updateCartItemQuantity(
@@ -182,37 +182,28 @@ export async function updateCartItemQuantity(
   quantity: number,
 ): Promise<CartItem | null> {
   if (quantity <= 0) {
-    await removeCartItem(db, itemId)
-    return null
+    await removeCartItem(db, itemId);
+    return null;
   }
   const { data, error } = await db
     .from('cart_items')
     .update({ quantity })
     .eq('id', itemId)
     .select()
-    .single()
-  if (error) throw error
-  return data
+    .single();
+  if (error) throw error;
+  return data;
 }
 
-export async function removeCartItem(
-  db: SupabaseClient<Database>,
-  itemId: string,
-): Promise<void> {
-  const { error } = await db.from('cart_items').delete().eq('id', itemId)
-  if (error) throw error
+export async function removeCartItem(db: SupabaseClient<Database>, itemId: string): Promise<void> {
+  const { error } = await db.from('cart_items').delete().eq('id', itemId);
+  if (error) throw error;
 }
 
 /** Delete all items in a cart in a single round-trip. */
-export async function clearCart(
-  db: SupabaseClient<Database>,
-  cartId: string,
-): Promise<void> {
-  const { error } = await db
-    .from('cart_items')
-    .delete()
-    .eq('cart_id', cartId)
-  if (error) throw error
+export async function clearCart(db: SupabaseClient<Database>, cartId: string): Promise<void> {
+  const { error } = await db.from('cart_items').delete().eq('cart_id', cartId);
+  if (error) throw error;
 }
 
 /**
@@ -227,12 +218,9 @@ export async function getCartItemCount(
     .from('carts')
     .select('id')
     .eq('customer_id', customerId)
-    .maybeSingle()
-  if (!cart) return 0
-  const { data, error } = await db
-    .from('cart_items')
-    .select('quantity')
-    .eq('cart_id', cart.id)
-  if (error) throw error
-  return (data ?? []).reduce((s, r) => s + r.quantity, 0)
+    .maybeSingle();
+  if (!cart) return 0;
+  const { data, error } = await db.from('cart_items').select('quantity').eq('cart_id', cart.id);
+  if (error) throw error;
+  return (data ?? []).reduce((s, r) => s + r.quantity, 0);
 }

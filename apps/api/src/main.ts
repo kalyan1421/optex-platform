@@ -80,10 +80,7 @@ async function bootstrap(): Promise<void> {
     .setTitle('OPTEX API')
     .setDescription('Backend API for the OPTEX eyewear retail platform (Kenya)')
     .setVersion('0.1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'supabase',
-    )
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'supabase')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);

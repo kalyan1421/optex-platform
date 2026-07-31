@@ -1,10 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
-import {
-  DASHBOARD_RANGE_DAYS,
-  DashboardQueryDto,
-  DashboardRange,
-} from './dto/dashboard-query.dto';
+import { DASHBOARD_RANGE_DAYS, DashboardQueryDto, DashboardRange } from './dto/dashboard-query.dto';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import {
   AnalyticsResponse,
@@ -93,13 +89,12 @@ export class AdminMetricsService {
     const fromIso = from.toISOString();
     const toIso = to.toISOString();
 
-    const [paidOrders, customerCount, recentOrders, topProducts] =
-      await Promise.all([
-        this.fetchPaidOrderRevenue(fromIso, toIso),
-        this.countCustomers(),
-        this.fetchRecentOrders(RECENT_ORDERS_LIMIT),
-        this.fetchTopProducts(fromIso, toIso, TOP_PRODUCTS_LIMIT),
-      ]);
+    const [paidOrders, customerCount, recentOrders, topProducts] = await Promise.all([
+      this.fetchPaidOrderRevenue(fromIso, toIso),
+      this.countCustomers(),
+      this.fetchRecentOrders(RECENT_ORDERS_LIMIT),
+      this.fetchTopProducts(fromIso, toIso, TOP_PRODUCTS_LIMIT),
+    ]);
 
     const kpis = this.computeKpis(paidOrders, customerCount);
     const dailyRevenue = this.bucketByDay(paidOrders);
@@ -150,10 +145,7 @@ export class AdminMetricsService {
    * Revenue rows (`total_kes`, `created_at`) for paid, fulfilled orders in the
    * window. Bounded by {@link ROW_CAP}.
    */
-  private async fetchPaidOrderRevenue(
-    fromIso: string,
-    toIso: string,
-  ): Promise<OrderRevenueRow[]> {
+  private async fetchPaidOrderRevenue(fromIso: string, toIso: string): Promise<OrderRevenueRow[]> {
     const { data, error } = await this.supabase.client
       .from('orders')
       .select('total_kes, created_at')
@@ -199,14 +191,9 @@ export class AdminMetricsService {
         payment_status: string;
         payment_method: string | null;
         created_at: string;
-        customer:
-          | { email: string | null }
-          | { email: string | null }[]
-          | null;
+        customer: { email: string | null } | { email: string | null }[] | null;
       };
-      const customer = Array.isArray(row.customer)
-        ? row.customer[0]
-        : row.customer;
+      const customer = Array.isArray(row.customer) ? row.customer[0] : row.customer;
       return {
         id: row.id,
         orderNumber: row.order_number,
@@ -239,10 +226,7 @@ export class AdminMetricsService {
    * on the embedded parent order via PostgREST inner-join filters so only rows
    * whose order is a real sale come back. Bounded by {@link ROW_CAP}.
    */
-  private async fetchPaidOrderItems(
-    fromIso: string,
-    toIso: string,
-  ): Promise<OrderItemRow[]> {
+  private async fetchPaidOrderItems(fromIso: string, toIso: string): Promise<OrderItemRow[]> {
     const { data, error } = await this.supabase.client
       .from('order_items')
       .select(
@@ -262,17 +246,10 @@ export class AdminMetricsService {
 
   // ───────────────────────── aggregation helpers ────────────────────────────
 
-  private computeKpis(
-    orders: OrderRevenueRow[],
-    customerCount: number,
-  ): DashboardKpis {
-    const totalRevenueKes = orders.reduce(
-      (sum, o) => sum + Number(o.total_kes),
-      0,
-    );
+  private computeKpis(orders: OrderRevenueRow[], customerCount: number): DashboardKpis {
+    const totalRevenueKes = orders.reduce((sum, o) => sum + Number(o.total_kes), 0);
     const orderCount = orders.length;
-    const averageOrderValueKes =
-      orderCount > 0 ? totalRevenueKes / orderCount : 0;
+    const averageOrderValueKes = orderCount > 0 ? totalRevenueKes / orderCount : 0;
 
     return {
       totalRevenueKes,
@@ -282,18 +259,11 @@ export class AdminMetricsService {
     };
   }
 
-  private computeSummary(
-    orders: OrderRevenueRow[],
-    items: OrderItemRow[],
-  ): SalesSummary {
-    const totalRevenueKes = orders.reduce(
-      (sum, o) => sum + Number(o.total_kes),
-      0,
-    );
+  private computeSummary(orders: OrderRevenueRow[], items: OrderItemRow[]): SalesSummary {
+    const totalRevenueKes = orders.reduce((sum, o) => sum + Number(o.total_kes), 0);
     const orderCount = orders.length;
     const unitsSold = items.reduce((sum, i) => sum + Number(i.quantity), 0);
-    const averageOrderValueKes =
-      orderCount > 0 ? totalRevenueKes / orderCount : 0;
+    const averageOrderValueKes = orderCount > 0 ? totalRevenueKes / orderCount : 0;
 
     return {
       totalRevenueKes,
@@ -332,10 +302,7 @@ export class AdminMetricsService {
   }
 
   /** Fold order items into top-N products by revenue. */
-  private aggregateTopProducts(
-    items: OrderItemRow[],
-    limit: number,
-  ): TopProduct[] {
+  private aggregateTopProducts(items: OrderItemRow[], limit: number): TopProduct[] {
     const map = new Map<string, TopProduct>();
     for (const item of items) {
       if (!item.product_id) continue;
@@ -366,9 +333,7 @@ export class AdminMetricsService {
    * then resolves names in a single `categories` lookup. Items whose product
    * has no category fall into an "Uncategorized" bucket.
    */
-  private async aggregateRevenueByCategory(
-    items: OrderItemRow[],
-  ): Promise<CategoryRevenue[]> {
+  private async aggregateRevenueByCategory(items: OrderItemRow[]): Promise<CategoryRevenue[]> {
     const byCategory = new Map<
       string,
       { categoryId: string | null; revenueKes: number; units: number }
@@ -379,8 +344,7 @@ export class AdminMetricsService {
       const categoryId = product?.category_id ?? null;
       const key = categoryId ?? '__none__';
       const lineRevenue = Number(item.quantity) * Number(item.unit_price_kes);
-      const existing =
-        byCategory.get(key) ?? { categoryId, revenueKes: 0, units: 0 };
+      const existing = byCategory.get(key) ?? { categoryId, revenueKes: 0, units: 0 };
       existing.revenueKes += lineRevenue;
       existing.units += Number(item.quantity);
       byCategory.set(key, existing);
@@ -405,9 +369,7 @@ export class AdminMetricsService {
   }
 
   /** Resolve category ids → names. Returns an empty map when given no ids. */
-  private async fetchCategoryNames(
-    ids: string[],
-  ): Promise<Map<string, string>> {
+  private async fetchCategoryNames(ids: string[]): Promise<Map<string, string>> {
     const unique = Array.from(new Set(ids));
     if (unique.length === 0) return new Map();
 
@@ -451,9 +413,7 @@ export class AdminMetricsService {
     }
     const spanDays = (to.getTime() - from.getTime()) / MS_PER_DAY;
     if (spanDays > MAX_ANALYTICS_DAYS) {
-      throw new BadRequestException(
-        `Date range too large (max ${MAX_ANALYTICS_DAYS} days)`,
-      );
+      throw new BadRequestException(`Date range too large (max ${MAX_ANALYTICS_DAYS} days)`);
     }
 
     return { fromIso: from.toISOString(), toIso: to.toISOString() };

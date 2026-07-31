@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
 import { PESAPAL_BASE_URL, isProd } from './payments.constants';
@@ -90,9 +86,7 @@ export class PesapalService {
 
   private baseUrl(): string {
     const nodeEnv = this.config.get('NODE_ENV', { infer: true });
-    return isProd(nodeEnv)
-      ? PESAPAL_BASE_URL.production
-      : PESAPAL_BASE_URL.sandbox;
+    return isProd(nodeEnv) ? PESAPAL_BASE_URL.production : PESAPAL_BASE_URL.sandbox;
   }
 
   /** Returns a cached/fresh Pesapal auth token. */
@@ -136,9 +130,7 @@ export class PesapalService {
     }
 
     // Pesapal tokens are valid ~5 minutes; honour expiryDate when present.
-    const expiresAt = body.expiryDate
-      ? new Date(body.expiryDate).getTime()
-      : now + 5 * 60 * 1000;
+    const expiresAt = body.expiryDate ? new Date(body.expiryDate).getTime() : now + 5 * 60 * 1000;
     this.tokenCache = { token: body.token, expiresAt };
     return body.token;
   }
@@ -148,9 +140,7 @@ export class PesapalService {
    * customer must be sent to. Requires a registered IPN id (`PESAPAL_IPN_ID`)
    * and a callback URL.
    */
-  async submitOrder(
-    params: PesapalSubmitParams,
-  ): Promise<PesapalSubmitResponse> {
+  async submitOrder(params: PesapalSubmitParams): Promise<PesapalSubmitResponse> {
     this.requireCreds();
     const ipnId = this.config.get('PESAPAL_IPN_ID', { infer: true });
     const callbackUrl =
@@ -180,34 +170,29 @@ export class PesapalService {
 
     let response: Response;
     try {
-      response = await fetch(
-        `${this.baseUrl()}/api/Transactions/SubmitOrderRequest`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify(payload),
+      response = await fetch(`${this.baseUrl()}/api/Transactions/SubmitOrderRequest`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
-      );
+        body: JSON.stringify(payload),
+      });
     } catch (e) {
       this.logger.error(`Pesapal submit threw: ${(e as Error).message}`);
       throw new ServiceUnavailableException('Pesapal order submission failed');
     }
 
-    const body = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    > & { order_tracking_id?: string; redirect_url?: string };
+    const body = (await response.json().catch(() => ({}))) as Record<string, unknown> & {
+      order_tracking_id?: string;
+      redirect_url?: string;
+    };
 
     // M-6 FIX: treat any non-null error object as a failure, including {} (empty
     // object). The previous check missed {} because Object.keys({}).length === 0.
     const hasError =
-      body.error !== null &&
-      body.error !== undefined &&
-      typeof body.error === 'object';
+      body.error !== null && body.error !== undefined && typeof body.error === 'object';
 
     if (!response.ok || hasError || !body.order_tracking_id || !body.redirect_url) {
       this.logger.error(
@@ -224,9 +209,7 @@ export class PesapalService {
    * authoritative call used by both the IPN webhook and the status endpoint —
    * never trust the IPN body.
    */
-  async getTransactionStatus(
-    orderTrackingId: string,
-  ): Promise<PesapalTransactionStatus> {
+  async getTransactionStatus(orderTrackingId: string): Promise<PesapalTransactionStatus> {
     this.requireCreds();
     const token = await this.getAccessToken();
 
@@ -247,14 +230,10 @@ export class PesapalService {
       throw new ServiceUnavailableException('Pesapal status query failed');
     }
 
-    const body = (await response
-      .json()
-      .catch(() => ({}))) as PesapalTransactionStatus;
+    const body = (await response.json().catch(() => ({}))) as PesapalTransactionStatus;
 
     if (!response.ok) {
-      this.logger.error(
-        `Pesapal status non-OK (${response.status}): ${JSON.stringify(body)}`,
-      );
+      this.logger.error(`Pesapal status non-OK (${response.status}): ${JSON.stringify(body)}`);
       throw new ServiceUnavailableException('Pesapal status query failed');
     }
 

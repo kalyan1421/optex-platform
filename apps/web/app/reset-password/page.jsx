@@ -50,36 +50,45 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f8f9fa] flex items-center justify-center px-4 py-16">
+    <main className="flex min-h-screen items-center justify-center bg-[#f8f9fa] px-4 py-16">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1A1A2E] mb-2">Set New Password</h1>
-          <p className="text-gray-500 text-sm">Choose a strong password for your account.</p>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-[#1A1A2E]">Set New Password</h1>
+          <p className="text-sm text-gray-500">Choose a strong password for your account.</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
           {done ? (
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <div className="space-y-4 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <svg
+                  className="h-8 w-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <h2 className="text-lg font-semibold text-gray-900">Password updated!</h2>
               <p className="text-sm text-gray-500">Redirecting you to sign in…</p>
-              <Link href="/login" className="inline-block mt-2 text-sm font-semibold text-[#2A3182] hover:underline">
+              <Link
+                href="/login"
+                className="mt-2 inline-block text-sm font-semibold text-[#2A3182] hover:underline"
+              >
                 Sign In now
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
+                <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                   {error}
                   {error.includes('expired') && (
                     <span>
                       {' '}
-                      <Link href="/forgot-password" className="underline font-semibold">
+                      <Link href="/forgot-password" className="font-semibold underline">
                         Request new link
                       </Link>
                     </span>
@@ -88,7 +97,7 @@ export default function ResetPasswordPage() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
                   New Password
                 </label>
                 <input
@@ -98,12 +107,12 @@ export default function ResetPasswordPage() {
                   required
                   minLength={6}
                   placeholder="At least 6 characters"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2A3182] focus:bg-white transition-colors"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
                   Confirm Password
                 </label>
                 <input
@@ -112,14 +121,14 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setConfirmPw(e.target.value)}
                   required
                   placeholder="Repeat your new password"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2A3182] focus:bg-white transition-colors"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white focus:outline-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading || !sessionReady}
-                className="w-full py-3 bg-[#2A3182] text-white font-bold text-sm rounded-xl hover:bg-[#1a1a5c] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-[#2A3182] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Updating…' : 'Set New Password'}
               </button>

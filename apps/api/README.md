@@ -41,13 +41,13 @@ pnpm dev:api
 
 Other scripts (run with `pnpm --filter @optex/api <script>`):
 
-| Script      | What it does                       |
-| ----------- | ---------------------------------- |
-| `dev`       | `nest start --watch`               |
-| `build`     | `nest build` → `dist/`             |
-| `start`     | `node dist/main.js`                |
-| `typecheck` | `tsc --noEmit`                     |
-| `lint`      | type-check (no eslint wired yet)   |
+| Script      | What it does                     |
+| ----------- | -------------------------------- |
+| `dev`       | `nest start --watch`             |
+| `build`     | `nest build` → `dist/`           |
+| `start`     | `node dist/main.js`              |
+| `typecheck` | `tsc --noEmit`                   |
+| `lint`      | type-check (no eslint wired yet) |
 
 The server listens on `PORT` (default **4000**), all routes are under `/api`:
 

@@ -12,11 +12,7 @@ import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 import { MpesaService } from './mpesa.service';
 import { PesapalService } from './pesapal.service';
-import {
-  FINAL_TX_STATUSES,
-  TX_STATUS,
-  normalizeKenyanMsisdn,
-} from './payments.constants';
+import { FINAL_TX_STATUSES, TX_STATUS, normalizeKenyanMsisdn } from './payments.constants';
 import {
   AdminListPaymentsQueryDto,
   PaymentProviderFilter,
@@ -172,12 +168,8 @@ export class PaymentsService {
       // Unique violation = a row for this CheckoutRequestID already exists
       // (Daraja replayed the same id). Treat as already-initiated, not fatal.
       if (error.code !== '23505') {
-        this.logger.error(
-          `Failed to persist M-Pesa transaction: ${error.message}`,
-        );
-        throw new InternalServerErrorException(
-          'Could not record the payment attempt.',
-        );
+        this.logger.error(`Failed to persist M-Pesa transaction: ${error.message}`);
+        throw new InternalServerErrorException('Could not record the payment attempt.');
       }
     }
 
@@ -194,10 +186,7 @@ export class PaymentsService {
    * Query the live status of an STK push (authed) and reconcile if the push has
    * resolved. Order ownership is checked via the stored transaction's order.
    */
-  async queryMpesaStatus(
-    authUserId: string,
-    checkoutRequestId: string,
-  ): Promise<MpesaStatusView> {
+  async queryMpesaStatus(authUserId: string, checkoutRequestId: string): Promise<MpesaStatusView> {
     const tx = await this.findMpesaTxByCheckout(checkoutRequestId);
     if (!tx) {
       throw new NotFoundException('No M-Pesa transaction for that request id.');
@@ -208,8 +197,7 @@ export class PaymentsService {
     }
 
     const result = await this.mpesa.stkQuery(checkoutRequestId);
-    const resultCode =
-      result.ResultCode !== undefined ? Number(result.ResultCode) : null;
+    const resultCode = result.ResultCode !== undefined ? Number(result.ResultCode) : null;
 
     // Reconcile from the query result if it resolved and the tx is still open.
     if (resultCode !== null && !FINAL_TX_STATUSES.includes(tx.status)) {
@@ -252,17 +240,13 @@ export class PaymentsService {
     if (!tx) {
       // Unknown CheckoutRequestID — log the raw payload for manual recon but
       // still ack so Daraja stops retrying.
-      this.logger.warn(
-        `M-Pesa callback for unknown CheckoutRequestID ${stk.CheckoutRequestID}`,
-      );
+      this.logger.warn(`M-Pesa callback for unknown CheckoutRequestID ${stk.CheckoutRequestID}`);
       return;
     }
 
     // IDEMPOTENCY: ignore if this transaction already reached a final state.
     if (FINAL_TX_STATUSES.includes(tx.status)) {
-      this.logger.log(
-        `M-Pesa callback ignored — tx ${tx.id} already ${tx.status}`,
-      );
+      this.logger.log(`M-Pesa callback ignored — tx ${tx.id} already ${tx.status}`);
       return;
     }
 
@@ -306,10 +290,7 @@ export class PaymentsService {
     // what we pushed (tx.amount_kes, itself derived from order.total_kes at push
     // time). A mismatch (underpayment, tampered/replayed callback) is recorded
     // for manual reconciliation and never auto-credits the order.
-    if (
-      info.amount !== undefined &&
-      Math.abs(Number(info.amount) - Number(tx.amount_kes)) > 0.01
-    ) {
+    if (info.amount !== undefined && Math.abs(Number(info.amount) - Number(tx.amount_kes)) > 0.01) {
       this.logger.error(
         `M-Pesa amount mismatch on tx ${tx.id}: expected ${tx.amount_kes}, paid ${info.amount} — holding for manual reconcile`,
       );
@@ -338,9 +319,7 @@ export class PaymentsService {
       .update({
         mpesa_ref: mpesaRef,
         status: TX_STATUS.MATCHED,
-        customer_phone: info.phoneNumber
-          ? String(info.phoneNumber)
-          : tx.customer_phone,
+        customer_phone: info.phoneNumber ? String(info.phoneNumber) : tx.customer_phone,
         raw: {
           ...(tx.raw ?? {}),
           stage: 'callback_success',
@@ -400,14 +379,8 @@ export class PaymentsService {
   // ───────────────────────── Pesapal ─────────────────────────────────────
 
   /** Initiate a Pesapal payment for one of the caller's pending orders. */
-  async initiatePesapal(
-    authUserId: string,
-    orderId: string,
-  ): Promise<PesapalInitiateResult> {
-    const { order, customer } = await this.resolveOwnedOrder(
-      authUserId,
-      orderId,
-    );
+  async initiatePesapal(authUserId: string, orderId: string): Promise<PesapalInitiateResult> {
+    const { order, customer } = await this.resolveOwnedOrder(authUserId, orderId);
     this.assertPayable(order);
 
     const [firstName, ...rest] = (customer?.full_name ?? '').trim().split(' ');
@@ -436,9 +409,7 @@ export class PaymentsService {
     });
     if (error && error.code !== '23505') {
       this.logger.error(`Failed to persist Pesapal transaction: ${error.message}`);
-      throw new InternalServerErrorException(
-        'Could not record the payment attempt.',
-      );
+      throw new InternalServerErrorException('Could not record the payment attempt.');
     }
 
     // Record the tracking id on the order for cross-reference (best-effort).
@@ -483,15 +454,11 @@ export class PaymentsService {
     }
     const tx = await this.findPesapalTx(orderTrackingId);
     if (!tx) {
-      this.logger.warn(
-        `Pesapal IPN for unknown OrderTrackingId ${orderTrackingId}`,
-      );
+      this.logger.warn(`Pesapal IPN for unknown OrderTrackingId ${orderTrackingId}`);
       return;
     }
     if (FINAL_TX_STATUSES.includes(tx.status ?? '')) {
-      this.logger.log(
-        `Pesapal IPN ignored — tx ${tx.id} already ${tx.status}`,
-      );
+      this.logger.log(`Pesapal IPN ignored — tx ${tx.id} already ${tx.status}`);
       return;
     }
     await this.reconcilePesapal(tx);
@@ -502,9 +469,7 @@ export class PaymentsService {
    * Returns the resolved status view.
    */
   private async reconcilePesapal(tx: PesapalTxRow): Promise<PesapalStatusView> {
-    const remote = await this.pesapal.getTransactionStatus(
-      tx.pesapal_order_id,
-    );
+    const remote = await this.pesapal.getTransactionStatus(tx.pesapal_order_id);
     const code = remote.status_code ?? null;
     const desc = remote.payment_status_description ?? null;
 
@@ -589,10 +554,8 @@ export class PaymentsService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
 
-    const wantMpesa =
-      !query.provider || query.provider === PaymentProviderFilter.MPESA;
-    const wantPesapal =
-      !query.provider || query.provider === PaymentProviderFilter.PESAPAL;
+    const wantMpesa = !query.provider || query.provider === PaymentProviderFilter.MPESA;
+    const wantPesapal = !query.provider || query.provider === PaymentProviderFilter.PESAPAL;
 
     const collected: AdminPaymentView[] = [];
 
@@ -604,9 +567,7 @@ export class PaymentsService {
         );
       if (query.status) q = q.eq('status', query.status);
       if (query.orderId) q = q.eq('order_id', query.orderId);
-      const { data, error } = await q
-        .order('received_at', { ascending: false })
-        .limit(500);
+      const { data, error } = await q.order('received_at', { ascending: false }).limit(500);
       if (error) throw new BadRequestException(error.message);
       for (const r of (data ?? []) as unknown as (MpesaTxRow & {
         order: { order_number: string } | null;
@@ -634,9 +595,7 @@ export class PaymentsService {
         );
       if (query.status) q = q.eq('status', query.status);
       if (query.orderId) q = q.eq('order_id', query.orderId);
-      const { data, error } = await q
-        .order('received_at', { ascending: false })
-        .limit(500);
+      const { data, error } = await q.order('received_at', { ascending: false }).limit(500);
       if (error) throw new BadRequestException(error.message);
       for (const r of (data ?? []) as unknown as (PesapalTxRow & {
         order: { order_number: string } | null;
@@ -656,10 +615,7 @@ export class PaymentsService {
       }
     }
 
-    collected.sort(
-      (a, b) =>
-        new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime(),
-    );
+    collected.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 
     const total = collected.length;
     const start = (page - 1) * pageSize;
@@ -679,9 +635,7 @@ export class PaymentsService {
     if (provider === ReconcileProvider.MPESA) {
       const { data, error } = await this.db
         .from('mpesa_transactions')
-        .select(
-          'id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at',
-        )
+        .select('id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at')
         .eq('id', transactionId)
         .maybeSingle();
       if (error) throw new BadRequestException(error.message);
@@ -691,8 +645,7 @@ export class PaymentsService {
 
       // The CheckoutRequestID lives in raw; if absent (already swapped to a
       // receipt) we can't re-query, so report the stored state.
-      const checkoutId =
-        (tx.raw?.CheckoutRequestID as string | undefined) ?? null;
+      const checkoutId = (tx.raw?.CheckoutRequestID as string | undefined) ?? null;
       if (!checkoutId) {
         return {
           provider: 'mpesa',
@@ -702,14 +655,12 @@ export class PaymentsService {
           orderId: tx.order_id,
           orderMarkedPaid: tx.status === TX_STATUS.MATCHED,
           changed: false,
-          detail:
-            'No CheckoutRequestID stored to re-query; transaction already resolved.',
+          detail: 'No CheckoutRequestID stored to re-query; transaction already resolved.',
         };
       }
 
       const result = await this.mpesa.stkQuery(checkoutId);
-      const resultCode =
-        result.ResultCode !== undefined ? Number(result.ResultCode) : null;
+      const resultCode = result.ResultCode !== undefined ? Number(result.ResultCode) : null;
 
       if (resultCode === null) {
         return {
@@ -752,9 +703,7 @@ export class PaymentsService {
     // Pesapal
     const { data, error } = await this.db
       .from('pesapal_transactions')
-      .select(
-        'id, pesapal_order_id, amount_kes, method, order_id, raw, status, received_at',
-      )
+      .select('id, pesapal_order_id, amount_kes, method, order_id, raw, status, received_at')
       .eq('id', transactionId)
       .maybeSingle();
     if (error) throw new BadRequestException(error.message);
@@ -885,9 +834,7 @@ export class PaymentsService {
 
     const { data: order, error: orderErr } = await this.db
       .from('orders')
-      .select(
-        'id, order_number, customer_id, total_kes, status, payment_status, payment_method',
-      )
+      .select('id, order_number, customer_id, total_kes, status, payment_status, payment_method')
       .eq('id', orderId)
       .maybeSingle();
     if (orderErr) throw new BadRequestException(orderErr.message);
@@ -909,9 +856,7 @@ export class PaymentsService {
       throw new ConflictException('This order has already been paid.');
     }
     if (order.status !== 'pending_payment') {
-      throw new ConflictException(
-        `Order is not awaiting payment (status: ${order.status}).`,
-      );
+      throw new ConflictException(`Order is not awaiting payment (status: ${order.status}).`);
     }
     if (!(order.total_kes > 0)) {
       throw new BadRequestException('Order total must be greater than zero.');
@@ -942,13 +887,9 @@ export class PaymentsService {
       .update(patch)
       .eq('id', orderId)
       .neq('payment_status', 'paid') // idempotency guard: only transition once
-      .select(
-        'id, order_number, customer_id, total_kes, status, payment_status',
-      );
+      .select('id, order_number, customer_id, total_kes, status, payment_status');
     if (error) {
-      this.logger.error(
-        `Failed to credit order ${orderId} (${provider}): ${error.message}`,
-      );
+      this.logger.error(`Failed to credit order ${orderId} (${provider}): ${error.message}`);
       return;
     }
     if (!data || data.length === 0) {
@@ -1007,20 +948,14 @@ export class PaymentsService {
 
   // ─── Transaction lookups ───
 
-  private async findMpesaTxByCheckout(
-    checkoutRequestId: string,
-  ): Promise<MpesaTxRow | null> {
+  private async findMpesaTxByCheckout(checkoutRequestId: string): Promise<MpesaTxRow | null> {
     // The CheckoutRequestID is stored both as `mpesa_ref` (pre-receipt) and in
     // `raw.CheckoutRequestID`. Match either so we find the row before AND after
     // the receipt swap.
     const { data, error } = await this.db
       .from('mpesa_transactions')
-      .select(
-        'id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at',
-      )
-      .or(
-        `mpesa_ref.eq.${checkoutRequestId},raw->>CheckoutRequestID.eq.${checkoutRequestId}`,
-      )
+      .select('id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at')
+      .or(`mpesa_ref.eq.${checkoutRequestId},raw->>CheckoutRequestID.eq.${checkoutRequestId}`)
       .order('received_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -1031,14 +966,10 @@ export class PaymentsService {
     return (data as MpesaTxRow | null) ?? null;
   }
 
-  private async findPesapalTx(
-    orderTrackingId: string,
-  ): Promise<PesapalTxRow | null> {
+  private async findPesapalTx(orderTrackingId: string): Promise<PesapalTxRow | null> {
     const { data, error } = await this.db
       .from('pesapal_transactions')
-      .select(
-        'id, pesapal_order_id, amount_kes, method, order_id, raw, status, received_at',
-      )
+      .select('id, pesapal_order_id, amount_kes, method, order_id, raw, status, received_at')
       .eq('pesapal_order_id', orderTrackingId)
       .maybeSingle();
     if (error) {
@@ -1055,9 +986,7 @@ export class PaymentsService {
     if (!body || typeof body !== 'object') return null;
     const b = body as Record<string, unknown>;
     const outer = (b.Body ?? b.body) as Record<string, unknown> | undefined;
-    const stk = (outer?.stkCallback ?? b.stkCallback) as
-      | Record<string, unknown>
-      | undefined;
+    const stk = (outer?.stkCallback ?? b.stkCallback) as Record<string, unknown> | undefined;
     if (!stk) return null;
     return stk as StkCallback;
   }

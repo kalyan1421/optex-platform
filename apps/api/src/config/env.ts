@@ -8,9 +8,7 @@ import { z } from 'zod';
  * M-Pesa (Daraja), Pesapal, Africa's Talking, and Resend are wired up.
  */
 export const envSchema = z.object({
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
 
   // --- Supabase (required) ---

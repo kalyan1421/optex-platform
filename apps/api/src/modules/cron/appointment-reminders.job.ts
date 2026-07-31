@@ -95,17 +95,13 @@ export class AppointmentRemindersJob {
       const sent1 = await this.processBucket('1h', now + HOUR_MS);
 
       if (sent24 + sent1 > 0) {
-        this.logger.log(
-          `Appointment reminders sent — 24h: ${sent24}, 1h: ${sent1}.`,
-        );
+        this.logger.log(`Appointment reminders sent — 24h: ${sent24}, 1h: ${sent1}.`);
       } else {
         this.logger.debug('Appointment reminders: nothing due this run.');
       }
     } catch (err) {
       // A thrown cron job is just noise — swallow and log.
-      this.logger.error(
-        `Appointment reminders run failed: ${(err as Error).message}`,
-      );
+      this.logger.error(`Appointment reminders run failed: ${(err as Error).message}`);
     }
   }
 
@@ -130,9 +126,7 @@ export class AppointmentRemindersJob {
       .limit(200);
 
     if (error) {
-      this.logger.error(
-        `Failed to load ${bucket} reminder appointments: ${error.message}`,
-      );
+      this.logger.error(`Failed to load ${bucket} reminder appointments: ${error.message}`);
       return 0;
     }
 
@@ -143,17 +137,12 @@ export class AppointmentRemindersJob {
       // Prefer the linked customer's phone; fall back to the guest contact_phone.
       const phone = (appt.customer?.phone ?? appt.contact_phone ?? '').trim();
       if (!phone) {
-        this.logger.debug(
-          `Appointment ${appt.id} has no phone — skipping ${bucket} reminder.`,
-        );
+        this.logger.debug(`Appointment ${appt.id} has no phone — skipping ${bucket} reminder.`);
         continue;
       }
 
       try {
-        const result = await this.sms.sendSms(
-          phone,
-          this.buildMessage(bucket, appt),
-        );
+        const result = await this.sms.sendSms(phone, this.buildMessage(bucket, appt));
         // SmsService no-ops (returns {ok:false}) without creds — that's fine,
         // it logs its own warning; we just don't count it as delivered.
         if (result.ok) sent += 1;

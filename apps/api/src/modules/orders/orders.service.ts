@@ -8,11 +8,7 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
-import {
-  CheckoutDeliveryOption,
-  CheckoutDto,
-  CheckoutPaymentMethod,
-} from './dto/checkout.dto';
+import { CheckoutDeliveryOption, CheckoutDto, CheckoutPaymentMethod } from './dto/checkout.dto';
 import { OrderStatus } from './dto/admin-list-orders-query.dto';
 import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
@@ -116,10 +112,7 @@ export class OrdersService {
    * client supplies only the payment method, shipping address, delivery option,
    * and an optional promo code.
    */
-  async checkout(
-    authUserId: string,
-    dto: CheckoutDto,
-  ): Promise<CheckoutResultView> {
+  async checkout(authUserId: string, dto: CheckoutDto): Promise<CheckoutResultView> {
     const customer = await this.resolveCustomer(authUserId);
 
     const deliveryOption = dto.deliveryOption ?? CheckoutDeliveryOption.DELIVERY;
@@ -138,29 +131,22 @@ export class OrdersService {
     // Atomic checkout. place_order RAISEs readable, user-facing messages for
     // validation failures (empty cart, unavailable items, invalid/expired/
     // capped promo); surface them to the caller as 400s.
-    const { data: placed, error } = await this.supabase.client.rpc(
-      'place_order',
-      {
-        p_customer_id: customer.id,
-        p_payment_method: dto.paymentMethod,
-        p_shipping: shipping,
-        p_delivery_option: deliveryOption,
-        p_promo_code: promoCode,
-      },
-    );
+    const { data: placed, error } = await this.supabase.client.rpc('place_order', {
+      p_customer_id: customer.id,
+      p_payment_method: dto.paymentMethod,
+      p_shipping: shipping,
+      p_delivery_option: deliveryOption,
+      p_promo_code: promoCode,
+    });
     if (error) {
       throw new BadRequestException(error.message);
     }
 
     // place_order RETURNS a single `orders` row; the JS client may surface it as
     // the object or a one-element array depending on typing — handle both.
-    const placedRow = (Array.isArray(placed) ? placed[0] : placed) as
-      | { id: string }
-      | null;
+    const placedRow = (Array.isArray(placed) ? placed[0] : placed) as { id: string } | null;
     if (!placedRow?.id) {
-      throw new InternalServerErrorException(
-        'Checkout did not return an order.',
-      );
+      throw new InternalServerErrorException('Checkout did not return an order.');
     }
     const orderId = placedRow.id;
 
@@ -178,8 +164,7 @@ export class OrdersService {
           status: 'confirmed',
           orderId,
           amountKes: detail.totalKes,
-          message:
-            'Order received. Payment will be collected on delivery (COD).',
+          message: 'Order received. Payment will be collected on delivery (COD).',
         }
       : {
           method: dto.paymentMethod,
@@ -229,10 +214,7 @@ export class OrdersService {
   }
 
   /** Full detail for one of the caller's orders. 404 if not theirs. */
-  async getOrderDetail(
-    authUserId: string,
-    orderId: string,
-  ): Promise<OrderDetailView> {
+  async getOrderDetail(authUserId: string, orderId: string): Promise<OrderDetailView> {
     const customer = await this.resolveCustomer(authUserId);
 
     const { data, error } = await this.supabase.client
@@ -267,10 +249,7 @@ export class OrdersService {
    * enum onto the Received → Processing → Dispatched → Delivered stages (W-2
    * fix). Cancelled orders are flagged and light no further stages.
    */
-  async getTracking(
-    authUserId: string,
-    orderId: string,
-  ): Promise<OrderTrackingView> {
+  async getTracking(authUserId: string, orderId: string): Promise<OrderTrackingView> {
     const customer = await this.resolveCustomer(authUserId);
 
     const { data, error } = await this.supabase.client
@@ -293,9 +272,7 @@ export class OrdersService {
     }
 
     const cancelled = row.status === OrderStatus.CANCELLED;
-    const currentIndex = cancelled
-      ? -1
-      : (STATUS_TO_STAGE_INDEX[row.status] ?? -1);
+    const currentIndex = cancelled ? -1 : (STATUS_TO_STAGE_INDEX[row.status] ?? -1);
 
     const stages: TrackingStageView[] = TRACKING_STAGES.map((stage, idx) => ({
       key: stage.key,
@@ -382,10 +359,7 @@ export class OrdersService {
    * persists the new status (and optional note), and fires best-effort SMS +
    * email when the order is dispatched or delivered.
    */
-  async adminUpdateStatus(
-    orderId: string,
-    dto: AdminOrderStatusDto,
-  ): Promise<OrderDetailView> {
+  async adminUpdateStatus(orderId: string, dto: AdminOrderStatusDto): Promise<OrderDetailView> {
     const { data: current, error: readError } = await this.supabase.client
       .from('orders')
       .select('id, status, notes, customer_id')
@@ -422,10 +396,7 @@ export class OrdersService {
     // than stashing them as a hidden property on the view object.
     const { detail, contact } = await this.adminGetOrderDetailWithContact(orderId);
 
-    if (
-      nextStatus === OrderStatus.DISPATCHED ||
-      nextStatus === OrderStatus.DELIVERED
-    ) {
+    if (nextStatus === OrderStatus.DISPATCHED || nextStatus === OrderStatus.DELIVERED) {
       void this.sendStatusUpdate(detail, contact);
     }
 
@@ -503,9 +474,7 @@ export class OrdersService {
     };
     return {
       detail: this.toDetail(row),
-      contact: row.customer
-        ? { email: row.customer.email, phone: row.customer.phone }
-        : null,
+      contact: row.customer ? { email: row.customer.email, phone: row.customer.phone } : null,
     };
   }
 
@@ -519,10 +488,7 @@ export class OrdersService {
   private toSummary(
     row: OrderRow & { order_items?: { quantity: number }[] | null },
   ): OrderSummaryView {
-    const itemCount = (row.order_items ?? []).reduce(
-      (s, i) => s + (i.quantity ?? 0),
-      0,
-    );
+    const itemCount = (row.order_items ?? []).reduce((s, i) => s + (i.quantity ?? 0), 0);
     return {
       id: row.id,
       orderNumber: row.order_number,
@@ -639,8 +605,7 @@ export class OrdersService {
   ): Promise<void> {
     const shipping = order.shipping as { phone?: string } | null;
     const phone = contact?.phone ?? shipping?.phone ?? null;
-    const verb =
-      order.status === OrderStatus.DELIVERED ? 'delivered' : 'dispatched';
+    const verb = order.status === OrderStatus.DELIVERED ? 'delivered' : 'dispatched';
 
     try {
       if (contact?.email) {
@@ -651,10 +616,7 @@ export class OrdersService {
         });
       }
       if (phone) {
-        await this.sms.sendSms(
-          phone,
-          `Optex: your order ${order.orderNumber} has been ${verb}.`,
-        );
+        await this.sms.sendSms(phone, `Optex: your order ${order.orderNumber} has been ${verb}.`);
       }
     } catch (e) {
       this.logger.warn(
@@ -718,20 +680,18 @@ interface OrderDetailRow {
   notes: string | null;
   created_at: string;
   customer_id: string;
-  order_items:
-    | Array<{
-        id: string;
-        product_id: string;
-        quantity: number;
-        unit_price_kes: number;
-        lens_option: unknown | null;
-        product: {
-          id: string;
-          slug: string;
-          name: string;
-          brand: string | null;
-          images: string[] | null;
-        } | null;
-      }>
-    | null;
+  order_items: Array<{
+    id: string;
+    product_id: string;
+    quantity: number;
+    unit_price_kes: number;
+    lens_option: unknown | null;
+    product: {
+      id: string;
+      slug: string;
+      name: string;
+      brand: string | null;
+      images: string[] | null;
+    } | null;
+  }> | null;
 }

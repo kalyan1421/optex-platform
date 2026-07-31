@@ -124,17 +124,13 @@ export class PromotionsService {
     value: number,
     subtotalKes: number,
   ): number {
-    const raw =
-      discountType === 'percent' ? (subtotalKes * value) / 100 : value;
+    const raw = discountType === 'percent' ? (subtotalKes * value) / 100 : value;
     const clamped = Math.min(Math.max(raw, 0), subtotalKes);
     return Math.round(clamped * 100) / 100;
   }
 
   /** Build a failed-validation result that still echoes the code's details. */
-  private invalid(
-    promo: PromoCodeRow,
-    message: string,
-  ): PromoValidationResultDto {
+  private invalid(promo: PromoCodeRow, message: string): PromoValidationResultDto {
     return {
       valid: false,
       code: promo.code,
@@ -176,10 +172,7 @@ export class PromotionsService {
   }
 
   /** Patch a promo code by id. Re-uppercases `code` when present. */
-  async updateCode(
-    id: string,
-    dto: UpdatePromoCodeDto,
-  ): Promise<PromoCodeRow> {
+  async updateCode(id: string, dto: UpdatePromoCodeDto): Promise<PromoCodeRow> {
     const payload: Record<string, unknown> = { ...dto };
     if (typeof payload.code === 'string') {
       payload.code = payload.code.trim().toUpperCase();
@@ -247,10 +240,7 @@ export class PromotionsService {
   }
 
   /** Patch a promo banner by id. */
-  async updateBanner(
-    id: string,
-    dto: UpdatePromoBannerDto,
-  ): Promise<PromoBannerRow> {
+  async updateBanner(id: string, dto: UpdatePromoBannerDto): Promise<PromoBannerRow> {
     const { data, error } = await this.supabase.client
       .from('promo_banners')
       .update({ ...dto })

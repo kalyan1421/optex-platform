@@ -20,8 +20,7 @@ import { BranchHoursDto } from './branch-hours.dto';
  */
 export class CreateBranchDto {
   @ApiProperty({
-    description:
-      'URL-friendly unique identifier (lowercase letters, digits, hyphens).',
+    description: 'URL-friendly unique identifier (lowercase letters, digits, hyphens).',
     example: 'nairobi-cbd',
     maxLength: 80,
   })

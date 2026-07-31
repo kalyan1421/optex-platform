@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
 import type { AuthResult, AuthUserView } from './dto/auth-views';
@@ -52,11 +47,7 @@ export class AuthFlowService {
   }
 
   /** Create an account. Returns a session when email confirmation is off. */
-  async signup(
-    email: string,
-    password: string,
-    fullName?: string,
-  ): Promise<AuthResult> {
+  async signup(email: string, password: string, fullName?: string): Promise<AuthResult> {
     const data = await this.post<GoTrueSession>('signup', {
       email,
       password,
@@ -80,11 +71,7 @@ export class AuthFlowService {
 
   // ── internals ──────────────────────────────────────────────────────────────
 
-  private async post<T>(
-    path: string,
-    body: unknown,
-    bearer?: string,
-  ): Promise<T> {
+  private async post<T>(path: string, body: unknown, bearer?: string): Promise<T> {
     let res: Response;
     try {
       res = await fetch(`${this.baseUrl}/auth/v1/${path}`, {

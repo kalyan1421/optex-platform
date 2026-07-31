@@ -33,7 +33,8 @@ export class CreatePromoCodeDto {
   code!: string;
 
   @ApiProperty({
-    description: "Discount type: 'percent' applies value as a percentage; 'fixed' applies value as KES.",
+    description:
+      "Discount type: 'percent' applies value as a percentage; 'fixed' applies value as KES.",
     enum: DiscountKind,
     example: DiscountKind.Percent,
   })
@@ -41,7 +42,8 @@ export class CreatePromoCodeDto {
   discount_type!: DiscountKind;
 
   @ApiProperty({
-    description: 'Discount value. Percentage (0-100) for percent codes, KES amount for fixed codes. Must be > 0.',
+    description:
+      'Discount value. Percentage (0-100) for percent codes, KES amount for fixed codes. Must be > 0.',
     example: 10,
     minimum: 0,
   })

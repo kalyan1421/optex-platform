@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * Shared OPTEX API client for the super-admin panel.
@@ -11,18 +11,19 @@
  * Base URL comes from `NEXT_PUBLIC_API_URL`; falls back to the local API in dev.
  */
 
-import { createApiClient, type ApiClient } from '@optex/api-client'
-import { createBrowserSupabase } from '@optex/db/browser'
+import { createApiClient, type ApiClient } from '@optex/api-client';
+import { createBrowserSupabase } from '@optex/db/browser';
 
-const baseUrl = typeof window !== 'undefined'
-  ? window.location.origin
-  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1111')
+const baseUrl =
+  typeof window !== 'undefined'
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1111';
 
 export const api: ApiClient = createApiClient({
   baseUrl,
   getAccessToken: async () => {
-    const supabase = createBrowserSupabase()
-    const { data } = await supabase.auth.getSession()
-    return data.session?.access_token ?? null
+    const supabase = createBrowserSupabase();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
   },
-})
+});

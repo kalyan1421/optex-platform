@@ -38,14 +38,10 @@ export class EmailService {
    */
   async sendEmail(input: SendEmailInput): Promise<EmailResult> {
     const apiKey = this.config.get('RESEND_API_KEY', { infer: true });
-    const from =
-      this.config.get('RESEND_FROM', { infer: true }) ??
-      EmailService.DEFAULT_FROM;
+    const from = this.config.get('RESEND_FROM', { infer: true }) ?? EmailService.DEFAULT_FROM;
 
     if (!apiKey) {
-      this.logger.warn(
-        'Resend API key missing (RESEND_API_KEY); skipping email send',
-      );
+      this.logger.warn('Resend API key missing (RESEND_API_KEY); skipping email send');
       return { ok: false };
     }
 
@@ -68,9 +64,7 @@ export class EmailService {
 
       if (!response.ok) {
         const detail = await response.text().catch(() => '');
-        this.logger.error(
-          `Resend email send failed (${response.status}): ${detail}`,
-        );
+        this.logger.error(`Resend email send failed (${response.status}): ${detail}`);
         return { ok: false };
       }
 

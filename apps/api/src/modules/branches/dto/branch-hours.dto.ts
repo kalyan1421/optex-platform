@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsOptional,
-  IsString,
-  Matches,
-} from 'class-validator';
+import { IsArray, IsOptional, IsString, Matches } from 'class-validator';
 
 /**
  * Opening hours for a single weekday, expressed as `[open, close]` 24h `HH:MM`

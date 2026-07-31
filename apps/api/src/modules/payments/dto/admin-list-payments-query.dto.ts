@@ -22,8 +22,7 @@ export class AdminListPaymentsQueryDto {
   provider?: PaymentProviderFilter;
 
   @ApiPropertyOptional({
-    description:
-      'Transaction status filter (pending | matched | failed | reversed)',
+    description: 'Transaction status filter (pending | matched | failed | reversed)',
   })
   @IsString()
   @IsOptional()

@@ -27,8 +27,7 @@ export interface BranchRow {
 }
 
 /** Columns selected for every branch response. */
-const BRANCH_COLUMNS =
-  'id, slug, name, address, phone, lat, lng, hours, is_active, created_at';
+const BRANCH_COLUMNS = 'id, slug, name, address, phone, lat, lng, hours, is_active, created_at';
 
 /**
  * Data access for retail branches. Reads/writes the `branches` table through
@@ -99,9 +98,7 @@ export class BranchesService {
 
     if (error) {
       if (error.code === '23505') {
-        throw new BadRequestException(
-          `A branch with slug "${dto.slug}" already exists`,
-        );
+        throw new BadRequestException(`A branch with slug "${dto.slug}" already exists`);
       }
       this.logger.error(`Failed to create branch: ${error.message}`);
       throw new InternalServerErrorException('Failed to create branch');
@@ -130,9 +127,7 @@ export class BranchesService {
 
     if (error) {
       if (error.code === '23505') {
-        throw new BadRequestException(
-          `A branch with slug "${dto.slug}" already exists`,
-        );
+        throw new BadRequestException(`A branch with slug "${dto.slug}" already exists`);
       }
       this.logger.error(`Failed to update branch ${id}: ${error.message}`);
       throw new InternalServerErrorException('Failed to update branch');
@@ -147,10 +142,7 @@ export class BranchesService {
     // Confirm existence so the caller gets a 404 instead of a no-op delete.
     await this.findById(id);
 
-    const { error } = await this.supabase.client
-      .from('branches')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('branches').delete().eq('id', id);
 
     if (error) {
       this.logger.error(`Failed to delete branch ${id}: ${error.message}`);

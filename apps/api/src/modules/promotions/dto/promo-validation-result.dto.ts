@@ -19,7 +19,8 @@ export class PromoValidationResultDto {
   code!: string;
 
   @ApiPropertyOptional({
-    description: "Discount type from the promo record ('percent' or 'fixed'). Absent if the code does not exist.",
+    description:
+      "Discount type from the promo record ('percent' or 'fixed'). Absent if the code does not exist.",
     example: 'percent',
     enum: ['percent', 'fixed'],
   })

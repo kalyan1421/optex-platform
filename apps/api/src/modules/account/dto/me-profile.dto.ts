@@ -7,8 +7,7 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class MeProfileDto {
   @ApiProperty({
-    description:
-      "Customer's auth user id (Supabase `auth.users.id`). Stable identity.",
+    description: "Customer's auth user id (Supabase `auth.users.id`). Stable identity.",
     example: '3f1a7b2c-9d4e-4c8a-bb12-0a1b2c3d4e5f',
   })
   id!: string;

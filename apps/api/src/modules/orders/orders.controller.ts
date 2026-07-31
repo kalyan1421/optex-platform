@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import { CheckoutDto } from './dto/checkout.dto';
@@ -33,7 +25,7 @@ export class OrdersController {
 
   @Post('checkout')
   @ApiOperation({
-    summary: 'Place an order from the caller\'s cart (server-side repricing)',
+    summary: "Place an order from the caller's cart (server-side repricing)",
   })
   @ApiCreatedResponse({
     description: 'The created order plus a payment instruction block',
@@ -67,11 +59,10 @@ export class OrdersController {
 
   @Get('orders/:id/tracking')
   @ApiOperation({
-    summary: 'Status timeline for one of the caller\'s orders',
+    summary: "Status timeline for one of the caller's orders",
   })
   @ApiOkResponse({
-    description:
-      'Received → Processing → Dispatched → Delivered stage timeline',
+    description: 'Received → Processing → Dispatched → Delivered stage timeline',
   })
   getTracking(
     @CurrentUser('id') authUserId: string,

@@ -52,11 +52,7 @@ import { SupabaseModule } from './supabase/supabase.module';
                 options: { singleLine: true, colorize: true },
               },
         redact: {
-          paths: [
-            'req.headers.authorization',
-            'req.headers.cookie',
-            'res.headers["set-cookie"]',
-          ],
+          paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
           remove: true,
         },
       },

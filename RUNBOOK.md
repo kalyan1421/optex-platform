@@ -4,14 +4,14 @@ One place to run every part of the stack — **Supabase** (DB/Auth/Storage/Kong)
 **API** (NestJS), **Web** storefront, and **Admin** panel — in local dev and in
 production.
 
-| Service | Local port | Local URL | Production |
-|---|---|---|---|
-| Supabase gateway (Kong) | 54321 | http://localhost:54321 | Hosted Supabase project (`https://<ref>.supabase.co`) |
-| Supabase Studio | 54323 | http://localhost:54323 | Supabase dashboard |
-| Postgres | 54322 | `localhost:54322` | Managed by Supabase Cloud |
-| NestJS API | 4000 (Docker) / 1111 (`pnpm dev:api`) | http://localhost:4000 · docs `/api/docs` · health `/api/health` | Your container host, e.g. `https://api.optexopticians.co.ke` |
-| Web storefront | 1112 | http://localhost:1112 | Vercel, e.g. `https://optexopticians.co.ke` |
-| Admin panel | 1113 | http://localhost:1113 | Vercel, e.g. `https://admin.optexopticians.co.ke` |
+| Service                 | Local port                            | Local URL                                                       | Production                                                   |
+| ----------------------- | ------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
+| Supabase gateway (Kong) | 54321                                 | http://localhost:54321                                          | Hosted Supabase project (`https://<ref>.supabase.co`)        |
+| Supabase Studio         | 54323                                 | http://localhost:54323                                          | Supabase dashboard                                           |
+| Postgres                | 54322                                 | `localhost:54322`                                               | Managed by Supabase Cloud                                    |
+| NestJS API              | 4000 (Docker) / 1111 (`pnpm dev:api`) | http://localhost:4000 · docs `/api/docs` · health `/api/health` | Your container host, e.g. `https://api.optexopticians.co.ke` |
+| Web storefront          | 1112                                  | http://localhost:1112                                           | Vercel, e.g. `https://optexopticians.co.ke`                  |
+| Admin panel             | 1113                                  | http://localhost:1113                                           | Vercel, e.g. `https://admin.optexopticians.co.ke`            |
 
 > Ports were moved off 3000/3001/4000 for local dev to avoid collisions with
 > other local processes — `docker-compose.yml`'s **API container** still uses
@@ -83,7 +83,7 @@ loop** (a migration failing partway, then re-failing with `already exists`
 on retry), don't try to fix it forward — `pnpm docker:reset` wipes the
 volume and starts clean. Partial DDL from a failed migration doesn't roll
 back on its own; `docker/migrate.sh` runs each file inside
-`psql --single-transaction` specifically so a *future* failure rolls back
+`psql --single-transaction` specifically so a _future_ failure rolls back
 cleanly instead of wedging like this.
 
 ### 1.3 Run Web and Admin
@@ -155,19 +155,19 @@ pnpm build          # production build of every package/app (regenerates DB type
 
 ### 1.7 Local troubleshooting
 
-| Symptom | Cause / fix |
-|---|---|
-| `supabase-migrate` keeps restarting / `type "X" already exists` | Wedged partial migration — `pnpm docker:reset` |
-| `supabase-studio` / `supabase/postgres-meta` image pull fails ("not found") | Old pinned tag pruned from Docker Hub — check `docker-compose.yml` still references live tags |
-| API image build fails: `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` | Needs `ENV CI=true` in `apps/api/Dockerfile` (already fixed — if it recurs, that env var got removed) |
-| `supabase-storage` shows `unhealthy` but storage works fine | Healthcheck hitting `localhost` resolves to `::1`; storage only binds IPv4. Compose healthcheck should target `127.0.0.1:5000` |
-| API exits at boot: "Invalid environment configuration" | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` missing in `apps/api/.env` |
-| Next.js: "Missing required env var: NEXT_PUBLIC_SUPABASE_URL" | Create `apps/web/.env.local` / `apps/admin/.env.local` and **restart** the dev server (Next reads env at startup only) |
-| Checkout/payments fail in the web app | API not running, or `NEXT_PUBLIC_API_URL` wrong — confirm `curl :4000/api/health` (or `:1111`) |
-| CORS error in browser console | Add the app origin to `CORS_ORIGINS` in `apps/api/.env` |
-| Admin pages redirect to `/login` forever | Signed-in user lacks `app_metadata.role = 'super_admin'` — see 1.4 |
-| Docker API can't reach a host-run Supabase (`supabase start` instead of `docker:up`) | Point `SUPABASE_URL` at `http://host.docker.internal:54321`, not `localhost` |
-| Port already in use | `lsof -i :1111 -i :1112 -i :1113 -i :54321 -i :54322 -i :54323`, kill the stale process, or `pkill -f "next dev"` |
+| Symptom                                                                              | Cause / fix                                                                                                                    |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `supabase-migrate` keeps restarting / `type "X" already exists`                      | Wedged partial migration — `pnpm docker:reset`                                                                                 |
+| `supabase-studio` / `supabase/postgres-meta` image pull fails ("not found")          | Old pinned tag pruned from Docker Hub — check `docker-compose.yml` still references live tags                                  |
+| API image build fails: `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`                  | Needs `ENV CI=true` in `apps/api/Dockerfile` (already fixed — if it recurs, that env var got removed)                          |
+| `supabase-storage` shows `unhealthy` but storage works fine                          | Healthcheck hitting `localhost` resolves to `::1`; storage only binds IPv4. Compose healthcheck should target `127.0.0.1:5000` |
+| API exits at boot: "Invalid environment configuration"                               | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` missing in `apps/api/.env`                                                        |
+| Next.js: "Missing required env var: NEXT_PUBLIC_SUPABASE_URL"                        | Create `apps/web/.env.local` / `apps/admin/.env.local` and **restart** the dev server (Next reads env at startup only)         |
+| Checkout/payments fail in the web app                                                | API not running, or `NEXT_PUBLIC_API_URL` wrong — confirm `curl :4000/api/health` (or `:1111`)                                 |
+| CORS error in browser console                                                        | Add the app origin to `CORS_ORIGINS` in `apps/api/.env`                                                                        |
+| Admin pages redirect to `/login` forever                                             | Signed-in user lacks `app_metadata.role = 'super_admin'` — see 1.4                                                             |
+| Docker API can't reach a host-run Supabase (`supabase start` instead of `docker:up`) | Point `SUPABASE_URL` at `http://host.docker.internal:54321`, not `localhost`                                                   |
+| Port already in use                                                                  | `lsof -i :1111 -i :1112 -i :1113 -i :54321 -i :54322 -i :54323`, kill the stale process, or `pkill -f "next dev"`              |
 
 ---
 
@@ -226,10 +226,10 @@ Health check for your host's readiness probe: `GET /api/health`.
 
 Each app is an independent Vercel project pointed at this monorepo:
 
-| App | Root directory | Build command | Output |
-|---|---|---|---|
-| web | `apps/web` | `cd ../.. && pnpm --filter @optex/web build` | `.next` |
-| admin | `apps/admin` | `cd ../.. && pnpm --filter @optex/admin build` | `.next` |
+| App   | Root directory | Build command                                  | Output  |
+| ----- | -------------- | ---------------------------------------------- | ------- |
+| web   | `apps/web`     | `cd ../.. && pnpm --filter @optex/web build`   | `.next` |
+| admin | `apps/admin`   | `cd ../.. && pnpm --filter @optex/admin build` | `.next` |
 
 Set environment variables per project from
 [apps/web/.env.production.example](apps/web/.env.production.example) and
@@ -295,26 +295,26 @@ curl -s https://api.optexopticians.co.ke/api/products?limit=1   # confirms DB co
 
 ### 2.7 Production troubleshooting
 
-| Symptom | Cause / fix |
-|---|---|
-| Web/Admin build fine but API calls fail in prod | `NEXT_PUBLIC_API_URL` unset/wrong in Vercel env, or API host down — check `/api/health` directly |
-| Browser console CORS errors in prod | API's `CORS_ORIGINS` doesn't exactly match the deployed origin |
+| Symptom                                                   | Cause / fix                                                                                                                                        |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web/Admin build fine but API calls fail in prod           | `NEXT_PUBLIC_API_URL` unset/wrong in Vercel env, or API host down — check `/api/health` directly                                                   |
+| Browser console CORS errors in prod                       | API's `CORS_ORIGINS` doesn't exactly match the deployed origin                                                                                     |
 | Admin login succeeds but every page redirects to `/login` | User's `app_metadata.role` isn't `super_admin` — re-run 2.4's promotion against production, and confirm you set `app_metadata` not `user_metadata` |
-| M-Pesa/Pesapal callbacks never arrive | Callback/IPN URL not publicly reachable, or not registered with the provider — re-check 2.5 |
-| API container fails to boot | Missing required env var — same validation as local (see 1.7), check container logs for "Invalid environment configuration" |
-| DB schema drift between environments | Migrations applied locally but not pushed — `cd Backend && supabase db push --linked` |
+| M-Pesa/Pesapal callbacks never arrive                     | Callback/IPN URL not publicly reachable, or not registered with the provider — re-check 2.5                                                        |
+| API container fails to boot                               | Missing required env var — same validation as local (see 1.7), check container logs for "Invalid environment configuration"                        |
+| DB schema drift between environments                      | Migrations applied locally but not pushed — `cd Backend && supabase db push --linked`                                                              |
 
 ---
 
 ## Reference
 
-| Document | Description |
-|---|---|
-| [README.md](README.md) | Architecture, tech stack, package map |
-| [COMMANDS.md](COMMANDS.md) | Every dev command in one place |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch strategy, PR process, code style |
-| [CLAUDE.md](CLAUDE.md) | Repo layout + current known-gap notes for AI-assisted work |
-| [docs/AUDIT.md](docs/AUDIT.md) | Tech-debt audit, Figma-to-code comparison |
-| [docs/MISSING_FEATURES.md](docs/MISSING_FEATURES.md) | SOW feature gap analysis |
-| [docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md) | NestJS module map + API contract |
-| [Backend/README.md](Backend/README.md) | Supabase CLI workflow for the hosted project |
+| Document                                                     | Description                                                |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| [README.md](README.md)                                       | Architecture, tech stack, package map                      |
+| [COMMANDS.md](COMMANDS.md)                                   | Every dev command in one place                             |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                           | Branch strategy, PR process, code style                    |
+| [CLAUDE.md](CLAUDE.md)                                       | Repo layout + current known-gap notes for AI-assisted work |
+| [docs/AUDIT.md](docs/AUDIT.md)                               | Tech-debt audit, Figma-to-code comparison                  |
+| [docs/MISSING_FEATURES.md](docs/MISSING_FEATURES.md)         | SOW feature gap analysis                                   |
+| [docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md) | NestJS module map + API contract                           |
+| [Backend/README.md](Backend/README.md)                       | Supabase CLI workflow for the hosted project               |

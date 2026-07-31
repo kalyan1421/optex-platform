@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import { CartService, CartView } from './cart.service';
@@ -36,10 +27,7 @@ export class CartController {
   @Post('items')
   @ApiOperation({ summary: 'Add a product to the cart (or increment quantity)' })
   @ApiOkResponse({ description: 'The updated cart' })
-  addItem(
-    @CurrentUser('id') authUserId: string,
-    @Body() dto: AddCartItemDto,
-  ): Promise<CartView> {
+  addItem(@CurrentUser('id') authUserId: string, @Body() dto: AddCartItemDto): Promise<CartView> {
     return this.cart.addItem(authUserId, dto.productId, dto.quantity ?? 1);
   }
 
@@ -69,10 +57,7 @@ export class CartController {
   @Post('apply-promo')
   @ApiOperation({ summary: 'Validate and apply a promo code to the cart' })
   @ApiOkResponse({ description: 'The updated cart with the applied discount' })
-  applyPromo(
-    @CurrentUser('id') authUserId: string,
-    @Body() dto: ApplyPromoDto,
-  ): Promise<CartView> {
+  applyPromo(@CurrentUser('id') authUserId: string, @Body() dto: ApplyPromoDto): Promise<CartView> {
     return this.cart.applyPromo(authUserId, dto.code);
   }
 

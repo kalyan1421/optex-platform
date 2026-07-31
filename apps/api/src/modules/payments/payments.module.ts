@@ -33,11 +33,7 @@ import { WebhooksController } from './webhooks.controller';
  * upcoming Cron module can reuse the Daraja/Pesapal clients for status polling.
  */
 @Module({
-  controllers: [
-    PaymentsController,
-    WebhooksController,
-    PaymentsAdminController,
-  ],
+  controllers: [PaymentsController, WebhooksController, PaymentsAdminController],
   providers: [PaymentsService, MpesaService, PesapalService],
   exports: [PaymentsService, MpesaService, PesapalService],
 })

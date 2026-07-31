@@ -9,6 +9,7 @@ consolidated register of gaps and issues with fixes.
 **Date:** 2026-06-26 · **Status:** design + hardening pass.
 
 > **Decisions taken for this design** (from the project owner):
+>
 > - **Target architecture: the NestJS API is the system of record** — all data
 >   access from both apps routes through it (today the apps bypass it; see §2).
 > - **Hosting: not yet decided — recommendation in §6** (Fly.io / Render, single
@@ -25,7 +26,8 @@ The backend is far more complete than a typical mid-build: a 14-module NestJS AP
 (`apps/api`), a hardened Supabase schema (migrations `0001`–`0008` with three
 dedicated security passes), typed shared packages (`@optex/db`,
 `@optex/api-client`, `@optex/validators`), payment rails (M-Pesa Daraja + Pesapal
-+ COD), SMS/email, and cron reconciliation.
+
+- COD), SMS/email, and cron reconciliation.
 
 The **single most important finding** is architectural, not a bug:
 
@@ -73,14 +75,14 @@ one move.
 
 **What this means in practice**
 
-| Concern | Today |
-|---|---|
-| Reads (catalog, branches, dashboard) | Direct Supabase via `@optex/db`, protected by RLS. Works. |
-| Cart / checkout | `apps/web` calls `@optex/db.createOrder()` directly — order is written but **no payment is initiated**. |
-| Payments | API has full M-Pesa/Pesapal logic + webhooks; **no app ever calls the initiate endpoints**. |
-| Admin Payments / Analytics / Prescriptions | **Hardcoded fixtures**, no DB calls. |
-| SMS / email confirmations | Implemented in the API; **never fire** because checkout doesn't go through the API. |
-| Business rules (VAT, promo, stock, status transitions) | Live in the API service layer **and** partially duplicated in `@optex/db` — two sources of truth. |
+| Concern                                                | Today                                                                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Reads (catalog, branches, dashboard)                   | Direct Supabase via `@optex/db`, protected by RLS. Works.                                               |
+| Cart / checkout                                        | `apps/web` calls `@optex/db.createOrder()` directly — order is written but **no payment is initiated**. |
+| Payments                                               | API has full M-Pesa/Pesapal logic + webhooks; **no app ever calls the initiate endpoints**.             |
+| Admin Payments / Analytics / Prescriptions             | **Hardcoded fixtures**, no DB calls.                                                                    |
+| SMS / email confirmations                              | Implemented in the API; **never fire** because checkout doesn't go through the API.                     |
+| Business rules (VAT, promo, stock, status transitions) | Live in the API service layer **and** partially duplicated in `@optex/db` — two sources of truth.       |
 
 This is the core risk: business logic, payment orchestration, and notifications
 all live behind an API that nothing calls.
@@ -132,11 +134,11 @@ signed URLs minted by the API**.
 
 ### Auth & authorization model
 
-| Principal | Identity | Authorization |
-|---|---|---|
-| Customer | Supabase Auth user; `customers` row auto-created by trigger `0004`. | Owns only their rows. API scopes by `customers.id`; RLS enforces the same on any direct path. |
-| Super admin | Single Supabase user, `app_metadata.role = 'super_admin'` (server-set, **not** user-writable — fixed in `0007`). | `RolesGuard` + `is_super_admin()` SQL helper. |
-| Provider webhook | No JWT (`@Public()` + `@SkipThrottle()`). | Trust derives from amount verification + status re-query + (recommended) IP allow-list — **not** a signature (Daraja/Pesapal don't sign). |
+| Principal        | Identity                                                                                                         | Authorization                                                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Customer         | Supabase Auth user; `customers` row auto-created by trigger `0004`.                                              | Owns only their rows. API scopes by `customers.id`; RLS enforces the same on any direct path.                                             |
+| Super admin      | Single Supabase user, `app_metadata.role = 'super_admin'` (server-set, **not** user-writable — fixed in `0007`). | `RolesGuard` + `is_super_admin()` SQL helper.                                                                                             |
+| Provider webhook | No JWT (`@Public()` + `@SkipThrottle()`).                                                                        | Trust derives from amount verification + status re-query + (recommended) IP allow-list — **not** a signature (Daraja/Pesapal don't sign). |
 
 ### Two clients, two trust levels (keep this invariant)
 
@@ -151,31 +153,31 @@ signed URLs minted by the API**.
 
 ### NestJS API modules (`apps/api/src/modules`)
 
-| Module | Customer surface | Admin surface | Notes |
-|---|---|---|---|
-| `catalog` | products, search (FTS), categories | product CRUD | `search_tsv` GIN index backs search. |
-| `cart` | get/add/update/remove, apply-promo | — | Atomic qty via `increment_cart_item_qty` (0007). Promo now persisted on `carts.promo_code` (0008). |
-| `orders` | checkout, history, detail, tracking | list, status workflow | **Checkout now uses `place_order` RPC** (§9). Status transitions validated. |
-| `payments` | M-Pesa STK push + query, Pesapal initiate + status | list, reconcile | Webhooks at `/api/webhooks/{mpesa,pesapal}`. Idempotent; amount-verified (§9). |
-| `appointments` | slots, book, cancel, reschedule | manage | Reminder idempotency flags (0008) — cron must use them. |
-| `prescriptions` | upload, list, signed download | manage | Private `prescriptions` bucket, namespaced by customer id. |
-| `reviews` | submit, list approved | moderate | One review per (product, customer) enforced in DB. |
-| `promotions` | validate | banner + code CRUD | `increment_promo_uses` RPC (0008). |
-| `branches` | list, detail | CRUD | lat/lng for locator. |
-| `account` | `GET/PATCH /me` | — | Profile. |
-| `admin-metrics` | — | dashboard, analytics | Real queries exist; admin UI still on fixtures (gap). |
-| `notifications` | contact form | — | `EmailService` (Resend), `SmsService` (Africa's Talking); both no-op safely without keys. |
-| `cron` | — | — | `mpesa-polling` (reconcile pending), `appointment-reminders`. In-process (single instance). |
-| `health` | `/api/health` liveness | — | Used by Docker/host probes. |
+| Module          | Customer surface                                   | Admin surface         | Notes                                                                                              |
+| --------------- | -------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
+| `catalog`       | products, search (FTS), categories                 | product CRUD          | `search_tsv` GIN index backs search.                                                               |
+| `cart`          | get/add/update/remove, apply-promo                 | —                     | Atomic qty via `increment_cart_item_qty` (0007). Promo now persisted on `carts.promo_code` (0008). |
+| `orders`        | checkout, history, detail, tracking                | list, status workflow | **Checkout now uses `place_order` RPC** (§9). Status transitions validated.                        |
+| `payments`      | M-Pesa STK push + query, Pesapal initiate + status | list, reconcile       | Webhooks at `/api/webhooks/{mpesa,pesapal}`. Idempotent; amount-verified (§9).                     |
+| `appointments`  | slots, book, cancel, reschedule                    | manage                | Reminder idempotency flags (0008) — cron must use them.                                            |
+| `prescriptions` | upload, list, signed download                      | manage                | Private `prescriptions` bucket, namespaced by customer id.                                         |
+| `reviews`       | submit, list approved                              | moderate              | One review per (product, customer) enforced in DB.                                                 |
+| `promotions`    | validate                                           | banner + code CRUD    | `increment_promo_uses` RPC (0008).                                                                 |
+| `branches`      | list, detail                                       | CRUD                  | lat/lng for locator.                                                                               |
+| `account`       | `GET/PATCH /me`                                    | —                     | Profile.                                                                                           |
+| `admin-metrics` | —                                                  | dashboard, analytics  | Real queries exist; admin UI still on fixtures (gap).                                              |
+| `notifications` | contact form                                       | —                     | `EmailService` (Resend), `SmsService` (Africa's Talking); both no-op safely without keys.          |
+| `cron`          | —                                                  | —                     | `mpesa-polling` (reconcile pending), `appointment-reminders`. In-process (single instance).        |
+| `health`        | `/api/health` liveness                             | —                     | Used by Docker/host probes.                                                                        |
 
 ### Shared packages
 
-| Package | Role | Post-migration role |
-|---|---|---|
-| `@optex/db` | Supabase clients + query helpers (hand-derived types). | Auth + signed-URL reads only; retire direct writes. |
-| `@optex/api-client` | Typed client for every API route (currently unused). | **Becomes the primary data layer** for both apps. |
-| `@optex/validators` | Shared zod schemas. | Share DTO validation between apps and API. |
-| `@optex/ui`, `@optex/config` | shadcn primitives, Tailwind preset. | unchanged. |
+| Package                      | Role                                                   | Post-migration role                                 |
+| ---------------------------- | ------------------------------------------------------ | --------------------------------------------------- |
+| `@optex/db`                  | Supabase clients + query helpers (hand-derived types). | Auth + signed-URL reads only; retire direct writes. |
+| `@optex/api-client`          | Typed client for every API route (currently unused).   | **Becomes the primary data layer** for both apps.   |
+| `@optex/validators`          | Shared zod schemas.                                    | Share DTO validation between apps and API.          |
+| `@optex/ui`, `@optex/config` | shadcn primitives, Tailwind preset.                    | unchanged.                                          |
 
 ---
 
@@ -234,7 +236,7 @@ low traffic:
 >
 > **Key insight — colocate the API with the Supabase region, not with users.**
 > Every authenticated request currently makes a network round-trip to Supabase
-> Auth (`auth.getUser`) *plus* its data queries. DB round-trips dominate latency,
+> Auth (`auth.getUser`) _plus_ its data queries. DB round-trips dominate latency,
 > so the API should sit in the **same region as the Supabase project**. Pick the
 > Supabase region nearest Kenya (e.g. `eu-central-1` Frankfurt) and run the API
 > in the matching provider region.
@@ -286,6 +288,7 @@ availability from the Auth API. Recommended as the first latency optimization.
 ## 7. Payment flows (reference)
 
 **M-Pesa (Daraja STK push)** — customer pays online:
+
 ```
 app → POST /api/payments/mpesa/stk-push {orderId, phone}
   api → resolve owned order, assert payable, read order.total_kes (server-side)
@@ -297,6 +300,7 @@ cron (mpesa-polling) → re-query stkQuery for stuck pendings (safety net)
 ```
 
 **Pesapal** — redirect/IPN:
+
 ```
 app → POST /api/payments/pesapal/initiate {orderId}
   api → SubmitOrder; persist pesapal_transactions(pending); store tracking id on order
@@ -322,56 +326,56 @@ Severity: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low. Status reflects 
 
 ### Architecture / wiring
 
-| # | Sev | Issue | Status / fix |
-|---|---|---|---|
-| AR-1 | 🔴 | Apps bypass the API; payments never initiated from checkout. | **Open** — primary migration work (route apps through `@optex/api-client`). |
-| AR-2 | 🔴 | Admin Payments / Analytics / Prescriptions show hardcoded fixtures. | **Open** — wire to API admin endpoints (data already exists server-side). |
-| AR-3 | 🟠 | Business rules duplicated across API and `@optex/db` (two sources of truth). | **Open** — after migration, `@optex/db` writes are retired. |
-| AR-4 | 🟡 | `@optex/api-client` (~80% of routes) is dead code until apps adopt it. | **Open** — resolved by AR-1/AR-2. |
+| #    | Sev | Issue                                                                        | Status / fix                                                                |
+| ---- | --- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| AR-1 | 🔴  | Apps bypass the API; payments never initiated from checkout.                 | **Open** — primary migration work (route apps through `@optex/api-client`). |
+| AR-2 | 🔴  | Admin Payments / Analytics / Prescriptions show hardcoded fixtures.          | **Open** — wire to API admin endpoints (data already exists server-side).   |
+| AR-3 | 🟠  | Business rules duplicated across API and `@optex/db` (two sources of truth). | **Open** — after migration, `@optex/db` writes are retired.                 |
+| AR-4 | 🟡  | `@optex/api-client` (~80% of routes) is dead code until apps adopt it.       | **Open** — resolved by AR-1/AR-2.                                           |
 
 ### Payments
 
-| # | Sev | Issue | Status / fix |
-|---|---|---|---|
-| PAY-1 | 🔴 | Paid amount not verified before crediting (M-Pesa callback + Pesapal reconcile). | **Fixed this pass** — amount checked; mismatch held for reconcile. |
-| PAY-2 | 🟠 | Pesapal reconcile silently overwrote the authoritative `amount_kes` with the provider figure. | **Fixed this pass** — original amount preserved; provider figure stored in `raw`. |
-| PAY-3 | 🟠 | Webhooks unsigned and raw body not captured. | **Partly fixed** — `rawBody` now enabled. NOTE: Daraja/Pesapal don't sign; real controls are amount-verify (done) + re-query (done for Pesapal) + **IP allow-list (recommended, infra)**. |
-| PAY-4 | 🟡 | Multiple STK pushes per order create orphan pending rows. | **Open** — add "pending STK exists for this order?" guard before push. |
-| PAY-5 | ⚪ | No index on `mpesa_transactions.received_at` / `orders.payment_method` for reconcile views. | **Open** — add indexes (migration). |
+| #     | Sev | Issue                                                                                         | Status / fix                                                                                                                                                                              |
+| ----- | --- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PAY-1 | 🔴  | Paid amount not verified before crediting (M-Pesa callback + Pesapal reconcile).              | **Fixed this pass** — amount checked; mismatch held for reconcile.                                                                                                                        |
+| PAY-2 | 🟠  | Pesapal reconcile silently overwrote the authoritative `amount_kes` with the provider figure. | **Fixed this pass** — original amount preserved; provider figure stored in `raw`.                                                                                                         |
+| PAY-3 | 🟠  | Webhooks unsigned and raw body not captured.                                                  | **Partly fixed** — `rawBody` now enabled. NOTE: Daraja/Pesapal don't sign; real controls are amount-verify (done) + re-query (done for Pesapal) + **IP allow-list (recommended, infra)**. |
+| PAY-4 | 🟡  | Multiple STK pushes per order create orphan pending rows.                                     | **Open** — add "pending STK exists for this order?" guard before push.                                                                                                                    |
+| PAY-5 | ⚪  | No index on `mpesa_transactions.received_at` / `orders.payment_method` for reconcile views.   | **Open** — add indexes (migration).                                                                                                                                                       |
 
 ### Orders / checkout
 
-| # | Sev | Issue | Status / fix |
-|---|---|---|---|
-| ORD-1 | 🔴 | Checkout not atomic (best-effort insert + compensation could orphan an order). | **Fixed this pass** — switched to `place_order` RPC (single transaction). |
-| ORD-2 | 🟠 | Promo-usage increment was a racy read-modify-write (cap could be exceeded). | **Fixed this pass** — `place_order` calls atomic `increment_promo_uses`. |
-| ORD-3 | 🟡 | `place_order` / `increment_promo_uses` RPCs shipped in `0008` but were never called. | **Fixed this pass** — root cause of ORD-1/ORD-2. |
+| #     | Sev | Issue                                                                                | Status / fix                                                              |
+| ----- | --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| ORD-1 | 🔴  | Checkout not atomic (best-effort insert + compensation could orphan an order).       | **Fixed this pass** — switched to `place_order` RPC (single transaction). |
+| ORD-2 | 🟠  | Promo-usage increment was a racy read-modify-write (cap could be exceeded).          | **Fixed this pass** — `place_order` calls atomic `increment_promo_uses`.  |
+| ORD-3 | 🟡  | `place_order` / `increment_promo_uses` RPCs shipped in `0008` but were never called. | **Fixed this pass** — root cause of ORD-1/ORD-2.                          |
 
 ### Auth / API hardening
 
-| # | Sev | Issue | Status / fix |
-|---|---|---|---|
-| API-1 | 🟠 | `auth.getUser()` network round-trip on every authed request. | **Open** — verify JWT locally with `SUPABASE_JWT_SECRET` (perf + availability). |
-| API-2 | 🟡 | Exception filter echoed raw error messages in non-prod (info disclosure). | **Fixed this pass** — generic message always; stack only logged. |
-| API-3 | 🟡 | Admin role enforcement. | **Verified OK** — all admin controllers carry `@Roles('super_admin')`. |
-| API-4 | ⚪ | Container ran as root, no healthcheck, no signal reaper. | **Fixed this pass** — non-root, `tini`, `HEALTHCHECK`. |
+| #     | Sev | Issue                                                                     | Status / fix                                                                    |
+| ----- | --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| API-1 | 🟠  | `auth.getUser()` network round-trip on every authed request.              | **Open** — verify JWT locally with `SUPABASE_JWT_SECRET` (perf + availability). |
+| API-2 | 🟡  | Exception filter echoed raw error messages in non-prod (info disclosure). | **Fixed this pass** — generic message always; stack only logged.                |
+| API-3 | 🟡  | Admin role enforcement.                                                   | **Verified OK** — all admin controllers carry `@Roles('super_admin')`.          |
+| API-4 | ⚪  | Container ran as root, no healthcheck, no signal reaper.                  | **Fixed this pass** — non-root, `tini`, `HEALTHCHECK`.                          |
 
 ### Schema / data
 
-| # | Sev | Issue | Status / fix |
-|---|---|---|---|
-| DB-1 | 🟠 | No RBAC/staff model (blocks appointment assignment + CR-01). | **Open** — add `staff` table + `staff_role` enum. |
-| DB-2 | 🟠 | No inventory ledger / stock-movement audit. | **Open** — `inventory_transactions` table. |
-| DB-3 | 🟡 | No audit log on admin mutations. | **Open** — `audit_log` table + triggers. |
-| DB-4 | 🟡 | Missing constraints: `customers.phone` UNIQUE, prescription optical ranges, order money-math CHECK. | **Open** — additive migration. |
-| DB-5 | ⚪ | No soft-delete; deletes cascade (product → order_items history). | **Open** — `is_active`/archival policy. |
+| #    | Sev | Issue                                                                                               | Status / fix                                      |
+| ---- | --- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| DB-1 | 🟠  | No RBAC/staff model (blocks appointment assignment + CR-01).                                        | **Open** — add `staff` table + `staff_role` enum. |
+| DB-2 | 🟠  | No inventory ledger / stock-movement audit.                                                         | **Open** — `inventory_transactions` table.        |
+| DB-3 | 🟡  | No audit log on admin mutations.                                                                    | **Open** — `audit_log` table + triggers.          |
+| DB-4 | 🟡  | Missing constraints: `customers.phone` UNIQUE, prescription optical ranges, order money-math CHECK. | **Open** — additive migration.                    |
+| DB-5 | ⚪  | No soft-delete; deletes cascade (product → order_items history).                                    | **Open** — `is_active`/archival policy.           |
 
 ### Scale (deferred by decision — single instance)
 
-| # | Sev | Issue | Status / fix |
-|---|---|---|---|
-| SC-1 | 🟡 | In-memory throttler won't share across replicas. | **Deferred** — Redis adapter before scaling out. |
-| SC-2 | 🟡 | In-process cron double-runs across replicas (duplicate SMS/work). | **Deferred** — distributed lock before scaling out. Reminder idempotency flags (`0008`) must still be used by the cron job. |
+| #    | Sev | Issue                                                             | Status / fix                                                                                                                |
+| ---- | --- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| SC-1 | 🟡  | In-memory throttler won't share across replicas.                  | **Deferred** — Redis adapter before scaling out.                                                                            |
+| SC-2 | 🟡  | In-process cron double-runs across replicas (duplicate SMS/work). | **Deferred** — distributed lock before scaling out. Reminder idempotency flags (`0008`) must still be used by the cron job. |
 
 ---
 
@@ -394,7 +398,7 @@ All changes typecheck (`pnpm --filter @optex/api typecheck` clean).
    corrected to reflect that the real controls are amount-verify + re-query +
    IP allow-list (these providers don't sign callbacks).
 5. **Exception filter (API-2).** Never echoes raw error messages; generic message
-   + server-side stack + `requestId` correlation.
+   - server-side stack + `requestId` correlation.
 6. **Docker hardening (API-4).** Non-root `node` user, `tini` PID 1,
    `/api/health` `HEALTHCHECK`; new root `docker-compose.yml`; completed
    `.env.example`.
@@ -404,6 +408,7 @@ All changes typecheck (`pnpm --filter @optex/api typecheck` clean).
 ## 10. Roadmap to launch
 
 **Phase A — connect the rails (launch-blocking)**
+
 - Route `apps/web` checkout through `POST /api/checkout`, then
   `POST /api/payments/{mpesa/stk-push,pesapal/initiate}`; poll status.
 - Deploy the API with public HTTPS; set `MPESA_CALLBACK_URL` / `PESAPAL_IPN_URL`;
@@ -412,16 +417,19 @@ All changes typecheck (`pnpm --filter @optex/api typecheck` clean).
 - Verify SMS/email confirmations fire end-to-end.
 
 **Phase B — harden & migrate reads**
+
 - Move remaining app reads onto `@optex/api-client`; retire `@optex/db` writes.
 - Local JWT verification (API-1); add reconcile indexes (PAY-5); STK dedupe
   (PAY-4); webhook IP allow-list.
 - Additive constraints migration (DB-4).
 
 **Phase C — CR-01 foundations**
+
 - `staff` + RBAC (DB-1), inventory ledger (DB-2), audit log (DB-3), then the
   Inventory / Doctor-consultation / Analytics / Branch-P&L features.
 
 **Before scaling out (only if needed)**
+
 - Redis throttler + distributed cron lock (SC-1/SC-2).
 
 ---
@@ -448,21 +456,23 @@ All changes typecheck (`pnpm --filter @optex/api typecheck` clean).
 frontends import no `@optex/db` and no `@supabase/*`.
 
 ### Auth proxy — DONE (backend)
+
 The API now proxies Supabase GoTrue so the frontend authenticates through the API:
 
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/auth/login` | email/password → `{ session, user }` (access + refresh tokens) |
-| `POST /api/auth/signup` | create account → session (when confirmation off) |
-| `POST /api/auth/refresh` | refresh token → new session |
-| `POST /api/auth/logout` | revoke session (bearer) |
-| `GET /api/auth/me` | current user from the bearer token |
+| Endpoint                 | Purpose                                                        |
+| ------------------------ | -------------------------------------------------------------- |
+| `POST /api/auth/login`   | email/password → `{ session, user }` (access + refresh tokens) |
+| `POST /api/auth/signup`  | create account → session (when confirmation off)               |
+| `POST /api/auth/refresh` | refresh token → new session                                    |
+| `POST /api/auth/logout`  | revoke session (bearer)                                        |
+| `GET /api/auth/me`       | current user from the bearer token                             |
 
 Implemented in `apps/api/src/modules/auth/*` (`AuthFlowService` forwards to GoTrue
 with the anon key). Exposed on the client as `api.auth.*`. Verified end-to-end
 (login → me → refresh). Requires `SUPABASE_ANON_KEY` in `apps/api/.env`.
 
 ### Frontend migration phases (remaining)
+
 1. **Token store + client wiring.** Store `{accessToken, refreshToken}` in a
    cookie (so middleware can gate server-side); `createApiClient.getAccessToken`
    reads it; auto-refresh on 401 via `api.auth.refresh`.

@@ -139,11 +139,7 @@ export class ApiError extends Error {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Resolves to a token (sync or async), or nothing for anonymous calls. */
-export type GetAccessToken = () =>
-  | string
-  | null
-  | undefined
-  | Promise<string | null | undefined>;
+export type GetAccessToken = () => string | null | undefined | Promise<string | null | undefined>;
 
 export interface CreateApiClientOptions {
   /**
@@ -276,10 +272,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
   const origin = options.baseUrl.replace(/\/+$/, '');
   const apiBase = `${origin}/api`;
 
-  async function request<T>(
-    path: string,
-    opts: RequestOptions = {},
-  ): Promise<T> {
+  async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     const { method = 'GET', body, form, query, init } = opts;
 
     const headers = new Headers(defaultHeaders);
@@ -328,12 +321,9 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
 
   // ── auth ─────────────────────────────────────────────────────────────────
   const auth: AuthApi = {
-    login: (input) =>
-      request<AuthResult>('/auth/login', { method: 'POST', body: input }),
-    signup: (input) =>
-      request<AuthResult>('/auth/signup', { method: 'POST', body: input }),
-    refresh: (input) =>
-      request<AuthResult>('/auth/refresh', { method: 'POST', body: input }),
+    login: (input) => request<AuthResult>('/auth/login', { method: 'POST', body: input }),
+    signup: (input) => request<AuthResult>('/auth/signup', { method: 'POST', body: input }),
+    refresh: (input) => request<AuthResult>('/auth/refresh', { method: 'POST', body: input }),
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
     me: () => request<AuthUser>('/auth/me'),
   };
@@ -347,16 +337,14 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         query: query as unknown as QueryParams,
       }),
     getProduct: (slug) => request<Product>(`/products/${encodeURIComponent(slug)}`),
-    getRelatedProducts: (id) =>
-      request<Product[]>(`/products/${encodeURIComponent(id)}/related`),
+    getRelatedProducts: (id) => request<Product[]>(`/products/${encodeURIComponent(id)}/related`),
     listCategories: () => request<Category[]>('/categories'),
   };
 
   // ── cart ─────────────────────────────────────────────────────────────────
   const cart: CartApi = {
     get: () => request<Cart>('/cart'),
-    addItem: (input) =>
-      request<Cart>('/cart/items', { method: 'POST', body: input }),
+    addItem: (input) => request<Cart>('/cart/items', { method: 'POST', body: input }),
     updateItem: (itemId, input) =>
       request<Cart>(`/cart/items/${encodeURIComponent(itemId)}`, {
         method: 'PATCH',
@@ -366,22 +354,19 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       request<Cart>(`/cart/items/${encodeURIComponent(itemId)}`, {
         method: 'DELETE',
       }),
-    applyPromo: (input) =>
-      request<Cart>('/cart/apply-promo', { method: 'POST', body: input }),
+    applyPromo: (input) => request<Cart>('/cart/apply-promo', { method: 'POST', body: input }),
     clearPromo: () => request<Cart>('/cart/promo', { method: 'DELETE' }),
   };
 
   // ── orders ───────────────────────────────────────────────────────────────
   const orders: OrdersApi = {
-    checkout: (input) =>
-      request<CheckoutResult>('/checkout', { method: 'POST', body: input }),
+    checkout: (input) => request<CheckoutResult>('/checkout', { method: 'POST', body: input }),
     list: (query) =>
       request<PaginatedOrders<OrderSummary>>('/orders', {
         query: query as QueryParams,
       }),
     get: (id) => request<OrderDetail>(`/orders/${encodeURIComponent(id)}`),
-    tracking: (id) =>
-      request<OrderTracking>(`/orders/${encodeURIComponent(id)}/tracking`),
+    tracking: (id) => request<OrderTracking>(`/orders/${encodeURIComponent(id)}/tracking`),
   };
 
   // ── payments ───────────────────────────────────────────────────────────────
@@ -413,18 +398,17 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       request<Slots>('/appointments/slots', {
         query: query as unknown as QueryParams,
       }),
-    create: (input) =>
-      request<Appointment>('/appointments', { method: 'POST', body: input }),
+    create: (input) => request<Appointment>('/appointments', { method: 'POST', body: input }),
     listMine: () => request<Appointment[]>('/appointments'),
     cancel: (id) =>
       request<Appointment>(`/appointments/${encodeURIComponent(id)}/cancel`, {
         method: 'PATCH',
       }),
     reschedule: (id, input) =>
-      request<Appointment>(
-        `/appointments/${encodeURIComponent(id)}/reschedule`,
-        { method: 'PATCH', body: input },
-      ),
+      request<Appointment>(`/appointments/${encodeURIComponent(id)}/reschedule`, {
+        method: 'PATCH',
+        body: input,
+      }),
   };
 
   // ── prescriptions ──────────────────────────────────────────────────────────
@@ -446,17 +430,13 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     },
     listMine: () => request<Prescription[]>('/prescriptions'),
     download: (id) =>
-      request<SignedDownloadUrl>(
-        `/prescriptions/${encodeURIComponent(id)}/download`,
-      ),
+      request<SignedDownloadUrl>(`/prescriptions/${encodeURIComponent(id)}/download`),
   };
 
   // ── reviews ──────────────────────────────────────────────────────────────
   const reviews: ReviewsApi = {
     listForProduct: (productId) =>
-      request<ProductReviews>(
-        `/products/${encodeURIComponent(productId)}/reviews`,
-      ),
+      request<ProductReviews>(`/products/${encodeURIComponent(productId)}/reviews`),
     create: (productId, input) =>
       request<Review>(`/products/${encodeURIComponent(productId)}/reviews`, {
         method: 'POST',
@@ -475,22 +455,19 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
 
   // ── branches ───────────────────────────────────────────────────────────────
   const branches: BranchesApi = {
-    list: (q) =>
-      request<Branch[]>('/branches', { query: q ? { q } : undefined }),
+    list: (q) => request<Branch[]>('/branches', { query: q ? { q } : undefined }),
     get: (id) => request<Branch>(`/branches/${encodeURIComponent(id)}`),
   };
 
   // ── account ──────────────────────────────────────────────────────────────
   const account: AccountApi = {
     me: () => request<MeProfile>('/me'),
-    updateMe: (input) =>
-      request<MeProfile>('/me', { method: 'PATCH', body: input }),
+    updateMe: (input) => request<MeProfile>('/me', { method: 'PATCH', body: input }),
   };
 
   // ── contact ──────────────────────────────────────────────────────────────
   const contact: ContactApi = {
-    submit: (input) =>
-      request<ContactResult>('/contact', { method: 'POST', body: input }),
+    submit: (input) => request<ContactResult>('/contact', { method: 'POST', body: input }),
   };
 
   // ── admin ──────────────────────────────────────────────────────────────────
@@ -500,13 +477,12 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         request<PaginatedOrders<AdminOrderSummary>>('/admin/orders', {
           query: query as QueryParams,
         }),
-      get: (id) =>
-        request<OrderDetail>(`/admin/orders/${encodeURIComponent(id)}`),
+      get: (id) => request<OrderDetail>(`/admin/orders/${encodeURIComponent(id)}`),
       updateStatus: (id, input) =>
-        request<OrderDetail>(
-          `/admin/orders/${encodeURIComponent(id)}/status`,
-          { method: 'PATCH', body: input },
-        ),
+        request<OrderDetail>(`/admin/orders/${encodeURIComponent(id)}/status`, {
+          method: 'PATCH',
+          body: input,
+        }),
     },
     payments: {
       list: (query) =>
@@ -514,54 +490,50 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           query: query as QueryParams,
         }),
       reconcile: (id, input) =>
-        request<ReconcileResult>(
-          `/admin/payments/${encodeURIComponent(id)}/reconcile`,
-          { method: 'POST', body: input },
-        ),
+        request<ReconcileResult>(`/admin/payments/${encodeURIComponent(id)}/reconcile`, {
+          method: 'POST',
+          body: input,
+        }),
       link: (id, input) =>
-        request<ReconcileResult>(
-          `/admin/payments/${encodeURIComponent(id)}/link`,
-          { method: 'POST', body: input },
-        ),
+        request<ReconcileResult>(`/admin/payments/${encodeURIComponent(id)}/link`, {
+          method: 'POST',
+          body: input,
+        }),
     },
     // Admin product writes live on the catalog controller (gated by
     // @Roles('super_admin')) — there is no `/admin/products` route.
     products: {
-      create: (input) =>
-        request<Product>('/products', { method: 'POST', body: input }),
+      create: (input) => request<Product>('/products', { method: 'POST', body: input }),
       update: (id, input) =>
         request<Product>(`/products/${encodeURIComponent(id)}`, {
           method: 'PATCH',
           body: input,
         }),
       remove: (id) =>
-        request<ProductDeactivationResult>(
-          `/products/${encodeURIComponent(id)}`,
-          { method: 'DELETE' },
-        ),
+        request<ProductDeactivationResult>(`/products/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        }),
       uploadImage: (id, file) => {
         const form = new FormData();
         form.append('file', file);
-        return request<ProductImageUploadResult>(
-          `/products/${encodeURIComponent(id)}/images`,
-          { method: 'POST', form },
-        );
+        return request<ProductImageUploadResult>(`/products/${encodeURIComponent(id)}/images`, {
+          method: 'POST',
+          form,
+        });
       },
     },
     promos: {
       list: () => request<PromoCode[]>('/admin/promo-codes'),
-      create: (input) =>
-        request<PromoCode>('/admin/promo-codes', { method: 'POST', body: input }),
+      create: (input) => request<PromoCode>('/admin/promo-codes', { method: 'POST', body: input }),
       update: (id, input) =>
         request<PromoCode>(`/admin/promo-codes/${encodeURIComponent(id)}`, {
           method: 'PATCH',
           body: input,
         }),
       remove: (id) =>
-        request<DeletionResult>(
-          `/admin/promo-codes/${encodeURIComponent(id)}`,
-          { method: 'DELETE' },
-        ),
+        request<DeletionResult>(`/admin/promo-codes/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        }),
     },
     banners: {
       list: () => request<PromoBanner[]>('/admin/promo-banners'),
@@ -576,14 +548,12 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           body: input,
         }),
       remove: (id) =>
-        request<DeletionResult>(
-          `/admin/promo-banners/${encodeURIComponent(id)}`,
-          { method: 'DELETE' },
-        ),
+        request<DeletionResult>(`/admin/promo-banners/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        }),
     },
     branches: {
-      create: (input) =>
-        request<Branch>('/branches', { method: 'POST', body: input }),
+      create: (input) => request<Branch>('/branches', { method: 'POST', body: input }),
       update: (id, input) =>
         request<Branch>(`/branches/${encodeURIComponent(id)}`, {
           method: 'PATCH',
@@ -611,10 +581,10 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           query: query as QueryParams,
         }),
       update: (id, input) =>
-        request<Appointment>(
-          `/admin/appointments/${encodeURIComponent(id)}`,
-          { method: 'PATCH', body: input },
-        ),
+        request<Appointment>(`/admin/appointments/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: input,
+        }),
     },
     prescriptions: {
       list: (query) =>
@@ -622,9 +592,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           query: query as QueryParams | undefined,
         }),
       download: (id) =>
-        request<SignedDownloadUrl>(
-          `/admin/prescriptions/${encodeURIComponent(id)}/download`,
-        ),
+        request<SignedDownloadUrl>(`/admin/prescriptions/${encodeURIComponent(id)}/download`),
     },
     dashboard: (query) =>
       request<DashboardResponse>('/admin/dashboard', {
@@ -721,9 +689,7 @@ export interface PaymentsApi {
   /** `POST /payments/mpesa/query` */
   mpesaQuery: (input: MpesaQueryInput) => Promise<MpesaStatus>;
   /** `POST /payments/pesapal/initiate` */
-  pesapalInitiate: (
-    input: PesapalInitiateInput,
-  ) => Promise<PesapalInitiateResult>;
+  pesapalInitiate: (input: PesapalInitiateInput) => Promise<PesapalInitiateResult>;
   /** `GET /payments/pesapal/status` */
   pesapalStatus: (query: PesapalStatusQuery) => Promise<PesapalStatus>;
 }
@@ -739,10 +705,7 @@ export interface AppointmentsApi {
   /** `PATCH /appointments/:id/cancel` */
   cancel: (id: string) => Promise<Appointment>;
   /** `PATCH /appointments/:id/reschedule` */
-  reschedule: (
-    id: string,
-    input: RescheduleAppointmentInput,
-  ) => Promise<Appointment>;
+  reschedule: (id: string, input: RescheduleAppointmentInput) => Promise<Appointment>;
 }
 
 /** Customer prescriptions (`/prescriptions/...`). */
@@ -751,10 +714,7 @@ export interface PrescriptionsApi {
    * `POST /prescriptions/upload` — multipart. Pass the file as a `Blob`/`File`;
    * optional measurement fields are appended as form fields.
    */
-  upload: (
-    file: Blob,
-    fields?: UploadPrescriptionFields,
-  ) => Promise<Prescription>;
+  upload: (file: Blob, fields?: UploadPrescriptionFields) => Promise<Prescription>;
   /** `GET /prescriptions` */
   listMine: () => Promise<Prescription[]>;
   /** `GET /prescriptions/:id/download` */
@@ -801,27 +761,17 @@ export interface ContactApi {
 export interface AdminApi {
   orders: {
     /** `GET /admin/orders` */
-    list: (
-      query?: AdminListOrdersQuery,
-    ) => Promise<PaginatedOrders<AdminOrderSummary>>;
+    list: (query?: AdminListOrdersQuery) => Promise<PaginatedOrders<AdminOrderSummary>>;
     /** `GET /admin/orders/:id` */
     get: (id: string) => Promise<OrderDetail>;
     /** `PATCH /admin/orders/:id/status` */
-    updateStatus: (
-      id: string,
-      input: AdminOrderStatusInput,
-    ) => Promise<OrderDetail>;
+    updateStatus: (id: string, input: AdminOrderStatusInput) => Promise<OrderDetail>;
   };
   payments: {
     /** `GET /admin/payments` */
-    list: (
-      query?: AdminListPaymentsQuery,
-    ) => Promise<PaginatedPayments<AdminPayment>>;
+    list: (query?: AdminListPaymentsQuery) => Promise<PaginatedPayments<AdminPayment>>;
     /** `POST /admin/payments/:id/reconcile` */
-    reconcile: (
-      id: string,
-      input: ReconcilePaymentInput,
-    ) => Promise<ReconcileResult>;
+    reconcile: (id: string, input: ReconcilePaymentInput) => Promise<ReconcileResult>;
     /** `POST /admin/payments/:id/link` */
     link: (id: string, input: LinkPaymentInput) => Promise<ReconcileResult>;
   };
@@ -873,10 +823,7 @@ export interface AdminApi {
     /** `GET /admin/appointments` */
     list: (query?: AdminAppointmentQuery) => Promise<Appointment[]>;
     /** `PATCH /admin/appointments/:id` */
-    update: (
-      id: string,
-      input: UpdateAppointmentInput,
-    ) => Promise<Appointment>;
+    update: (id: string, input: UpdateAppointmentInput) => Promise<Appointment>;
   };
   prescriptions: {
     /** `GET /admin/prescriptions?customerId=` */

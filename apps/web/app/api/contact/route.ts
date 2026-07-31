@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 // Required env vars:
 //   RESEND_API_KEY   — get from https://resend.com/api-keys
@@ -12,25 +12,25 @@ function escHtml(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
+    .replace(/'/g, '&#x27;');
 }
 
 // Simple in-process rate limiter: max 5 submissions per IP per 60 seconds.
 // For production scale replace with Upstash Redis + @upstash/ratelimit.
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 5
-const RATE_WINDOW_MS = 60_000
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60_000;
 
 function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return true
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
   }
-  if (entry.count >= RATE_LIMIT) return false
-  entry.count++
-  return true
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
 }
 
 export async function POST(req: NextRequest) {
@@ -38,46 +38,46 @@ export async function POST(req: NextRequest) {
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     req.headers.get('x-real-ip') ??
-    'unknown'
+    'unknown';
   if (!checkRateLimit(ip)) {
     return NextResponse.json(
       { error: 'Too many requests. Please wait a minute before trying again.' },
       { status: 429 },
-    )
+    );
   }
 
-  const { name, email, phone, subject, message } = await req.json()
+  const { name, email, phone, subject, message } = await req.json();
 
   // Basic validation
   if (!name || !email || !message) {
-    return NextResponse.json({ error: 'Name, email, and message are required.' }, { status: 400 })
+    return NextResponse.json({ error: 'Name, email, and message are required.' }, { status: 400 });
   }
 
   // Validate email format to prevent header injection
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 });
   }
 
-  const apiKey = process.env.RESEND_API_KEY
-  const toEmail = process.env.CONTACT_EMAIL || 'hello@optexopticians.co.ke'
+  const apiKey = process.env.RESEND_API_KEY;
+  const toEmail = process.env.CONTACT_EMAIL || 'hello@optexopticians.co.ke';
 
   // If no API key configured, just log and return success (dev mode)
   if (!apiKey) {
-    console.log('[Contact Form]', { name, email, phone, subject, message })
-    return NextResponse.json({ success: true })
+    console.log('[Contact Form]', { name, email, phone, subject, message });
+    return NextResponse.json({ success: true });
   }
 
   // C-2 FIX: Escape all user-supplied values before embedding in HTML.
-  const safeName    = escHtml(String(name))
-  const safeEmail   = escHtml(String(email))
-  const safePhone   = phone   ? escHtml(String(phone))   : '—'
-  const safeSubject = subject ? escHtml(String(subject)) : '—'
-  const safeMessage = escHtml(String(message))
+  const safeName = escHtml(String(name));
+  const safeEmail = escHtml(String(email));
+  const safePhone = phone ? escHtml(String(phone)) : '—';
+  const safeSubject = subject ? escHtml(String(subject)) : '—';
+  const safeMessage = escHtml(String(message));
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -96,13 +96,13 @@ export async function POST(req: NextRequest) {
         </table>
       `,
     }),
-  })
+  });
 
   if (!res.ok) {
-    const error = await res.text()
-    console.error('[Resend error]', error)
-    return NextResponse.json({ error: 'Failed to send email. Please try again.' }, { status: 500 })
+    const error = await res.text();
+    console.error('[Resend error]', error);
+    return NextResponse.json({ error: 'Failed to send email. Please try again.' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true });
 }

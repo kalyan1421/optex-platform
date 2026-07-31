@@ -28,6 +28,7 @@ Pnpm workspace: `pnpm-workspace.yaml` lists `apps/*` and `packages/*`. Bootstrap
 ## Local dev
 
 Dev server ports (set in each app's `package.json` and mirrored in `.claude/launch.json`):
+
 - `pnpm dev:api` → **`http://localhost:1111`** (NestJS, routes under `/api`, Swagger at `/api/docs`)
 - `pnpm dev:web` → **`http://localhost:1112`**
 - `pnpm dev:admin` → **`http://localhost:1113`**

@@ -4,13 +4,13 @@ Typed Supabase clients + query helpers, shared by `apps/web` and `apps/admin`.
 
 ## Entry points
 
-| Import | Use from | Notes |
-|---|---|---|
-| `@optex/db/browser` | Client components | Cached singleton browser client |
-| `@optex/db/server` | Server Components / Route Handlers / Server Actions | Bound to the calling request's cookies |
-| `@optex/db/service` | Trusted server-only (webhooks, jobs) | Uses **service-role** key, bypasses RLS |
-| `@optex/db` (root) | Anywhere | Types + query helpers (`listProducts`, `createOrder`, `isSuperAdmin`, …) |
-| `@optex/db/types` | Anywhere | Raw `Database` type only |
+| Import              | Use from                                            | Notes                                                                    |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------------ |
+| `@optex/db/browser` | Client components                                   | Cached singleton browser client                                          |
+| `@optex/db/server`  | Server Components / Route Handlers / Server Actions | Bound to the calling request's cookies                                   |
+| `@optex/db/service` | Trusted server-only (webhooks, jobs)                | Uses **service-role** key, bypasses RLS                                  |
+| `@optex/db` (root)  | Anywhere                                            | Types + query helpers (`listProducts`, `createOrder`, `isSuperAdmin`, …) |
+| `@optex/db/types`   | Anywhere                                            | Raw `Database` type only                                                 |
 
 ## Required env vars
 

@@ -4,11 +4,7 @@ import { Roles } from '../../auth/decorators';
 import { AdminListPaymentsQueryDto } from './dto/admin-list-payments-query.dto';
 import { ReconcilePaymentDto } from './dto/reconcile-payment.dto';
 import { LinkPaymentDto } from './dto/link-payment.dto';
-import {
-  AdminPaymentView,
-  PaginatedPayments,
-  ReconcileResult,
-} from './dto/payment-views';
+import { AdminPaymentView, PaginatedPayments, ReconcileResult } from './dto/payment-views';
 import { PaymentsService } from './payments.service';
 
 /**
@@ -27,9 +23,7 @@ export class PaymentsAdminController {
     summary: 'Unified list of M-Pesa + Pesapal transactions (filters + paging)',
   })
   @ApiOkResponse({ description: 'Paginated, merged payment transactions' })
-  list(
-    @Query() query: AdminListPaymentsQueryDto,
-  ): Promise<PaginatedPayments<AdminPaymentView>> {
+  list(@Query() query: AdminListPaymentsQueryDto): Promise<PaginatedPayments<AdminPaymentView>> {
     return this.payments.adminListPayments(query);
   }
 

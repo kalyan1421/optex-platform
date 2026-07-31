@@ -22,11 +22,7 @@ export const DEFAULT_APPOINTMENT_STATUS: AppointmentStatus = 'pending';
  * `appointments.type` is a free-text column in the schema; the SOW recognizes
  * these three appointment kinds. Mirrors `packages/db/src/queries/appointments.ts`.
  */
-export const APPOINTMENT_TYPES = [
-  'eye_test',
-  'frame_fitting',
-  'consultation',
-] as const;
+export const APPOINTMENT_TYPES = ['eye_test', 'frame_fitting', 'consultation'] as const;
 
 export type AppointmentType = (typeof APPOINTMENT_TYPES)[number];
 

@@ -2,13 +2,13 @@
 
 ## Branch naming
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Feature | `feat/<scope>-<short-desc>` | `feat/web-product-filters` |
-| Bug fix | `fix/<scope>-<short-desc>` | `fix/api-mpesa-callback` |
-| Tech debt | `tech-debt/<short-desc>` | `tech-debt/docker-supabase` |
-| Chore | `chore/<short-desc>` | `chore/update-lockfile` |
-| Docs | `docs/<short-desc>` | `docs/runbook-deploy` |
+| Type      | Pattern                     | Example                     |
+| --------- | --------------------------- | --------------------------- |
+| Feature   | `feat/<scope>-<short-desc>` | `feat/web-product-filters`  |
+| Bug fix   | `fix/<scope>-<short-desc>`  | `fix/api-mpesa-callback`    |
+| Tech debt | `tech-debt/<short-desc>`    | `tech-debt/docker-supabase` |
+| Chore     | `chore/<short-desc>`        | `chore/update-lockfile`     |
+| Docs      | `docs/<short-desc>`         | `docs/runbook-deploy`       |
 
 Scopes: `web`, `admin`, `api`, `db`, `ui`, `config`, `docker`, `infra`
 
@@ -25,6 +25,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) format:
 Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `perf`
 
 Examples:
+
 ```
 feat(api): add M-Pesa STK push endpoint
 fix(web): correct cart total rounding for KES fractional amounts
@@ -67,6 +68,7 @@ chore(docker): pin Kong to 2.8.1 for declarative config compatibility
 ## Payments and webhooks
 
 M-Pesa and Pesapal webhook handlers live in `apps/api/src/modules/payments/webhooks.controller.ts`. Webhook routes must:
+
 - Verify the incoming payload signature before any DB write
 - Return 200 immediately (Daraja times out at 5 s)
 - Use the service-role Supabase client (bypasses RLS) for transaction writes

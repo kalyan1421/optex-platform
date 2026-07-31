@@ -6,14 +6,14 @@
 
 ## 0. Source-of-truth inputs
 
-| Source | Location | Status |
-|---|---|---|
-| **Binding SOW** | `/Users/kalyan/Client/OPTEX /OPTEX OPTICIANS.pdf` (v3.0 KE) | Read |
-| Superseded India SOW | `/Users/kalyan/Client/OPTEX /Optex_SOW_Quotation.pdf` (v1.0 IN) | Read — **do not implement against this** |
-| Strategy report | `/Users/kalyan/Client/OPTEX /Optex_Ecommerce_Strategy_Report.pdf` | Read (1-10 of 28) |
-| Notion Hub | `OPTEX OPTICIANS — Digital Transformation Hub` | Fetched: hub, Website Redesign Plan, Full Feature List, Admin Spec (13 screens), Risks |
-| Figma | `figma.com/design/D0kzp43FOwBevQSV66XOT2/Optex` (customer storefront) | Overview screenshot fetched; per-node metadata timed out |
-| Admin Figma | `figma.com/design/eFGBgVE1CJ5DWFMi8vZKcF/Complete-Admin-Panel-Screens` (per `optex-admin/README.md`) | Different file from the link the user shared — not pulled |
+| Source               | Location                                                                                             | Status                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **Binding SOW**      | `/Users/kalyan/Client/OPTEX /OPTEX OPTICIANS.pdf` (v3.0 KE)                                          | Read                                                                                   |
+| Superseded India SOW | `/Users/kalyan/Client/OPTEX /Optex_SOW_Quotation.pdf` (v1.0 IN)                                      | Read — **do not implement against this**                                               |
+| Strategy report      | `/Users/kalyan/Client/OPTEX /Optex_Ecommerce_Strategy_Report.pdf`                                    | Read (1-10 of 28)                                                                      |
+| Notion Hub           | `OPTEX OPTICIANS — Digital Transformation Hub`                                                       | Fetched: hub, Website Redesign Plan, Full Feature List, Admin Spec (13 screens), Risks |
+| Figma                | `figma.com/design/D0kzp43FOwBevQSV66XOT2/Optex` (customer storefront)                                | Overview screenshot fetched; per-node metadata timed out                               |
+| Admin Figma          | `figma.com/design/eFGBgVE1CJ5DWFMi8vZKcF/Complete-Admin-Panel-Screens` (per `optex-admin/README.md`) | Different file from the link the user shared — not pulled                              |
 
 Two SOWs exist. **The Kenya v3.0 supersedes the India v1.0** in every material area: payments (M-Pesa/Pesapal/COD vs Razorpay/UPI), single 8-week phase (vs 16-week + Phase 2), Super Admin only (vs 3 roles), AR Try-On **in scope** (vs out of scope), KES currency + 16% VAT.
 
@@ -23,16 +23,16 @@ Two SOWs exist. **The Kenya v3.0 supersedes the India v1.0** in every material a
 
 **Both current codebases are misaligned with the binding SOW and need to be rebuilt rather than ported.** The current repo is a Figma-Make export (admin) + a CRA prototype (web), neither of which can host the Kenya commerce flows (M-Pesa Daraja STK push callbacks, Pesapal IPN, Supabase Auth+RLS, JSON-LD/SSR, sub-2.5s LCP).
 
-| Pillar | SOW requires | Current state | Action |
-|---|---|---|---|
-| Web framework | **Next.js 14** (SSR/SSG) | CRA (`react-scripts 5`) | **Rebuild** |
-| Admin framework | **Next.js 14** (same monorepo) | Vite 6 SPA, no router | **Rebuild** |
-| Backend | **Node.js + Express REST** | Empty `Backend/` folder | **Build from scratch** |
-| Database | **Supabase Postgres** (+ Auth + Storage + RLS) | None | **Build from scratch** |
-| Payments | **M-Pesa Daraja** + **Pesapal** + COD | None | **Build from scratch** |
-| Hosting | **Vercel + Cloudflare** | Firebase Hosting | **Migrate** |
-| State of cart | Persistent (DB-backed) | In-memory `CartContext` with 3 hard-coded items | **Replace** |
-| Mobile-first | Required (70%+ Kenyan traffic on mobile) | Desktop-first; magic `pt-[100px]/[118px]` paddings, no `md:` rules on key pages | **Re-design** |
+| Pillar          | SOW requires                                   | Current state                                                                   | Action                 |
+| --------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------- |
+| Web framework   | **Next.js 14** (SSR/SSG)                       | CRA (`react-scripts 5`)                                                         | **Rebuild**            |
+| Admin framework | **Next.js 14** (same monorepo)                 | Vite 6 SPA, no router                                                           | **Rebuild**            |
+| Backend         | **Node.js + Express REST**                     | Empty `Backend/` folder                                                         | **Build from scratch** |
+| Database        | **Supabase Postgres** (+ Auth + Storage + RLS) | None                                                                            | **Build from scratch** |
+| Payments        | **M-Pesa Daraja** + **Pesapal** + COD          | None                                                                            | **Build from scratch** |
+| Hosting         | **Vercel + Cloudflare**                        | Firebase Hosting                                                                | **Migrate**            |
+| State of cart   | Persistent (DB-backed)                         | In-memory `CartContext` with 3 hard-coded items                                 | **Replace**            |
+| Mobile-first    | Required (70%+ Kenyan traffic on mobile)       | Desktop-first; magic `pt-[100px]/[118px]` paddings, no `md:` rules on key pages | **Re-design**          |
 
 Trying to retrofit Supabase + Daraja + SSR onto CRA+Vite costs **more** labour than a clean Next.js 14 monorepo build using the existing shadcn UI components and Tailwind tokens.
 
@@ -48,31 +48,31 @@ Mobile-width frames (3 home variants on the left) + desktop frames (right): **Ho
 
 ### Mapping to `optex-web` pages
 
-| Figma frame | Code (`src/pages/`) | Implementation status |
-|---|---|---|
-| Home (mobile + desktop) | `Home/Home.jsx` + 9 sub-sections | UI shell present; data hard-coded; AOS animations everywhere; mobile breakpoints partial |
-| Shop / PLP w/ filters | `Shop/Shop.jsx` | Sidebar exists but filters non-functional; tablet (768-1024px) falls through to mobile layout |
-| Product detail | `ProductDetails/ProductDetails.jsx` | One hard-coded product; `lg:` only — no `md:` |
-| Cart | `Cart/Cart.jsx` | Renders 3 seed items from `CartContext` |
-| Checkout | `Checkout/Checkout.jsx` | 3-step UI exists; form has no state, no submit; no M-Pesa/Pesapal |
-| Login / Signup | `Login/`, `Signup/` | Page shells, no auth |
-| Profile | `Profile/Profile.jsx` | Static UI |
-| Contact | `Contact/Contact.jsx` | Static iframe map embed (not Branch Locator with DB-driven pins) |
-| Branch Locator | — | **Missing** as a dedicated route |
-| Appointment Booking wizard | — | **Missing** entirely |
-| Order Tracking | — | **Missing** entirely |
-| /try-on landing (Phase 3) | `Home/components/VirtualTryOn.jsx` | Stub component only |
+| Figma frame                | Code (`src/pages/`)                 | Implementation status                                                                         |
+| -------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| Home (mobile + desktop)    | `Home/Home.jsx` + 9 sub-sections    | UI shell present; data hard-coded; AOS animations everywhere; mobile breakpoints partial      |
+| Shop / PLP w/ filters      | `Shop/Shop.jsx`                     | Sidebar exists but filters non-functional; tablet (768-1024px) falls through to mobile layout |
+| Product detail             | `ProductDetails/ProductDetails.jsx` | One hard-coded product; `lg:` only — no `md:`                                                 |
+| Cart                       | `Cart/Cart.jsx`                     | Renders 3 seed items from `CartContext`                                                       |
+| Checkout                   | `Checkout/Checkout.jsx`             | 3-step UI exists; form has no state, no submit; no M-Pesa/Pesapal                             |
+| Login / Signup             | `Login/`, `Signup/`                 | Page shells, no auth                                                                          |
+| Profile                    | `Profile/Profile.jsx`               | Static UI                                                                                     |
+| Contact                    | `Contact/Contact.jsx`               | Static iframe map embed (not Branch Locator with DB-driven pins)                              |
+| Branch Locator             | —                                   | **Missing** as a dedicated route                                                              |
+| Appointment Booking wizard | —                                   | **Missing** entirely                                                                          |
+| Order Tracking             | —                                   | **Missing** entirely                                                                          |
+| /try-on landing (Phase 3)  | `Home/components/VirtualTryOn.jsx`  | Stub component only                                                                           |
 
 **Mobile vs desktop fidelity:** Figma has explicit mobile-width frames for the home page — the current code does a one-size layout with sporadic `lg:` overrides. See §4 below.
 
 ### Brand tokens — Figma vs code
 
-| Token | Figma | `optex-web` Tailwind | `optex-admin` theme |
-|---|---|---|---|
-| Primary navy | `#2A3182` | `brand.blue = #2A3182` ✓ | `--primary: #030213` ✗ (different) |
-| Accent red | `#D83232` / `#E53935` | `brand.red = #E53935` ✓ | `--destructive: #d4183d` ✗ (different) |
-| Sans font | (one clean sans) | `Montserrat` ✓ | shadcn default ✗ |
-| Heading scale | per frame | `text-[40px] sm: md:` — magic px | unset, uses `--text-*` defaults |
+| Token         | Figma                 | `optex-web` Tailwind             | `optex-admin` theme                    |
+| ------------- | --------------------- | -------------------------------- | -------------------------------------- |
+| Primary navy  | `#2A3182`             | `brand.blue = #2A3182` ✓         | `--primary: #030213` ✗ (different)     |
+| Accent red    | `#D83232` / `#E53935` | `brand.red = #E53935` ✓          | `--destructive: #d4183d` ✗ (different) |
+| Sans font     | (one clean sans)      | `Montserrat` ✓                   | shadcn default ✗                       |
+| Heading scale | per frame             | `text-[40px] sm: md:` — magic px | unset, uses `--text-*` defaults        |
 
 The two apps **do not share a design system** today — admin uses shadcn's default `oklch` theme; web uses brand-token hex. In a Next.js monorepo this becomes a single `packages/ui` with the same Tailwind config.
 
@@ -86,33 +86,33 @@ The two apps **do not share a design system** today — admin uses shadcn's defa
 
 All 13 screens **exist as fixture UI** in `src/app/components/admin/`. **None are wired to a backend.** Login is exported only into `src/imports/Login/` and never imported into `App.tsx`.
 
-| Screen | UI | Backend wiring |
-|---|---|---|
-| Dashboard | ✓ (fixtures) | ✗ |
-| Analytics | ✓ | ✗ |
-| Products | ✓ + Add/Edit dialog | ✗ — no image upload to Supabase Storage |
-| Inventory | ✓ + inline cell edit + CSV | ✗ |
-| Orders | ✓ + status modal | ✗ — no M-Pesa ref validation, no SMS trigger |
-| Appointments | ✓ | ✗ |
-| Customers | ✓ | ✗ |
-| Prescriptions | ✓ + preview modal | ✗ — no Storage |
-| Reviews | ✓ | ✗ |
-| Promotions | ✓ | ✗ |
-| Branches | ✓ | ✗ |
-| Payments | ✓ M-Pesa / Pesapal / COD tabs | ✗ — no Daraja webhook receiver |
-| Login | exists in `imports/Login/` only | not in App.tsx |
+| Screen        | UI                              | Backend wiring                               |
+| ------------- | ------------------------------- | -------------------------------------------- |
+| Dashboard     | ✓ (fixtures)                    | ✗                                            |
+| Analytics     | ✓                               | ✗                                            |
+| Products      | ✓ + Add/Edit dialog             | ✗ — no image upload to Supabase Storage      |
+| Inventory     | ✓ + inline cell edit + CSV      | ✗                                            |
+| Orders        | ✓ + status modal                | ✗ — no M-Pesa ref validation, no SMS trigger |
+| Appointments  | ✓                               | ✗                                            |
+| Customers     | ✓                               | ✗                                            |
+| Prescriptions | ✓ + preview modal               | ✗ — no Storage                               |
+| Reviews       | ✓                               | ✗                                            |
+| Promotions    | ✓                               | ✗                                            |
+| Branches      | ✓                               | ✗                                            |
+| Payments      | ✓ M-Pesa / Pesapal / COD tabs   | ✗ — no Daraja webhook receiver               |
+| Login         | exists in `imports/Login/` only | not in App.tsx                               |
 
 ### 3.2 Stack mismatch
 
-| Current | Required | Verdict |
-|---|---|---|
-| Vite 6 SPA | Next.js 14 (app router) | **Replace** — no router today |
-| State-machine routing (App.tsx:26-44) | File-based routes | **Replace** |
-| Tailwind v4 (`@tailwindcss/vite`) | Tailwind v3 (matches web) | **Downgrade** |
-| Firebase Hosting (`optex-adminpanel`) | Vercel | **Migrate** |
-| MUI in `package.json` (unused) | — | **Delete** — ~2MB dead deps |
-| `figma:asset/` Vite plugin → `src/assets/` (dir doesn't exist) | — | **Delete** — build hazard |
-| `src/imports/{Login,Signup,Main,CartPage,CheckoutPage,ProfileScreen,...}` 15+ generated folders | — | **Delete** — none imported by App.tsx |
+| Current                                                                                         | Required                  | Verdict                               |
+| ----------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------- |
+| Vite 6 SPA                                                                                      | Next.js 14 (app router)   | **Replace** — no router today         |
+| State-machine routing (App.tsx:26-44)                                                           | File-based routes         | **Replace**                           |
+| Tailwind v4 (`@tailwindcss/vite`)                                                               | Tailwind v3 (matches web) | **Downgrade**                         |
+| Firebase Hosting (`optex-adminpanel`)                                                           | Vercel                    | **Migrate**                           |
+| MUI in `package.json` (unused)                                                                  | —                         | **Delete** — ~2MB dead deps           |
+| `figma:asset/` Vite plugin → `src/assets/` (dir doesn't exist)                                  | —                         | **Delete** — build hazard             |
+| `src/imports/{Login,Signup,Main,CartPage,CheckoutPage,ProfileScreen,...}` 15+ generated folders | —                         | **Delete** — none imported by App.tsx |
 
 ### 3.3 Code-quality hotspots
 
@@ -134,55 +134,55 @@ All 13 screens **exist as fixture UI** in `src/app/components/admin/`. **None ar
 
 ### 4.1 Coverage vs required customer features
 
-| Feature group | Status |
-|---|---|
-| Home / Hero / Featured / Testimonials | UI shell only (no CMS) |
-| Category pages (Eyeglasses / Sunglasses / Kids / Computer / Reading) | **Missing as category routes**; `/shop` is one static list |
-| PLP filtering (price/brand/shape/gender/material) | Filter UI on Shop.jsx — non-functional |
-| PDP + multi-angle + reviews + lens options | Stub; single hard-coded product |
-| Search + autocomplete (Supabase FTS) | **Missing** |
-| Cart with persistent sessions | `CartContext` in-memory, **3 hard-coded seed items every mount** ([CartContext.js:11-42](../Frontend/optex-web/src/context/CartContext.js)) |
-| Multi-step checkout | UI accordion; **no form state, no submit** |
-| **M-Pesa STK Push** | **Missing** |
-| **Pesapal** | **Missing** |
-| **COD** | **Missing** |
-| Order confirmation SMS+email | **Missing** |
-| Order tracking page | **Missing** |
-| User account / auth | Page shells; no auth backend |
-| **Appointment booking wizard** (3-step) | **Missing** |
-| **Branch locator** (Google Maps) | **Missing** (Contact iframe ≠ locator) |
-| Prescription upload | **Missing** |
-| Reviews + JSON-LD | **Missing** |
-| Trust / warranty / returns pages | **Missing** |
-| Promotions engine | UI stub |
-| WhatsApp floating button (`wa.me` deep-link only — Business API is out of scope per Kenya SOW §8.2) | **Missing** |
-| GA4 | **Missing** |
-| JSON-LD: Product / LocalBusiness / MedicalOrganization / FAQ | **Missing** |
+| Feature group                                                                                       | Status                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home / Hero / Featured / Testimonials                                                               | UI shell only (no CMS)                                                                                                                      |
+| Category pages (Eyeglasses / Sunglasses / Kids / Computer / Reading)                                | **Missing as category routes**; `/shop` is one static list                                                                                  |
+| PLP filtering (price/brand/shape/gender/material)                                                   | Filter UI on Shop.jsx — non-functional                                                                                                      |
+| PDP + multi-angle + reviews + lens options                                                          | Stub; single hard-coded product                                                                                                             |
+| Search + autocomplete (Supabase FTS)                                                                | **Missing**                                                                                                                                 |
+| Cart with persistent sessions                                                                       | `CartContext` in-memory, **3 hard-coded seed items every mount** ([CartContext.js:11-42](../Frontend/optex-web/src/context/CartContext.js)) |
+| Multi-step checkout                                                                                 | UI accordion; **no form state, no submit**                                                                                                  |
+| **M-Pesa STK Push**                                                                                 | **Missing**                                                                                                                                 |
+| **Pesapal**                                                                                         | **Missing**                                                                                                                                 |
+| **COD**                                                                                             | **Missing**                                                                                                                                 |
+| Order confirmation SMS+email                                                                        | **Missing**                                                                                                                                 |
+| Order tracking page                                                                                 | **Missing**                                                                                                                                 |
+| User account / auth                                                                                 | Page shells; no auth backend                                                                                                                |
+| **Appointment booking wizard** (3-step)                                                             | **Missing**                                                                                                                                 |
+| **Branch locator** (Google Maps)                                                                    | **Missing** (Contact iframe ≠ locator)                                                                                                      |
+| Prescription upload                                                                                 | **Missing**                                                                                                                                 |
+| Reviews + JSON-LD                                                                                   | **Missing**                                                                                                                                 |
+| Trust / warranty / returns pages                                                                    | **Missing**                                                                                                                                 |
+| Promotions engine                                                                                   | UI stub                                                                                                                                     |
+| WhatsApp floating button (`wa.me` deep-link only — Business API is out of scope per Kenya SOW §8.2) | **Missing**                                                                                                                                 |
+| GA4                                                                                                 | **Missing**                                                                                                                                 |
+| JSON-LD: Product / LocalBusiness / MedicalOrganization / FAQ                                        | **Missing**                                                                                                                                 |
 
 ### 4.2 Stack mismatch
 
-| Current | Required | Verdict |
-|---|---|---|
-| CRA (react-scripts) | Next.js 14 | **Replace** — CRA blocks SSR/SSG, `next/image`, edge functions for Daraja callbacks |
-| JavaScript / JSX | TS recommended (admin is TS) | **Migrate to TS** for monorepo consistency |
-| AOS animations | n/a (or framer-motion) | **Replace with framer-motion** — AOS scroll-listener cost on low-end Android 4G |
-| Tailwind v3 | Tailwind v3 ✓ | **Keep** |
-| Firebase Hosting | Vercel + Cloudflare | **Migrate** |
-| `CartContext` (in-memory) | Supabase-backed cart | **Replace** |
+| Current                   | Required                     | Verdict                                                                             |
+| ------------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| CRA (react-scripts)       | Next.js 14                   | **Replace** — CRA blocks SSR/SSG, `next/image`, edge functions for Daraja callbacks |
+| JavaScript / JSX          | TS recommended (admin is TS) | **Migrate to TS** for monorepo consistency                                          |
+| AOS animations            | n/a (or framer-motion)       | **Replace with framer-motion** — AOS scroll-listener cost on low-end Android 4G     |
+| Tailwind v3               | Tailwind v3 ✓                | **Keep**                                                                            |
+| Firebase Hosting          | Vercel + Cloudflare          | **Migrate**                                                                         |
+| `CartContext` (in-memory) | Supabase-backed cart         | **Replace**                                                                         |
 
 ### 4.3 Responsiveness audit (mobile + desktop)
 
 **Score: 6/10** — desktop-acceptable, mobile-to-tablet transitions broken.
 
-| Issue | File:line | Impact |
-|---|---|---|
-| Magic-number top padding `pt-[100px]` / `pt-[118px]` with only one `sm:pt-[120px]` override | [MainLayout.jsx:16-20](../Frontend/optex-web/src/layouts/MainLayout.jsx) | Header height changes mid-scroll cause CLS on tablet |
-| `overflow-x-hidden` masking real overflow bugs | MainLayout.jsx:19 | Hides regressions instead of fixing them |
-| Shop sidebar: no `md:` rules, jumps from mobile→`lg:w-[240px]` | `Shop.jsx:139` | Tablet users get the mobile layout (no sticky filter) |
-| PDP image grid `grid-cols-4` at every breakpoint | `ProductDetails.jsx:71` | Thumbnails ~80px on small mobile — should be `grid-cols-3 sm:grid-cols-4` |
-| `<img>` not lazy-loaded, no `srcset`, no WebP | most pages | LCP ~3.5s — SOW requires < 2.5s |
-| Form inputs missing `htmlFor`/`id` pairing | `Checkout.jsx:88-102` | Screen readers cannot announce field names |
-| File extension chaos (`.js` vs `.jsx`) | `Footer.js`, `FaceShape.js`, `Promotional.js`, vs `Navbar.jsx`, `Hero.jsx`, etc. | No type safety; ESLint won't help |
+| Issue                                                                                       | File:line                                                                        | Impact                                                                    |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Magic-number top padding `pt-[100px]` / `pt-[118px]` with only one `sm:pt-[120px]` override | [MainLayout.jsx:16-20](../Frontend/optex-web/src/layouts/MainLayout.jsx)         | Header height changes mid-scroll cause CLS on tablet                      |
+| `overflow-x-hidden` masking real overflow bugs                                              | MainLayout.jsx:19                                                                | Hides regressions instead of fixing them                                  |
+| Shop sidebar: no `md:` rules, jumps from mobile→`lg:w-[240px]`                              | `Shop.jsx:139`                                                                   | Tablet users get the mobile layout (no sticky filter)                     |
+| PDP image grid `grid-cols-4` at every breakpoint                                            | `ProductDetails.jsx:71`                                                          | Thumbnails ~80px on small mobile — should be `grid-cols-3 sm:grid-cols-4` |
+| `<img>` not lazy-loaded, no `srcset`, no WebP                                               | most pages                                                                       | LCP ~3.5s — SOW requires < 2.5s                                           |
+| Form inputs missing `htmlFor`/`id` pairing                                                  | `Checkout.jsx:88-102`                                                            | Screen readers cannot announce field names                                |
+| File extension chaos (`.js` vs `.jsx`)                                                      | `Footer.js`, `FaceShape.js`, `Promotional.js`, vs `Navbar.jsx`, `Hero.jsx`, etc. | No type safety; ESLint won't help                                         |
 
 Mobile-first Figma frames exist for Home — the code does **not** match them.
 
@@ -363,12 +363,12 @@ create table pesapal_transactions (
 
 ### 5.3 Supabase Storage buckets
 
-| Bucket | Purpose | Public read? |
-|---|---|---|
-| `product-images` | PDP gallery | yes |
-| `tryon-assets` | transparent PNG cutouts for AR | yes |
-| `prescriptions` | uploaded prescription PDFs/images | **no** (signed URLs only) |
-| `promo-banners` | banner artwork | yes |
+| Bucket           | Purpose                           | Public read?              |
+| ---------------- | --------------------------------- | ------------------------- |
+| `product-images` | PDP gallery                       | yes                       |
+| `tryon-assets`   | transparent PNG cutouts for AR    | yes                       |
+| `prescriptions`  | uploaded prescription PDFs/images | **no** (signed URLs only) |
+| `promo-banners`  | banner artwork                    | yes                       |
 
 ### 5.4 Node.js / Express REST API (or Next.js route handlers)
 
@@ -412,18 +412,18 @@ POST   /admin/payments/mpesa/reconcile
 
 ### 5.5 Third-party integrations
 
-| Concern | Provider | Reason |
-|---|---|---|
-| Payments — M-Pesa | Safaricom **Daraja API** (STK Push C2B) | SOW §2.1 / §3.2 |
-| Payments — Cards / Airtel Money / Bank | **Pesapal** | SOW §2.2 |
-| Payments — fallback / Visa-MC via Pesapal | (covered above) | — |
-| SMS | **Africa's Talking** (preferred for KE) or Twilio | SOW order/appt confirmations |
-| Email | Resend or SendGrid | Order confirmation |
-| Maps | Google Maps JS API | Branch locator + appointment branch picker |
-| Face mesh (Phase 3 web) | MediaPipe Face Mesh | Notion try-on plan |
-| Face detection (Phase 3 app) | Google ML Kit | Notion try-on plan |
-| Analytics | GA4 + GTM | SOW |
-| Tax (optional) | eTIMS (KRA) — flagged in Risks page | Open decision |
+| Concern                                   | Provider                                          | Reason                                     |
+| ----------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| Payments — M-Pesa                         | Safaricom **Daraja API** (STK Push C2B)           | SOW §2.1 / §3.2                            |
+| Payments — Cards / Airtel Money / Bank    | **Pesapal**                                       | SOW §2.2                                   |
+| Payments — fallback / Visa-MC via Pesapal | (covered above)                                   | —                                          |
+| SMS                                       | **Africa's Talking** (preferred for KE) or Twilio | SOW order/appt confirmations               |
+| Email                                     | Resend or SendGrid                                | Order confirmation                         |
+| Maps                                      | Google Maps JS API                                | Branch locator + appointment branch picker |
+| Face mesh (Phase 3 web)                   | MediaPipe Face Mesh                               | Notion try-on plan                         |
+| Face detection (Phase 3 app)              | Google ML Kit                                     | Notion try-on plan                         |
+| Analytics                                 | GA4 + GTM                                         | SOW                                        |
+| Tax (optional)                            | eTIMS (KRA) — flagged in Risks page               | Open decision                              |
 
 ---
 
@@ -448,6 +448,7 @@ optex/
 ```
 
 **One open decision:** keep Express as a separate `apps/api` service (SOW words "Node.js + Express"), or use Next.js route handlers for everything (simpler, fewer deploy targets, same Node runtime).
+
 - **Recommendation:** Next.js route handlers for everything except the M-Pesa/Pesapal webhooks, which run as **Vercel serverless functions** so the public URL is stable & isolated from app deploys. This still satisfies "Node.js + Express" in spirit (Express can be mounted under a single Vercel function if the client requires the literal name).
 
 ---
@@ -456,16 +457,17 @@ optex/
 
 Tailwind breakpoint policy across both apps:
 
-| Token | Width | Use for |
-|---|---|---|
-| default | 0px+ | Single-column phone (Kenya: Android, often 360-414px) |
-| `sm:` | 640px | Large phone / small landscape |
-| `md:` | 768px | iPad portrait — **must explicitly handle** (current code skips this) |
-| `lg:` | 1024px | iPad landscape / small laptop |
-| `xl:` | 1280px | Desktop |
-| `2xl:` | 1536px | Large desktop |
+| Token   | Width  | Use for                                                              |
+| ------- | ------ | -------------------------------------------------------------------- |
+| default | 0px+   | Single-column phone (Kenya: Android, often 360-414px)                |
+| `sm:`   | 640px  | Large phone / small landscape                                        |
+| `md:`   | 768px  | iPad portrait — **must explicitly handle** (current code skips this) |
+| `lg:`   | 1024px | iPad landscape / small laptop                                        |
+| `xl:`   | 1280px | Desktop                                                              |
+| `2xl:`  | 1536px | Large desktop                                                        |
 
 Rules:
+
 1. Every page declares mobile layout first, then progressively enhances at `md:` and `lg:`. No `lg:`-only overrides.
 2. No magic-number paddings tied to header height — header height becomes a CSS custom property (`--header-h`) set on `:root`.
 3. `<Image>` from `next/image` for every product asset; remove all bare `<img>` post-migration.
@@ -479,16 +481,16 @@ Rules:
 
 This re-orders the Notion plan against the current state — **the current code is essentially zero-day for SOW purposes**, so the schedule below assumes a fresh Next.js monorepo build.
 
-| Week | Work | Deliverable |
-|---|---|---|
-| **1** | Monorepo init · Supabase project + schema migrations · brand tokens + Tailwind preset · Figma design approval | DB schema live, design approved |
-| **2** | Next.js scaffolds (web + admin) · Supabase Auth · header/footer · home shell · admin login + sidebar layout · Catalog page wired to Supabase | Dev env live |
-| **3** | Category pages, PLP filtering, PDP, search (Supabase FTS) · admin Products + Inventory · cart wired to Supabase | Catalog UI complete |
-| **4** | Checkout · Daraja STK Push + callback · Pesapal redirect + IPN · COD path · Order creation + status machine | Payments live |
-| **5** | Admin Orders/Appointments/Customers · Africa's Talking SMS triggers · Prescription upload + Storage signed URLs · admin Dashboard charts | Admin v1 |
-| **6** | Reviews + JSON-LD (Product/LocalBusiness/MedicalOrganization/FAQ) · Promotions engine · Branch locator + Google Maps · Appointment wizard · AR Try-On scope confirm | Full feature set |
-| **7** | SEO schema · Core Web Vitals (LCP<2.5s) · UAT (web + Android) · Vercel + Cloudflare DNS cut-over · bug fixes | GO-LIVE |
-| **8** | Play Store submission · training docs · handover | Published + handover |
+| Week  | Work                                                                                                                                                                | Deliverable                     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| **1** | Monorepo init · Supabase project + schema migrations · brand tokens + Tailwind preset · Figma design approval                                                       | DB schema live, design approved |
+| **2** | Next.js scaffolds (web + admin) · Supabase Auth · header/footer · home shell · admin login + sidebar layout · Catalog page wired to Supabase                        | Dev env live                    |
+| **3** | Category pages, PLP filtering, PDP, search (Supabase FTS) · admin Products + Inventory · cart wired to Supabase                                                     | Catalog UI complete             |
+| **4** | Checkout · Daraja STK Push + callback · Pesapal redirect + IPN · COD path · Order creation + status machine                                                         | Payments live                   |
+| **5** | Admin Orders/Appointments/Customers · Africa's Talking SMS triggers · Prescription upload + Storage signed URLs · admin Dashboard charts                            | Admin v1                        |
+| **6** | Reviews + JSON-LD (Product/LocalBusiness/MedicalOrganization/FAQ) · Promotions engine · Branch locator + Google Maps · Appointment wizard · AR Try-On scope confirm | Full feature set                |
+| **7** | SEO schema · Core Web Vitals (LCP<2.5s) · UAT (web + Android) · Vercel + Cloudflare DNS cut-over · bug fixes                                                        | GO-LIVE                         |
+| **8** | Play Store submission · training docs · handover                                                                                                                    | Published + handover            |
 
 (Flutter Android app runs Weeks 3-7 in parallel — not in scope of this repo audit.)
 
@@ -496,14 +498,14 @@ This re-orders the Notion plan against the current state — **the current code 
 
 ## 9. Top risks (from Notion `⚠️ Risks` page)
 
-| Risk | Status | Mitigation |
-|---|---|---|
-| Daraja / Pesapal credentials not delivered by Week 1 | 🔴 Open | Lock credentials in kickoff; have sandbox-only fallback for Weeks 1-3 |
-| Product catalog spreadsheet not delivered Week 1 | 🔴 Open | Use seed fixtures until Week 2; gate PDP UAT on real data |
-| Frame PNG cutouts for Try-On (Phase 3) | 🔴 Open | Start Month 8, not Month 10 |
-| Budget-Android Try-On perf | 🟡 | 15 fps "Lite Mode" toggle |
-| KRA eTIMS integration | 🟡 Open decision | Confirm at kickoff |
-| iOS app / Try-On for iOS | 🟡 Open decision | Confirm out-of-scope in writing |
+| Risk                                                 | Status           | Mitigation                                                            |
+| ---------------------------------------------------- | ---------------- | --------------------------------------------------------------------- |
+| Daraja / Pesapal credentials not delivered by Week 1 | 🔴 Open          | Lock credentials in kickoff; have sandbox-only fallback for Weeks 1-3 |
+| Product catalog spreadsheet not delivered Week 1     | 🔴 Open          | Use seed fixtures until Week 2; gate PDP UAT on real data             |
+| Frame PNG cutouts for Try-On (Phase 3)               | 🔴 Open          | Start Month 8, not Month 10                                           |
+| Budget-Android Try-On perf                           | 🟡               | 15 fps "Lite Mode" toggle                                             |
+| KRA eTIMS integration                                | 🟡 Open decision | Confirm at kickoff                                                    |
+| iOS app / Try-On for iOS                             | 🟡 Open decision | Confirm out-of-scope in writing                                       |
 
 ---
 
@@ -526,11 +528,13 @@ This re-orders the Notion plan against the current state — **the current code 
 The `Frontend/` directory has its own `.git` repository (`.git` lives at `Frontend/`, not the repo root) and is excluded from the root `.gitignore` to prevent it from being tracked twice. Do not run git commands from the root for changes inside `Frontend/` — use `git -C Frontend/` if you need to inspect its history.
 
 **What to mine from `Frontend/` (read-only):**
+
 - Visual layout and spacing from page components (`src/app/components/admin/*.tsx`, `src/pages/*.jsx`)
 - shadcn `ui/*` primitives already adapted to the OPTEX colour palette
 - TypeScript interfaces for `Product`, `Order`, `Appointment`, `Customer`
 
 **What to ignore:**
+
 - Build pipeline (Vite, react-scripts, Firebase Hosting config)
 - `src/imports/` (raw Figma-Make export, never integrated into App.tsx)
 - `figma:asset/` Vite plugin and the missing `src/assets/` directory

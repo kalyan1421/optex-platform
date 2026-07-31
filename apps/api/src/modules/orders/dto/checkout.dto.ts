@@ -1,12 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { ShippingAddressDto } from './shipping-address.dto';
 
 /**

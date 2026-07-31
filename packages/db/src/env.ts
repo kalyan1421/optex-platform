@@ -9,20 +9,20 @@ function required(name: string, value: string | undefined): string {
     throw new Error(
       `[@optex/db] Missing required env var: ${name}.\n` +
         `  → Copy apps/web/.env.example or apps/admin/.env.example to .env.local in the same folder, fill in your Supabase project URL + anon key, and restart the dev server.`,
-    )
+    );
   }
-  return value
+  return value;
 }
 
 export const supabaseUrl = (): string =>
-  required('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL)
+  required('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL);
 
 export const supabaseAnonKey = (): string =>
-  required('NEXT_PUBLIC_SUPABASE_ANON_KEY', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  required('NEXT_PUBLIC_SUPABASE_ANON_KEY', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export const supabaseServiceRoleKey = (): string =>
-  required('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY)
+  required('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 /** True when the public Supabase env is present. Use to gate optional queries. */
 export const isSupabaseConfigured = (): boolean =>
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);

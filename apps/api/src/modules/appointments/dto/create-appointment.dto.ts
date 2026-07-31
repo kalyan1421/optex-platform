@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsIn,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { APPOINTMENT_TYPES, type AppointmentType } from './appointment.dto';
 
 /** ISO calendar date `YYYY-MM-DD`. */
