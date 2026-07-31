@@ -9,9 +9,9 @@ E-commerce and operations platform for **Optex Opticians (Kenya)**. Built as a p
 ```
 optex/
 ├── apps/
-│   ├── web/          Next.js 14 — customer storefront  (port 3000)
-│   ├── admin/        Next.js 14 — super-admin panel    (port 3001)
-│   └── api/          NestJS 11  — REST API              (port 4000)
+│   ├── web/          Next.js 14 — customer storefront  (port 1112)
+│   ├── admin/        Next.js 14 — super-admin panel    (port 1113)
+│   └── api/          NestJS 11  — REST API              (1111 dev / 4000 Docker)
 ├── packages/
 │   ├── ui/           shadcn primitives shared by web + admin
 │   ├── db/           Supabase types + query helpers
@@ -34,9 +34,9 @@ optex/
 
 | Service | Tech | URL |
 |---------|------|-----|
-| Customer storefront | Next.js 14 App Router + Tailwind v4 | `localhost:3000` |
-| Admin panel | Next.js 14 App Router + shadcn | `localhost:3001` |
-| REST API | NestJS 11 + class-validator | `localhost:4000` |
+| Customer storefront | Next.js 14 App Router + Tailwind v4 | `localhost:1112` |
+| Admin panel | Next.js 14 App Router + shadcn | `localhost:1113` |
+| REST API | NestJS 11 + class-validator | `localhost:1111` (`pnpm dev:api`) · `localhost:4000` (Docker) |
 | Supabase gateway | Kong 2.8.1 (DB-less) | `localhost:54321` |
 | Supabase Studio | Official Studio UI | `localhost:54323` |
 | Postgres | Supabase Postgres 15 | `localhost:54322` |
@@ -100,16 +100,16 @@ This starts all 9 services (Postgres, Auth, PostgREST, Storage, Kong, Studio, an
 | Supabase gateway (API) | http://localhost:54321 |
 | Supabase Studio | http://localhost:54323 |
 | Postgres direct | `localhost:54322` (user: `postgres`) |
-| NestJS API | http://localhost:4000 |
+| NestJS API | http://localhost:4000 (Docker port — `pnpm dev:api` uses 1111 instead) |
 
 ### 4 — Start the web and admin apps
 
 ```bash
 # Terminal 1
-pnpm dev:web      # http://localhost:3000
+pnpm dev:web      # http://localhost:1112
 
 # Terminal 2
-pnpm dev:admin    # http://localhost:3001
+pnpm dev:admin    # http://localhost:1113
 ```
 
 ### 5 — Create the super-admin user
@@ -147,7 +147,7 @@ Migrations in `Backend/supabase/migrations/` run automatically via `docker/migra
 
 ```bash
 # Regenerate packages/db/src/database.types.ts from local Postgres
-pnpm db:types:docker
+pnpm db:types
 
 # Types are also regenerated automatically before every pnpm build
 ```

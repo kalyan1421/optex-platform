@@ -29,12 +29,12 @@ cd ..
 
 ## 2. Run Both Apps (Dev)
 
-### Start Web Storefront — http://localhost:3000
+### Start Web Storefront — http://localhost:1112
 ```bash
 pnpm dev:web
 ```
 
-### Start Admin Panel — http://localhost:3001
+### Start Admin Panel — http://localhost:1113
 ```bash
 pnpm dev:admin
 ```
@@ -79,10 +79,10 @@ pnpm --filter @optex/admin build
 ### Preview production build locally
 ```bash
 # Web storefront
-pnpm --filter @optex/web start      # http://localhost:3000
+pnpm --filter @optex/web start      # http://localhost:1112
 
 # Admin panel
-pnpm --filter @optex/admin start    # http://localhost:3001
+pnpm --filter @optex/admin start    # http://localhost:1113
 ```
 
 ---
@@ -99,7 +99,7 @@ pnpm docker:up          # first run: builds images, runs migrations + seed
 - **Supabase gateway (Kong):** http://localhost:54321
 - **Studio:** http://localhost:54323
 - **Postgres direct:** `localhost:54322` (user: `postgres`, password: `your-super-secret-and-long-postgres-password`)
-- **NestJS API:** http://localhost:4000
+- **NestJS API:** http://localhost:4000 — this is the **Docker** port (`docker-compose.yml` sets `PORT=4000`). Running the API on the host with `pnpm dev:api` uses **1111** instead.
 
 ### Stop all services (data preserved)
 ```bash
@@ -151,8 +151,9 @@ supabase migration new <migration_name>
 
 ### Apply latest migration to local DB
 ```bash
-cd Backend
-supabase db push
+# Compose owns the local stack — migrate.sh applies migrations/*.sql idempotently.
+# Do NOT use `supabase db push` locally; it targets the CLI stack, not Compose.
+docker compose up -d supabase-migrate
 ```
 
 ### Apply latest migration to hosted DB
@@ -181,12 +182,13 @@ Run after any schema change (new table, column, or enum) to keep
 `packages/db/src/database.types.ts` in sync:
 
 ```bash
-# From repo root — targets local Supabase
+# From repo root — targets the local Docker Compose Postgres (:54322)
 pnpm db:types
 
 # Equivalent long form
-supabase gen types typescript --local --schema public \
-  > packages/db/src/database.types.ts
+supabase gen types typescript \
+  --db-url postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres \
+  --schema public > packages/db/src/database.types.ts
 ```
 
 > **Important:** Commit the updated `database.types.ts` after every migration.
@@ -388,7 +390,7 @@ supabase db push --linked
 pkill -f "next dev"
 
 # Check which ports are in use
-lsof -i :3000 -i :3001 -i :54321 -i :54322 -i :54323
+lsof -i :1111 -i :1112 -i :1113 -i :54321 -i :54322 -i :54323
 
 # Reinstall all deps from scratch
 rm -rf node_modules apps/*/node_modules packages/*/node_modules
@@ -427,6 +429,6 @@ pnpm update -r <package-name>
 | Stop Supabase | `pnpm docker:down` |
 | Reset local DB | `pnpm docker:reset` |
 | Push migrations (prod) | `cd Backend && supabase db push --linked` |
-| Regen DB types | `pnpm db:types:docker` |
+| Regen DB types | `pnpm db:types` |
 | Install deps | `pnpm install` |
 | Add dep to web app | `pnpm --filter @optex/web add <pkg>` |
