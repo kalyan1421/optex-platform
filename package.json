@@ -14,7 +14,7 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "db:types": "supabase gen types typescript --db-url postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres --schema public > packages/db/src/database.types.ts",
+    "db:types": "supabase gen types typescript --db-url postgresql://postgres:your-super-secret-and-long-postgres-password@localhost:54322/postgres --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v && docker compose up --build"
