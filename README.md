@@ -137,7 +137,7 @@ pnpm docker:down    # stop all services (data preserved)
 pnpm docker:reset   # wipe volumes + restart (fresh DB)
 ```
 
-Migrations in `Backend/supabase/migrations/` run automatically via `docker/migrate.sh` on every `docker:up`. Already-applied files are skipped (tracked in `_docker_migrations`).
+Migrations in `Backend/supabase/migrations/` run automatically via `docker/migrate.sh` on every `docker:up`. Already-applied files are skipped (tracked in `_docker.migrations`).
 
 ---
 

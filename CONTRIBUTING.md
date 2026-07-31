@@ -53,7 +53,7 @@ chore(docker): pin Kong to 2.8.1 for declarative config compatibility
 
 ## Database migrations
 
-- Never edit an existing migration file once it has been applied (tracked by `_docker_migrations`)
+- Never edit an existing migration file once it has been applied (tracked by `_docker.migrations`)
 - New migrations must be idempotent: use `IF NOT EXISTS`, `OR REPLACE`, `DO $$ ... IF NOT EXISTS $$`
 - RLS policies must cover all four operations (SELECT / INSERT / UPDATE / DELETE) for each role
 - After every migration: regenerate types and commit `database.types.ts`

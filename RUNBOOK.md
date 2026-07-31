@@ -61,7 +61,7 @@ First run builds the API image and pulls 8 Supabase service images (Postgres,
 GoTrue, PostgREST, Storage, postgres-meta, Kong, Studio) — this takes a few
 minutes. Migrations (`Backend/supabase/migrations/0001`–`0008`) and
 `seed.sql` run automatically and idempotently via `docker/migrate.sh`
-(tracked in the `_docker_migrations` table — already-applied files are
+(tracked in the `_docker.migrations` table — already-applied files are
 skipped on every subsequent `docker:up`).
 
 Other Docker commands:

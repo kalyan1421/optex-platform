@@ -3,21 +3,6 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
-      _docker_migrations: {
-        Row: {
-          applied_at: string | null;
-          filename: string;
-        };
-        Insert: {
-          applied_at?: string | null;
-          filename: string;
-        };
-        Update: {
-          applied_at?: string | null;
-          filename?: string;
-        };
-        Relationships: [];
-      };
       appointments: {
         Row: {
           branch_id: string;
