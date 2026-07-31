@@ -47,6 +47,25 @@ export class ReviewDto {
   created_at!: string;
 }
 
+/**
+ * A review as listed in the admin moderation table, with the author and
+ * product names resolved.
+ *
+ * The admin UI shows who wrote the review and what it is about; without these
+ * joins it would only have raw uuids to render. Kept separate from `ReviewDto`
+ * so the public product-review payload stays free of customer names.
+ */
+export class AdminReviewDto extends ReviewDto {
+  @ApiProperty({
+    description: "Author's full name, or null when the customer record has none.",
+    nullable: true,
+  })
+  customer_name!: string | null;
+
+  @ApiProperty({ description: 'Name of the reviewed product.', nullable: true })
+  product_name!: string | null;
+}
+
 /** Aggregate rating summary returned alongside a product's review list. */
 export class ReviewAggregateDto {
   @ApiProperty({

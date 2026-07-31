@@ -7,7 +7,7 @@ import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { Skeleton } from '../ui/skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '@/lib/api';
 
 type ReviewStatus = 'Pending' | 'Approved' | 'Flagged';
 
@@ -50,32 +50,22 @@ export function Reviews() {
   const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
-    const db = createBrowserSupabase();
     (async () => {
       try {
-        const { data, error } = await db
-          .from('product_reviews')
-          .select(
-            'id, rating, body, status, admin_reply, created_at, customer:customers(full_name), product:products(name)',
-          )
-          .order('created_at', { ascending: false });
-        if (error) {
-          console.error(error);
-          return;
-        }
-        const mapped: Review[] = (data ?? []).map((s: any) => ({
+        const data = await api.admin.reviews.list();
+        const mapped: Review[] = data.map((s) => ({
           id: s.id,
-          customer: s.customer?.full_name || 'Anonymous',
-          product: s.product?.name || '—',
+          customer: s.customer_name || 'Anonymous',
+          product: s.product_name || '—',
           rating: s.rating,
-          body: s.body,
+          body: s.body ?? '',
           date: s.created_at ? s.created_at.split('T')[0] : '',
           status: (s.status.charAt(0).toUpperCase() + s.status.slice(1)) as ReviewStatus,
           adminReply: s.admin_reply || '',
         }));
         setReviews(mapped);
       } catch (e) {
-        console.error(e);
+        console.error('Failed to load reviews:', e);
       } finally {
         setLoading(false);
       }
@@ -92,24 +82,22 @@ export function Reviews() {
 
   function approve(id: string) {
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Approved' } : r)));
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        await db.from('product_reviews').update({ status: 'approved' }).eq('id', id);
+        await api.admin.reviews.moderate(id, { status: 'approved' });
       } catch (e) {
-        console.error(e);
+        console.error('Failed to approve review:', e);
       }
     })();
   }
 
   function flag(id: string) {
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Flagged' } : r)));
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        await db.from('product_reviews').update({ status: 'flagged' }).eq('id', id);
+        await api.admin.reviews.moderate(id, { status: 'flagged' });
       } catch (e) {
-        console.error(e);
+        console.error('Failed to flag review:', e);
       }
     })();
   }
@@ -121,12 +109,11 @@ export function Reviews() {
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, adminReply: text } : r)));
     setReplyTarget(null);
     setReplyText('');
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        await db.from('product_reviews').update({ admin_reply: text }).eq('id', id);
+        await api.admin.reviews.moderate(id, { admin_reply: text });
       } catch (e) {
-        console.error(e);
+        console.error('Failed to save reply:', e);
       }
     })();
   }

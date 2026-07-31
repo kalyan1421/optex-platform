@@ -20,6 +20,7 @@ import type {
   AddCartItemInput,
   AdminAppointmentQuery,
   AdminCustomer,
+  AdminReview,
   InventoryResponse,
   InventoryStock,
   SetStockInput,
@@ -570,7 +571,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     },
     reviews: {
       list: (status) =>
-        request<Review[]>('/admin/reviews', {
+        request<AdminReview[]>('/admin/reviews', {
           query: status ? { status } : undefined,
         }),
       moderate: (id, input) =>
@@ -833,7 +834,7 @@ export interface AdminApi {
   };
   reviews: {
     /** `GET /admin/reviews?status=` */
-    list: (status?: Review['status']) => Promise<Review[]>;
+    list: (status?: Review['status']) => Promise<AdminReview[]>;
     /** `PATCH /admin/reviews/:id` */
     moderate: (id: string, input: UpdateReviewInput) => Promise<Review>;
   };

@@ -671,6 +671,15 @@ export interface Review {
   created_at: string;
 }
 
+/**
+ * A review as listed in the admin moderation table (`AdminReviewDto`), with the
+ * author and product names resolved so the UI has more than uuids to render.
+ */
+export interface AdminReview extends Review {
+  customer_name: string | null;
+  product_name: string | null;
+}
+
 /** Aggregate rating summary (`ReviewAggregateDto`). */
 export interface ReviewAggregate {
   averageRating: number | null;

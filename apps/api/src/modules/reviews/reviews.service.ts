@@ -5,6 +5,7 @@ import type { CreateReviewDto } from './dto/create-review.dto';
 import type { UpdateReviewDto } from './dto/update-review.dto';
 import {
   DEFAULT_REVIEW_STATUS,
+  type AdminReviewDto,
   type ProductReviewsResponseDto,
   type ReviewDto,
   type ReviewStatus,
@@ -12,6 +13,15 @@ import {
 
 /** Columns selected from `product_reviews`. Mirrors the schema exactly. */
 const REVIEW_COLUMNS = 'id, product_id, customer_id, rating, body, status, admin_reply, created_at';
+
+/** As `REVIEW_COLUMNS`, plus the author and product names the admin table shows. */
+const ADMIN_REVIEW_COLUMNS = `${REVIEW_COLUMNS}, customer:customers(full_name), product:products(name)`;
+
+/** Shape Supabase returns for the admin joins, before flattening to `*_name`. */
+type RawAdminReviewRow = ReviewDto & {
+  customer: { full_name: string | null } | { full_name: string | null }[] | null;
+  product: { name: string } | { name: string }[] | null;
+};
 
 /** Postgres unique-violation code, raised on the duplicate-review constraint. */
 const PG_UNIQUE_VIOLATION = '23505';
@@ -115,10 +125,10 @@ export class ReviewsService {
    * Lists reviews for the admin panel, optionally filtered by moderation
    * `status`. Returns every status when no filter is supplied.
    */
-  async listForAdmin(status?: ReviewStatus): Promise<ReviewDto[]> {
+  async listForAdmin(status?: ReviewStatus): Promise<AdminReviewDto[]> {
     let query = this.supabase.client
       .from('product_reviews')
-      .select(REVIEW_COLUMNS)
+      .select(ADMIN_REVIEW_COLUMNS)
       .order('created_at', { ascending: false });
 
     if (status) {
@@ -131,7 +141,20 @@ export class ReviewsService {
       throw new InternalServerErrorException('Failed to load reviews');
     }
 
-    return (data ?? []) as ReviewDto[];
+    // PostgREST returns an embedded to-one join as either an object or a
+    // single-element array depending on how it infers the relationship, so
+    // normalise both shapes before flattening to `*_name`.
+    return ((data ?? []) as unknown as RawAdminReviewRow[]).map((row) => {
+      const { customer, product, ...review } = row;
+      const customerRow = Array.isArray(customer) ? (customer[0] ?? null) : customer;
+      const productRow = Array.isArray(product) ? (product[0] ?? null) : product;
+
+      return {
+        ...review,
+        customer_name: customerRow?.full_name ?? null,
+        product_name: productRow?.name ?? null,
+      };
+    });
   }
 
   /**
