@@ -38,7 +38,7 @@ chore(docker): pin Kong to 2.8.1 for declarative config compatibility
 - [ ] `pnpm lint` passes with no errors
 - [ ] `pnpm build` succeeds
 - [ ] New SQL migrations are numbered sequentially and idempotent
-- [ ] `packages/db/src/database.types.ts` regenerated after any schema change (`pnpm db:types:docker`)
+- [ ] `packages/db/src/database.types.ts` regenerated after any schema change (`pnpm db:types`)
 - [ ] Env variables added to the relevant `.env.example` and `.env.production.example`
 - [ ] No real secrets committed (`.env.local`, `.env`)
 

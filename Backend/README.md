@@ -9,11 +9,16 @@ Currently this folder holds the **Supabase definition** (schema, RLS, storage, s
 ```
 Backend/
 └─ supabase/
-   ├─ config.toml                  Supabase CLI project config
+   ├─ config.toml                  Supabase CLI config — hosted link/push only
    ├─ migrations/
    │  ├─ 0001_init_schema.sql      Tables, enums, indexes, helper functions
    │  ├─ 0002_rls_policies.sql     Row-Level Security for every table
-   │  └─ 0003_storage_buckets.sql  product-images, tryon-assets, promo-banners, prescriptions
+   │  ├─ 0003_storage_buckets.sql  product-images, tryon-assets, promo-banners, prescriptions
+   │  ├─ 0004_customers_trigger.sql
+   │  ├─ 0005_performance_indexes.sql
+   │  ├─ 0006_security_fixes.sql   orders INSERT lockdown, current_customer_id()
+   │  ├─ 0007_security_meta.sql    is_super_admin() reads app_metadata only
+   │  └─ 0008_api_hardening.sql    atomic place_order RPC, promo codes
    └─ seed.sql                     Branches, categories, 3 placeholder products
 ```
 
@@ -23,21 +28,28 @@ Backend/
 # 1. Install the Supabase CLI (https://supabase.com/docs/guides/cli)
 brew install supabase/tap/supabase
 
-# 2. From repo root:
+# 2. Hosted project (staging / production) — from this folder:
 cd Backend
 supabase link --project-ref <hosted-project-ref>     # one-time
-supabase db push                                     # applies migrations to hosted DB
+supabase db push --linked                            # applies migrations to hosted DB
 supabase db reset --linked                           # nuke + re-run + seed (dev only!)
+```
 
-# 3. Locally:
-supabase start                                       # boots Postgres + Studio at :54323
-psql "postgresql://postgres:postgres@localhost:54322/postgres" -f seed.sql
+**Local Supabase is Docker Compose only — do not run `supabase start`.** The CLI
+config in `supabase/config.toml` is scoped to the hosted workflows above; the
+local stack is owned by `docker-compose.yml` at the repo root, and every app's
+`.env` points at it:
+
+```bash
+# From repo root
+docker compose up -d supabase-kong   # Postgres :54322, Kong gateway :54321
+docker compose up -d supabase-migrate # idempotently applies migrations/*.sql + seed.sql
 ```
 
 ## Roles & auth model
 
 - **Customers** sign up via Supabase Auth (email/password initially; SMS OTP later via Africa's Talking). On first sign-up the app inserts a matching row into `public.customers` keyed on `auth.users.id`.
-- **Super Admin** is a single Supabase user whose `user_metadata` JSON carries `{"role": "super_admin"}`. The `is_super_admin()` SQL helper reads this claim from the JWT. There is **no** branch-manager / staff tier in this SOW.
+- **Super Admin** is a single Supabase user whose **`app_metadata`** JSON carries `{"role": "super_admin"}`. `app_metadata` is server-set only (via the Auth admin API); **never** use `user_metadata` for authorization — any authenticated user can rewrite it themselves with `auth.updateUser({ data: … })`. The `is_super_admin()` SQL helper (redefined in `0007_security_meta.sql`) reads `app_metadata` only, with no `user_metadata` fallback. There is **no** branch-manager / staff tier in this SOW.
 - **Service role** key (Daraja / Pesapal webhooks, SMS senders) bypasses RLS — used only server-side, never exposed to the browser.
 
 ## Payment webhooks

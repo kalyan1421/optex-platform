@@ -25,10 +25,10 @@ fast in dev than late-bind a null error during a payment callback.
 
 ## Regenerating `database.types.ts`
 
-The file is currently **hand-derived** from `Backend/supabase/migrations/0001_init_schema.sql`. Once the migrations are applied to a hosted Supabase project, run from the repo root:
+The file is **generated** from the local Docker Compose Postgres (it was hand-derived historically; regenerating is now the only supported path, so do not hand-edit it — your edits will be overwritten). Run from the repo root:
 
 ```bash
 pnpm db:types
 ```
 
-…which runs `supabase gen types typescript --local --schema public` and overwrites `packages/db/src/database.types.ts`.
+…which runs `supabase gen types typescript --db-url …localhost:54322…` against the **local Docker Compose** Postgres and overwrites `packages/db/src/database.types.ts`. Bring the stack up first (`docker compose up -d supabase-kong`).
