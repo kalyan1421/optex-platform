@@ -16,7 +16,7 @@ import { createBrowserSupabase } from '@optex/db/browser'
 
 const baseUrl = typeof window !== 'undefined'
   ? window.location.origin
-  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1111')
 
 export const api: ApiClient = createApiClient({
   baseUrl,

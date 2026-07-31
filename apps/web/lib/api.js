@@ -8,7 +8,7 @@
  * logged-in customer. Public endpoints work without a token.
  *
  * Base URL comes from `NEXT_PUBLIC_API_URL` (e.g. https://api.optexopticians.com);
- * falls back to the local API on :4000 in development.
+ * falls back to the local API on :1111 in development.
  */
 
 import { createApiClient } from '@optex/api-client'
@@ -16,7 +16,7 @@ import { createBrowserSupabase } from '@optex/db/browser'
 
 const baseUrl = typeof window !== 'undefined'
   ? window.location.origin
-  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1111')
 
 export const api = createApiClient({
   baseUrl,

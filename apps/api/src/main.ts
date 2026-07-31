@@ -9,7 +9,8 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 
-const DEFAULT_CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:3001'];
+// Dev ports: web 1112, admin 1113 (see CLAUDE.md / RUNBOOK.md).
+const DEFAULT_CORS_ORIGINS = ['http://localhost:1112', 'http://localhost:1113'];
 
 function parseCorsOrigins(raw?: string): string[] {
   if (!raw) {

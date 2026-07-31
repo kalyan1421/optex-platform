@@ -100,8 +100,8 @@ services:
       API_EXTERNAL_URL: http://localhost:54321
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
-      GOTRUE_SITE_URL: http://localhost:3000
-      GOTRUE_URI_ALLOW_LIST: "http://localhost:3000,http://localhost:3001,https://optex-staging.vercel.app"
+      GOTRUE_SITE_URL: http://localhost:1112
+      GOTRUE_URI_ALLOW_LIST: "http://localhost:1112,http://localhost:1113,https://optex-staging.vercel.app"
       GOTRUE_DISABLE_SIGNUP: "false"
       GOTRUE_JWT_ADMIN_ROLES: service_role
       GOTRUE_JWT_AUD: authenticated

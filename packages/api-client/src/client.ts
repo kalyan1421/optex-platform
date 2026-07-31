@@ -148,7 +148,7 @@ export type GetAccessToken = () =>
 export interface CreateApiClientOptions {
   /**
    * API origin WITHOUT the `/api` prefix, e.g. `https://api.optex.co.ke` or
-   * `http://localhost:4000`. A trailing slash is tolerated. The `/api` prefix
+   * `http://localhost:1111`. A trailing slash is tolerated. The `/api` prefix
    * is appended by the client.
    */
   baseUrl: string;
