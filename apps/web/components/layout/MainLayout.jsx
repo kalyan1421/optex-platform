@@ -11,15 +11,9 @@ export default function MainLayout({ children }) {
   const hideNavFooter = ['/login', '/signup'].includes(pathname);
 
   return (
-    <div className="relative min-h-screen bg-white">
+    <div className="relative min-h-screen flex flex-col bg-white">
       {!hideNavFooter && <Header />}
-      <main
-        className={`
-          ${!isHomePage && !hideNavFooter ? (isSpecialPage ? 'pt-[118px]' : 'pt-[100px]') : ''}
-          ${!isHomePage && !hideNavFooter ? 'sm:pt-[120px]' : ''}
-          ${isHomePage ? 'overflow-x-hidden' : ''}
-        `}
-      >
+      <main className={`flex-1 flex flex-col w-full ${isHomePage ? 'overflow-x-hidden' : 'pt-[139px]'}`}>
         {children}
       </main>
       {!hideNavFooter && <Footer />}

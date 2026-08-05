@@ -1,10 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import 'aos/dist/aos.css';
 @import 'tailwindcss';
+
 @source "../app/**/*.{js,jsx,ts,tsx}";
 @source "../components/**/*.{js,jsx,ts,tsx}";
 @source "../context/**/*.{js,jsx,ts,tsx}";
-
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-@import 'aos/dist/aos.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -16,6 +16,8 @@
 
   /* ── Primary font ───────────────────────────────────────────────────── */
   --font-sans: 'Montserrat', sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-inter: 'Inter', sans-serif;
 
   /* ── Semantic color utilities (wired to CSS custom properties) ───────── */
   --color-background: var(--background);
@@ -67,76 +69,124 @@
   --ring: #2A3182;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-html,
-body {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: 'Montserrat', sans-serif;
-  background-color: #ffffff;
-  color: #111827;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-img {
-  display: block;
-  max-width: 100%;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-@media (prefers-reduced-motion: reduce) {
+@layer base {
   html {
-    scroll-behavior: auto;
+    scroll-behavior: smooth;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  html {
+    background-color: #ffffff !important;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #ffffff !important;
+    color: var(--foreground);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  .top-bar-text {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .nav-link {
+    color: #000000;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  @media (min-width: 1024px) {
+    .nav-link {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 18.97px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      text-transform: capitalize;
+    }
+  }
+  .nav-link:hover {
+    color: #2E3192;
+  }
+  .nav-link-active {
+    color: #2E3192;
+    font-weight: 700;
+    position: relative;
+  }
+  .nav-link-active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2.25px;
+    background-color: #2E3192;
+  }
+
+  .btn-appointment {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-brand-red);
+    color: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18.97px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-transform: capitalize;
+    padding: 10px 20px;
+    border-radius: 36px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+  .btn-appointment:hover {
+    background-color: #c62828;
+    transform: translateY(-1px);
   }
 }
 
 @layer utilities {
-  .site-container {
-    margin-inline: auto;
-    width: 100%;
-    max-width: 1440px;
-    padding-inline: 1rem;
-  }
-  @media (min-width: 640px) {
-    .site-container { padding-inline: 2.5rem; }
-  }
-  @media (min-width: 1024px) {
-    .site-container { padding-inline: 5rem; }
-  }
-
-  .section-container {
-    margin-inline: auto;
-    width: 100%;
-    max-width: 1440px;
-    padding-inline: 1rem;
-  }
-  @media (min-width: 640px) {
-    .section-container { padding-inline: 2.5rem; }
-  }
-  @media (min-width: 1024px) {
-    .section-container { padding-inline: 5rem; }
-  }
-
+  .site-container,
+  .section-container,
   .page-container {
     margin-inline: auto;
     width: 100%;
@@ -144,9 +194,17 @@ select {
     padding-inline: 1rem;
   }
   @media (min-width: 640px) {
-    .page-container { padding-inline: 2.5rem; }
+    .site-container,
+    .section-container,
+    .page-container {
+      padding-inline: 2.5rem;
+    }
   }
   @media (min-width: 1024px) {
-    .page-container { padding-inline: 5rem; }
+    .site-container,
+    .section-container,
+    .page-container {
+      padding-inline: 5rem;
+    }
   }
 }

@@ -19,73 +19,110 @@ export default function TrendingNow() {
   }, []);
 
   return (
-    <section className="bg-white py-16 overflow-hidden">
-      <div className="site-container">
+    <section className="bg-[#FFFFFF] flex flex-col items-center w-full px-6 lg:px-[100px]">
+      <div className="flex flex-col lg:w-[1240px] lg:gap-[60px]">
 
         {/* Header Row */}
-        <div data-aos="fade-up" className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-2xl">
-            <h2 className="section-heading mb-4 leading-tight">
+        <div data-aos="fade-up" className="flex flex-col lg:flex-row lg:items-end justify-between lg:w-[1240px] lg:h-[142px]">
+          <div className="flex flex-col lg:w-[600px] lg:h-[142px] lg:gap-[16px]">
+            <h2 
+              className="text-[#000000]"
+              style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '48px', lineHeight: '72px' }}
+            >
               Trending Now
             </h2>
-            <p className="section-copy font-medium">
-              Our most popular designs this season, curated for those who value <br className="hidden lg:block" />
-              both style and visual excellence.
+            <p 
+              className="text-[#717182]"
+              style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '18px', lineHeight: '27px' }}
+            >
+              Our most popular designs this season, curated for those who value both style and visual excellence.
             </p>
           </div>
-          <div className="pb-2">
-            <Link href="/shop" className="text-brand-blue font-bold text-[16px] border-b-[2px] border-brand-blue pb-1 hover:opacity-80 transition-all group flex items-center gap-2">
-              View all products
+          <div className="flex justify-start lg:justify-end mt-4 lg:mt-0">
+            <Link 
+              href="/shop" 
+              className="flex items-center justify-center lg:w-[157.58px] lg:h-[33px] hover:opacity-80 transition-opacity"
+              style={{ borderBottom: '2px solid #2E3192' }}
+            >
+              <span 
+                className="text-[#2E3192]"
+                style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '18px', lineHeight: '27px' }}
+              >
+                View all products
+              </span>
             </Link>
           </div>
         </div>
 
         {/* Product Grid */}
         {products.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap justify-between gap-6 lg:gap-0 lg:w-[1240px] lg:h-[381.75px]">
             {products.map((product, index) => (
-              <Link key={product.id} href={`/product/${product.slug}`} data-aos="fade-up" data-aos-delay={index * 100} className="group cursor-pointer block">
-                <div className="relative mb-5 aspect-square overflow-hidden rounded-[28px] shadow-sm transition-all duration-500 hover:shadow-xl sm:mb-6 sm:rounded-[34px]">
-                  <div className="absolute top-6 left-6 z-10">
-                    <span className="rounded-xl bg-brand-red px-4 py-2 text-[10px] font-black tracking-wider text-white shadow-lg sm:text-[11px]">
+              <Link key={product.id} href={`/product/${product.slug}`} data-aos="fade-up" data-aos-delay={index * 100} className="group flex flex-col lg:w-[261.75px] lg:h-[381.75px] lg:gap-[24px]">
+                {/* Image Block */}
+                <div className="relative overflow-hidden bg-[#F9F9F9] lg:w-[261.75px] lg:h-[261.75px] w-full aspect-square" style={{ borderRadius: '32px' }}>
+                  <div 
+                    className="absolute bg-[#E53935] lg:top-[16px] lg:left-[16px] px-[16px] py-[6px] z-10"
+                    style={{ borderRadius: '33554400px' }}
+                  >
+                    <span 
+                      className="text-[#FFFFFF] uppercase"
+                      style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '12px', lineHeight: '18px', letterSpacing: '0.6px' }}
+                    >
                       {BADGES[index % BADGES.length]}
                     </span>
                   </div>
-                  <div className="w-full h-full">
-                    <img
-                      src={getProductImageUrl(product)}
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                  </div>
+                  <img
+                    src={getProductImageUrl(product)}
+                    alt={product.name}
+                    className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                    style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+                  />
                 </div>
-                <div className="px-2">
-                  <p className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-1.5">
-                    {product.brand || '—'}
+                
+                {/* Text Block */}
+                <div className="flex flex-col lg:w-[261.75px] lg:h-[96px]">
+                  <p 
+                    className="text-[#717182] uppercase"
+                    style={{ fontFamily: 'Arimo, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '21px', letterSpacing: '1px' }}
+                  >
+                    {product.brand || 'Oakley'}
                   </p>
-                  <h3 className="mb-1 text-[18px] font-black leading-tight text-brand-dark transition-colors group-hover:text-brand-blue sm:text-[20px]">
+                  <h3 
+                    className="text-[#000000] truncate lg:mt-[5px]"
+                    style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '20px', lineHeight: '30px' }}
+                  >
                     {product.name}
                   </h3>
-                  <p className="text-[18px] font-black text-brand-blue">
-                    {formatKes(Number(product.price_kes))}
-                  </p>
+                  <div className="flex items-baseline lg:mt-[8px]">
+                    <span 
+                      className="text-[#2E3192]"
+                      style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '22px', lineHeight: '33px' }}
+                    >
+                      KSH. {Number(product.price_kes).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap justify-between gap-6 lg:gap-0 lg:w-[1240px] lg:h-[381.75px]">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-square rounded-[28px] bg-gray-100 mb-5" />
-                <div className="h-3 bg-gray-100 rounded w-1/3 mb-2" />
-                <div className="h-5 bg-gray-100 rounded w-2/3 mb-2" />
-                <div className="h-5 bg-gray-100 rounded w-1/2" />
+              <div key={i} className="animate-pulse lg:w-[261.75px] lg:h-[381.75px] flex flex-col gap-6">
+                <div className="w-full aspect-square bg-gray-100" style={{ borderRadius: '32px' }} />
+                <div className="flex flex-col gap-2">
+                  <div className="h-4 bg-gray-100 rounded w-1/3" />
+                  <div className="h-6 bg-gray-100 rounded w-2/3" />
+                  <div className="h-8 bg-gray-100 rounded w-1/2 mt-2" />
+                </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Production Level Divider Line (from Design) */}
+        <div className="w-full h-[1px] bg-[#EAEAEA] mt-10 lg:mt-[80px]" />
       </div>
     </section>
   );

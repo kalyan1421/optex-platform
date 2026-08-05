@@ -5,86 +5,91 @@ const WhyOptex = () => {
     {
       title: 'Certified Optometrists',
       description: 'Our team of professional eye specialists ensures you get the most accurate eye care.',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
-          <path d="M4.8 2.3A.3.3 0 1 0 5 2a.3.3 0 0 0-.2.3Z" /><path d="M10 22v-2a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2" /><path d="M18 22v-2a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2" /><circle cx="7" cy="10" r="4" /><circle cx="15" cy="10" r="4" /><path d="M12 21h-2a2 2 0 0 1-2-2v-3a2 2 0 1 1 4 0v3a2 2 0 0 1-2 2Z" />
-        </svg>
-      )
+      icon: '🩺'
     },
     {
       title: 'Latest Technology',
       description: 'We use state-of-the-art diagnostic tools for comprehensive eye health assessments.',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
-          <path d="M6 18h8" /><path d="M3 22h18" /><path d="M14 22a7 7 0 1 0 0-14h-1" /><path d="M9 14h2" /><path d="M9 12a2 2 0 1 0-2 2h2V4a2 2 0 1 0-4 0v10a2 2 0 1 0 2 2h2" />
-        </svg>
-      )
+      icon: '🔬'
     },
     {
       title: 'Premium Materials',
       description: 'Only the highest quality acetate, titanium, and lens materials for durability and comfort.',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
-          <path d="M6 3h12l4 6-10 12L2 9l4-6Z" /><path d="M11 3 8 9l4 12 4-12-3-6" /><path d="M2 9h20" />
-        </svg>
-      )
+      icon: '💎'
     },
     {
       title: 'Same Day Service',
       description: 'In-house lab capabilities allow us to provide quick turnaround on many prescriptions.',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-      )
+      icon: '⚡'
     }
   ];
 
   return (
-    <section className="overflow-hidden bg-white py-16">
-      <div className="section-container">
-        <div className="flex flex-col items-center gap-10 lg:flex-row lg:gap-14">
-          {/* Left Side: Image */}
-          <div data-aos="fade-right" className="w-full lg:w-5/12 relative">
-            <div className="relative z-10">
-              <img
-                src="/images/why-aptox.png"
-                alt="Professional Optometrist"
-                className="rounded-[30px] shadow-lg w-full h-auto object-cover aspect-square md:aspect-[4/3] lg:aspect-square transform hover:scale-[1.01] transition-transform duration-500"
-              />
-            </div>
-          </div>
+    <section className="bg-[#FFFFFF] flex flex-col items-center w-full px-6 lg:px-[100px] lg:pt-[100px] lg:pb-[100px] overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:justify-start lg:w-[1240px] lg:h-[664.375px] lg:gap-[80px] w-full gap-10">
+        
+        {/* Left Side: Image */}
+        <div data-aos="fade-right" className="lg:w-[531.5px] lg:h-[664.375px] w-full flex-shrink-0 relative">
+          <img
+            src="/images/why-aptox.png"
+            alt="Professional Optometrist"
+            className="w-full h-full object-cover"
+            style={{ 
+              borderRadius: '40px',
+              boxShadow: '0px 25px 50px -12px rgba(0,0,0,0.25)'
+            }}
+          />
+        </div>
 
-          {/* Right Side: Content */}
-          <div data-aos="fade-left" className="w-full lg:w-7/12">
-            <div className="max-w-xl">
-              <span className="text-[#E53935] font-bold text-[11px] tracking-[0.2em] mb-4 block uppercase">
-                Why Optex Opticians
-              </span>
-              <h2 className="mb-8 text-[28px] font-bold leading-[1.2] tracking-tight text-gray-900 md:text-[36px]">
-                Your vision is our priority. Experience the difference.
-              </h2>
+        {/* Right Side: Content */}
+        <div data-aos="fade-left" className="flex flex-col lg:w-[531.5px] lg:h-[638.25px] lg:mt-[13.06px] w-full">
+          <span 
+            className="text-[#E53935] uppercase block"
+            style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '16px', lineHeight: '24px', letterSpacing: '2px' }}
+          >
+            Why Optex Opticians
+          </span>
+          
+          <h2 
+            className="text-[#000000] mt-[16px] lg:w-[532px]"
+            style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '48px', lineHeight: '60px' }}
+          >
+            Your vision is our priority. Experience the difference.
+          </h2>
 
-              <div className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 md:gap-x-10 md:gap-y-10">
-                {features.map((feature, index) => (
-                  <div key={index} data-aos="fade-up" data-aos-delay={index * 100} className="flex flex-col group">
-                    <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center mb-3 group-hover:bg-brand-blue group-hover:text-white transition-all duration-300">
-                      <div className="group-hover:scale-105 transition-transform duration-300 scale-90">
-                        {feature.icon}
-                      </div>
-                    </div>
-                    <h3 className="text-[16px] font-bold text-gray-900 mb-1.5">
-                      {feature.title}
-                    </h3>
-                    <p className="text-[13px] font-medium leading-relaxed text-[#6B7280] sm:text-[13.5px]">
-                      {feature.description}
-                    </p>
-                  </div>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:gap-x-[32px] lg:gap-y-[32px] mt-[32px] gap-8">
+            {features.map((feature, index) => (
+              <div key={index} data-aos="fade-up" data-aos-delay={index * 100} className="flex flex-col lg:w-[249.75px] lg:h-[177.125px] gap-[16px]">
+                
+                <div 
+                  className="flex items-center justify-center bg-[#F5F5F5] flex-shrink-0"
+                  style={{ width: '50px', height: '50px', borderRadius: '16px' }}
+                >
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '24px', lineHeight: '36px', color: '#0A0A0A' }}>
+                    {feature.icon}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col lg:w-[249.75px] lg:h-[111.125px] gap-[8px]">
+                  <h3 
+                    className="text-[#000000]"
+                    style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '20px', lineHeight: '30px' }}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p 
+                    className="text-[#717182]"
+                    style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '15px', lineHeight: '24.38px' }}
+                  >
+                    {feature.description}
+                  </p>
+                </div>
+                
               </div>
-            </div>
+            ))}
           </div>
         </div>
+
       </div>
     </section>
   );

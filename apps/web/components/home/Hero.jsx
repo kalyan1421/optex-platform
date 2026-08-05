@@ -1,61 +1,92 @@
 import React from 'react';
-import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-white select-none">
-      <div className="site-container relative flex h-full items-center justify-center pt-20 lg:justify-start lg:pt-0">
+    <section className="relative w-full overflow-hidden bg-[#FFFFFF] lg:h-[773px]">
 
-        {/* Left: Content */}
+      {/* Background Image Container */}
+      <div
+        className="pointer-events-none absolute right-0 top-0 z-0 h-full w-full bg-cover bg-center sm:bg-[position:65%_center] lg:left-[300px] lg:top-[11px] lg:h-[762px] lg:w-[1143px] lg:bg-right-top"
+        style={{ backgroundImage: 'url(/images/home-banner.png)' }}
+      >
+        <div className="absolute inset-0 z-0 bg-black/20 lg:hidden" />
+      </div>
+
+      {/* Bottom Gradient Mask */}
+      <div
+        className="pointer-events-none absolute left-0 z-10 hidden h-[276px] w-[1442px] lg:block"
+        style={{
+          top: '497px',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 100%)'
+        }}
+      />
+
+      {/* Mobile content — centered flow, unchanged */}
+      <div
+        data-aos="fade-up"
+        data-aos-delay="200"
+        className="relative z-20 mx-auto flex w-full max-w-[580px] flex-col items-center gap-[32px] px-4 pb-16 pt-32 text-center lg:hidden"
+      >
+        <div className="flex flex-col gap-6">
+          <h1
+            className="w-full drop-shadow-md uppercase text-white font-bold text-[36px]"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
+          >
+            <span className="block">UWAZI WA</span>
+            <span className="block">MAONO,</span>
+            <span className="block">UREMBO WA</span>
+            <span className="block">MTINDO</span>
+          </h1>
+          <p className="font-normal text-white text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
+            Crafted for bold vision and timeless Kenyan style.<br />
+            Step into clarity. Step into confidence.
+          </p>
+        </div>
+        <div className="flex w-full flex-col sm:flex-row sm:justify-center gap-3">
+          <Link href="/shop" className="flex items-center justify-center rounded-[36px] bg-[#2E3192] px-[20px] py-[10px] hover:bg-blue-800 transition-colors">
+            <span className="capitalize text-white font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>Shop Now</span>
+          </Link>
+          <Link href="/category/eyeglasses" className="group flex items-center justify-center rounded-[36px] border-[1.25px] border-[#E53935] bg-transparent px-[20px] py-[10px] hover:bg-[#E53935] transition-colors">
+            <span className="capitalize text-[#E53935] font-bold group-hover:text-white transition-colors" style={{ fontFamily: 'Poppins, sans-serif' }}>Explore Collection</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Desktop content — positioned inside same max-w container as navbar */}
+      <div className="hidden lg:block absolute inset-0 max-w-[1440px] mx-auto pointer-events-none">
         <div
           data-aos="fade-up"
           data-aos-delay="200"
-          className="z-20 mx-auto flex w-full max-w-[580px] flex-col items-center text-center lg:mx-0 lg:w-[50%] lg:items-start lg:text-left"
+          className="pointer-events-auto absolute left-[100px] top-[207px] z-20 flex flex-col gap-[32px] w-[523px] items-start text-left"
         >
-          <h1 className="text-[30px] font-[900] uppercase leading-[0.95] tracking-tighter drop-shadow-md sm:text-[40px] md:text-[44px] lg:text-[60px] lg:drop-shadow-none">
-            <span className="text-white lg:text-brand-red block">UWAZI WA</span>
-            <span className="text-white lg:text-brand-red block">MAONO,</span>
-            <span className="text-white lg:text-brand-dark block mt-1">UREMBO WA</span>
-            <span className="text-white lg:text-brand-dark block">MTINDO</span>
-          </h1>
-
-          <p className="mt-5 inline-block max-w-[460px] px-2 py-1 text-[14px] font-semibold leading-relaxed text-white sm:px-0 lg:block lg:bg-transparent lg:py-0 lg:text-[15px] lg:text-gray-700">
-            Crafted for bold vision and timeless Kenyan style.<br className="hidden sm:block" />
-            Step into clarity. Step into confidence.
-          </p>
-
-          <div className="mt-8 flex w-full max-w-[420px] flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4 lg:max-w-none lg:justify-start">
-            <a
-              href="#shop"
-              className="w-full rounded-full bg-brand-blue px-6 py-3 text-center text-[14px] font-bold text-white sm:w-auto
-                         hover:bg-blue-800 transition-all duration-300 shadow-md transform hover:-translate-y-0.5"
+          <div className="flex flex-col gap-[20px] w-[523px]">
+            <h1
+              className="w-full uppercase font-bold text-[76.67px] leading-[0.97] tracking-[-0.01em] text-left"
+              style={{ fontFamily: 'Poppins, sans-serif' }}
             >
-              Shop Now
-            </a>
-            <a
-              href="#collection"
-              className="w-full rounded-full border-0 sm:border-[1.5px] border-brand-red bg-white px-6 py-3 text-center text-[14px] font-bold text-brand-red sm:w-auto
-                         hover:bg-brand-red hover:text-white transition-all duration-300 shadow-sm transform hover:-translate-y-0.5 bg-white lg:bg-transparent"
+              <span className="block text-[#E53935]">UWAZI WA</span>
+              <span className="block text-[#E53935]">MAONO,</span>
+              <span className="block text-[#1A1A2E]">UREMBO WA</span>
+              <span className="block text-[#1A1A2E]">MTINDO</span>
+            </h1>
+            <p
+              className="text-[#1A1A2E] w-[523px] text-[20px] leading-[1.2] tracking-[-0.01em] text-left"
+              style={{ fontFamily: 'Inter, sans-serif' }}
             >
-              Explore Collection
-            </a>
+              Crafted for bold vision and timeless Kenyan style.<br />
+              Step into clarity. Step into confidence.
+            </p>
+          </div>
+          <div className="flex items-center gap-[12px] w-[359px] h-[43px]">
+            <Link href="/shop" className="flex items-center justify-center rounded-[36px] bg-[#2E3192] px-[20px] py-[10px] hover:bg-blue-800 transition-colors h-[43px] w-[135px]">
+              <span className="capitalize whitespace-nowrap text-[18.97px] font-bold leading-[1.2] tracking-[-0.01em] text-[#FFFFFF]" style={{ fontFamily: 'Poppins, sans-serif' }}>Shop Now</span>
+            </Link>
+            <Link href="/category/eyeglasses" className="group flex items-center justify-center rounded-[36px] border-[1.25px] border-[#E53935] bg-transparent px-[20px] py-[10px] hover:bg-[#E53935] transition-colors h-[43px] w-[212px]">
+              <span className="capitalize whitespace-nowrap text-[18.97px] font-bold leading-[1.2] tracking-[-0.01em] text-[#E53935] group-hover:text-white transition-colors" style={{ fontFamily: 'Poppins, sans-serif' }}>Explore Collection</span>
+            </Link>
           </div>
         </div>
-
-        {/* Right: Background Image - Full 100vh Height Coverage */}
-        <div
-          className="pointer-events-none absolute right-0 top-0 z-10 h-full w-full bg-cover bg-no-repeat bg-center sm:bg-[position:65%_center] lg:w-[65%] lg:bg-right-top"
-          style={{
-            backgroundImage: `url(/images/home-banner.png)`
-          }}
-        >
-          {/* Mobile Overlay for text readability */}
-          <div className="absolute inset-0 bg-black/20 lg:bg-transparent z-0" />
-
-          {/* Smooth Bottom-Up Fade Overlay */}
-          <div className="absolute bottom-0 left-0 w-full h-[40%] bg-gradient-to-t from-white via-white/40 to-transparent z-10" />
-        </div>
-
       </div>
     </section>
   );

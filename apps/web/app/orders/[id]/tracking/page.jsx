@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createBrowserSupabase } from '@optex/db/browser';
-import { formatKes } from '@optex/ui';
+import { formatKes, formatKesNumber } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ export default function OrderTrackingPage() {
             <div className="ml-auto flex items-center gap-1">
               <span className="text-[11px] font-bold text-gray-400 uppercase">Total:</span>
               <span className="text-[11px] font-bold text-gray-400 uppercase mr-1">KSH.</span>
-              <span className="text-[20px] font-black text-[#2A3182]">{Number(order.total_kes).toFixed(2)}</span>
+              <span className="text-[20px] font-black text-[#2A3182]">{formatKesNumber(order.total_kes)}</span>
             </div>
           </div>
         </div>
@@ -389,7 +389,7 @@ export default function OrderTrackingPage() {
                       <td colSpan={2} className="py-5 px-6 text-[12px] font-bold text-gray-400 uppercase tracking-widest">Order Total</td>
                       <td className="py-5 px-6 text-right">
                         <span className="text-[11px] font-bold text-gray-400 uppercase mr-1">KSH.</span>
-                        <span className="text-[20px] font-black text-[#2A3182]">{Number(order.total_kes).toFixed(2)}</span>
+                        <span className="text-[20px] font-black text-[#2A3182]">{formatKesNumber(order.total_kes)}</span>
                       </td>
                     </tr>
                   </tfoot>

@@ -9,6 +9,21 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      _docker_migrations: {
+        Row: {
+          applied_at: string | null
+          filename: string
+        }
+        Insert: {
+          applied_at?: string | null
+          filename: string
+        }
+        Update: {
+          applied_at?: string | null
+          filename?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           branch_id: string
@@ -18,6 +33,8 @@ export type Database = {
           customer_id: string | null
           id: string
           notes: string | null
+          reminder_1h_sent: boolean
+          reminder_24h_sent: boolean
           scheduled_at: string
           status: Database["public"]["Enums"]["appt_status"]
           type: string
@@ -30,6 +47,8 @@ export type Database = {
           customer_id?: string | null
           id?: string
           notes?: string | null
+          reminder_1h_sent?: boolean
+          reminder_24h_sent?: boolean
           scheduled_at: string
           status?: Database["public"]["Enums"]["appt_status"]
           type: string
@@ -42,6 +61,8 @@ export type Database = {
           customer_id?: string | null
           id?: string
           notes?: string | null
+          reminder_1h_sent?: boolean
+          reminder_24h_sent?: boolean
           scheduled_at?: string
           status?: Database["public"]["Enums"]["appt_status"]
           type?: string
@@ -145,16 +166,19 @@ export type Database = {
         Row: {
           customer_id: string | null
           id: string
+          promo_code: string | null
           updated_at: string
         }
         Insert: {
           customer_id?: string | null
           id?: string
+          promo_code?: string | null
           updated_at?: string
         }
         Update: {
           customer_id?: string | null
           id?: string
+          promo_code?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -344,7 +368,7 @@ export type Database = {
         Row: {
           branch_id: string | null
           created_at: string
-          customer_id: string | null
+          customer_id: string
           discount_kes: number
           id: string
           mpesa_ref: string | null
@@ -365,12 +389,12 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           created_at?: string
-          customer_id?: string | null
+          customer_id: string
           discount_kes?: number
           id?: string
           mpesa_ref?: string | null
           notes?: string | null
-          order_number?: string  // DEFAULT generate_order_number() added in migration 0006
+          order_number?: string
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           pesapal_id?: string | null
@@ -386,7 +410,7 @@ export type Database = {
         Update: {
           branch_id?: string | null
           created_at?: string
-          customer_id?: string | null
+          customer_id?: string
           discount_kes?: number
           id?: string
           mpesa_ref?: string | null
@@ -430,7 +454,7 @@ export type Database = {
           pesapal_order_id: string
           raw: Json | null
           received_at: string
-          status: string | null
+          status: string
         }
         Insert: {
           amount_kes?: number | null
@@ -440,7 +464,7 @@ export type Database = {
           pesapal_order_id: string
           raw?: Json | null
           received_at?: string
-          status?: string | null
+          status?: string
         }
         Update: {
           amount_kes?: number | null
@@ -450,7 +474,7 @@ export type Database = {
           pesapal_order_id?: string
           raw?: Json | null
           received_at?: string
-          status?: string | null
+          status?: string
         }
         Relationships: [
           {
@@ -467,7 +491,7 @@ export type Database = {
           axis_od: number | null
           axis_os: number | null
           created_at: string
-          customer_id: string | null
+          customer_id: string
           cyl_od: number | null
           cyl_os: number | null
           file_url: string | null
@@ -483,7 +507,7 @@ export type Database = {
           axis_od?: number | null
           axis_os?: number | null
           created_at?: string
-          customer_id?: string | null
+          customer_id: string
           cyl_od?: number | null
           cyl_os?: number | null
           file_url?: string | null
@@ -499,7 +523,7 @@ export type Database = {
           axis_od?: number | null
           axis_os?: number | null
           created_at?: string
-          customer_id?: string | null
+          customer_id?: string
           cyl_od?: number | null
           cyl_os?: number | null
           file_url?: string | null
@@ -588,6 +612,8 @@ export type Database = {
           id: string
           images: string[]
           is_active: boolean
+          is_featured: boolean
+          is_trending: boolean
           name: string
           price_kes: number
           search_tsv: unknown
@@ -598,7 +624,7 @@ export type Database = {
         }
         Insert: {
           brand?: string | null
-          category_id?: string | null  // nullable FK — references categories(id) ON DELETE SET NULL
+          category_id: string
           created_at?: string
           description?: string | null
           frame_material?: string | null
@@ -607,6 +633,8 @@ export type Database = {
           id?: string
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          is_trending?: boolean
           name: string
           price_kes: number
           search_tsv?: unknown
@@ -626,6 +654,8 @@ export type Database = {
           id?: string
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          is_trending?: boolean
           name?: string
           price_kes?: number
           search_tsv?: unknown
@@ -654,6 +684,7 @@ export type Database = {
           sort_order: number
           starts_at: string | null
           target_url: string | null
+          type: string
         }
         Insert: {
           ends_at?: string | null
@@ -664,6 +695,7 @@ export type Database = {
           sort_order?: number
           starts_at?: string | null
           target_url?: string | null
+          type?: string
         }
         Update: {
           ends_at?: string | null
@@ -674,6 +706,7 @@ export type Database = {
           sort_order?: number
           starts_at?: string | null
           target_url?: string | null
+          type?: string
         }
         Relationships: []
       }
@@ -734,7 +767,60 @@ export type Database = {
     Functions: {
       current_customer_id: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
+      increment_cart_item_qty: {
+        Args: { delta: number; item_id: string }
+        Returns: {
+          cart_id: string
+          id: string
+          lens_option: Json | null
+          product_id: string
+          quantity: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "cart_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      increment_promo_uses: { Args: { p_code: string }; Returns: number }
       is_super_admin: { Args: never; Returns: boolean }
+      place_order: {
+        Args: {
+          p_customer_id: string
+          p_delivery_option: string
+          p_payment_method: string
+          p_promo_code: string
+          p_shipping: Json
+        }
+        Returns: {
+          branch_id: string | null
+          created_at: string
+          customer_id: string
+          discount_kes: number
+          id: string
+          mpesa_ref: string | null
+          notes: string | null
+          order_number: string
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          pesapal_id: string | null
+          promo_code: string | null
+          shipping: Json | null
+          shipping_kes: number
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal_kes: number
+          total_kes: number
+          updated_at: string
+          vat_kes: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       appt_status:
