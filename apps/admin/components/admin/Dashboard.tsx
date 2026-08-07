@@ -17,41 +17,31 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { createBrowserSupabase } from '@optex/db/browser';
-import {
-  getDashboardStats,
-  getRecentOrders,
-  getTopProducts,
-  getRevenueByPeriod,
-  getPaymentMethodBreakdown,
-} from '@optex/db';
-import type {
-  DashboardStats,
-  RecentOrder,
-  TopProduct,
-  RevenuePoint,
-  PaymentMethodBreakdown,
-} from '@optex/db';
+import { api } from '../../lib/api';
+import type { DashboardResponse, RecentOrder, TopProduct } from '@optex/api-client';
 import { formatKes } from '@optex/ui';
 
+/** Chart-friendly revenue point. The API returns `{date, revenueKes, orders}`. */
+interface RevenuePoint {
+  label: string;
+  revenue: number;
+  orders: number;
+}
+
+/** Pie-friendly payment slice. The API returns `{method, orders, revenueKes, share}`. */
+interface PaymentSlice {
+  name: string;
+  value: number;
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  mpesa: 'M-Pesa',
+  pesapal: 'Pesapal',
+  cod: 'COD',
+  unknown: 'Unrecorded',
+};
+
 const COLORS_PAYMENT = ['#22c55e', '#3b82f6', '#f59e0b'];
-
-// Fallback data used only when real data has not yet loaded
-const fallbackSalesData7D: RevenuePoint[] = [
-  { label: 'Day 1', revenue: 42000, orders: 14 },
-  { label: 'Day 2', revenue: 58000, orders: 19 },
-  { label: 'Day 3', revenue: 37000, orders: 12 },
-  { label: 'Day 4', revenue: 63000, orders: 21 },
-  { label: 'Day 5', revenue: 51000, orders: 17 },
-  { label: 'Day 6', revenue: 72000, orders: 24 },
-  { label: 'Day 7', revenue: 48000, orders: 16 },
-];
-
-const fallbackPaymentData: PaymentMethodBreakdown[] = [
-  { name: 'M-Pesa', value: 64 },
-  { name: 'Pesapal', value: 28 },
-  { name: 'COD', value: 8 },
-];
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
   delivered: 'bg-green-100 text-green-700',
@@ -77,50 +67,59 @@ function formatDate(iso: string) {
 
 export function Dashboard() {
   const [period, setPeriod] = useState<'7D' | '30D' | '90D'>('7D');
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardResponse | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [chartData, setChartData] = useState<RevenuePoint[]>([]);
-  const [paymentData, setPaymentData] = useState<PaymentMethodBreakdown[]>([]);
+  const [paymentData, setPaymentData] = useState<PaymentSlice[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
 
+  // One request per period change. GET /admin/dashboard returns the KPIs, the
+  // calendar snapshot, recent orders, top products, the daily revenue series and
+  // the payment-method breakdown together, so the four parallel Supabase reads
+  // this replaced are now a single round-trip.
   useEffect(() => {
-    // H-5 FIX: getRevenueByPeriod is NOT included here because the period-change
-    // useEffect below already fires on mount (period='7D') and handles the initial
-    // chart load. Including it here caused two simultaneous requests for 7D data
-    // on every page load, one of which was always wasted.
-    const db = createBrowserSupabase();
-    Promise.all([
-      getDashboardStats(db),
-      getRecentOrders(db, 5),
-      getTopProducts(db, 5),
-      getPaymentMethodBreakdown(db),
-    ])
-      .then(([s, orders, top, payment]) => {
-        setStats(s);
-        setRecentOrders(orders);
-        setTopProducts(top);
-        setPaymentData(payment);
+    let cancelled = false;
+    setChartLoading(true);
+
+    api.admin
+      .dashboard({ range: period.toLowerCase() as '7d' | '30d' | '90d' })
+      .then((d) => {
+        if (cancelled) return;
+        setStats(d);
+        setRecentOrders(d.recentOrders);
+        setTopProducts(d.topProducts);
+        setChartData(
+          d.dailyRevenue.map((p) => ({
+            label: formatDate(p.date),
+            revenue: p.revenueKes,
+            orders: p.orders,
+          })),
+        );
+        setPaymentData(
+          d.paymentMethods.map((m) => ({
+            name: PAYMENT_LABELS[m.method] ?? m.method,
+            value: m.share,
+          })),
+        );
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+        setChartLoading(false);
+      });
 
-  useEffect(() => {
-    const db = createBrowserSupabase();
-    setChartLoading(true);
-    getRevenueByPeriod(db, period)
-      .then(setChartData)
-      .catch(console.error)
-      .finally(() => setChartLoading(false));
+    return () => {
+      cancelled = true;
+    };
   }, [period]);
 
   const kpiCards = [
     {
       title: 'Revenue (Month)',
-      value: stats ? formatKes(stats.revenueMonth) : '—',
+      value: stats ? formatKes(stats.snapshot.revenueMonthKes) : '—',
       change: '+live',
       icon: DollarSign,
       color: 'text-green-600',
@@ -128,7 +127,7 @@ export function Dashboard() {
     },
     {
       title: 'Orders Today',
-      value: stats ? String(stats.ordersToday) : '—',
+      value: stats ? String(stats.snapshot.ordersToday) : '—',
       change: '+live',
       icon: ShoppingBag,
       color: 'text-blue-600',
@@ -136,7 +135,7 @@ export function Dashboard() {
     },
     {
       title: 'Total Customers',
-      value: stats ? String(stats.totalCustomers) : '—',
+      value: stats ? String(stats.kpis.customerCount) : '—',
       change: '+live',
       icon: Users,
       color: 'text-purple-600',
@@ -144,7 +143,7 @@ export function Dashboard() {
     },
     {
       title: 'Appointments Today',
-      value: stats ? String(stats.appointmentsToday) : '—',
+      value: stats ? String(stats.snapshot.appointmentsToday) : '—',
       change: '+live',
       icon: CalendarCheck,
       color: 'text-orange-600',
@@ -217,7 +216,7 @@ export function Dashboard() {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart
                   key={period}
-                  data={chartData.length > 0 ? chartData : fallbackSalesData7D}
+                  data={chartData}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
@@ -250,14 +249,14 @@ export function Dashboard() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={paymentData.length > 0 ? paymentData : fallbackPaymentData}
+                  data={paymentData}
                   cx="50%"
                   cy="50%"
                   innerRadius={55}
                   outerRadius={80}
                   dataKey="value"
                 >
-                  {(paymentData.length > 0 ? paymentData : fallbackPaymentData).map(
+                  {paymentData.map(
                     (entry, index) => (
                       <Cell
                         key={`pm-cell-${entry.name}`}
@@ -275,7 +274,7 @@ export function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-2 space-y-2">
-              {(paymentData.length > 0 ? paymentData : fallbackPaymentData).map((pm, i) => (
+              {paymentData.map((pm, i) => (
                 <div key={pm.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div
@@ -339,19 +338,19 @@ export function Dashboard() {
                   {recentOrders.map((order) => (
                     <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
                       <td className="px-2 py-2.5 text-sm font-medium text-[#141776]">
-                        {order.order_number}
+                        {order.orderNumber}
                       </td>
                       <td className="px-2 py-2.5 text-sm text-gray-500">
-                        {formatDate(order.created_at)}
+                        {formatDate(order.createdAt)}
                       </td>
                       <td className="px-2 py-2.5 text-sm font-medium">
-                        {formatKes(order.total_kes)}
+                        {formatKes(order.totalKes)}
                       </td>
                       <td className="px-2 py-2.5">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_COLORS[order.payment_method ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_COLORS[order.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
                         >
-                          {order.payment_method?.toUpperCase()}
+                          {order.paymentMethod?.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-2 py-2.5">
@@ -409,7 +408,7 @@ export function Dashboard() {
                 <tbody>
                   {topProducts.map((product, i) => (
                     <tr
-                      key={product.product_id}
+                      key={product.productId}
                       className="border-b last:border-0 hover:bg-gray-50"
                     >
                       <td className="px-2 py-2.5">
@@ -425,7 +424,7 @@ export function Dashboard() {
                       </td>
                       <td className="px-2 py-2.5 text-sm">{product.units}</td>
                       <td className="px-2 py-2.5 text-sm font-medium">
-                        {formatKes(product.revenue)}
+                        {formatKes(product.revenueKes)}
                       </td>
                     </tr>
                   ))}

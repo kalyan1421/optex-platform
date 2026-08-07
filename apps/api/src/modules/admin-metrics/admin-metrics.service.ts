@@ -7,6 +7,7 @@ import {
   CategoryRevenue,
   DailyRevenuePoint,
   DashboardKpis,
+  DashboardSnapshot,
   PaymentMethodBreakdown,
   DashboardResponse,
   OrderVolumePoint,
@@ -91,11 +92,12 @@ export class AdminMetricsService {
     const fromIso = from.toISOString();
     const toIso = to.toISOString();
 
-    const [paidOrders, customerCount, recentOrders, topProducts] = await Promise.all([
+    const [paidOrders, customerCount, recentOrders, topProducts, snapshot] = await Promise.all([
       this.fetchPaidOrderRevenue(fromIso, toIso),
       this.countCustomers(),
       this.fetchRecentOrders(RECENT_ORDERS_LIMIT),
       this.fetchTopProducts(fromIso, toIso, TOP_PRODUCTS_LIMIT),
+      this.fetchSnapshot(),
     ]);
 
     const kpis = this.computeKpis(paidOrders, customerCount);
@@ -111,6 +113,7 @@ export class AdminMetricsService {
       topProducts,
       dailyRevenue,
       paymentMethods,
+      snapshot,
     };
   }
 
@@ -123,15 +126,22 @@ export class AdminMetricsService {
   async analytics(query: AnalyticsQueryDto): Promise<AnalyticsResponse> {
     const { fromIso, toIso } = this.resolveAnalyticsRange(query);
 
-    const [paidOrders, itemRows] = await Promise.all([
+    // The preceding window of equal length, so category growth is a real
+    // period-over-period comparison rather than an invented figure.
+    const spanMs = new Date(toIso).getTime() - new Date(fromIso).getTime();
+    const prevToIso = fromIso;
+    const prevFromIso = new Date(new Date(fromIso).getTime() - spanMs).toISOString();
+
+    const [paidOrders, itemRows, prevItemRows] = await Promise.all([
       this.fetchPaidOrderRevenue(fromIso, toIso),
       this.fetchPaidOrderItems(fromIso, toIso),
+      this.fetchPaidOrderItems(prevFromIso, prevToIso),
     ]);
 
     const summary = this.computeSummary(paidOrders, itemRows);
     const topProducts = this.aggregateTopProducts(itemRows, TOP_PRODUCTS_LIMIT);
     const orderVolumeByDay = this.bucketVolumeByDay(paidOrders);
-    const revenueByCategory = await this.aggregateRevenueByCategory(itemRows);
+    const revenueByCategory = await this.aggregateRevenueByCategory(itemRows, prevItemRows);
 
     return {
       from: fromIso,
@@ -162,6 +172,48 @@ export class AdminMetricsService {
 
     if (error) throw new BadRequestException(error.message);
     return (data ?? []) as OrderRevenueRow[];
+  }
+
+  /**
+   * Calendar-scoped figures for the KPI cards: paid revenue month-to-date,
+   * orders created today, appointments scheduled today. Independent of the
+   * dashboard's selected range.
+   */
+  private async fetchSnapshot(): Promise<DashboardSnapshot> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+    const [monthOrders, todayOrders, todayAppts] = await Promise.all([
+      this.supabase.client
+        .from('orders')
+        .select('total_kes')
+        .gte('created_at', startOfMonth)
+        .in('status', [...PAID_ORDER_STATUSES])
+        .eq('payment_status', PAID_PAYMENT_STATUS),
+      this.supabase.client
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', startOfDay)
+        .lt('created_at', endOfDay),
+      this.supabase.client
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .gte('scheduled_at', startOfDay)
+        .lt('scheduled_at', endOfDay),
+    ]);
+
+    const revenueMonthKes = ((monthOrders.data ?? []) as { total_kes: number | string }[]).reduce(
+      (sum, o) => sum + Number(o.total_kes),
+      0,
+    );
+
+    return {
+      revenueMonthKes: this.round2(revenueMonthKes),
+      ordersToday: todayOrders.count ?? 0,
+      appointmentsToday: todayAppts.count ?? 0,
+    };
   }
 
   /** Total registered customers (all-time). */
@@ -367,7 +419,10 @@ export class AdminMetricsService {
    * then resolves names in a single `categories` lookup. Items whose product
    * has no category fall into an "Uncategorized" bucket.
    */
-  private async aggregateRevenueByCategory(items: OrderItemRow[]): Promise<CategoryRevenue[]> {
+  private async aggregateRevenueByCategory(
+    items: OrderItemRow[],
+    previousItems: OrderItemRow[] = [],
+  ): Promise<CategoryRevenue[]> {
     const byCategory = new Map<
       string,
       { categoryId: string | null; revenueKes: number; units: number }
@@ -390,14 +445,33 @@ export class AdminMetricsService {
 
     const names = await this.fetchCategoryNames(categoryIds);
 
-    return Array.from(byCategory.values())
-      .map((c) => ({
+    // Revenue per category in the preceding window, for the growth comparison.
+    const previousByCategory = new Map<string, number>();
+    for (const item of previousItems) {
+      const product = this.unwrapProduct(item.product);
+      const key = product?.category_id ?? '__none__';
+      previousByCategory.set(
+        key,
+        (previousByCategory.get(key) ?? 0) + Number(item.quantity) * Number(item.unit_price_kes),
+      );
+    }
+
+    return Array.from(byCategory.entries())
+      .map(([key, c]) => ({
         categoryId: c.categoryId,
         categoryName: c.categoryId
           ? (names.get(c.categoryId) ?? 'Unknown category')
           : 'Uncategorized',
         revenueKes: this.round2(c.revenueKes),
         units: c.units,
+        // Null rather than 0 when the previous window had no revenue for this
+        // category: "no prior data" and "flat" are different answers, and a
+        // 0% badge on a brand-new category would be a lie.
+        growthPct: (() => {
+          const prev = previousByCategory.get(key) ?? 0;
+          if (prev <= 0) return null;
+          return this.round2(((c.revenueKes - prev) / prev) * 100);
+        })(),
       }))
       .sort((a, b) => b.revenueKes - a.revenueKes);
   }

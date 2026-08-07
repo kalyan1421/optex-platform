@@ -967,6 +967,20 @@ export interface DashboardResponse {
   dailyRevenue: DailyRevenuePoint[];
   /** Share of paid orders by payment rail (gap G-4). */
   paymentMethods: PaymentMethodBreakdown[];
+  /** Calendar-scoped KPI figures, independent of `range`. */
+  snapshot: DashboardSnapshot;
+}
+
+/**
+ * Point-in-time figures that do not vary with the dashboard range
+ * (`DashboardSnapshot`). The KPI cards read "Revenue (Month)", "Orders Today"
+ * and "Appointments Today" — calendar questions the range-scoped `kpis` block
+ * cannot answer.
+ */
+export interface DashboardSnapshot {
+  revenueMonthKes: number;
+  ordersToday: number;
+  appointmentsToday: number;
 }
 
 /**
@@ -1010,6 +1024,13 @@ export interface CategoryRevenue {
   categoryName: string;
   revenueKes: number;
   units: number;
+  /**
+   * Revenue change vs the preceding window of equal length, as a percentage.
+   * `null` when that window had no revenue for this category — "no prior data"
+   * and "flat" are different answers, and a 0% badge on a brand-new category
+   * would be misleading.
+   */
+  growthPct: number | null;
 }
 
 /** Full `GET /admin/analytics` payload (`AnalyticsResponse`). */

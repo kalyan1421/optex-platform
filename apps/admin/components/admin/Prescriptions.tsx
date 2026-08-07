@@ -6,7 +6,6 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Skeleton } from '../ui/skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -137,14 +136,8 @@ export function Prescriptions() {
     setLoading(true);
     setError(null);
     try {
-      const db = createBrowserSupabase();
-      const { data, error: fetchErr } = await db
-        .from('prescriptions')
-        .select('*, customer:customers(full_name, email, phone)')
-        .order('created_at', { ascending: false });
-
-      if (fetchErr) throw new Error(fetchErr.message);
-      setPrescriptions((data ?? []) as PrescriptionRow[]);
+      const rows = await api.admin.prescriptions.list();
+      setPrescriptions(rows as unknown as PrescriptionRow[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load prescriptions');
     } finally {

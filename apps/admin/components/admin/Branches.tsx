@@ -7,7 +7,6 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Skeleton } from '../ui/skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
 
 interface Branch {
@@ -215,21 +214,12 @@ export function Branches() {
   const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
-    const db = createBrowserSupabase();
-    void (async () => {
-      try {
-        const { data, error } = await db
-          .from('branches')
-          .select('id, slug, name, address, phone, lat, lng, hours, is_active')
-          .order('created_at');
-        if (error) throw error;
-        setBranches((data ?? []).map((row) => mapDbRowToBranch(row as Record<string, unknown>)));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    // `/branches/admin/all` includes inactive branches; the public list does not.
+    api.admin.branches
+      .listAll()
+      .then((rows) => setBranches(rows.map((r) => mapDbRowToBranch(r as unknown as Record<string, unknown>))))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   function saveBranch(updated: Branch) {

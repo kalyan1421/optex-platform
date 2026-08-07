@@ -61,6 +61,24 @@ export interface PaymentMethodBreakdown {
   share: number;
 }
 
+/**
+ * Point-in-time figures that do NOT vary with the selected range.
+ *
+ * The admin panel's KPI cards read "Revenue (Month)", "Orders Today" and
+ * "Appointments Today" — calendar-scoped questions the range-scoped `kpis`
+ * block cannot answer. Both are served rather than conflated, because
+ * "revenue over the last 30 days" and "revenue this calendar month" are
+ * different numbers and the cards claim the latter.
+ */
+export interface DashboardSnapshot {
+  /** Paid revenue since the 1st of the current calendar month. */
+  revenueMonthKes: number;
+  /** Orders created today, any status. */
+  ordersToday: number;
+  /** Appointments scheduled for today. */
+  appointmentsToday: number;
+}
+
 export interface DashboardResponse {
   range: string;
   from: string;
@@ -70,6 +88,7 @@ export interface DashboardResponse {
   topProducts: TopProduct[];
   dailyRevenue: DailyRevenuePoint[];
   paymentMethods: PaymentMethodBreakdown[];
+  snapshot: DashboardSnapshot;
 }
 
 /** Sales summary block for the analytics report. */
@@ -93,6 +112,13 @@ export interface CategoryRevenue {
   categoryName: string;
   revenueKes: number;
   units: number;
+  /**
+   * Revenue change vs the preceding window of equal length, as a percentage.
+   * `null` when that window had no revenue for this category — "no prior data"
+   * and "flat" are different answers, and a 0% badge on a brand-new category
+   * would be misleading.
+   */
+  growthPct: number | null;
 }
 
 /** Full `GET /admin/analytics` payload. */

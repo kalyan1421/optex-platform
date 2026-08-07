@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { DatePicker } from '../ui/date-picker';
 import { Skeleton } from '../ui/skeleton';
 import { TableSkeleton } from '../ui/table-skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
 
 type DiscountType = 'percentage' | 'fixed';
@@ -71,41 +70,42 @@ export function Promotions() {
   const [newBannerEnd, setNewBannerEnd] = useState('');
 
   useEffect(() => {
-    const db = createBrowserSupabase();
     (async () => {
       try {
-        const [codesRes, bannersRes] = await Promise.all([
-          db.from('promo_codes').select('*').order('created_at', { ascending: false }),
-          db.from('promo_banners').select('*').order('sort_order'),
+        const [codes, banners] = await Promise.all([
+          api.admin.promos.list(),
+          api.admin.banners.list(),
         ]);
-        if (codesRes.error) console.error(codesRes.error);
-        if (bannersRes.error) console.error(bannersRes.error);
 
-        const mappedCodes: PromoCode[] = (codesRes.data ?? []).map((row: any) => ({
-          id: row.id,
-          code: row.code,
-          description: '',
-          discountType: row.discount_type === 'percent' ? 'percentage' : 'fixed',
-          value: row.value,
-          categories: [],
-          maxUses: row.max_uses || 0,
-          uses: row.uses,
-          expiresAt: row.expires_at?.split('T')[0] || '',
-          isActive: row.is_active,
-        }));
+        setPromos(
+          codes.map((row) => ({
+            id: row.id,
+            code: row.code,
+            description: '',
+            discountType: row.discount_type === 'percent' ? 'percentage' : 'fixed',
+            value: row.value,
+            categories: [],
+            maxUses: row.max_uses || 0,
+            uses: row.uses,
+            expiresAt: row.expires_at?.split('T')[0] || '',
+            isActive: row.is_active,
+          })),
+        );
 
-        const mappedBanners: BannerCampaign[] = (bannersRes.data ?? []).map((row: any) => ({
-          id: row.id,
-          title: row.headline || '',
-          imageUrl: row.image_url,
-          targetUrl: row.target_url || '',
-          startDate: row.starts_at?.split('T')[0] || '',
-          endDate: row.ends_at?.split('T')[0] || '',
-          isActive: row.is_active,
-        }));
-
-        setPromos(mappedCodes);
-        setBanners(mappedBanners);
+        setBanners(
+          banners.map((row) => {
+            const b = row as unknown as Record<string, string | boolean | null>;
+            return {
+              id: String(b.id),
+              title: String(b.headline ?? ''),
+              imageUrl: String(b.image_url ?? ''),
+              targetUrl: String(b.target_url ?? ''),
+              startDate: String(b.starts_at ?? '').split('T')[0] || '',
+              endDate: String(b.ends_at ?? '').split('T')[0] || '',
+              isActive: Boolean(b.is_active),
+            };
+          }),
+        );
       } catch (e) {
         console.error(e);
       } finally {

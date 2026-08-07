@@ -8,7 +8,6 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { DatePicker } from '../ui/date-picker';
 import { Skeleton } from '../ui/skeleton';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
 
 type AppointmentStatus = 'Pending' | 'Confirmed' | 'Rescheduled' | 'Cancelled' | 'Completed';
@@ -107,56 +106,39 @@ export function Appointments() {
   const WEEK_END = weekEnd.toLocaleDateString('en-CA');
 
   useEffect(() => {
-    const db = createBrowserSupabase();
-    void (async () => {
-      try {
-        const { data, error } = await db
-          .from('appointments')
-          .select(
-            'id, type, scheduled_at, status, notes, contact_name, contact_phone, branch_id, customer:customers(full_name, phone), branch:branches(name)',
-          )
-          .order('scheduled_at', { ascending: true });
-
-        if (error) {
-          console.error('Failed to fetch appointments:', error);
-          return;
-        }
-
-        const mapped: Appointment[] = (data ?? []).map((row) => {
-          // customer may be null for guest bookings
-          const customerObj = row.customer as { full_name: string; phone: string } | null;
-          const customerName = customerObj?.full_name ?? row.contact_name ?? 'Guest';
-          const phone = customerObj?.phone ?? row.contact_phone ?? '—';
-          const branchObj = row.branch as { name: string } | null;
-
-          const isoStr: string = row.scheduled_at ?? '';
-          const localDate = isoStr ? toLocalDate(isoStr) : '';
-          const timeStr = isoStr
-            ? new Date(isoStr).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-            : '';
-
-          return {
-            id: row.id as string,
-            customer: customerName,
-            phone,
-            type: toAppointmentType(row.type ?? ''),
-            branch: branchObj?.name ?? '—',
-            scheduledAt: localDate,
-            time: timeStr,
-            status: toDisplayStatus(row.status ?? 'pending'),
-            notes: row.notes ?? '',
-            scheduled_at_iso: isoStr,
-            branchId: (row.branch_id as string) ?? '',
-          };
-        });
-
-        setAppointments(mapped);
-      } catch (e) {
-        console.error('Unexpected error fetching appointments:', e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    // GET /admin/appointments now resolves customer and branch names (G-9),
+    // so the panel no longer joins against Supabase to render a row.
+    api.admin.appointments
+      .list()
+      .then((rows) => {
+        setAppointments(
+          rows.map((row) => {
+            const customerName = row.customer?.full_name ?? row.contact_name ?? 'Guest';
+            const phone = row.customer?.phone ?? row.contact_phone ?? '—';
+            const isoStr = row.scheduled_at ?? '';
+            return {
+              id: row.id,
+              customer: customerName,
+              phone,
+              type: toAppointmentType(row.type ?? ''),
+              branch: row.branch?.name ?? '—',
+              scheduledAt: isoStr ? toLocalDate(isoStr) : '',
+              time: isoStr
+                ? new Date(isoStr).toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '',
+              status: toDisplayStatus(row.status ?? 'pending'),
+              notes: row.notes ?? '',
+              scheduled_at_iso: isoStr,
+              branchId: row.branch_id ?? '',
+            };
+          }),
+        );
+      })
+      .catch((e) => console.error('Failed to fetch appointments:', e))
+      .finally(() => setLoading(false));
   }, []);
 
   /**

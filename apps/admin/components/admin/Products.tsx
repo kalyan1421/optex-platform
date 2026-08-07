@@ -9,12 +9,12 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
-import { createBrowserSupabase } from '@optex/db/browser';
-import { listAllProducts, listCategories } from '@optex/db';
 import { api } from '../../lib/api';
-import type { UpdateProductInput } from '@optex/api-client';
-import type { AdminProduct } from '@optex/db';
-import type { Category as DbCategory } from '@optex/db';
+import type {
+  Product as AdminProduct,
+  Category as DbCategory,
+  UpdateProductInput,
+} from '@optex/api-client';
 import { TableSkeleton } from '../ui/table-skeleton';
 
 type CategoryFilter = 'All' | string;
@@ -31,6 +31,27 @@ function StockBadge({ isActive }: { isActive: boolean }) {
       Active
     </span>
   );
+}
+
+/** The API caps `limit` at 100 per page. */
+const PRODUCT_PAGE_SIZE = 100;
+
+/**
+ * Fetch every product, active or inactive, by walking the pages.
+ *
+ * `/products/admin/all` includes deactivated rows where the public list does
+ * not. The grid searches and filters client-side, so a truncated first page
+ * would silently hide products from the admin rather than showing fewer —
+ * hence paging to exhaustion instead of requesting one oversized page.
+ */
+async function fetchAllProducts(): Promise<AdminProduct[]> {
+  const all: AdminProduct[] = [];
+  for (let page = 1; ; page += 1) {
+    const res = await api.admin.products.listAll({ page, limit: PRODUCT_PAGE_SIZE });
+    all.push(...res.items);
+    if (all.length >= res.total || res.items.length === 0) break;
+  }
+  return all;
 }
 
 function productImage(p: AdminProduct) {
@@ -234,8 +255,7 @@ export function Products() {
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
-    const db = createBrowserSupabase();
-    Promise.all([listAllProducts(db), listCategories(db)])
+    Promise.all([fetchAllProducts(), api.catalog.listCategories()])
       .then(([prods, cats]) => {
         setProducts(prods);
         setCategories(cats);
@@ -272,10 +292,7 @@ export function Products() {
   }
 
   async function refreshProducts() {
-    // Still a direct read: `GET /products` is public and active-only, so the
-    // admin list needs API gap G-2 before this can move. Wave 1 is writes.
-    const db = createBrowserSupabase();
-    setProducts(await listAllProducts(db));
+    setProducts(await fetchAllProducts());
   }
 
   async function handleAddProduct(data: Partial<AdminProduct>) {
@@ -347,7 +364,10 @@ export function Products() {
     return cat ? p.category_id === cat.id : true;
   });
 
-  function categoryName(categoryId: string) {
+  // `products.category_id` is nullable in the schema, so an uncategorised
+  // product renders a dash rather than being treated as a lookup miss.
+  function categoryName(categoryId: string | null) {
+    if (!categoryId) return '—';
     return categories.find((c) => c.id === categoryId)?.name ?? '—';
   }
 

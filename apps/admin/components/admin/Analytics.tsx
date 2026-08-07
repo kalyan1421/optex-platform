@@ -17,57 +17,88 @@ import {
   Legend,
 } from 'recharts';
 import { formatKes } from '@optex/ui';
-import { createBrowserSupabase } from '@optex/db/browser';
-import {
-  getDashboardStats,
-  getRevenueByPeriod,
-  getTopProducts,
-  getPaymentMethodBreakdown,
-} from '@optex/db';
-import type { DashboardStats, RevenuePoint, TopProduct, PaymentMethodBreakdown } from '@optex/db';
+import { api } from '../../lib/api';
+import type { CategoryRevenue, TopProduct } from '@optex/api-client';
 
-// Hardcoded fallback only used when DB returns no category data (no equivalent query yet)
-const categoryPerformance = [
-  { category: 'Sunglasses', sales: 4500, growth: 12.5 },
-  { category: 'Eyeglasses', sales: 3200, growth: 8.3 },
-  { category: 'Contact Lenses', sales: 1800, growth: -3.2 },
-  { category: 'Accessories', sales: 950, growth: 15.7 },
-  { category: 'Kids', sales: 620, growth: 22.1 },
-  { category: 'Computer', sales: 430, growth: 31.4 },
-];
+/** Chart-friendly revenue point. */
+interface RevenuePoint {
+  label: string;
+  revenue: number;
+  orders: number;
+}
+
+/** Pie-friendly payment slice. */
+interface PaymentSlice {
+  name: string;
+  value: number;
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  mpesa: 'M-Pesa',
+  pesapal: 'Pesapal',
+  cod: 'COD',
+  unknown: 'Unrecorded',
+};
+
+function shortDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-KE', { day: '2-digit', month: 'short' });
+}
 
 export function Analytics() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [revenueMonthKes, setRevenueMonthKes] = useState<number | null>(null);
+  const [ordersToday, setOrdersToday] = useState<number | null>(null);
+  const [totalCustomers, setTotalCustomers] = useState<number | null>(null);
+  const [avgOrderValue, setAvgOrderValue] = useState<number | null>(null);
   const [revenueData, setRevenueData] = useState<RevenuePoint[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentMethodBreakdown[]>([]);
+  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentSlice[]>([]);
+  const [categories, setCategories] = useState<CategoryRevenue[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const db = createBrowserSupabase();
-    Promise.all([
-      getDashboardStats(db),
-      getRevenueByPeriod(db, '90D'),
-      getTopProducts(db, 10),
-      getPaymentMethodBreakdown(db),
-    ])
-      .then(([s, revenue, top, payment]) => {
-        setStats(s);
-        setRevenueData(revenue);
-        setTopProducts(top);
-        setPaymentBreakdown(payment);
+    let cancelled = false;
+
+    // The dashboard endpoint carries the calendar KPIs and the payment
+    // breakdown; the analytics endpoint carries the 90-day series, the top
+    // products and revenue-by-category — including the growth comparison that
+    // replaces the hardcoded category chart.
+    Promise.all([api.admin.dashboard({ range: '90d' }), api.admin.analytics()])
+      .then(([dash, an]) => {
+        if (cancelled) return;
+        setRevenueMonthKes(dash.snapshot.revenueMonthKes);
+        setOrdersToday(dash.snapshot.ordersToday);
+        setTotalCustomers(dash.kpis.customerCount);
+        setAvgOrderValue(an.summary.averageOrderValueKes);
+        setRevenueData(
+          an.orderVolumeByDay.map((p) => ({
+            label: shortDate(p.date),
+            revenue: p.revenueKes,
+            orders: p.orders,
+          })),
+        );
+        setTopProducts(an.topProducts);
+        setCategories(an.revenueByCategory);
+        setPaymentBreakdown(
+          dash.paymentMethods.map((m) => ({
+            name: PAYMENT_LABELS[m.method] ?? m.method,
+            value: m.share,
+          })),
+        );
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  const avgOrderValue =
-    stats && stats.ordersToday > 0 ? Math.round(stats.revenueMonth / stats.ordersToday) : null;
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const ytdKPIs = [
     {
       title: 'Revenue (This Month)',
-      value: stats ? formatKes(stats.revenueMonth) : '—',
+      value: revenueMonthKes != null ? formatKes(revenueMonthKes) : '—',
       sub: 'Live from DB',
       icon: DollarSign,
       up: true,
@@ -76,7 +107,7 @@ export function Analytics() {
     },
     {
       title: 'Orders Today',
-      value: stats ? String(stats.ordersToday) : '—',
+      value: ordersToday != null ? String(ordersToday) : '—',
       sub: 'Live from DB',
       icon: ShoppingCart,
       up: true,
@@ -85,7 +116,7 @@ export function Analytics() {
     },
     {
       title: 'Total Customers',
-      value: stats ? String(stats.totalCustomers) : '—',
+      value: totalCustomers != null ? String(totalCustomers) : '—',
       sub: 'Live from DB',
       icon: Users,
       up: true,
@@ -93,9 +124,9 @@ export function Analytics() {
       color: 'text-purple-600',
     },
     {
-      title: 'Avg Order Value (Today)',
+      title: 'Avg Order Value',
       value: avgOrderValue != null ? formatKes(avgOrderValue) : '—',
-      sub: 'Revenue ÷ orders today',
+      sub: 'Paid orders, last 30 days',
       icon: BarChart2,
       up: true,
       bg: 'bg-orange-100',
@@ -266,7 +297,7 @@ export function Analytics() {
               </thead>
               <tbody>
                 {topProducts.map((product, i) => (
-                  <tr key={product.product_id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={product.productId} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-2 py-2.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#141776] text-xs font-medium text-white">
                         {i + 1}
@@ -276,7 +307,7 @@ export function Analytics() {
                     <td className="px-2 py-2.5 text-sm text-gray-400">{product.sku}</td>
                     <td className="px-2 py-2.5 text-sm">{product.units}</td>
                     <td className="px-2 py-2.5 text-sm font-medium">
-                      {formatKes(product.revenue)}
+                      {formatKes(product.revenueKes)}
                     </td>
                   </tr>
                 ))}
@@ -295,12 +326,12 @@ export function Analytics() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={categoryPerformance}>
+              <BarChart data={categories}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="category" tick={{ fontSize: 11 }} />
+                <XAxis dataKey="categoryName" tick={{ fontSize: 11 }} />
                 <YAxis />
-                <Tooltip />
-                <Bar dataKey="sales" name="Sales" fill="#141776" radius={[3, 3, 0, 0]} />
+                <Tooltip formatter={(v: number) => formatKes(v)} />
+                <Bar dataKey="revenueKes" name="Revenue" fill="#141776" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -309,36 +340,52 @@ export function Analytics() {
         <Card>
           <CardHeader>
             <CardTitle>Category Growth Rates</CardTitle>
-            <CardDescription>Month-over-month growth %</CardDescription>
+            <CardDescription>Revenue vs the preceding 30 days</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {categoryPerformance.map((c) => (
-                <div key={c.category}>
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-sm font-medium">{c.category}</span>
-                    <div className="flex items-center gap-1">
-                      {c.growth > 0 ? (
-                        <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                      ) : (
-                        <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span
-                        className={`text-sm font-semibold ${c.growth > 0 ? 'text-green-600' : 'text-red-500'}`}
-                      >
-                        {c.growth > 0 ? '+' : ''}
-                        {c.growth}%
-                      </span>
+              {loading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : categories.length === 0 ? (
+                <p className="text-sm text-gray-400">No category sales in this period yet.</p>
+              ) : (
+                categories.map((c) => {
+                  // growthPct is null when the preceding window had no revenue
+                  // for this category — shown as "new" rather than a fake 0%.
+                  const g = c.growthPct;
+                  const up = g != null && g > 0;
+                  return (
+                    <div key={c.categoryId ?? c.categoryName}>
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-sm font-medium">{c.categoryName}</span>
+                        {g == null ? (
+                          <span className="text-xs font-medium text-gray-400">new</span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            {up ? (
+                              <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                            ) : (
+                              <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                            )}
+                            <span
+                              className={`text-sm font-semibold ${up ? 'text-green-600' : 'text-red-500'}`}
+                            >
+                              {up ? '+' : ''}
+                              {g}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="h-1.5 rounded-full bg-gray-100">
+                        <div
+                          className={`h-1.5 rounded-full ${g == null ? 'bg-gray-300' : up ? 'bg-green-500' : 'bg-red-400'}`}
+                          style={{ width: `${Math.min(Math.abs(g ?? 0) * 3, 100)}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-gray-100">
-                    <div
-                      className={`h-1.5 rounded-full ${c.growth > 0 ? 'bg-green-500' : 'bg-red-400'}`}
-                      style={{ width: `${Math.min(Math.abs(c.growth) * 3, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>
