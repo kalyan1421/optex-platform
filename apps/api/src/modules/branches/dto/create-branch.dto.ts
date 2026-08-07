@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsLatitude,
@@ -51,11 +51,19 @@ export class CreateBranchDto {
   address?: string;
 
   @ApiPropertyOptional({
-    description: 'Contact phone in Kenyan format (e.g. +254712345678 or 0712345678).',
+    description:
+      'Contact phone in Kenyan format (e.g. +254712345678 or 0712345678). ' +
+      'Spaces, hyphens and brackets are accepted and stripped before validation.',
     example: '+254712345678',
   })
   @IsOptional()
   @IsString()
+  // Humans type "+254 700 000 002" and the existing branch records are stored
+  // that way, so normalise separators to a canonical form before matching
+  // rather than rejecting formatting the rest of the system already contains.
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/[\s()-]/g, '') : (value as unknown),
+  )
   @Matches(/^(\+?254|0)[17]\d{8}$/, {
     message: 'phone must be a valid Kenyan mobile number',
   })

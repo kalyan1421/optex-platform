@@ -120,8 +120,14 @@ export async function getTopProducts(
   const since90d = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await db
     .from('order_items')
-    .select('product_id, quantity, unit_price_kes, product:products(name, sku)')
-    .gte('created_at', since90d)
+    .select(
+      'product_id, quantity, unit_price_kes, product:products(name, sku), order:orders!inner(created_at)',
+    )
+    // `order_items` has no `created_at` of its own — the timestamp lives on the
+    // parent order. Filtering the child column made this query fail with
+    // 42703 on every dashboard load, so "Top Products" always rendered empty
+    // regardless of sales. The `!inner` join scopes the filter to the parent.
+    .gte('order.created_at', since90d)
     .limit(5000); // safety cap — replace with GROUP BY RPC when order volume grows
   if (error) throw error;
   if (!data?.length) return [];
