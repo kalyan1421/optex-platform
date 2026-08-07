@@ -11,6 +11,8 @@ import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { listAllProducts, listCategories } from '@optex/db';
+import { api } from '../../lib/api';
+import type { UpdateProductInput } from '@optex/api-client';
 import type { AdminProduct } from '@optex/db';
 import type { Category as DbCategory } from '@optex/db';
 import { TableSkeleton } from '../ui/table-skeleton';
@@ -228,6 +230,8 @@ export function Products() {
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<AdminProduct | undefined>();
+  /** Validation message from the API for create / update / deactivate. */
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     const db = createBrowserSupabase();
@@ -240,8 +244,41 @@ export function Products() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleAddProduct(data: Partial<AdminProduct>) {
+  /**
+   * Map the dialog's form state onto the API's product DTO.
+   *
+   * Two things matter here. The API runs `forbidNonWhitelisted`, so any field
+   * outside the DTO (`id`, `created_at`, the generated `search_tsv`) is a 400
+   * rather than a silent strip — we therefore pick fields explicitly instead
+   * of spreading. And the form uses `null` for "empty", while the DTO types
+   * optionals as `string | undefined`, so nulls are normalised to undefined.
+   */
+  function toProductInput(data: Partial<AdminProduct>): UpdateProductInput {
+    const orUndefined = (v: string | null | undefined) => (v == null || v === '' ? undefined : v);
+    return {
+      name: orUndefined(data.name),
+      sku: orUndefined(data.sku),
+      category_id: orUndefined(data.category_id),
+      brand: orUndefined(data.brand),
+      price_kes: data.price_kes ?? undefined,
+      frame_material: orUndefined(data.frame_material),
+      frame_shape: orUndefined(data.frame_shape),
+      gender: orUndefined(data.gender),
+      description: orUndefined(data.description),
+      images: data.images ?? undefined,
+      try_on_image_url: orUndefined(data.try_on_image_url),
+      is_active: data.is_active ?? undefined,
+    };
+  }
+
+  async function refreshProducts() {
+    // Still a direct read: `GET /products` is public and active-only, so the
+    // admin list needs API gap G-2 before this can move. Wave 1 is writes.
     const db = createBrowserSupabase();
+    setProducts(await listAllProducts(db));
+  }
+
+  async function handleAddProduct(data: Partial<AdminProduct>) {
     const slug =
       (data.name ?? '')
         .toLowerCase()
@@ -250,49 +287,50 @@ export function Products() {
       '-' +
       Date.now();
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await db.from('products').insert({ ...data, slug } as any);
-      if (error) {
-        console.error(error);
+      const input = toProductInput(data);
+      if (!input.name || !input.sku || !input.category_id) {
+        setFormError('Name, SKU and category are required.');
         return;
       }
+      await api.admin.products.create({
+        ...input,
+        name: input.name,
+        sku: input.sku,
+        category_id: input.category_id,
+        price_kes: input.price_kes ?? 0,
+        slug,
+      });
       setAddOpen(false);
-      const prods = await listAllProducts(db);
-      setProducts(prods);
+      setFormError('');
+      await refreshProducts();
     } catch (err) {
-      console.error(err);
+      console.error('create product failed:', err);
+      setFormError((err as Error)?.message ?? 'Could not create the product.');
     }
   }
 
   async function handleEditProduct(data: Partial<AdminProduct>) {
     if (!editProduct) return;
-    const db = createBrowserSupabase();
     try {
-      const { error } = await db.from('products').update(data).eq('id', editProduct.id);
-      if (error) {
-        console.error(error);
-        return;
-      }
+      await api.admin.products.update(editProduct.id, toProductInput(data));
       setEditProduct(undefined);
-      const prods = await listAllProducts(db);
-      setProducts(prods);
+      setFormError('');
+      await refreshProducts();
     } catch (err) {
-      console.error(err);
+      console.error('update product failed:', err);
+      setFormError((err as Error)?.message ?? 'Could not save the product.');
     }
   }
 
   async function handleDeleteProduct(id: string) {
-    if (!confirm('Delete this product? This cannot be undone.')) return;
-    const db = createBrowserSupabase();
+    if (!confirm('Deactivate this product? It will be hidden from the storefront.')) return;
     try {
-      const { error } = await db.from('products').update({ is_active: false }).eq('id', id);
-      if (error) {
-        console.error(error);
-        return;
-      }
+      await api.admin.products.remove(id);
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: false } : p)));
+      setFormError('');
     } catch (err) {
-      console.error(err);
+      console.error('deactivate product failed:', err);
+      setFormError((err as Error)?.message ?? 'Could not deactivate the product.');
     }
   }
 
@@ -328,17 +366,29 @@ export function Products() {
 
       <ProductFormDialog
         open={addOpen}
-        onOpenChange={setAddOpen}
+        onOpenChange={(v) => {
+          setAddOpen(v);
+          if (!v) setFormError('');
+        }}
         categories={categories}
         onSave={handleAddProduct}
       />
       <ProductFormDialog
         open={!!editProduct}
-        onOpenChange={(v) => !v && setEditProduct(undefined)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setEditProduct(undefined);
+            setFormError('');
+          }
+        }}
         product={editProduct}
         categories={categories}
         onSave={handleEditProduct}
       />
+
+      {formError && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
+      )}
 
       {/* Category filter tabs */}
       <div className="flex flex-wrap gap-2">

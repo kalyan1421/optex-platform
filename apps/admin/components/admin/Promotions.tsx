@@ -13,6 +13,7 @@ import { DatePicker } from '../ui/date-picker';
 import { Skeleton } from '../ui/skeleton';
 import { TableSkeleton } from '../ui/table-skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '../../lib/api';
 
 type DiscountType = 'percentage' | 'fixed';
 
@@ -53,6 +54,8 @@ export function Promotions() {
   const [promos, setPromos] = useState<PromoCode[]>([]);
   const [banners, setBanners] = useState<BannerCampaign[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Validation message from the API for promo / banner actions. */
+  const [actionError, setActionError] = useState('');
   const [addPromoOpen, setAddPromoOpen] = useState(false);
   const [addBannerOpen, setAddBannerOpen] = useState(false);
 
@@ -112,89 +115,98 @@ export function Promotions() {
   }, []);
 
   function togglePromo(id: string) {
-    setPromos((prev) => prev.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p)));
-    const db = createBrowserSupabase();
+    const previous = promos;
     const current = promos.find((p) => p.id === id);
+    setPromos((prev) => prev.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p)));
     void (async () => {
       try {
-        await db.from('promo_codes').update({ is_active: !current?.isActive }).eq('id', id);
+        await api.admin.promos.update(id, { is_active: !current?.isActive });
+        setActionError('');
       } catch (e) {
-        console.error(e);
+        console.error('toggle promo failed:', e);
+        setPromos(previous);
+        setActionError((e as Error)?.message ?? 'Could not update the promo code.');
       }
     })();
   }
 
   function deletePromo(id: string) {
+    const previous = promos;
     setPromos((prev) => prev.filter((p) => p.id !== id));
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        await db.from('promo_codes').delete().eq('id', id);
+        await api.admin.promos.remove(id);
+        setActionError('');
       } catch (e) {
-        console.error(e);
+        console.error('delete promo failed:', e);
+        setPromos(previous);
+        setActionError((e as Error)?.message ?? 'Could not delete the promo code.');
       }
     })();
   }
 
   function toggleBanner(id: string) {
-    setBanners((prev) => prev.map((b) => (b.id === id ? { ...b, isActive: !b.isActive } : b)));
-    const db = createBrowserSupabase();
+    const previous = banners;
     const current = banners.find((b) => b.id === id);
+    setBanners((prev) => prev.map((b) => (b.id === id ? { ...b, isActive: !b.isActive } : b)));
     void (async () => {
       try {
-        await db.from('promo_banners').update({ is_active: !current?.isActive }).eq('id', id);
+        await api.admin.banners.update(id, { is_active: !current?.isActive });
+        setActionError('');
       } catch (e) {
-        console.error(e);
+        console.error('toggle banner failed:', e);
+        setBanners(previous);
+        setActionError((e as Error)?.message ?? 'Could not update the banner.');
       }
     })();
   }
 
   function addPromo() {
     if (!newCode || !newValue) return;
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        await db.from('promo_codes').insert({
+        // The API validates the code shape, discount bounds and date window,
+        // and owns the `uses`/`max_uses` invariants that `increment_promo_uses`
+        // depends on. The previous direct insert skipped all of it.
+        await api.admin.promos.create({
           code: newCode.toUpperCase(),
           discount_type: newDiscountType === 'percentage' ? 'percent' : 'fixed',
           value: parseFloat(newValue),
           max_uses: parseInt(newMaxUses) || 100,
-          expires_at: newExpiry || null,
+          ...(newExpiry ? { expires_at: newExpiry } : {}),
           is_active: true,
         });
-        // Refresh list after insert
-        const { data, error } = await db
-          .from('promo_codes')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) {
-          console.error(error);
-          return;
-        }
-        const mappedCodes: PromoCode[] = (data ?? []).map((row: any) => ({
-          id: row.id,
-          code: row.code,
-          description: '',
-          discountType: row.discount_type === 'percent' ? 'percentage' : 'fixed',
-          value: row.value,
-          categories: [],
-          maxUses: row.max_uses || 0,
-          uses: row.uses,
-          expiresAt: row.expires_at?.split('T')[0] || '',
-          isActive: row.is_active,
-        }));
-        setPromos(mappedCodes);
+        const fresh = await api.admin.promos.list();
+        setPromos(
+          fresh.map((row) => ({
+            id: row.id,
+            code: row.code,
+            description: '',
+            discountType: row.discount_type === 'percent' ? 'percentage' : 'fixed',
+            value: row.value,
+            categories: [],
+            maxUses: row.max_uses || 0,
+            uses: row.uses,
+            expiresAt: row.expires_at?.split('T')[0] || '',
+            isActive: row.is_active,
+          })),
+        );
+        setActionError('');
+        // Only clear the form once the API has accepted it — otherwise a
+        // rejected code (duplicate, bad value, past expiry) would be lost and
+        // the admin would have to retype it.
+        setAddPromoOpen(false);
+        setNewCode('');
+        setNewDesc('');
+        setNewValue('');
+        setNewMaxUses('');
+        setNewExpiry('');
+        setNewCategories([]);
       } catch (e) {
-        console.error(e);
+        console.error('create promo failed:', e);
+        setActionError((e as Error)?.message ?? 'Could not create the promo code.');
       }
     })();
-    setAddPromoOpen(false);
-    setNewCode('');
-    setNewDesc('');
-    setNewValue('');
-    setNewMaxUses('');
-    setNewExpiry('');
-    setNewCategories([]);
   }
 
   function usagePct(uses: number, max: number) {
@@ -206,6 +218,9 @@ export function Promotions() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Promotions</h2>
         <p className="mt-1 text-gray-500">Manage discount codes and banner campaigns</p>
+        {actionError && (
+          <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</p>
+        )}
       </div>
 
       <Tabs defaultValue="codes">

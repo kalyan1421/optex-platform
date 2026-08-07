@@ -1,84 +1,87 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createBrowserSupabase } from '@optex/db/browser';
-import { getCartView, addCartItem, updateCartItemQuantity, removeCartItem } from '@optex/db';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 const CartContext = createContext();
 
 export const useCart = () => useContext(CartContext);
 
-function dbItemToCartItem(item) {
+/**
+ * Map an API cart line onto the shape the UI renders.
+ *
+ * Prices come from the server on every response — the client never computes a
+ * line total or a cart total, so what the customer sees is always a figure the
+ * server actually blessed.
+ */
+function apiItemToCartItem(item) {
   return {
     id: item.id,
-    productId: item.product_id,
+    productId: item.productId,
     title: item.product.name,
-    price: String(item.product.price_kes),
-    image: item.product.images?.[0] ?? '',
+    price: String(item.product.priceKes),
+    image: item.product.image ?? '',
     quantity: item.quantity,
     brand: item.product.brand ?? '',
-    variant: item.lens_option ? JSON.stringify(item.lens_option) : '',
+    variant: item.lensOption ? JSON.stringify(item.lensOption) : '',
   };
 }
 
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([]);
   const [cartId, setCartId] = useState(null);
-  const [userId, setUserId] = useState(null);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
 
-  const supabase = createBrowserSupabase();
-
-  // Sync with auth state and load DB cart when logged in
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const uid = session?.user?.id ?? null;
-      setUserId(uid);
-      if (uid) loadDbCart(uid);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const uid = session?.user?.id ?? null;
-      setUserId(uid);
-      if (uid) {
-        loadDbCart(uid);
-      } else {
-        // Logged out — clear cart
-        setItems([]);
-        setCartId(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function loadDbCart(uid) {
-    try {
-      const view = await getCartView(supabase, uid);
-      if (view) {
-        setCartId(view.cartId);
-        setItems(view.items.map(dbItemToCartItem));
-      }
-    } catch (err) {
-      console.error('Cart load error:', err);
-    }
+  /** Apply a `Cart` response — every mutation returns the full, current cart. */
+  function applyCart(cart) {
+    setCartId(cart?.cartId ?? null);
+    setItems((cart?.items ?? []).map(apiItemToCartItem));
   }
 
+  // Load the server cart on sign-in; clear it on sign-out. Auth state comes
+  // from AuthContext rather than a second Supabase session listener.
+  useEffect(() => {
+    if (!user) {
+      setItems([]);
+      setCartId(null);
+      return;
+    }
+
+    let cancelled = false;
+    api.cart
+      .get()
+      .then((cart) => {
+        if (!cancelled) applyCart(cart);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('Cart load error:', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const addToCart = async (product) => {
-    if (userId) {
+    if (user) {
       try {
-        await addCartItem(supabase, {
-          customerId: userId,
+        // The API owns availability, quantity bounds and the line-merge rule,
+        // and returns the recomputed cart — no second round-trip to reload.
+        const cart = await api.cart.addItem({
           productId: product.id,
           quantity: product.quantity ?? 1,
         });
-        await loadDbCart(userId);
+        applyCart(cart);
+        setError('');
       } catch (err) {
-        console.error('addCartItem error:', err);
+        console.error('addItem error:', err);
+        setError(err?.message ?? 'Could not add that item to your cart.');
       }
     } else {
-      // Guest — in-memory only.
+      // Guest — in-memory only. Orders require an account, so this cart is
+      // handed over at sign-in rather than persisted.
       // M-2 FIX: include the variant (lens option) in the match key so the same
       // frame with different lens options is not collapsed into one cart item.
       setItems((prev) => {
@@ -100,12 +103,14 @@ export const CartProvider = ({ children }) => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
     const newQty = Math.max(1, item.quantity + delta);
-    if (userId) {
+    if (user) {
       try {
-        await updateCartItemQuantity(supabase, id, newQty);
-        await loadDbCart(userId);
+        const cart = await api.cart.updateItem(id, { quantity: newQty });
+        applyCart(cart);
+        setError('');
       } catch (err) {
-        console.error('updateCartItemQuantity error:', err);
+        console.error('updateItem error:', err);
+        setError(err?.message ?? 'Could not update that item.');
       }
     } else {
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity: newQty } : i)));
@@ -113,12 +118,14 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeItem = async (id) => {
-    if (userId) {
+    if (user) {
       try {
-        await removeCartItem(supabase, id);
-        await loadDbCart(userId);
+        const cart = await api.cart.removeItem(id);
+        applyCart(cart);
+        setError('');
       } catch (err) {
-        console.error('removeCartItem error:', err);
+        console.error('removeItem error:', err);
+        setError(err?.message ?? 'Could not remove that item.');
       }
     } else {
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -129,7 +136,7 @@ export const CartProvider = ({ children }) => {
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, updateQuantity, removeItem, cartCount, cartId }}
+      value={{ items, addToCart, updateQuantity, removeItem, cartCount, cartId, error }}
     >
       {children}
     </CartContext.Provider>

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { DatePicker } from '../ui/date-picker';
 import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '../../lib/api';
 
 type AppointmentStatus = 'Pending' | 'Confirmed' | 'Rescheduled' | 'Cancelled' | 'Completed';
 type AppointmentType = 'Eye Test' | 'Frame Fitting' | 'Consultation';
@@ -25,6 +26,8 @@ interface Appointment {
   notes: string;
   /** Raw ISO string from DB, used for DB updates */
   scheduled_at_iso: string;
+  /** Needed to look up real availability when rescheduling. */
+  branchId: string;
 }
 
 const FILTERS = ['Today', 'Tomorrow', 'This Week', 'All'];
@@ -84,6 +87,13 @@ export function Appointments() {
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
+  /** Validation message from the API when a reschedule is rejected. */
+  const [rescheduleError, setRescheduleError] = useState('');
+  /** Validation message from the API for confirm / cancel actions. */
+  const [actionError, setActionError] = useState('');
+  /** Free slots for the reschedule target's branch on the chosen date. */
+  const [slotOptions, setSlotOptions] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
   // Dynamic today / tomorrow in local timezone
   const TODAY = new Date().toLocaleDateString('en-CA');
@@ -103,7 +113,7 @@ export function Appointments() {
         const { data, error } = await db
           .from('appointments')
           .select(
-            'id, type, scheduled_at, status, notes, contact_name, contact_phone, customer:customers(full_name, phone), branch:branches(name)',
+            'id, type, scheduled_at, status, notes, contact_name, contact_phone, branch_id, customer:customers(full_name, phone), branch:branches(name)',
           )
           .order('scheduled_at', { ascending: true });
 
@@ -136,6 +146,7 @@ export function Appointments() {
             status: toDisplayStatus(row.status ?? 'pending'),
             notes: row.notes ?? '',
             scheduled_at_iso: isoStr,
+            branchId: (row.branch_id as string) ?? '',
           };
         });
 
@@ -148,6 +159,44 @@ export function Appointments() {
     })();
   }, []);
 
+  /**
+   * Load real availability for the reschedule dialog whenever the target
+   * appointment or the chosen date changes. The server excludes times already
+   * taken and only offers slots inside that branch's opening hours, so the
+   * admin can no longer pick a slot the API will reject.
+   */
+  useEffect(() => {
+    if (!rescheduleTarget?.branchId || !newDate) {
+      setSlotOptions([]);
+      return;
+    }
+
+    let cancelled = false;
+    setSlotsLoading(true);
+
+    api.appointments
+      .slots({ branchId: rescheduleTarget.branchId, date: newDate })
+      .then((res) => {
+        if (cancelled) return;
+        const available = res.slots ?? [];
+        setSlotOptions(available);
+        setNewTime((current) => (available.includes(current) ? current : ''));
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.error('slots lookup failed:', e);
+        setSlotOptions([]);
+        setNewTime('');
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rescheduleTarget, newDate]);
+
   const filtered = appointments.filter((a) => {
     if (filter === 'Today') return a.scheduledAt === TODAY;
     if (filter === 'Tomorrow') return a.scheduledAt === TOMORROW;
@@ -157,43 +206,31 @@ export function Appointments() {
   });
 
   function confirm(id: string) {
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        const { error } = await db
-          .from('appointments')
-          .update({ status: 'confirmed' })
-          .eq('id', id);
-        if (error) {
-          console.error('confirm error:', error);
-          return;
-        }
+        await api.admin.appointments.update(id, { status: 'confirmed' });
         setAppointments((prev) =>
           prev.map((a) => (a.id === id ? { ...a, status: 'Confirmed' } : a)),
         );
+        setActionError('');
       } catch (e) {
-        console.error('Unexpected error confirming appointment:', e);
+        console.error('confirm error:', e);
+        setActionError((e as Error)?.message ?? 'Could not confirm the appointment.');
       }
     })();
   }
 
   function cancel(id: string) {
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        const { error } = await db
-          .from('appointments')
-          .update({ status: 'cancelled' })
-          .eq('id', id);
-        if (error) {
-          console.error('cancel error:', error);
-          return;
-        }
+        await api.admin.appointments.update(id, { status: 'cancelled' });
         setAppointments((prev) =>
           prev.map((a) => (a.id === id ? { ...a, status: 'Cancelled' } : a)),
         );
+        setActionError('');
       } catch (e) {
-        console.error('Unexpected error cancelling appointment:', e);
+        console.error('cancel error:', e);
+        setActionError((e as Error)?.message ?? 'Could not cancel the appointment.');
       }
     })();
   }
@@ -201,19 +238,18 @@ export function Appointments() {
   function reschedule() {
     if (!rescheduleTarget || !newDate || !newTime) return;
     const id = rescheduleTarget.id;
-    // Build an ISO string from the new local date + time
     const newIso = new Date(`${newDate}T${newTime}:00`).toISOString();
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        const { error } = await db
-          .from('appointments')
-          .update({ status: 'rescheduled', scheduled_at: newIso })
-          .eq('id', id);
-        if (error) {
-          console.error('reschedule error:', error);
-          return;
-        }
+        // Routing through the API applies assertSlotBookable(): the new slot
+        // must fall inside the branch's opening hours for that weekday, land
+        // on the slot grid, and be free. The previous direct-to-Supabase write
+        // skipped all three, which is how an admin could double-book a slot.
+        await api.admin.appointments.update(id, {
+          status: 'rescheduled',
+          date: newDate,
+          time: newTime,
+        });
         setAppointments((prev) =>
           prev.map((a) =>
             a.id === id
@@ -230,8 +266,16 @@ export function Appointments() {
         setRescheduleTarget(null);
         setNewDate('');
         setNewTime('');
+        setRescheduleError('');
       } catch (e) {
-        console.error('Unexpected error rescheduling appointment:', e);
+        console.error('reschedule error:', e);
+        // Keep the dialog open and show the API's reason — "That slot is
+        // already booked", "The branch is closed on the requested date", or
+        // "The requested time is not an available slot for this branch".
+        // These are now real, expected outcomes rather than unexpected errors.
+        setRescheduleError(
+          (e as Error)?.message ?? 'Could not reschedule to that slot. Please pick another time.',
+        );
       }
     })();
   }
@@ -420,11 +464,25 @@ export function Appointments() {
               </tbody>
             </table>
           </div>
+          {actionError && (
+            <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </p>
+          )}
         </CardContent>
       </Card>
 
       {/* Reschedule dialog */}
-      <Dialog open={!!rescheduleTarget} onOpenChange={() => setRescheduleTarget(null)}>
+      <Dialog
+        open={!!rescheduleTarget}
+        onOpenChange={() => {
+          setRescheduleTarget(null);
+          setNewDate('');
+          setNewTime('');
+          setSlotOptions([]);
+          setRescheduleError('');
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Reschedule Appointment</DialogTitle>
@@ -439,34 +497,48 @@ export function Appointments() {
             </div>
             <div className="space-y-1.5">
               <Label>New Time</Label>
-              <Select value={newTime} onValueChange={setNewTime}>
+              {/*
+                Real availability for this branch and date, from the API. The
+                previous hardcoded 09:00–16:00 list ignored the branch's actual
+                opening hours and offered slots that were already booked.
+              */}
+              <Select
+                value={newTime}
+                onValueChange={setNewTime}
+                disabled={!newDate || slotsLoading || slotOptions.length === 0}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select time slot" />
+                  <SelectValue
+                    placeholder={
+                      !newDate
+                        ? 'Pick a date first'
+                        : slotsLoading
+                          ? 'Loading available times…'
+                          : slotOptions.length === 0
+                            ? 'No times available'
+                            : 'Select time slot'
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    '09:00',
-                    '09:30',
-                    '10:00',
-                    '10:30',
-                    '11:00',
-                    '11:30',
-                    '12:00',
-                    '13:00',
-                    '13:30',
-                    '14:00',
-                    '14:30',
-                    '15:00',
-                    '15:30',
-                    '16:00',
-                  ].map((t) => (
+                  {slotOptions.map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {newDate && !slotsLoading && slotOptions.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  This branch is closed or fully booked on that date.
+                </p>
+              )}
             </div>
+            {rescheduleError && (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {rescheduleError}
+              </p>
+            )}
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => setRescheduleTarget(null)}>
                 Cancel

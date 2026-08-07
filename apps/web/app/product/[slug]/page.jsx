@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { getProductBySlug, listProducts } from '@optex/db';
 import { formatKes } from '@optex/ui';
+import { api } from '@/lib/api';
 import { getProductImageUrl } from '@/lib/product-image';
 
 // ── Reviews helpers ─────────────────────────────────────────────────────────
@@ -127,25 +128,22 @@ function ReviewsSection({ productId }) {
       setFormError('Review must be at least 10 characters.');
       return;
     }
-    if (!customerId) {
-      setFormError('Unable to resolve your customer profile. Please try again.');
-      return;
-    }
     setSubmitting(true);
-    const db = createBrowserSupabase();
-    const { error } = await db.from('product_reviews').insert({
-      product_id: productId,
-      customer_id: customerId,
-      rating,
-      body: body.trim(),
-      status: 'pending',
-    });
-    setSubmitting(false);
-    if (error) {
-      setFormError('Something went wrong. Please try again.');
-      return;
+    try {
+      // The API resolves the customer from the JWT and applies the moderation
+      // status, the one-review-per-product guard and the verified-purchase
+      // check. The previous direct insert set `status: 'pending'` itself and
+      // skipped every one of those rules.
+      await api.reviews.create(productId, { rating, body: body.trim() });
+      setSubmitted(true);
+    } catch (err) {
+      console.error('review submit failed:', err);
+      // Duplicate reviews and unverified purchases are expected outcomes with
+      // specific messages, not generic failures.
+      setFormError(err?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitted(true);
   }
 
   return (

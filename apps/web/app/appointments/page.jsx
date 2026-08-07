@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserSupabase } from '@optex/db/browser';
-import { listBranches, createAppointment } from '@optex/db';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -146,24 +146,19 @@ const APPT_TYPES = [
   },
 ];
 
-// Generate 30-minute time slots 9:00 AM → 5:30 PM
-function generateTimeSlots() {
-  const slots = [];
-  for (let h = 9; h <= 17; h++) {
-    for (let m of [0, 30]) {
-      if (h === 17 && m === 30) break; // last slot is 5:30 PM
-      const suffix = h < 12 ? 'AM' : 'PM';
-      const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-      const displayM = String(m).padStart(2, '0');
-      slots.push({
-        value: `${String(h).padStart(2, '0')}:${displayM}`,
-        label: `${displayH}:${displayM} ${suffix}`,
-      });
-    }
-  }
-  return slots;
+/**
+ * Render a 24h `HH:MM` slot returned by `GET /appointments/slots` as a
+ * 12-hour display label. The slot grid itself comes from the API — it is
+ * derived from the branch's opening hours for that weekday, minus times
+ * already taken. Never generate candidate slots on the client: the server
+ * is the only thing that knows a branch's hours or what is already booked.
+ */
+function formatSlotLabel(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const suffix = h < 12 ? 'AM' : 'PM';
+  const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${displayH}:${String(m).padStart(2, '0')} ${suffix}`;
 }
-const TIME_SLOTS = generateTimeSlots();
 
 function todayString() {
   return new Date().toISOString().slice(0, 10);
@@ -255,6 +250,7 @@ function BranchHoursSummary({ hours }) {
 
 export default function Page() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState([]);
@@ -264,8 +260,13 @@ export default function Page() {
   // Step 2
   const [apptType, setApptType] = useState('eye_test');
   const [date, setDate] = useState('');
-  const [time, setTime] = useState(TIME_SLOTS[0].value);
+  const [time, setTime] = useState('');
   const [stepNotes, setStepNotes] = useState('');
+
+  // Real availability for the selected branch + date, from the API.
+  const [slots, setSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState('');
 
   // Step 3
   const [contactName, setContactName] = useState('');
@@ -278,48 +279,86 @@ export default function Page() {
   const [success, setSuccess] = useState(false);
   const [bookedData, setBookedData] = useState(null);
 
-  // Load branches + pre-fill user info if logged in
+  // Load branches
   useEffect(() => {
-    const db = createBrowserSupabase();
-
-    // Load branches
-    listBranches(db)
+    api.branches
+      .list()
       .then(setBranches)
       .catch(console.error)
       .finally(() => setBranchLoading(false));
+  }, []);
 
-    // Pre-fill contact info from auth user
+  // Pre-fill contact details from the caller's own profile (best-effort).
+  useEffect(() => {
+    if (!user) return;
     void (async () => {
       try {
-        const {
-          data: { user },
-        } = await db.auth.getUser();
-        if (!user) return;
-        const fullName = user.user_metadata?.full_name ?? '';
-        const phone = user.user_metadata?.phone ?? '';
-        if (fullName) setContactName(fullName);
-
-        // Also check customers table for phone
-        if (!phone) {
-          const { data: cust } = await db
-            .from('customers')
-            .select('full_name, phone')
-            .eq('auth_user_id', user.id)
-            .maybeSingle();
-          if (cust?.full_name && !fullName) setContactName(cust.full_name);
-          if (cust?.phone) setContactPhone(cust.phone);
-        } else {
-          setContactPhone(phone);
-        }
+        const me = await api.account.me();
+        if (me.full_name) setContactName(me.full_name);
+        if (me.phone) setContactPhone(me.phone);
       } catch (_) {
-        /* pre-fill is best-effort */
+        /* pre-fill is best-effort — never block the booking flow */
       }
     })();
-  }, []);
+  }, [user]);
+
+  /**
+   * Load real availability whenever the branch or date changes.
+   *
+   * The server derives the slot grid from the branch's opening hours for that
+   * weekday and removes times already taken, so a slot shown here is a slot
+   * that can actually be booked. A stale in-flight response must never
+   * overwrite a newer one, hence the `cancelled` guard.
+   */
+  useEffect(() => {
+    if (!selectedBranch || !date) {
+      setSlots([]);
+      setTime('');
+      return;
+    }
+
+    let cancelled = false;
+    setSlotsLoading(true);
+    setSlotsError('');
+
+    api.appointments
+      .slots({ branchId: selectedBranch.id, date })
+      .then((res) => {
+        if (cancelled) return;
+        const available = res.slots ?? [];
+        setSlots(available);
+        // Keep the current choice only if it survived; otherwise clear it so
+        // the customer cannot submit a time that is no longer offered.
+        setTime((current) => (available.includes(current) ? current : ''));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('slots lookup failed:', err);
+        setSlots([]);
+        setTime('');
+        setSlotsError('Could not load available times. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBranch, date]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!selectedBranch) return;
+
+    // An account is required to book (client decision B4). The API enforces
+    // this; we check here only so the customer is redirected rather than
+    // shown a 401 after filling in the whole form.
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent('/appointments')}`);
+      return;
+    }
+
     if (!contactName.trim() || !contactPhone.trim()) {
       setSubmitError('Please enter your name and phone number.');
       return;
@@ -328,41 +367,29 @@ export default function Page() {
       setSubmitError('Please select a date in Step 2.');
       return;
     }
+    if (!time) {
+      setSubmitError('Please select an available time in Step 2.');
+      return;
+    }
 
     setSubmitting(true);
     setSubmitError('');
 
     try {
-      const db = createBrowserSupabase();
+      // The API resolves the customer from the JWT and validates the slot
+      // against branch opening hours, the slot grid, and existing bookings.
+      // Contact details are collected for the branch's benefit and appended
+      // to the note — the booking itself is owned by the authenticated user.
+      const allNotes =
+        [`Contact: ${contactName.trim()} (${contactPhone.trim()})`, stepNotes, notes]
+          .filter(Boolean)
+          .join(' | ') || undefined;
 
-      // Get customer_id if logged in
-      let customerId = null;
-      try {
-        const {
-          data: { user },
-        } = await db.auth.getUser();
-        if (user) {
-          const { data: cust } = await db
-            .from('customers')
-            .select('id')
-            .eq('auth_user_id', user.id)
-            .maybeSingle();
-          customerId = cust?.id ?? null;
-        }
-      } catch (_) {
-        /* guest booking is fine */
-      }
-
-      const scheduledAt = new Date(`${date}T${time}`);
-      const allNotes = [stepNotes, notes].filter(Boolean).join(' | ') || null;
-
-      await createAppointment(db, {
+      await api.appointments.create({
         branchId: selectedBranch.id,
+        date,
+        time,
         type: apptType,
-        scheduledAt,
-        customerId,
-        contactName: contactName.trim(),
-        contactPhone: contactPhone.trim(),
         notes: allNotes,
       });
 
@@ -373,8 +400,24 @@ export default function Page() {
       });
       setSuccess(true);
     } catch (err) {
-      console.error('createAppointment error:', err);
-      setSubmitError('Failed to book appointment. Please try again.');
+      console.error('appointment booking failed:', err);
+      // The API returns a specific, user-safe reason for the cases customers
+      // actually hit — slot taken, branch closed, time not on the grid.
+      // Surface it rather than a generic failure, and refresh availability so
+      // the customer sees the current picture.
+      setSubmitError(err?.message || 'Failed to book appointment. Please try again.');
+      if (selectedBranch && date) {
+        api.appointments
+          .slots({ branchId: selectedBranch.id, date })
+          .then((res) => {
+            const available = res.slots ?? [];
+            setSlots(available);
+            setTime((current) => (available.includes(current) ? current : ''));
+          })
+          .catch(() => {
+            /* the error above is already shown */
+          });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -385,7 +428,9 @@ export default function Page() {
     setSelectedBranch(null);
     setApptType('eye_test');
     setDate('');
-    setTime(TIME_SLOTS[0].value);
+    setTime('');
+    setSlots([]);
+    setSlotsError('');
     setStepNotes('');
     setContactPhone('');
     setNotes('');
@@ -663,19 +708,36 @@ export default function Page() {
               </div>
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
-                  Preferred Time
+                  Available Time
                 </label>
                 <select
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                  disabled={!date || slotsLoading || slots.length === 0}
+                  className="w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors focus:border-[#2A3182] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {TIME_SLOTS.map((slot) => (
-                    <option key={slot.value} value={slot.value}>
-                      {slot.label}
-                    </option>
-                  ))}
+                  {!date && <option value="">Select a date first</option>}
+                  {date && slotsLoading && <option value="">Loading available times…</option>}
+                  {date && !slotsLoading && slots.length === 0 && (
+                    <option value="">No times available on this date</option>
+                  )}
+                  {date && !slotsLoading && slots.length > 0 && (
+                    <>
+                      <option value="">Select a time</option>
+                      {slots.map((slot) => (
+                        <option key={slot} value={slot}>
+                          {formatSlotLabel(slot)}
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
+                {slotsError && <p className="mt-1.5 text-[12px] text-[#E53935]">{slotsError}</p>}
+                {date && !slotsLoading && !slotsError && slots.length === 0 && (
+                  <p className="mt-1.5 text-[12px] text-gray-500">
+                    This branch is closed or fully booked on that date. Try another day.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -704,12 +766,12 @@ export default function Page() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!date) {
+                  if (!date || !time) {
                     return;
                   }
                   setStep(3);
                 }}
-                disabled={!date}
+                disabled={!date || !time}
                 className="rounded-full bg-[#111827] px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue to Your Details
@@ -718,6 +780,11 @@ export default function Page() {
             {!date && (
               <p className="mt-3 text-[12px] font-medium text-red-500">
                 Please select a date to continue.
+              </p>
+            )}
+            {date && !time && !slotsLoading && slots.length > 0 && (
+              <p className="mt-3 text-[12px] font-medium text-red-500">
+                Please select an available time to continue.
               </p>
             )}
           </div>

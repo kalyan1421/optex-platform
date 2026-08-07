@@ -8,6 +8,7 @@ import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '../../lib/api';
 
 interface Branch {
   id: string;
@@ -22,11 +23,36 @@ interface Branch {
   mapEmbedUrl: string;
 }
 
+/** Weekday keys of `branches.hours`, in the order the slot engine expects. */
+const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const;
+
+/** Accepts `["09:00","18:00"]` and renders it as `09:00 - 18:00`. */
+function rangeToText(range: unknown): string {
+  if (!Array.isArray(range) || range.length < 2) return 'Closed';
+  return `${range[0]} - ${range[1]}`;
+}
+
+/**
+ * Parse `09:00 - 18:00` back into `["09:00","18:00"]`. Anything that is not a
+ * valid 24h range — including the literal "Closed" — becomes `null`, which is
+ * how the schema represents a closed day.
+ */
+function textToRange(text: string): [string, string] | null {
+  const match = text.trim().match(/^([01]\d|2[0-3]):([0-5]\d)\s*[-–]\s*([01]\d|2[0-3]):([0-5]\d)$/);
+  if (!match) return null;
+  return [`${match[1]}:${match[2]}`, `${match[3]}:${match[4]}`];
+}
+
 function mapDbRowToBranch(branch: Record<string, unknown>): Branch {
-  const hours = (branch.hours ?? {}) as Record<string, string>;
-  const hoursWeekday = hours.weekday ?? hours['mon-fri'] ?? '—';
-  const hoursSaturday = hours.saturday ?? hours.sat ?? '—';
-  const hoursSunday = hours.sunday ?? hours.sun ?? 'Closed';
+  // `branches.hours` is keyed by short weekday with `[open, close]` arrays —
+  // `{ mon: ["09:00","18:00"], sun: null }`. This component previously read
+  // `hours.weekday` / `.saturday` / `.sunday`, which never exist in real data,
+  // so it displayed placeholders and then wrote that invented shape back,
+  // destroying the per-weekday structure the appointment slot engine reads.
+  const hours = (branch.hours ?? {}) as Record<string, unknown>;
+  const hoursWeekday = rangeToText(hours.mon);
+  const hoursSaturday = rangeToText(hours.sat);
+  const hoursSunday = rangeToText(hours.sun);
 
   const lat = String(branch.lat ?? '');
   const lng = String(branch.lng ?? '');
@@ -185,6 +211,8 @@ export function Branches() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [editTarget, setEditTarget] = useState<Branch | null>(null);
+  /** Validation message from the API when a branch update is rejected. */
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     const db = createBrowserSupabase();
@@ -205,29 +233,40 @@ export function Branches() {
   }, []);
 
   function saveBranch(updated: Branch) {
-    // Optimistically update local state
+    const previous = branches;
+    // Optimistically update local state, then roll back if the API rejects.
     setBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
 
-    const db = createBrowserSupabase();
     void (async () => {
       try {
-        await db
-          .from('branches')
-          .update({
-            name: updated.name,
-            address: updated.address,
-            phone: updated.phone,
-            lat: parseFloat(updated.lat) || null,
-            lng: parseFloat(updated.lng) || null,
-            hours: {
-              weekday: updated.hoursWeekday,
-              saturday: updated.hoursSaturday,
-              sunday: updated.hoursSunday,
-            },
-          })
-          .eq('id', updated.id);
+        const weekday = textToRange(updated.hoursWeekday);
+        const lat = parseFloat(updated.lat);
+        const lng = parseFloat(updated.lng);
+
+        // Mon–Fri share one range (the client confirmed all 27 branches follow
+        // the same pattern); Saturday and Sunday are set independently.
+        const hours: Record<string, [string, string] | null> = {
+          sat: textToRange(updated.hoursSaturday),
+          sun: textToRange(updated.hoursSunday),
+        };
+        for (const day of WEEKDAY_KEYS) hours[day] = weekday;
+
+        await api.admin.branches.update(updated.id, {
+          name: updated.name,
+          address: updated.address,
+          phone: updated.phone,
+          ...(Number.isFinite(lat) ? { lat } : {}),
+          ...(Number.isFinite(lng) ? { lng } : {}),
+          hours,
+        });
+        setSaveError('');
       } catch (e) {
-        console.error(e);
+        console.error('branch update failed:', e);
+        setBranches(previous);
+        setSaveError(
+          (e as Error)?.message ??
+            'Could not save the branch. Hours must look like "09:00 - 18:00", or "Closed".',
+        );
       }
     })();
   }
@@ -238,6 +277,10 @@ export function Branches() {
         <h2 className="text-2xl font-bold text-gray-900">Branch Management</h2>
         <p className="mt-1 text-gray-500">Manage store locations, hours, and contact information</p>
       </div>
+
+      {saveError && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{saveError}</p>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {loading

@@ -7,6 +7,7 @@ import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Skeleton } from '../ui/skeleton';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '../../lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,6 +128,8 @@ export function Prescriptions() {
   const [statusFilter, setStatusFilter] = useState<'All' | 'pending' | 'processed'>('All');
   const [viewItem, setViewItem] = useState<PrescriptionRow | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
+  /** Validation message from the API for status / download actions. */
+  const [actionError, setActionError] = useState('');
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -177,24 +180,29 @@ export function Prescriptions() {
 
   function markProcessed(id: string) {
     const now = new Date().toISOString();
-    // Optimistic update
+    // Optimistic update; rolled back if the API rejects.
     setPrescriptions((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: 'processed', processed_at: now } : p)),
     );
     void (async () => {
       try {
-        const db = createBrowserSupabase();
-        const { error: updateErr } = await db
-          .from('prescriptions')
-          .update({ status: 'processed', processed_at: now })
-          .eq('id', id);
-        if (updateErr) throw new Error(updateErr.message);
+        // `processed_at` is stamped server-side to match the status, so the
+        // two can never disagree. The response carries the authoritative row.
+        const updated = await api.admin.prescriptions.updateStatus(id, { status: 'processed' });
+        setPrescriptions((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? { ...p, status: updated.status, processed_at: updated.processed_at }
+              : p,
+          ),
+        );
+        setActionError('');
       } catch (err) {
-        // Rollback optimistic update
         setPrescriptions((prev) =>
           prev.map((p) => (p.id === id ? { ...p, status: 'pending', processed_at: null } : p)),
         );
         console.error('Failed to mark processed:', err);
+        setActionError((err as Error)?.message ?? 'Could not mark the prescription processed.');
       }
     })();
   }
@@ -206,15 +214,16 @@ export function Prescriptions() {
     setViewLoading(true);
     void (async () => {
       try {
-        const db = createBrowserSupabase();
-        const { data, error: urlErr } = await db.storage
-          .from('prescriptions')
-          .createSignedUrl(row.file_url!, 60);
-        if (urlErr || !data?.signedUrl)
-          throw new Error(urlErr?.message ?? 'Could not generate URL');
-        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        // The API re-checks that the row exists and signs the stored object
+        // path itself. Signing from the browser meant the client decided which
+        // object path to sign — health data under the DPA 2019 should not be
+        // reachable that way.
+        const { url } = await api.admin.prescriptions.download(row.id);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setActionError('');
       } catch (err) {
         console.error('View file error:', err);
+        setActionError((err as Error)?.message ?? 'Could not open the prescription file.');
       } finally {
         setViewLoading(false);
       }
@@ -228,6 +237,9 @@ export function Prescriptions() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Prescriptions</h2>
         <p className="mt-1 text-gray-500">Review and process uploaded customer prescriptions</p>
+        {actionError && (
+          <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</p>
+        )}
       </div>
 
       {error && (

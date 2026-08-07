@@ -16,7 +16,7 @@ export { isSupabaseConfigured } from './env';
 export * from './queries/products';
 export * from './queries/orders';
 export * from './queries/auth';
-export * from './queries/cart';
+
 export * from './queries/branches';
 export * from './queries/appointments';
 export * from './queries/admin';
