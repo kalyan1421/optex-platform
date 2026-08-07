@@ -133,9 +133,9 @@ Five waves. Ordered by risk retired per unit of effort, not by tidiness.
 
 **Exit:** zero write operations reach Supabase from a browser. Every business rule is enforced in exactly one place.
 
-### Wave 2 — Admin reads
+### Wave 2 — Admin reads ✅ **DONE (2026-08-07)**
 
-Needs **G-2, G-3, G-4, G-8** first.
+Needed **G-2, G-3, G-4, G-8** plus **G-9**, all built. See [§12](#12-wave-2-completion-record).
 
 Dashboard → `api.admin.dashboard()` · Analytics → `api.admin.analytics()` (close the hardcoded `categoryPerformance` fixture while in there) · plus the read halves of every Wave-1 page.
 
@@ -385,3 +385,57 @@ Customer reads are unchanged (`200` for own appointments, own cart, public revie
 | Dashboard "Payment Methods" pie is a hardcoded 64/28/8 fixture | Wave 2 (gap G-4) |
 | All reads still on Supabase in both apps | Waves 2–4, as planned |
 | Branch phones now canonicalise on save (spaces stripped) | Expected; data converges as branches are edited |
+
+---
+
+## 12. Wave 2 completion record
+
+**Date:** 2026-08-07 · Verified against the running stack.
+
+### Exit criterion met
+
+`grep -rn "@optex/db" apps/admin/components/` returns one line: `AdminSidebar.tsx`'s `signOut`. That is the auth residue [§4](#4--where-this-stops--and-why) says should stay. No admin component issues a Supabase query, `.rpc`, or `.storage` call.
+
+### Gaps built
+
+| Gap | Built |
+| --- | --- |
+| G-2 | `GET /products/admin/all` — includes inactive |
+| G-3 | `GET /branches/admin/all` — includes inactive |
+| G-4 | `paymentMethods[]` on the dashboard |
+| G-8 | `snapshot{}` on the dashboard — calendar KPIs alongside the range-scoped ones |
+| G-9 | `GET /admin/appointments` resolves customer + branch names |
+
+G-2 and G-3 are separate admin routes, not flags on the existing `@Public()` ones: a public endpoint must not widen its result set based on a token it never verifies.
+
+### Both hardcoded fixtures removed
+
+- **Dashboard payment pie** — was a literal `64% / 28% / 8%` rendered regardless of sales. Now real; verified showing 50/50 against two seeded orders.
+- **Analytics category chart** — was six invented categories with invented growth percentages. Now real revenue by category, with growth computed against the preceding equal-length window. Returns `null` (rendered "new") when there is no prior data rather than a misleading 0%.
+
+### Verified in the browser
+
+| Check | Result |
+| --- | --- |
+| All seven admin pages load | ✅ |
+| Payment breakdown | M-Pesa 50% / Pesapal 50% — the 64/28/8 fixture is gone |
+| Dashboard KPIs | Ksh 18,000 MTD, 2 orders today, 4 customers — all real |
+| Deactivated product (G-2) | Still listed, badged **Inactive** |
+| Appointments (G-9) | "Amina Wanjiru · 0712000111 · Nairobi CBD" — names, not uuids |
+| Branch hours | Real per-weekday ranges |
+
+### Defects found during Wave 2
+
+1. **Products requested `limit=200`, exceeding the DTO cap of 100** — a 400 swallowed by `console.error`, leaving the grid empty. Now pages to exhaustion, because the grid filters client-side and a truncated page would silently hide products rather than show fewer.
+2. **Two more PostgREST filter injections**, same class as the confirmed one on the payments path ([CODE-REVIEW C-2](CODE-REVIEW.md)): `branches.service.ts` and `products.service.ts` escaped the `ilike` wildcards but not PostgREST's own delimiters. `customers.service.ts` already did this correctly and was the model. Both fixed.
+
+Typechecking also surfaced two shape differences the untyped Supabase path had hidden: the API is camelCase where db rows were snake_case, and `products.category_id` is genuinely nullable. Fixed at the call sites rather than cast away.
+
+### Still open
+
+| Item | Where |
+| --- | --- |
+| **C-2** — the payments-path injection itself | [SPEC-01 R3](specs/SPEC-01-payment-integrity.md), still P0 and unimplemented |
+| All storefront reads | Waves 3–4 |
+| `apps/web` has no `typecheck` script | Wave 5 |
+| ESLint `no-restricted-imports` not yet added | Wave 5 |
