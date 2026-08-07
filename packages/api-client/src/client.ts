@@ -88,6 +88,7 @@ import type {
   RescheduleAppointmentInput,
   Review,
   SignedDownloadUrl,
+  UpdatePrescriptionStatusInput,
   Slots,
   SlotsQuery,
   UpdateAppointmentInput,
@@ -598,6 +599,11 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         }),
       download: (id) =>
         request<SignedDownloadUrl>(`/admin/prescriptions/${encodeURIComponent(id)}/download`),
+      updateStatus: (id, input) =>
+        request<Prescription>(`/admin/prescriptions/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: input,
+        }),
     },
     customers: {
       list: (search) =>
@@ -849,6 +855,8 @@ export interface AdminApi {
     list: (query?: PrescriptionQuery) => Promise<Prescription[]>;
     /** `GET /admin/prescriptions/:id/download` */
     download: (id: string) => Promise<SignedDownloadUrl>;
+    /** `PATCH /admin/prescriptions/:id` */
+    updateStatus: (id: string, input: UpdatePrescriptionStatusInput) => Promise<Prescription>;
   };
   customers: {
     /** `GET /admin/customers?search=` */

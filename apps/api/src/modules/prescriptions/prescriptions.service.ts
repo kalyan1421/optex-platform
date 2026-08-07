@@ -3,12 +3,14 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { PrescriptionQueryDto } from './dto/prescription-query.dto';
 import { UploadPrescriptionDto } from './dto/upload-prescription.dto';
+import type { PrescriptionStatus } from './dto/update-prescription-status.dto';
 
 /**
  * PRIVATE storage bucket for prescription scans (see migration 0003). Objects
@@ -67,6 +69,8 @@ export interface PrescriptionRow {
  */
 @Injectable()
 export class PrescriptionsService {
+  private readonly logger = new Logger(PrescriptionsService.name);
+
   constructor(private readonly supabase: SupabaseService) {}
 
   // ── Customer-facing ───────────────────────────────────────────────────────
@@ -192,6 +196,43 @@ export class PrescriptionsService {
       throw new NotFoundException('Prescription not found');
     }
     return this.signFor(row);
+  }
+
+  /**
+   * Sets a prescription's processing status (admin only).
+   *
+   * `processed_at` is derived here rather than accepted from the caller, so the
+   * timestamp can never contradict the status: moving to `processed` stamps
+   * it, moving back to `pending` clears it. Re-applying the same status is a
+   * no-op that returns the current row rather than re-stamping the time.
+   */
+  async updateStatusAsAdmin(id: string, status: PrescriptionStatus): Promise<PrescriptionRow> {
+    const existing = await this.fetchById(id);
+    if (!existing) {
+      throw new NotFoundException('Prescription not found');
+    }
+    if (existing.status === status) {
+      return existing;
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('prescriptions')
+      .update({
+        status,
+        processed_at: status === 'processed' ? new Date().toISOString() : null,
+      })
+      .eq('id', id)
+      .select(PRESCRIPTION_COLUMNS)
+      .maybeSingle<PrescriptionRow>();
+
+    if (error) {
+      this.logger.error(`Failed to update prescription ${id}: ${error.message}`);
+      throw new InternalServerErrorException('Failed to update prescription');
+    }
+    if (!data) {
+      throw new NotFoundException('Prescription not found');
+    }
+    return data;
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────

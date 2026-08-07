@@ -619,9 +619,21 @@ export interface Prescription {
   axis_od: number | null;
   axis_os: number | null;
   pd: number | null;
-  status: string;
+  /** `pres_status` enum — mirrors the database, not a free-form string. */
+  status: PrescriptionStatus;
   processed_at: string | null;
   created_at: string;
+}
+
+/** Values of the `pres_status` enum. */
+export type PrescriptionStatus = 'pending' | 'processed';
+
+/**
+ * Body for `PATCH /admin/prescriptions/:id` (`UpdatePrescriptionStatusDto`).
+ * `processed_at` is server-derived and deliberately not accepted here.
+ */
+export interface UpdatePrescriptionStatusInput {
+  status: PrescriptionStatus;
 }
 
 /**

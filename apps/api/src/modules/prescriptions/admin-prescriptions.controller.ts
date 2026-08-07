@@ -1,7 +1,8 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators';
 import { PrescriptionQueryDto } from './dto/prescription-query.dto';
+import { UpdatePrescriptionStatusDto } from './dto/update-prescription-status.dto';
 import { PrescriptionRow, PrescriptionsService } from './prescriptions.service';
 
 /**
@@ -24,6 +25,21 @@ export class AdminPrescriptionsController {
   @ApiOkResponse({ description: 'Prescriptions, newest first' })
   list(@Query() query: PrescriptionQueryDto): Promise<PrescriptionRow[]> {
     return this.prescriptions.listAll(query);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Set a prescription’s processing status (admin)',
+    description:
+      'Moves a prescription between `pending` and `processed`. `processed_at` is ' +
+      'stamped or cleared server-side to match, so the two can never disagree.',
+  })
+  @ApiOkResponse({ description: 'The updated prescription row' })
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdatePrescriptionStatusDto,
+  ): Promise<PrescriptionRow> {
+    return this.prescriptions.updateStatusAsAdmin(id, dto.status);
   }
 
   @Get(':id/download')
