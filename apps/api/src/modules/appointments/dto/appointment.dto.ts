@@ -68,3 +68,14 @@ export class AppointmentDto {
   @ApiProperty({ description: 'Row creation instant (UTC ISO-8601).' })
   created_at!: string;
 }
+
+/**
+ * An appointment as returned by `GET /admin/appointments` — the base row plus
+ * the customer and branch names resolved, so the admin panel has more than
+ * uuids to render (gap G-9). `customer` is null for admin-created walk-in
+ * bookings, which carry `contact_name`/`contact_phone` instead.
+ */
+export interface AdminAppointmentDto extends AppointmentDto {
+  customer: { full_name: string | null; email: string | null; phone: string | null } | null;
+  branch: { name: string } | null;
+}

@@ -49,6 +49,18 @@ export interface DailyRevenuePoint {
 }
 
 /** Full `GET /admin/dashboard` payload. */
+/**
+ * Share of paid orders by payment rail, for the dashboard breakdown (G-4).
+ * `share` is a percentage of order COUNT. Orders with no recorded method are
+ * grouped under `unknown` so the shares always total 100.
+ */
+export interface PaymentMethodBreakdown {
+  method: string;
+  orders: number;
+  revenueKes: number;
+  share: number;
+}
+
 export interface DashboardResponse {
   range: string;
   from: string;
@@ -57,6 +69,7 @@ export interface DashboardResponse {
   recentOrders: RecentOrder[];
   topProducts: TopProduct[];
   dailyRevenue: DailyRevenuePoint[];
+  paymentMethods: PaymentMethodBreakdown[];
 }
 
 /** Sales summary block for the analytics report. */

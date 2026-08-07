@@ -56,6 +56,20 @@ export class BranchesController {
     return this.branches.findActive(q);
   }
 
+  /**
+   * Admin listing: every branch, active or not (gap G-3). Separate from the
+   * public route rather than a flag on it — a `@Public()` endpoint must not
+   * conditionally widen its result set based on a token it never verifies.
+   */
+  @Roles('super_admin')
+  @ApiBearerAuth()
+  @Get('admin/all')
+  @ApiOperation({ summary: 'List all branches including inactive (admin)' })
+  @ApiOkResponse({ description: 'All branches', type: [BranchDto] })
+  listAllForAdmin(@Query('q') q?: string): Promise<BranchRow[]> {
+    return this.branches.findAllForAdmin(q);
+  }
+
   /** Returns a single branch by id; 404 when it does not exist. */
   @Public()
   @Get(':id')

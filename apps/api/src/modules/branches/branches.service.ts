@@ -44,6 +44,30 @@ export class BranchesService {
    * Lists active branches ordered by name. When `q` is provided, filters by a
    * case-insensitive match against either `name` or `address`.
    */
+  /**
+   * Every branch, active or not, for the admin panel (gap G-3).
+   * `findActive` is the public listing and must stay active-only.
+   */
+  async findAllForAdmin(q?: string): Promise<BranchRow[]> {
+    let query = this.supabase.client
+      .from('branches')
+      .select(BRANCH_COLUMNS)
+      .order('name', { ascending: true });
+
+    const term = q?.trim();
+    if (term) {
+      const pattern = `%${this.escapeLike(term)}%`;
+      query = query.or(`name.ilike.${pattern},address.ilike.${pattern}`);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      this.logger.error(`Failed to list branches (admin): ${error.message}`);
+      throw new InternalServerErrorException('Failed to list branches');
+    }
+    return (data ?? []) as BranchRow[];
+  }
+
   async findActive(q?: string): Promise<BranchRow[]> {
     let query = this.supabase.client
       .from('branches')
@@ -150,8 +174,18 @@ export class BranchesService {
     }
   }
 
-  /** Escapes PostgREST `ilike` wildcards so user input is treated literally. */
+  /**
+   * Makes user input safe inside a PostgREST `or(...)` filter string.
+   *
+   * Two separate concerns, and only the first was handled before:
+   *   - `%` and `_` are `ilike` wildcards, escaped so they match literally.
+   *   - `,` `.` `(` `)` are PostgREST's own filter DELIMITERS. Left unescaped,
+   *     a term like `x,is_active.eq.false` injects an extra OR condition and
+   *     changes which rows the query returns. Same class as the confirmed
+   *     injection on the payments path (CODE-REVIEW C-2). Stripped to spaces,
+   *     matching the approach already used in customers.service.ts.
+   */
   private escapeLike(value: string): string {
-    return value.replace(/[%_]/g, (match) => `\\${match}`);
+    return value.replace(/[(),.]/g, ' ').replace(/[%_]/g, (match) => `\\${match}`);
   }
 }

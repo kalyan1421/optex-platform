@@ -7,6 +7,7 @@ import {
   CategoryRevenue,
   DailyRevenuePoint,
   DashboardKpis,
+  PaymentMethodBreakdown,
   DashboardResponse,
   OrderVolumePoint,
   RecentOrder,
@@ -52,6 +53,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 interface OrderRevenueRow {
   total_kes: number | string;
   created_at: string;
+  payment_method: string | null;
 }
 
 interface OrderItemRow {
@@ -98,6 +100,7 @@ export class AdminMetricsService {
 
     const kpis = this.computeKpis(paidOrders, customerCount);
     const dailyRevenue = this.bucketByDay(paidOrders);
+    const paymentMethods = this.aggregatePaymentMethods(paidOrders);
 
     return {
       range,
@@ -107,6 +110,7 @@ export class AdminMetricsService {
       recentOrders,
       topProducts,
       dailyRevenue,
+      paymentMethods,
     };
   }
 
@@ -148,7 +152,7 @@ export class AdminMetricsService {
   private async fetchPaidOrderRevenue(fromIso: string, toIso: string): Promise<OrderRevenueRow[]> {
     const { data, error } = await this.supabase.client
       .from('orders')
-      .select('total_kes, created_at')
+      .select('total_kes, created_at, payment_method')
       .gte('created_at', fromIso)
       .lte('created_at', toIso)
       .in('status', [...PAID_ORDER_STATUSES])
@@ -245,6 +249,36 @@ export class AdminMetricsService {
   }
 
   // ───────────────────────── aggregation helpers ────────────────────────────
+
+  /**
+   * Share of paid orders by payment rail, for the dashboard breakdown (G-4).
+   *
+   * `share` is a percentage of ORDER COUNT, not revenue — the admin panel
+   * labels it "M-Pesa / Pesapal / COD breakdown", which is a volume question.
+   * Orders with no recorded method are grouped under `unknown` rather than
+   * dropped, so the shares always total 100 and a gap is visible instead of
+   * silently redistributed.
+   */
+  private aggregatePaymentMethods(orders: OrderRevenueRow[]): PaymentMethodBreakdown[] {
+    const counts = new Map<string, { orders: number; revenueKes: number }>();
+    for (const o of orders) {
+      const key = o.payment_method ?? 'unknown';
+      const bucket = counts.get(key) ?? { orders: 0, revenueKes: 0 };
+      bucket.orders += 1;
+      bucket.revenueKes += Number(o.total_kes);
+      counts.set(key, bucket);
+    }
+
+    const total = orders.length;
+    return [...counts.entries()]
+      .map(([method, b]) => ({
+        method,
+        orders: b.orders,
+        revenueKes: this.round2(b.revenueKes),
+        share: total > 0 ? this.round2((b.orders / total) * 100) : 0,
+      }))
+      .sort((a, b) => b.orders - a.orders);
+  }
 
   private computeKpis(orders: OrderRevenueRow[], customerCount: number): DashboardKpis {
     const totalRevenueKes = orders.reduce((sum, o) => sum + Number(o.total_kes), 0);

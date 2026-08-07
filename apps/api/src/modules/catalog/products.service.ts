@@ -51,6 +51,31 @@ export class ProductsService {
    * Paginated, filtered list of active products.
    * Returns `{ items, total, page, limit }`.
    */
+  /**
+   * Product list for the admin panel, including deactivated rows (gap G-2).
+   * `list` is the public catalogue and must stay active-only.
+   */
+  async listForAdmin(query: ProductQueryDto): Promise<Paginated<ProductRow>> {
+    const { page, limit } = query;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await this.supabase.client
+      .from('products')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw new BadRequestException(error.message);
+
+    return {
+      items: (data ?? []) as ProductRow[],
+      total: count ?? 0,
+      page,
+      limit,
+    };
+  }
+
   async list(query: ProductQueryDto): Promise<Paginated<ProductRow>> {
     const { page, limit } = query;
     const from = (page - 1) * limit;
@@ -135,7 +160,13 @@ export class ProductsService {
     }
 
     // Fallback: ilike on name/brand for partial or no-tsv matches.
-    const pattern = `%${q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+    //
+    // `,` `.` `(` `)` are PostgREST's own filter delimiters — left unescaped a
+    // search term can inject an extra OR condition and change which rows come
+    // back (same class as CODE-REVIEW C-2). Strip those, then escape the
+    // `ilike` wildcards so they match literally.
+    const safe = q.replace(/[(),.]/g, ' ').replace(/[%_]/g, (m) => `\\${m}`);
+    const pattern = `%${safe}%`;
     const {
       data: ilData,
       error: ilError,

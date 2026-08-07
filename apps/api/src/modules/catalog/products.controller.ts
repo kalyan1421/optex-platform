@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiConsumes,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -44,6 +45,21 @@ export class ProductsController {
   @ApiOkResponse({ description: 'Paginated active products' })
   list(@Query() query: ProductQueryDto): Promise<Paginated<ProductRow>> {
     return this.products.list(query);
+  }
+
+  /**
+   * Admin listing: every product, active or not (gap G-2). Declared before the
+   * `:slug` route so "admin" is not swallowed as a slug. Separate from the
+   * public route rather than a flag on it — a `@Public()` endpoint must not
+   * conditionally widen its result set based on a token it never verifies.
+   */
+  @Roles('super_admin')
+  @ApiBearerAuth()
+  @Get('admin/all')
+  @ApiOperation({ summary: 'List all products including inactive (admin)' })
+  @ApiOkResponse({ description: 'Paginated products, active and inactive' })
+  listAllForAdmin(@Query() query: ProductQueryDto): Promise<Paginated<ProductRow>> {
+    return this.products.listForAdmin(query);
   }
 
   @Public()

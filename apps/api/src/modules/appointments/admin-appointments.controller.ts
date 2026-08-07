@@ -12,7 +12,7 @@ import { Roles } from '../../auth/decorators';
 import { AppointmentsService } from './appointments.service';
 import { AdminAppointmentQueryDto } from './dto/admin-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { AppointmentDto } from './dto/appointment.dto';
+import { AdminAppointmentDto, AppointmentDto } from './dto/appointment.dto';
 
 /**
  * Super-admin appointment management. Mounted at `/api/admin/appointments`
@@ -29,7 +29,7 @@ export class AdminAppointmentsController {
   @Get()
   @ApiOperation({ summary: 'List appointments (optional branch/status/date filters)' })
   @ApiOkResponse({ type: [AppointmentDto], description: 'Matching appointments' })
-  list(@Query() query: AdminAppointmentQueryDto): Promise<AppointmentDto[]> {
+  list(@Query() query: AdminAppointmentQueryDto): Promise<AdminAppointmentDto[]> {
     return this.appointments.listForAdmin(query);
   }
 

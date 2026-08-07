@@ -17,6 +17,7 @@ import type { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import type { SlotsResponseDto } from './dto/slots-response.dto';
 import {
   DEFAULT_APPOINTMENT_STATUS,
+  type AdminAppointmentDto,
   type AppointmentDto,
   type AppointmentStatus,
   type AppointmentType,
@@ -25,6 +26,14 @@ import {
 /** Columns selected from `appointments`. Mirrors the schema exactly. */
 const APPOINTMENT_COLUMNS =
   'id, customer_id, branch_id, type, scheduled_at, status, contact_name, contact_phone, notes, created_at';
+
+/**
+ * Admin listing needs the customer and branch NAMES, not just their uuids —
+ * otherwise the panel has nothing human-readable to render and has to join
+ * client-side against Supabase, which is what gap G-9 was about. Mirrors the
+ * approach already used for admin reviews.
+ */
+const ADMIN_APPOINTMENT_COLUMNS = `${APPOINTMENT_COLUMNS}, customer:customers(full_name, email, phone), branch:branches(name)`;
 
 /**
  * Booking grid resolution, in minutes. Candidate slots are generated on this
@@ -189,10 +198,10 @@ export class AppointmentsService {
   // ─── Admin ──────────────────────────────────────────────────────────────────
 
   /** Lists appointments for the admin panel, with optional filters. */
-  async listForAdmin(query: AdminAppointmentQueryDto): Promise<AppointmentDto[]> {
+  async listForAdmin(query: AdminAppointmentQueryDto): Promise<AdminAppointmentDto[]> {
     let q = this.supabase.client
       .from('appointments')
-      .select(APPOINTMENT_COLUMNS)
+      .select(ADMIN_APPOINTMENT_COLUMNS)
       .order('scheduled_at', { ascending: false });
 
     if (query.branchId) q = q.eq('branch_id', query.branchId);
@@ -209,7 +218,7 @@ export class AppointmentsService {
       this.logger.error(`Failed to list appointments (admin): ${error.message}`);
       throw new InternalServerErrorException('Failed to list appointments');
     }
-    return (data ?? []) as AppointmentDto[];
+    return (data ?? []) as unknown as AdminAppointmentDto[];
   }
 
   /**

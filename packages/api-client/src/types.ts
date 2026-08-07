@@ -577,6 +577,16 @@ export interface CreateAppointmentInput {
   notes?: string;
 }
 
+/**
+ * An appointment as returned by `GET /admin/appointments` — the base row plus
+ * resolved customer and branch names (gap G-9). `customer` is null for
+ * admin-created walk-in bookings, which carry `contact_name`/`contact_phone`.
+ */
+export interface AdminAppointment extends Appointment {
+  customer: { full_name: string | null; email: string | null; phone: string | null } | null;
+  branch: { name: string } | null;
+}
+
 /** Body for `PATCH /appointments/:id/reschedule` (`RescheduleAppointmentDto`). */
 export interface RescheduleAppointmentInput {
   /** YYYY-MM-DD */
@@ -955,6 +965,20 @@ export interface DashboardResponse {
   recentOrders: RecentOrder[];
   topProducts: TopProduct[];
   dailyRevenue: DailyRevenuePoint[];
+  /** Share of paid orders by payment rail (gap G-4). */
+  paymentMethods: PaymentMethodBreakdown[];
+}
+
+/**
+ * Share of paid orders by payment rail (`PaymentMethodBreakdown`).
+ * `share` is a percentage of order COUNT, not revenue. Orders with no recorded
+ * method appear as `unknown` so the shares always total 100.
+ */
+export interface PaymentMethodBreakdown {
+  method: string;
+  orders: number;
+  revenueKes: number;
+  share: number;
 }
 
 /** Query for `GET /admin/analytics` (`AnalyticsQueryDto`). */

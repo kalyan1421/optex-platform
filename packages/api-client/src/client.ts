@@ -87,6 +87,7 @@ import type {
   ReconcileResult,
   RescheduleAppointmentInput,
   Review,
+  AdminAppointment,
   SignedDownloadUrl,
   UpdatePrescriptionStatusInput,
   Slots,
@@ -509,6 +510,10 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     // Admin product writes live on the catalog controller (gated by
     // @Roles('super_admin')) — there is no `/admin/products` route.
     products: {
+      listAll: (query) =>
+        request<Paginated<Product>>('/products/admin/all', {
+          query: query as QueryParams | undefined,
+        }),
       create: (input) => request<Product>('/products', { method: 'POST', body: input }),
       update: (id, input) =>
         request<Product>(`/products/${encodeURIComponent(id)}`, {
@@ -559,6 +564,8 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         }),
     },
     branches: {
+      listAll: (q) =>
+        request<Branch[]>('/branches/admin/all', { query: q ? { q } : undefined }),
       create: (input) => request<Branch>('/branches', { method: 'POST', body: input }),
       update: (id, input) =>
         request<Branch>(`/branches/${encodeURIComponent(id)}`, {
@@ -583,7 +590,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     },
     appointments: {
       list: (query) =>
-        request<Appointment[]>('/admin/appointments', {
+        request<AdminAppointment[]>('/admin/appointments', {
           query: query as QueryParams,
         }),
       update: (id, input) =>
@@ -801,6 +808,8 @@ export interface AdminApi {
     link: (id: string, input: LinkPaymentInput) => Promise<ReconcileResult>;
   };
   products: {
+    /** `GET /products/admin/all` — includes inactive products (gap G-2) */
+    listAll: (query?: ProductQuery) => Promise<Paginated<Product>>;
     /** `POST /products` */
     create: (input: CreateProductInput) => Promise<Product>;
     /** `PATCH /products/:id` */
@@ -831,6 +840,8 @@ export interface AdminApi {
     remove: (id: string) => Promise<DeletionResult>;
   };
   branches: {
+    /** `GET /branches/admin/all` — includes inactive branches (gap G-3) */
+    listAll: (q?: string) => Promise<Branch[]>;
     /** `POST /branches` */
     create: (input: CreateBranchInput) => Promise<Branch>;
     /** `PATCH /branches/:id` */
@@ -845,8 +856,8 @@ export interface AdminApi {
     moderate: (id: string, input: UpdateReviewInput) => Promise<Review>;
   };
   appointments: {
-    /** `GET /admin/appointments` */
-    list: (query?: AdminAppointmentQuery) => Promise<Appointment[]>;
+    /** `GET /admin/appointments` — includes resolved customer/branch names */
+    list: (query?: AdminAppointmentQuery) => Promise<AdminAppointment[]>;
     /** `PATCH /admin/appointments/:id` */
     update: (id: string, input: UpdateAppointmentInput) => Promise<Appointment>;
   };
