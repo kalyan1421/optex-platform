@@ -14,7 +14,7 @@ export default function MainLayout({ children }) {
   return (
     <div className="relative min-h-screen flex flex-col bg-white">
       {!hideNavFooter && <Header />}
-      <main className={`flex-1 flex flex-col w-full transition-all duration-500 ease-in-out ${isHomePage ? 'overflow-x-hidden' : (isCompactNav ? 'pt-[87px]' : 'pt-[135px]')}`}>
+      <main className={`flex-1 flex flex-col w-full transition-all duration-500 ease-in-out ${hideNavFooter ? '' : (isHomePage ? 'overflow-x-hidden' : (isCompactNav ? 'pt-[87px]' : 'pt-[135px]'))}`}>
         {children}
       </main>
       {!hideNavFooter && <Footer />}
