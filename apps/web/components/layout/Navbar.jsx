@@ -84,6 +84,7 @@ export default function Navbar() {
   ];
 
   const isHomePage = pathname === '/';
+  const isCompactNav = pathname === '/about' || pathname === '/eye-care';
 
   // Figma: "hero page" frame fill is #FFFFFF80 (50% white) over the hero photo;
   // "other pages" frame has no fill override, i.e. opaque white.
@@ -109,20 +110,18 @@ export default function Navbar() {
 
   return (
     <nav 
-      className={`relative z-30 py-2 sm:py-3 lg:h-[99px] lg:py-[3px]`}
+      className={`relative z-30 py-2 sm:py-3 lg:py-[3px] transition-all duration-500 ease-in-out ${isCompactNav ? 'lg:h-[51px] shadow-sm' : 'lg:h-[99px]'}`}
       style={{ backgroundColor: navbarBackground }}
     >
       <div className="mx-auto flex h-full w-full max-w-[1440px] items-center gap-4 px-4 sm:px-10 lg:justify-between lg:gap-0 lg:px-[100px]">
 
         <div className="flex-shrink-0 h-full flex items-center">
           <Link href="/" className="flex h-full items-center">
-            <Image
+            <img
               src="/images/Logo.png"
               alt="Optex"
-              width={140}
-              height={99}
-              className="h-full w-auto object-contain"
-              style={{ maxHeight: '99px' }}
+              className="h-full w-auto object-contain transition-all duration-500 ease-in-out"
+              style={{ maxHeight: isCompactNav ? '39px' : '99px' }}
             />
           </Link>
         </div>

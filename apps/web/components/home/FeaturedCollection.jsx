@@ -68,7 +68,7 @@ const FeaturedCollection = () => {
         {/* Content Box (Tabs + Grid) */}
         <div className="flex flex-col lg:w-[1143px] lg:gap-[40px]">
           {/* Categories Section */}
-          <div className="flex flex-row w-full lg:w-[1143px] lg:h-[144px] lg:gap-[16px] gap-3 overflow-x-auto pb-1">
+          <div className="flex flex-row w-full lg:w-[1143px] lg:h-[144px] lg:gap-[16px] gap-3 justify-center">
             {UI_CATEGORIES.map((cat, index) => {
               const isActive = activeCategory === cat.id;
               const isGlasses = cat.id === 'glasses';
@@ -79,8 +79,8 @@ const FeaturedCollection = () => {
                   onClick={() => setActiveCategory(cat.id)}
                   data-aos="fade-up"
                   data-aos-delay={index * 100}
-                  className={`relative flex flex-col cursor-pointer shrink-0 transition-all duration-300 overflow-hidden
-                    lg:w-[370px] lg:h-[144px] rounded-[32px] bg-white
+                  className={`relative flex flex-col cursor-pointer flex-1 max-w-[370px] transition-all duration-300 overflow-hidden
+                    lg:h-[144px] rounded-[32px] bg-white
                     ${isActive ? 'border-2 border-[#2E3192]' : 'border border-[#D4D4D4]'}
                   `}
                 >
