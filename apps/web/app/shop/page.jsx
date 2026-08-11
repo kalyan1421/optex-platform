@@ -11,7 +11,6 @@ import { getProductImageUrl } from '@/lib/product-image';
 const Shop = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeBrand, setActiveBrand] = useState('All');
-  const [sortBy, setSortBy] = useState('default');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([{ name: 'All', count: 0 }]);
   const [brands, setBrands] = useState(['All']);
@@ -49,168 +48,192 @@ const Shop = () => {
     return cat ? p.category_id === cat.id : true;
   });
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'price-asc') return Number(a.price_kes) - Number(b.price_kes);
-    if (sortBy === 'price-desc') return Number(b.price_kes) - Number(a.price_kes);
-    if (sortBy === 'newest')
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    return 0; // default: preserve DB order (created_at desc)
-  });
-
   return (
     <div className="min-h-screen bg-white">
-      {/* Banner Section */}
-      <section className="relative flex h-[320px] items-center justify-center overflow-hidden sm:h-[360px] lg:h-[400px]">
+      {/* Hero Banner Section */}
+      <section className="relative flex w-full flex-col items-center overflow-hidden lg:h-[314px] lg:px-[139.6px] lg:pt-[80px]">
+        {/* Background Image */}
         <div
-          className="absolute inset-0 z-0 scale-105 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=2070&auto=format)',
-          }}
-        >
-          <div className="absolute inset-0 bg-[#2A3182]/70 mix-blend-multiply"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/80 to-transparent"></div>
-        </div>
+          className="absolute inset-0 z-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/images/shop-banner-cropped.jpg)' }}
+        />
+        {/* Overlay (#F9F9F9 at 50% opacity) */}
+        <div className="absolute inset-0 z-0 bg-[#F9F9F980]" />
 
-        <div
-          data-aos="fade-up"
-          className="relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6"
-        >
-          <h1 className="mb-4 text-[36px] font-black tracking-tight text-white drop-shadow-2xl sm:text-[46px] md:text-[60px]">
+        {/* Content Box */}
+        <div className="relative z-10 flex flex-col items-center lg:h-[154px] lg:w-[1160.8px]">
+          <h1
+            className="flex items-center justify-center whitespace-nowrap text-center text-[#000000] lg:mt-[2.4px] lg:h-[84px] lg:w-[410px]"
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: '56px',
+              lineHeight: '84px',
+            }}
+          >
             Our Collection
           </h1>
-          <p className="mx-auto max-w-lg text-[14px] font-medium leading-relaxed text-white/90 drop-shadow-lg sm:text-[16px] md:text-[18px]">
+          <p
+            className="flex items-center justify-center text-center text-[#000000] lg:mt-[14px] lg:h-[54px] lg:w-[700px]"
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 400,
+              fontSize: '18px',
+              lineHeight: '27px',
+            }}
+          >
             Browse through our extensive range of premium eyewear, from classic frames to modern
             sunglasses.
           </p>
         </div>
       </section>
 
-      {/* Main Content */}
-      <main className="page-container py-12 sm:py-14">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
-          {/* Sidebar Filters */}
-          <aside
-            className="w-full flex-shrink-0 lg:sticky lg:h-fit lg:max-h-[calc(100vh-130px)] lg:w-[240px] lg:self-start lg:overflow-y-auto lg:pr-2"
-            style={{ top: '130px' }}
-          >
-            <div data-aos="fade-right">
-              {/* Categories */}
-              <div className="mb-10">
-                <h3 className="mb-5 text-[15px] font-bold uppercase tracking-[0.1em] text-[#1a1a1a]">
+      {/* Main Content Layout */}
+      <main className="mx-auto mb-12 w-full max-w-[1240px] px-6 lg:mb-[100px] lg:mt-[40px] lg:px-[16px]">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:gap-[40px]">
+          {/* Sidebar (Width: 250px) */}
+          <aside className="w-full flex-shrink-0 lg:flex lg:w-[250px] lg:flex-col lg:gap-[32px]">
+            {/* Categories Block */}
+            <div className="flex flex-col gap-[8px] lg:w-[250px]">
+              <div className="mb-[8px] border-b-[0.8px] border-[#0000001A] lg:h-[35.8px] lg:w-[250px] lg:pb-[8px]">
+                <h3 className="font-poppins h-[27px] text-[18px] font-semibold leading-[27px] text-[#000000]">
                   Categories
                 </h3>
-                <ul className="space-y-1">
-                  {categories.map((cat) => (
+              </div>
+              <ul className="flex flex-col gap-[8px] lg:w-[250px]">
+                {categories.map((cat) => {
+                  const isActive = activeCategory === cat.name;
+                  return (
                     <li
                       key={cat.name}
                       onClick={() => setActiveCategory(cat.name)}
-                      className={`flex cursor-pointer items-center justify-between rounded-lg py-2.5 text-[14px] transition-all duration-200 ${
-                        activeCategory === cat.name
-                          ? 'bg-[#2A3182] px-4 font-bold text-white shadow-md'
-                          : 'font-medium text-gray-500 hover:text-[#2A3182]'
-                      }`}
+                      className={`flex cursor-pointer items-center px-[16px] transition-colors lg:h-[40px] lg:w-[250px] lg:rounded-[10px] ${isActive ? 'bg-[#2E3192] text-white' : 'text-[#717182] hover:bg-gray-50'}`}
                     >
-                      <span>{cat.name}</span>
-                      <span
-                        className={`text-[11px] ${activeCategory === cat.name ? 'text-white/70' : 'text-gray-400'}`}
-                      >
-                        ({cat.count})
+                      <span className="font-inter text-[16px]">
+                        {cat.name} ({cat.count})
                       </span>
                     </li>
-                  ))}
-                </ul>
-              </div>
+                  );
+                })}
+              </ul>
+            </div>
 
-              {/* Brands */}
-              <div>
-                <h3 className="mb-5 text-[15px] font-bold uppercase tracking-[0.1em] text-[#1a1a1a]">
+            {/* Brands Block */}
+            <div className="flex flex-col gap-[16px] lg:w-[250px]">
+              <div className="mb-[8px] border-b-[0.8px] border-[#0000001A] lg:h-[35.8px] lg:w-[250px] lg:pb-[8px]">
+                <h3 className="font-poppins h-[27px] text-[18px] font-semibold leading-[27px] text-[#000000]">
                   Brands
                 </h3>
-                <ul className="space-y-1">
-                  {brands.map((brand) => (
+              </div>
+              <ul className="flex flex-col gap-[8px] lg:w-[250px]">
+                {brands.map((brand) => {
+                  const isActive = activeBrand === brand;
+                  return (
                     <li
                       key={brand}
                       onClick={() => setActiveBrand(brand)}
-                      className={`cursor-pointer rounded-lg py-2.5 text-[14px] transition-all duration-200 ${
-                        activeBrand === brand
-                          ? 'bg-[#2A3182] px-4 font-bold text-white shadow-md'
-                          : 'font-medium text-gray-500 hover:text-[#2A3182]'
-                      }`}
+                      className={`flex cursor-pointer items-center px-[16px] transition-colors lg:h-[40px] lg:w-[250px] lg:rounded-[10px] ${isActive ? 'bg-[#2E3192] text-white' : 'text-[#717182] hover:bg-gray-50'}`}
                     >
-                      {brand}
+                      <span className="font-inter text-[16px]">{brand}</span>
                     </li>
-                  ))}
-                </ul>
-              </div>
+                  );
+                })}
+              </ul>
             </div>
           </aside>
 
-          {/* Product Grid Area */}
-          <section className="min-w-0 flex-1">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[12px] font-bold uppercase tracking-widest text-gray-400 sm:text-[13px]">
-                Showing {sorted.length} products
-              </p>
-              <div className="w-full sm:w-auto">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full cursor-pointer rounded-lg border border-gray-100 px-3 py-2 text-[12px] font-bold text-gray-500 outline-none focus:border-[#2A3182] sm:w-auto"
-                >
-                  <option value="default">Default Sorting</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="newest">Newest First</option>
-                </select>
-              </div>
+          {/* Product Grid Area (Width: 918px) */}
+          <section className="mt-10 flex flex-col lg:mt-0 lg:w-[918px] lg:gap-[24px]">
+            {/* Top Header */}
+            <div className="flex items-center justify-between lg:h-[36px] lg:w-[918px]">
+              <span
+                className="flex items-center text-[#717182] lg:h-[24px] lg:w-[150px]"
+                style={{ fontFamily: 'Arimo, sans-serif', fontSize: '16px', lineHeight: '24px' }}
+              >
+                Showing {filtered.length} products
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {sorted.map((product, index) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[918px] lg:grid-cols-3 lg:gap-[24px]">
+              {filtered.map((product) => (
                 <div
                   key={product.id}
-                  data-aos="fade-up"
-                  data-aos-delay={index * 50}
-                  className="group flex flex-col rounded-[25px] border border-[#ddd] bg-white p-2.5 transition-all duration-500 hover:shadow-xl"
+                  className="group relative flex w-full flex-col overflow-hidden border-[#D4D4D4] bg-[#FFFFFF] transition-shadow duration-300 hover:shadow-lg lg:h-[480px] lg:w-[290px]"
+                  style={{
+                    borderRadius: '32px',
+                    borderWidth: '0.8px',
+                  }}
                 >
-                  {/* Image Container */}
-                  <div className="relative aspect-square overflow-hidden rounded-[20px] bg-[#f8f9fa]">
-                    <div className="absolute right-3 top-3 z-10">
-                      <div className="rounded-full border border-[#ddd] bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
-                        <span className="text-[9px] font-black uppercase tracking-tighter text-[#2A3182]">
-                          {product.frame_shape ?? product.brand}
-                        </span>
-                      </div>
+                  {/* Image Box */}
+                  <div className="relative flex w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:h-[288.4px]">
+                    {/* Category Label Pill */}
+                    <div className="absolute right-[16px] top-[16px] z-10 flex items-center justify-center rounded-[20px] bg-white px-[12px] py-[6px] shadow-sm">
+                      <span className="font-inter text-[12px] font-medium text-[#2E3192]">
+                        {product.frame_shape || 'Sunglasses'}
+                      </span>
                     </div>
-                    <Link href={`/product/${product.slug}`}>
+
+                    <Link
+                      href={`/product/${product.slug}`}
+                      className="relative block h-full w-full overflow-hidden"
+                    >
                       <img
                         src={getProductImageUrl(product)}
                         alt={product.name}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </Link>
                   </div>
 
-                  {/* Product Details */}
-                  <div className="flex flex-1 flex-col p-4 pt-4">
-                    <div className="mb-1 flex items-start justify-between gap-3">
-                      <Link href={`/product/${product.slug}`}>
-                        <h3 className="text-[16px] font-bold leading-tight text-gray-900 transition-colors group-hover:text-[#2A3182]">
-                          {product.name}
-                        </h3>
-                      </Link>
-                      <span className="mt-1 text-[9px] font-bold uppercase tracking-widest text-gray-300">
-                        {product.brand}
+                  {/* Content Area */}
+                  <div className="flex flex-col lg:mx-[24.8px] lg:mt-[24px] lg:w-[240.4px]">
+                    {/* Row 1: Title & Brand */}
+                    <div className="flex items-start justify-between lg:h-[27px] lg:w-[240.4px]">
+                      <h3 className="font-poppins truncate font-semibold text-[#000000] transition-colors group-hover:text-[#2E3192] lg:w-[135px] lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]">
+                        {product.name}
+                      </h3>
+                      <span
+                        className="text-right uppercase text-[#2E3192] lg:h-[21px] lg:w-[57px]"
+                        style={{
+                          fontFamily: 'Arimo, sans-serif',
+                          fontSize: '14px',
+                          lineHeight: '21px',
+                        }}
+                      >
+                        {product.brand || 'RAYBAN'}
                       </span>
                     </div>
-                    <p className="mb-4 line-clamp-2 flex-1 text-[12px] leading-relaxed text-gray-400">
-                      {product.description}
-                    </p>
-                    <div className="flex items-center justify-between gap-3 border-t border-[#ddd] pt-2">
-                      <p className="text-[18px] font-black tracking-tight text-[#2A3182]">
-                        {formatKes(Number(product.price_kes))}
+
+                    {/* Row 2: Description */}
+                    <div className="lg:mt-[8px] lg:h-[42px] lg:w-[240.4px]">
+                      <p
+                        className="font-inter line-clamp-2 text-[#717182]"
+                        style={{ fontSize: '14px', lineHeight: '21px' }}
+                      >
+                        {product.description ||
+                          'Premium quality sunglasses designed for maximum comfort and style.'}
                       </p>
+                    </div>
+
+                    {/* Row 3: Price & Action */}
+                    <div className="flex items-center justify-between lg:mt-[24px] lg:h-[41px] lg:w-[240.4px]">
+                      {/* Price Block */}
+                      <div className="flex items-baseline gap-[4px] text-[#2E3192] lg:mt-[0.8px] lg:h-[33px] lg:w-[101px]">
+                        <span
+                          className="text-[12px] font-bold uppercase"
+                          style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
+                        >
+                          KSH.
+                        </span>
+                        <span
+                          className="text-[22px] font-bold"
+                          style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
+                        >
+                          {Number(product.price_kes).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Button */}
                       <button
                         onClick={() =>
                           addToCart({
@@ -221,9 +244,14 @@ const Shop = () => {
                             quantity: 1,
                           })
                         }
-                        className="whitespace-nowrap rounded-full bg-[#EF4444] px-4 py-2 text-[11px] font-bold text-white shadow-md transition-all hover:bg-red-600 active:scale-95"
+                        className="flex items-center justify-center bg-[#E53935] text-white transition-all hover:bg-[#D32F2F] active:scale-95 lg:h-[41px] lg:w-[121.375px] lg:rounded-[24px]"
                       >
-                        Add to Cart
+                        <span
+                          className="flex items-center justify-center whitespace-nowrap text-center text-[14px] font-semibold lg:h-[21px] lg:w-[82px]"
+                          style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '21px' }}
+                        >
+                          Add to Cart
+                        </span>
                       </button>
                     </div>
                   </div>

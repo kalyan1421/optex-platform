@@ -39,31 +39,60 @@ const FaceShape = () => {
   ];
 
   return (
-    <section className="overflow-hidden bg-[#F8F9FA] py-16">
-      <div className="site-container">
-        <div data-aos="fade-up" className="mb-12 text-center">
-          <h2 className="mb-4 text-[36px] font-bold leading-tight tracking-tight text-gray-900">
+    <section className="flex w-full flex-col items-center bg-[#F9F9F9] px-6 lg:px-[100px] lg:pb-[100px] lg:pt-[100px]">
+      <div className="flex w-full flex-col lg:w-[1240px] lg:gap-[60px]">
+        {/* Header Row */}
+        <div
+          data-aos="fade-up"
+          className="flex flex-col items-center justify-center lg:h-[142px] lg:w-[1240px] lg:gap-[16px]"
+        >
+          <h2
+            className="text-center capitalize text-[#000000]"
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: '48px',
+              lineHeight: '72px',
+            }}
+          >
             Shop by Face Shape
           </h2>
-          <p className="mx-auto max-w-2xl text-[16px] font-medium text-[#6B7280]">
+          <p
+            className="text-center text-[#717182] lg:h-[54px] lg:w-[600px]"
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 400,
+              fontSize: '18px',
+              lineHeight: '27px',
+            }}
+          >
             Not sure which frames suit you best? Find the perfect match based on your unique facial
             features.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        {/* Grid Row */}
+        <div className="flex flex-col gap-6 lg:h-[476px] lg:w-[1240px] lg:flex-row lg:justify-center lg:gap-[24px]">
           {shapes.map((shape, index) => (
             <div
               key={shape.id}
               data-aos="fade-up"
               data-aos-delay={index * 100}
-              className="flex flex-col overflow-hidden rounded-[40px] border border-gray-50 bg-white shadow-sm md:rounded-[45px]"
+              className="group flex cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:h-[476px] lg:w-[267.75px]"
+              style={{
+                borderRadius: '32px',
+                border: '1px solid #E5E7EB',
+                boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.1)',
+              }}
             >
-              <div className="relative flex h-64 items-center justify-center bg-[#F3F4F6] md:h-72">
+              <div
+                className="relative flex w-full items-center justify-center overflow-hidden bg-[#F3F4F6] lg:h-[265.75px] lg:w-[265.75px]"
+                style={{ borderRadius: '31px 31px 0 0' }}
+              >
                 {shape.image ? (
                   <img src={shape.image} alt={shape.title} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex flex-col items-center justify-center">
+                  <div className="flex flex-col items-center justify-center opacity-50">
                     <svg
                       width="70"
                       height="70"
@@ -83,16 +112,42 @@ const FaceShape = () => {
                 )}
               </div>
 
-              <div className="flex flex-grow flex-col items-center p-6 pt-6 text-center">
-                <h3 className="mb-2 text-[20px] font-bold text-gray-900 md:text-[22px]">
+              <div className="relative flex w-full flex-col items-center lg:h-[208.25px] lg:w-[265.75px]">
+                <h3
+                  className="absolute text-center text-[#000000]"
+                  style={{
+                    top: '24px',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 600,
+                    fontSize: '22px',
+                    lineHeight: '33px',
+                  }}
+                >
                   {shape.title}
                 </h3>
-                <p className="mb-6 px-1 text-[13px] font-medium leading-relaxed text-[#6B7280] md:text-[14px]">
+                <p
+                  className="absolute w-full px-[24px] text-center text-[#717182]"
+                  style={{
+                    top: '65px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    lineHeight: '22.75px',
+                  }}
+                >
                   {shape.description}
                 </p>
                 <a
                   href={`#shop-${shape.id}`}
-                  className="mt-auto border-b-2 border-[#2A3182] pb-0.5 text-[15px] font-bold text-[#2A3182] transition-all duration-200 hover:border-[#E53935] hover:text-[#E53935] md:text-[16px]"
+                  className="absolute text-center text-[#2E3192] transition-colors hover:border-[#E53935] hover:text-[#E53935]"
+                  style={{
+                    top: '158.25px',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 700,
+                    fontSize: '16px',
+                    lineHeight: '24px',
+                    borderBottom: '2px solid #2E3192',
+                  }}
                 >
                   {shape.linkText}
                 </a>

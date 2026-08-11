@@ -15,12 +15,12 @@ const Home = () => {
     <>
       <Hero />
       <FeaturedCollection />
-      <Promotional />
       <TrendingNow />
       <FeaturedProducts />
       <VirtualTryOn />
       <FaceShape />
       <WhyOptex />
+      <Promotional />
       <Testimonials />
       <FinalCTA />
     </>

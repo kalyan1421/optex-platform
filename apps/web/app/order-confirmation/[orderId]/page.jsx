@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
-import { formatKes } from '@optex/ui';
+import { formatKes, formatKesNumber } from '@optex/ui';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -405,7 +405,9 @@ export default function Page() {
                   <span className="mb-0.5 text-[11px] font-bold uppercase tracking-tight text-gray-500">
                     KSH.
                   </span>
-                  <span className="text-[22px] font-black text-[#2A3182]">{total.toFixed(2)}</span>
+                  <span className="text-[22px] font-black text-[#2A3182]">
+                    {formatKesNumber(total)}
+                  </span>
                 </div>
               </div>
             </div>

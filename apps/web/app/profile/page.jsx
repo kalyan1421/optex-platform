@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { listOrdersForCustomer } from '@optex/db';
-import { formatKes } from '@optex/ui';
+import { formatKes, formatKesNumber } from '@optex/ui';
 
 // Icons
 const VerifyBadgeIcon = () => (
@@ -647,7 +647,7 @@ export default function Page() {
                           KSH.
                         </span>
                         <span className="text-[16px] font-black">
-                          {Number(order.total_kes).toFixed(2)}
+                          {formatKesNumber(order.total_kes)}
                         </span>
                       </td>
                       <td className="px-6 py-6 sm:px-8">

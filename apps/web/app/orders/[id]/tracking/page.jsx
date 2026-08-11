@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createBrowserSupabase } from '@optex/db/browser';
-import { formatKes } from '@optex/ui';
+import { formatKes, formatKesNumber } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
@@ -289,7 +289,7 @@ export default function OrderTrackingPage() {
               <span className="text-[11px] font-bold uppercase text-gray-400">Total:</span>
               <span className="mr-1 text-[11px] font-bold uppercase text-gray-400">KSH.</span>
               <span className="text-[20px] font-black text-[#2A3182]">
-                {Number(order.total_kes).toFixed(2)}
+                {formatKesNumber(order.total_kes)}
               </span>
             </div>
           </div>
@@ -491,7 +491,7 @@ export default function OrderTrackingPage() {
                           KSH.
                         </span>
                         <span className="text-[20px] font-black text-[#2A3182]">
-                          {Number(order.total_kes).toFixed(2)}
+                          {formatKesNumber(order.total_kes)}
                         </span>
                       </td>
                     </tr>

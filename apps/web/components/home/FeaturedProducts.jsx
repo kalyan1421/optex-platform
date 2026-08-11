@@ -17,67 +17,149 @@ export default function FeaturedProducts() {
   }, []);
 
   return (
-    <section className="overflow-hidden bg-white py-16">
-      <div className="site-container">
+    <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
+      <div className="flex flex-col lg:w-[1240px] lg:gap-[51px]">
         {/* Header Row */}
         <div
           data-aos="fade-up"
-          className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+          className="flex flex-col justify-between lg:h-[92px] lg:w-[1240px] lg:flex-row lg:items-end"
         >
-          <div>
-            <h2 className="section-heading mb-2">Featured Products</h2>
-            <p className="section-copy">Discover our handpicked collection of premium eyewear.</p>
+          <div className="flex flex-col lg:h-[92px] lg:w-[426.5px] lg:gap-[8px]">
+            <h2
+              className="capitalize text-[#000000]"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 600,
+                fontSize: '40px',
+                lineHeight: '60px',
+                letterSpacing: '-0.4px',
+              }}
+            >
+              Featured Products
+            </h2>
+            <p
+              className="whitespace-nowrap text-[#717182]"
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '24px',
+              }}
+            >
+              Discover our handpicked collection of premium eyewear.
+            </p>
           </div>
-          <div className="pb-1">
+          <div className="mt-4 flex justify-start lg:mt-0 lg:justify-end lg:pb-[4px]">
             <Link
               href="/shop"
-              className="text-brand-blue flex items-center gap-2 text-[16px] font-bold hover:underline"
+              className="flex items-center transition-opacity hover:opacity-80 lg:h-[24px] lg:w-[96.95px]"
             >
-              See More
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
+              <span
+                className="text-center capitalize text-[#2E3192] underline"
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  lineHeight: '24px',
+                  letterSpacing: '-0.16px',
+                }}
               >
-                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+                See More
+              </span>
+              <div className="flex items-center justify-center text-[#2E3192] lg:h-[24px] lg:w-[24px]">
+                <svg
+                  width="6"
+                  height="12"
+                  viewBox="0 0 6 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-1"
+                >
+                  <polyline points="1 11 5 6 1 1"></polyline>
+                </svg>
+              </div>
             </Link>
           </div>
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-10">
+        <div className="flex flex-wrap justify-between gap-6 lg:grid lg:w-[1240px] lg:grid-cols-4 lg:gap-[24px]">
           {products.map((product, index) => (
             <div
               key={product.id}
               data-aos="fade-up"
               data-aos-delay={index * 50}
-              className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-sm transition-all duration-500 hover:shadow-2xl"
+              className="group flex cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:h-[378.2px] lg:w-[291px] lg:gap-[10px]"
+              style={{
+                borderRadius: '32px',
+                border: '0.8px solid #D4D4D4',
+                boxShadow: '0px 8px 24px 0px rgba(0,0,0,0.05)',
+              }}
             >
               {/* Product Image */}
-              <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
+              <Link
+                href={`/product/${product.slug}`}
+                className="relative w-full overflow-hidden bg-[#F5F5F5] lg:h-[225.2px] lg:w-[289px]"
+                style={{ borderRadius: '31px 31px 0 0' }}
+              >
                 <img
                   src={getProductImageUrl(product)}
                   alt={product.name}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                  style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                 />
-              </div>
+              </Link>
 
               {/* Product Info */}
-              <div className="flex flex-grow flex-col p-5">
-                <h3 className="text-brand-dark group-hover:text-brand-blue mb-1 text-[17px] font-bold leading-tight transition-colors sm:text-[18px]">
-                  {product.name}
-                </h3>
-                <p className="mb-5 line-clamp-2 text-[13px] leading-relaxed text-gray-400">
-                  {product.description}
-                </p>
-                <div className="mt-auto flex items-center justify-between gap-2">
-                  <p className="text-brand-blue whitespace-nowrap text-[18px] font-black">
-                    {formatKes(Number(product.price_kes))}
+              <div className="flex flex-col lg:h-[141px] lg:w-[289px] lg:gap-[10px] lg:px-[12px] lg:pb-[12px]">
+                <div className="flex flex-col lg:h-[72px] lg:w-[265px]">
+                  <Link href={`/product/${product.slug}`}>
+                    <h3
+                      className="truncate text-[#000000] transition-colors group-hover:text-[#2E3192] lg:h-[30px] lg:w-[265px]"
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontSize: '20px',
+                        lineHeight: '30px',
+                        letterSpacing: '-0.2px',
+                      }}
+                    >
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <p
+                    className="line-clamp-2 text-[#717182] lg:h-[42px] lg:w-[265px]"
+                    style={{
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '21px',
+                      letterSpacing: '-0.14px',
+                    }}
+                  >
+                    {product.description || 'Unisex style with UV protection'}
                   </p>
+                </div>
+
+                <div className="flex items-center justify-between lg:h-[37px] lg:w-[265px]">
+                  <span
+                    className="whitespace-nowrap text-[#2E3192]"
+                    style={{
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 700,
+                      fontSize: '18px',
+                      lineHeight: '27px',
+                      letterSpacing: '-0.18px',
+                    }}
+                  >
+                    KSH.{' '}
+                    {Number(product.price_kes).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -89,9 +171,20 @@ export default function FeaturedProducts() {
                         quantity: 1,
                       });
                     }}
-                    className="bg-brand-red whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
+                    className="flex flex-shrink-0 items-center justify-center bg-[#E53935] transition-colors hover:bg-red-700 lg:h-[37px] lg:w-[127.5px]"
+                    style={{ borderRadius: '24px' }}
                   >
-                    Add to Cart
+                    <span
+                      className="text-center text-[#FFFFFF]"
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        lineHeight: '21px',
+                      }}
+                    >
+                      Shop Now
+                    </span>
                   </button>
                 </div>
               </div>

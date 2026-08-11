@@ -10,19 +10,19 @@ const UI_CATEGORIES = [
   {
     id: 'glasses',
     name: 'Eye Glasses',
-    image: '/images/eye-glasses.png',
+    image: '/images/eyeglasses-fc.jpg',
     keywords: ['glass', 'eyeglass', 'optic', 'reading'],
   },
   {
     id: 'shades',
     name: 'Shades',
-    image: '/images/shades.png',
+    image: '/images/shades-fc.png',
     keywords: ['sun', 'shade', 'sunglass'],
   },
   {
     id: 'lens',
     name: 'Contact Lens',
-    image: '/images/contact-lens.png',
+    image: '/images/contactlens-fc.png',
     keywords: ['contact', 'lens', 'lense'],
   },
 ];
@@ -45,7 +45,6 @@ const FeaturedCollection = () => {
   function getProductsForTab(tabId) {
     const uiCat = UI_CATEGORIES.find((c) => c.id === tabId);
     if (!uiCat) return [];
-    // Find matching DB category by name keyword
     const dbCat = dbCategories.find((c) =>
       uiCat.keywords.some(
         (kw) => c.name.toLowerCase().includes(kw) || (c.slug || '').toLowerCase().includes(kw),
@@ -54,130 +53,245 @@ const FeaturedCollection = () => {
     if (dbCat) {
       return allProducts.filter((p) => p.category_id === dbCat.id).slice(0, 4);
     }
-    // Fallback: return first 4 products
     return allProducts.slice(0, 4);
   }
 
   const activeProducts = getProductsForTab(activeCategory);
 
   return (
-    <section className="overflow-hidden bg-white py-16 sm:py-20">
-      <div className="section-container">
+    <section className="flex w-full flex-col items-center bg-[#FFFFFF] lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
+      <div className="flex flex-col items-center lg:w-[1240px] lg:gap-[40px]">
         {/* Header Section */}
         <div
           data-aos="fade-up"
-          className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+          className="flex w-full flex-row items-center justify-between lg:h-[60px] lg:w-[1240px]"
         >
-          <h2 className="section-heading">Featured Collection</h2>
+          <h2
+            className="capitalize text-[#000000]"
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 600,
+              fontSize: '40px',
+              lineHeight: '60px',
+              letterSpacing: '-0.4px',
+            }}
+          >
+            Featured Collection
+          </h2>
           <Link
             href="/shop"
-            className="flex items-center gap-2 text-[14px] font-bold text-[#2A3182] transition-opacity hover:opacity-80 sm:text-[15px]"
+            className="flex items-center gap-[4px] transition-opacity hover:opacity-80 lg:h-[24px] lg:w-[168.46px]"
           >
-            View Full Catalog
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <span
+              className="whitespace-nowrap capitalize text-[#2E3192] underline decoration-solid"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 600,
+                fontSize: '16px',
+                lineHeight: '24px',
+              }}
             >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+              View Full Catalog
+            </span>
+            <div className="flex h-[20px] w-[20px] items-center justify-center text-[#2E3192] lg:h-[20px] lg:w-[20px]">
+              <svg
+                className="h-full w-full"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4.16699 10H15.8337"
+                  stroke="currentColor"
+                  strokeWidth="1.66667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M10 4.16675L15.8333 10.0001L10 15.8334"
+                  stroke="currentColor"
+                  strokeWidth="1.66667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </Link>
         </div>
 
-        {/* Categories Section */}
-        <div className="mb-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-          {UI_CATEGORIES.map((cat, index) => (
-            <div
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              data-aos="fade-up"
-              data-aos-delay={index * 100}
-              className={`group relative flex h-[190px] cursor-pointer flex-col items-center overflow-hidden rounded-[30px] border-[1.5px] transition-all duration-300 sm:h-[200px] ${
-                activeCategory === cat.id
-                  ? 'border-[#2A3182] bg-[#f8faff] shadow-xl'
-                  : 'border-gray-200 bg-white shadow-sm hover:border-gray-300'
-              }`}
-            >
-              <div className="flex h-[130px] w-full items-center justify-center overflow-hidden p-4 sm:h-[140px]">
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
-                />
-              </div>
-              <div className="flex flex-1 items-center justify-center p-4">
-                <span className="text-center text-[17px] font-bold tracking-tight text-gray-900 sm:text-[18px]">
-                  {cat.name}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Content Box (Tabs + Grid) */}
+        <div className="flex flex-col lg:w-[1143px] lg:gap-[40px]">
+          {/* Categories Section */}
+          <div className="flex w-full flex-row justify-center gap-3 lg:h-[144px] lg:w-[1143px] lg:gap-[16px]">
+            {UI_CATEGORIES.map((cat, index) => {
+              const isActive = activeCategory === cat.id;
+              const isGlasses = cat.id === 'glasses';
 
-        {/* Product Grid */}
-        {activeProducts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-            {activeProducts.map((product, index) => (
-              <Link
-                key={product.id}
-                href={`/product/${product.slug}`}
-                data-aos="fade-up"
-                data-aos-delay={index * 100}
-                className="group flex cursor-pointer flex-col rounded-[32px] border border-gray-100 bg-white p-3 transition-all duration-500 hover:shadow-2xl"
-              >
-                <div className="relative mb-0 aspect-[4/4.5] overflow-hidden rounded-[28px] bg-[#f4f5f7]">
-                  <div className="absolute right-4 top-4 z-10">
-                    <div className="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-[#2A3182] opacity-60">
-                        Ksh.
-                      </span>
-                      <span className="text-[15px] font-black text-[#2A3182]">
-                        {Number(product.price_kes).toLocaleString()}
-                      </span>
-                    </div>
+              return (
+                <div
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}
+                  className={`relative flex max-w-[370px] flex-1 cursor-pointer flex-col overflow-hidden rounded-[32px] bg-white transition-all duration-300 lg:h-[144px] ${isActive ? 'border-2 border-[#2E3192]' : 'border border-[#D4D4D4]'} `}
+                >
+                  {/* Inner image area — fills full card */}
+                  <div className="relative flex-1 overflow-hidden rounded-[28px]">
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
                   </div>
-                  <div className="h-full w-full">
+                  {/* Label below image */}
+                  <div className="flex shrink-0 items-center justify-center py-[6px]">
+                    <span
+                      className="capitalize text-[#000000]"
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        lineHeight: '100%',
+                      }}
+                    >
+                      {cat.name}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Product Grid */}
+          {activeProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[1143px] lg:grid-cols-4 lg:gap-[24px]">
+              {activeProducts.map((product, index) => (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.slug}`}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}
+                  className="group flex cursor-pointer flex-col bg-[#FFFFFF] transition-colors transition-transform duration-500 hover:-translate-y-1 hover:border-[#2E3192]/50 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
+                  style={{
+                    borderRadius: '32px',
+                    border: '1px solid #D4D4D4',
+                    borderTop: '1px solid #D4D4D4',
+                    boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  <div
+                    className="relative overflow-hidden bg-[#F9F9F9] lg:h-[280px] lg:w-[241.75px]"
+                    style={{ borderRadius: '24px' }}
+                  >
+                    {/* Price Tag */}
+                    <div
+                      className="absolute z-10 flex items-center justify-center bg-[#FFFFFFE5] lg:left-[156.98px] lg:top-[16px] lg:h-[40px] lg:w-[81px]"
+                      style={{ borderRadius: '33554400px' }}
+                    >
+                      <div className="flex items-baseline gap-[2px]">
+                        <span
+                          className="text-[#2E3192]"
+                          style={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 700,
+                            fontSize: '8px',
+                          }}
+                        >
+                          KSH.
+                        </span>
+                        <span
+                          className="text-[#2E3192]"
+                          style={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 700,
+                            fontSize: '16px',
+                          }}
+                        >
+                          {Number(product.price_kes).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Image */}
                     <img
                       src={getProductImageUrl(product)}
                       alt={product.name}
-                      className={`h-full w-full transition-transform duration-700 group-hover:scale-110 ${
-                        activeCategory === 'lens' ? 'object-contain p-6' : 'object-cover'
+                      className={`h-full w-full mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
+                        activeCategory === 'lens' ? 'object-contain' : 'object-cover'
                       }`}
+                      style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                     />
                   </div>
-                </div>
-                <div className="p-5 pt-5 sm:p-6">
-                  <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-gray-400">
-                    {product.brand || '—'}
-                  </p>
-                  <h3 className="text-[18px] font-bold leading-tight text-[#1a1a1a] transition-colors group-hover:text-[#2A3182] sm:text-[20px]">
-                    {product.name}
-                  </h3>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-[32px] border border-gray-100 bg-white p-3"
+                  <div className="flex flex-col lg:h-[55px] lg:w-[241.75px] lg:gap-[4px] lg:px-[12px]">
+                    <p
+                      className="uppercase text-[#717182]"
+                      style={{
+                        fontFamily: 'Arimo, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '12px',
+                        lineHeight: '18px',
+                        letterSpacing: '1px',
+                      }}
+                    >
+                      {product.brand || '—'}
+                    </p>
+                    <h3
+                      className="truncate text-[#000000] transition-colors group-hover:text-[#2E3192]"
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontSize: '22px',
+                        lineHeight: '33px',
+                        letterSpacing: '-0.32px',
+                      }}
+                    >
+                      {product.name}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center bg-[#FFFFFF] lg:h-[377px] lg:w-[1143px]"
+              style={{ borderRadius: '32px', border: '1px solid #D4D4D4' }}
+            >
+              <svg
+                width="68"
+                height="68"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#717182"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mb-4"
               >
-                <div className="mb-3 aspect-[4/4.5] rounded-[28px] bg-gray-100" />
-                <div className="p-4">
-                  <div className="mb-2 h-3 w-1/3 rounded bg-gray-100" />
-                  <div className="h-5 w-2/3 rounded bg-gray-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                <rect x="4" y="11" width="6" height="5" rx="2" />
+                <rect x="14" y="11" width="6" height="5" rx="2" />
+                <path d="M10 13h4" />
+                <path d="M6 11V8a2 2 0 0 1 2-2h1" />
+                <path d="M18 11V8a2 2 0 0 0-2-2h-1" />
+              </svg>
+              <span
+                className="mb-1 uppercase text-[#717182]"
+                style={{
+                  fontFamily: 'Arimo, sans-serif',
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  letterSpacing: '1px',
+                }}
+              >
+                0 OF 12
+              </span>
+              <h3
+                className="text-[#000000]"
+                style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '24px' }}
+              >
+                Check back soon for new styles
+              </h3>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
