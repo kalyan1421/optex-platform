@@ -86,7 +86,7 @@ export default function TrendingNow() {
                     className="text-[#717182] uppercase"
                     style={{ fontFamily: 'Arimo, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '21px', letterSpacing: '1px' }}
                   >
-                    {product.brand || 'Oakley'}
+                    {product.brand || '—'}
                   </p>
                   <h3 
                     className="text-[#000000] truncate lg:mt-[5px]"

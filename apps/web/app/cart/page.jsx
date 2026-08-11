@@ -106,7 +106,7 @@ const Cart = () => {
                 >
                   {/* Product Image */}
                   <div className="h-[180px] w-[180px] shrink-0 overflow-hidden rounded-[26px] bg-[#EEEEF0] flex items-center justify-center">
-                    <img src={item.image || "/images/products/executive-pro.jpg"} alt={item.title} className="max-h-full max-w-full object-contain" />
+                    <img src={item.image || "/images/executive_pro.png"} alt={item.title} className="max-h-full max-w-full object-contain" />
                   </div>
 
                   {/* Product Info */}
@@ -114,9 +114,9 @@ const Cart = () => {
                     <div className="flex flex-col">
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col">
-                          {(item.badge || item.brand || "BEST SELLER") && (
+                          {(item.badge || item.brand) && (
                             <p className="mb-[4px] uppercase text-[#B51A13]" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '15.75px', lineHeight: '18.9px', fontWeight: 700, letterSpacing: '1.57px' }}>
-                              {item.badge || item.brand || "BEST SELLER"}
+                              {item.badge || item.brand}
                             </p>
                           )}
                           <h3 className="m-0 text-[#141776]" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '27px', lineHeight: '37.8px', fontWeight: 700 }}>
@@ -128,13 +128,15 @@ const Cart = () => {
                             KSH.
                           </span>
                           <span className="text-[#141776]" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '27px', lineHeight: '37.8px', fontWeight: 700 }}>
-                            {item.price}
+                            {formatCurrency(Number(item.price))}
                           </span>
                         </div>
                       </div>
-                      <p className="text-[#464652] mt-[4px] mb-0" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '18px', lineHeight: '27px', fontWeight: 400 }}>
-                        {item.variant || "Frame: Midnight Matte | Lens: Blue Light Filter"}
-                      </p>
+                      {item.variant && (
+                        <p className="text-[#464652] mt-[4px] mb-0" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '18px', lineHeight: '27px', fontWeight: 400 }}>
+                          {item.variant}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between mt-auto w-full">

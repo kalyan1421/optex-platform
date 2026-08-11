@@ -612,8 +612,6 @@ export type Database = {
           id: string
           images: string[]
           is_active: boolean
-          is_featured: boolean
-          is_trending: boolean
           name: string
           price_kes: number
           search_tsv: unknown
@@ -633,8 +631,6 @@ export type Database = {
           id?: string
           images?: string[]
           is_active?: boolean
-          is_featured?: boolean
-          is_trending?: boolean
           name: string
           price_kes: number
           search_tsv?: unknown
@@ -654,8 +650,6 @@ export type Database = {
           id?: string
           images?: string[]
           is_active?: boolean
-          is_featured?: boolean
-          is_trending?: boolean
           name?: string
           price_kes?: number
           search_tsv?: unknown
@@ -684,7 +678,6 @@ export type Database = {
           sort_order: number
           starts_at: string | null
           target_url: string | null
-          type: string
         }
         Insert: {
           ends_at?: string | null
@@ -695,7 +688,6 @@ export type Database = {
           sort_order?: number
           starts_at?: string | null
           target_url?: string | null
-          type?: string
         }
         Update: {
           ends_at?: string | null
@@ -706,7 +698,6 @@ export type Database = {
           sort_order?: number
           starts_at?: string | null
           target_url?: string | null
-          type?: string
         }
         Relationships: []
       }

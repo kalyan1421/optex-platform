@@ -159,7 +159,7 @@ const FeaturedCollection = () => {
                       className="text-[#717182] uppercase" 
                       style={{ fontFamily: 'Arimo, sans-serif', fontWeight: 400, fontSize: '12px', lineHeight: '18px', letterSpacing: '1px' }}
                     >
-                      {product.brand || 'Oakley'}
+                      {product.brand || '—'}
                     </p>
                     <h3 
                       className="text-[#000000] truncate transition-colors group-hover:text-[#2E3192]" 

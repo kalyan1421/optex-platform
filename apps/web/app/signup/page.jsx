@@ -117,7 +117,7 @@ const Signup = () => {
         <Link href="/">
           <img src="/images/Logo.png" alt="Optex" className="w-[112px] h-[93px] object-contain" />
         </Link>
-        <p className="text-[#464652]" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '18px', lineHeight: '28.8px', fontWeight: 400 }}>Sign in to your account</p>
+        <p className="text-[#464652]" style={{ fontFamily: 'Manrope, sans-serif', fontSize: '18px', lineHeight: '28.8px', fontWeight: 400 }}>Create your account</p>
       </div>
 
       <div 

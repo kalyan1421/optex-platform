@@ -357,18 +357,28 @@ const ProductDetails = ({ params }) => {
 
           {/* Product Info */}
           <div className="flex flex-col lg:w-[590px]">
-            <p className="text-[#E53935] uppercase mb-[29px]" style={{ fontFamily: 'Arimo, sans-serif', fontSize: '14px', lineHeight: '21px', fontWeight: 400, letterSpacing: '2px' }}>{product?.brand ?? 'OAKLEY'}</p>
+            <p className="text-[#E53935] uppercase mb-[29px]" style={{ fontFamily: 'Arimo, sans-serif', fontSize: '14px', lineHeight: '21px', fontWeight: 400, letterSpacing: '2px' }}>{product?.brand || '—'}</p>
             <h1 className="mb-[16px] text-[#000000] -mt-[29px] pt-[29px]" style={{ fontFamily: 'Poppins, sans-serif', fontSize: '48px', lineHeight: '60px', fontWeight: 700 }}>{product?.name ?? '…'}</h1>
 
             <div className="flex items-center gap-[16px] mb-[29px]">
-              <div className="flex items-center text-[#FFC107]">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-[18px] h-[18px]" fill={i < Math.round(reviewStats.average) || (reviewStats.count === 0 && i < 4) ? "currentColor" : "#d1d5db"} viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                  </svg>
-                ))}
-              </div>
-              <span className="text-[#717182]" style={{ fontFamily: 'Arimo, sans-serif', fontSize: '14px', lineHeight: '21px', fontWeight: 400 }}>({reviewStats.count > 0 ? reviewStats.count : 124} Customer Reviews)</span>
+              {reviewStats.count > 0 ? (
+                <>
+                  <div className="flex items-center text-[#FFC107]">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="w-[18px] h-[18px]" fill={i < Math.round(reviewStats.average) ? "currentColor" : "#d1d5db"} viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-[#717182]" style={{ fontFamily: 'Arimo, sans-serif', fontSize: '14px', lineHeight: '21px', fontWeight: 400 }}>
+                    ({reviewStats.count} Customer {reviewStats.count === 1 ? 'Review' : 'Reviews'})
+                  </span>
+                </>
+              ) : (
+                <span className="text-[#717182]" style={{ fontFamily: 'Arimo, sans-serif', fontSize: '14px', lineHeight: '21px', fontWeight: 400 }}>
+                  No reviews yet
+                </span>
+              )}
             </div>
 
             <div className="mb-[32px]">

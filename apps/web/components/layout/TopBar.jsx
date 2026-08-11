@@ -54,10 +54,10 @@ export default function TopBar() {
         </span>
 
         {/* Right: Phone */}
-        <div className="flex flex-row items-center" style={{ gap: '8px', width: '139px', justifyContent: 'flex-end' }}>
+        <div className="flex flex-row items-center" style={{ gap: '8px', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
           <PhoneIcon />
           <a
-            href="tel:+919876543210"
+            href="tel:+254700000000"
             style={{
               fontFamily: 'Montserrat, sans-serif',
               fontWeight: 400,
@@ -68,7 +68,7 @@ export default function TopBar() {
               textDecoration: 'none',
             }}
           >
-            +91 9876543210
+            +254 700 000 000
           </a>
         </div>
       </div>
