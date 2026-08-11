@@ -8,9 +8,102 @@ import { listProducts, listCategories } from '@optex/db';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 
+/**
+ * Price bands, in KES. The catalogue spans roughly 5,000–35,000, so these are
+ * bands rather than a dual-thumb slider: the sidebar has one established
+ * control — a list of selectable rows — and a slider is a new component with no
+ * design behind it. See docs/DESIGN-STATUS.md §5.
+ */
+const PRICE_BANDS = [
+  { name: 'All', test: () => true },
+  { name: 'Under KSh 10,000', test: (p) => p < 10000 },
+  { name: 'KSh 10,000 – 20,000', test: (p) => p >= 10000 && p < 20000 },
+  { name: 'KSh 20,000 – 30,000', test: (p) => p >= 20000 && p < 30000 },
+  { name: 'Over KSh 30,000', test: (p) => p >= 30000 },
+];
+
+const SORT_OPTIONS = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'price-asc', label: 'Price: low to high' },
+  { value: 'price-desc', label: 'Price: high to low' },
+  { value: 'name-asc', label: 'Name: A–Z' },
+];
+
+/**
+ * Distinct non-empty values of `key`, sorted, prefixed with "All".
+ *
+ * Grouped case-insensitively because the catalogue is not clean — the seed
+ * alone carries both "Metal" and "metal", which would otherwise render as two
+ * separate rows that each filter out the other's products. The first spelling
+ * encountered wins for display; `matchesFacet` compares the same way.
+ */
+function facetValues(products, key) {
+  const seen = new Map();
+  for (const p of products) {
+    const raw = p[key];
+    if (!raw) continue;
+    const k = String(raw).trim().toLowerCase();
+    if (k && !seen.has(k)) seen.set(k, String(raw).trim());
+  }
+  return ['All', ...Array.from(seen.values()).sort((a, b) => a.localeCompare(b))];
+}
+
+/** Case- and whitespace-insensitive facet comparison. See `facetValues`. */
+function matchesFacet(value, selected) {
+  if (selected === 'All') return true;
+  return (
+    String(value ?? '')
+      .trim()
+      .toLowerCase() === selected.trim().toLowerCase()
+  );
+}
+
+/**
+ * One sidebar facet — the established Shop control: a heading with a hairline
+ * rule, then selectable rows. Extracted so the five facets stay identical
+ * rather than drifting as copies.
+ */
+function FacetBlock({ title, options, active, onSelect, counts }) {
+  if (options.length <= 2) return null; // "All" + one value filters nothing
+  return (
+    <div className="flex flex-col gap-[8px] lg:w-[250px]">
+      <div className="mb-[8px] border-b-[0.8px] border-[#0000001A] lg:h-[35.8px] lg:w-[250px] lg:pb-[8px]">
+        <h3 className="font-poppins h-[27px] text-[18px] font-semibold leading-[27px] text-[#000000]">
+          {title}
+        </h3>
+      </div>
+      <ul className="flex flex-col gap-[8px] lg:w-[250px]">
+        {options.map((opt) => {
+          const isActive = active === opt;
+          return (
+            <li key={opt}>
+              <button
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => onSelect(opt)}
+                className={`flex w-full cursor-pointer items-center px-[16px] text-left capitalize transition-colors lg:h-[40px] lg:w-[250px] lg:rounded-[10px] ${isActive ? 'bg-[#2E3192] text-white' : 'text-[#717182] hover:bg-gray-50'}`}
+              >
+                <span className="font-inter text-[16px]">
+                  {opt}
+                  {counts?.[opt] !== undefined ? ` (${counts[opt]})` : ''}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 const Shop = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeBrand, setActiveBrand] = useState('All');
+  const [activeShape, setActiveShape] = useState('All');
+  const [activeGender, setActiveGender] = useState('All');
+  const [activeMaterial, setActiveMaterial] = useState('All');
+  const [activePrice, setActivePrice] = useState('All');
+  const [sortBy, setSortBy] = useState('featured');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([{ name: 'All', count: 0 }]);
   const [brands, setBrands] = useState(['All']);
@@ -40,13 +133,55 @@ const Shop = () => {
       .catch(console.error);
   }, []);
 
+  const shapes = facetValues(products, 'frame_shape');
+  const genders = facetValues(products, 'gender');
+  const materials = facetValues(products, 'frame_material');
+
+  const priceBand = PRICE_BANDS.find((b) => b.name === activePrice) ?? PRICE_BANDS[0];
+
   const filtered = products.filter((p) => {
-    const brandMatch = activeBrand === 'All' || p.brand === activeBrand;
-    if (!brandMatch) return false;
+    if (activeBrand !== 'All' && p.brand !== activeBrand) return false;
+    if (!matchesFacet(p.frame_shape, activeShape)) return false;
+    if (!matchesFacet(p.gender, activeGender)) return false;
+    if (!matchesFacet(p.frame_material, activeMaterial)) return false;
+    if (!priceBand.test(Number(p.price_kes))) return false;
     if (activeCategory === 'All') return true;
     const cat = categories.find((c) => c.name === activeCategory);
     return cat ? p.category_id === cat.id : true;
   });
+
+  // Sort a copy — `filtered` is derived per render, but sorting in place would
+  // still mutate the array the grid maps over mid-render.
+  const visible = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-asc':
+        return Number(a.price_kes) - Number(b.price_kes);
+      case 'price-desc':
+        return Number(b.price_kes) - Number(a.price_kes);
+      case 'name-asc':
+        return String(a.name).localeCompare(String(b.name));
+      default:
+        return 0; // 'featured' = the order the API returned
+    }
+  });
+
+  const activeFilters = [
+    activeCategory,
+    activeBrand,
+    activeShape,
+    activeGender,
+    activeMaterial,
+    activePrice,
+  ].filter((v) => v !== 'All').length;
+
+  function clearFilters() {
+    setActiveCategory('All');
+    setActiveBrand('All');
+    setActiveShape('All');
+    setActiveGender('All');
+    setActiveMaterial('All');
+    setActivePrice('All');
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -140,6 +275,49 @@ const Shop = () => {
                 })}
               </ul>
             </div>
+
+            {/*
+              Facets below are not in the Figma Shop screen — it specifies only
+              Categories and Brands. The columns (frame_shape, gender,
+              frame_material) have existed in `products` since 0001 and were
+              unused. Each block hides itself when the catalogue has fewer than
+              two distinct values, so a thin catalogue does not render dead
+              controls. See docs/DESIGN-STATUS.md §5.
+            */}
+            <FacetBlock
+              title="Price"
+              options={PRICE_BANDS.map((b) => b.name)}
+              active={activePrice}
+              onSelect={setActivePrice}
+            />
+            <FacetBlock
+              title="Frame shape"
+              options={shapes}
+              active={activeShape}
+              onSelect={setActiveShape}
+            />
+            <FacetBlock
+              title="Gender"
+              options={genders}
+              active={activeGender}
+              onSelect={setActiveGender}
+            />
+            <FacetBlock
+              title="Material"
+              options={materials}
+              active={activeMaterial}
+              onSelect={setActiveMaterial}
+            />
+
+            {activeFilters > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="font-inter mt-[8px] flex h-[40px] w-full items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] text-[15px] text-[#2E3192] transition-colors hover:bg-gray-50 lg:w-[250px]"
+              >
+                Clear all filters ({activeFilters})
+              </button>
+            )}
           </aside>
 
           {/* Product Grid Area (Width: 918px) */}
@@ -150,12 +328,28 @@ const Shop = () => {
                 className="flex items-center text-[#717182] lg:h-[24px] lg:w-[150px]"
                 style={{ fontFamily: 'Arimo, sans-serif', fontSize: '16px', lineHeight: '24px' }}
               >
-                Showing {filtered.length} products
+                Showing {visible.length} {visible.length === 1 ? 'product' : 'products'}
               </span>
+
+              {/* The design leaves an empty slot at this corner; sort fills it. */}
+              <label className="flex items-center gap-[8px]">
+                <span className="sr-only">Sort products by</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="font-inter h-[36px] cursor-pointer rounded-[10px] border-[0.8px] border-[#D4D4D4] bg-white px-[12px] text-[15px] text-[#0A0A0A] focus:border-[#2E3192] focus:outline-none"
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[918px] lg:grid-cols-3 lg:gap-[24px]">
-              {filtered.map((product) => (
+              {visible.map((product) => (
                 <div
                   key={product.id}
                   className="group relative flex w-full flex-col overflow-hidden border-[#D4D4D4] bg-[#FFFFFF] transition-shadow duration-300 hover:shadow-lg lg:h-[480px] lg:w-[290px]"
@@ -166,12 +360,16 @@ const Shop = () => {
                 >
                   {/* Image Box */}
                   <div className="relative flex w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:h-[288.4px]">
-                    {/* Category Label Pill */}
-                    <div className="absolute right-[16px] top-[16px] z-10 flex items-center justify-center rounded-[20px] bg-white px-[12px] py-[6px] shadow-sm">
-                      <span className="font-inter text-[12px] font-medium text-[#2E3192]">
-                        {product.frame_shape || 'Sunglasses'}
-                      </span>
-                    </div>
+                    {/* Frame-shape pill — omitted rather than guessed when the
+                        product has no shape set, so the card never labels an
+                        eyeglass frame "Sunglasses". */}
+                    {product.frame_shape && (
+                      <div className="absolute right-[16px] top-[16px] z-10 flex items-center justify-center rounded-[20px] bg-white px-[12px] py-[6px] shadow-sm">
+                        <span className="font-inter text-[12px] font-medium capitalize text-[#2E3192]">
+                          {product.frame_shape}
+                        </span>
+                      </div>
+                    )}
 
                     <Link
                       href={`/product/${product.slug}`}
