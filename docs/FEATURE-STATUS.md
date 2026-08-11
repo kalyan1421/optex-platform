@@ -112,13 +112,13 @@ Every entry below was determined by reading the code, not from any tracker or ch
 | Dashboard | ✅ | Real KPIs, revenue chart, payment-method pie |
 | Products | ✅ | Full CRUD + image upload |
 | Orders | ✅ | List, detail, status update — API-routed |
-| Customers | 🟡 | **Deactivate button disabled** (`Customers.tsx:238`) — 1 of only 2 incompleteness markers in the repo |
+| Customers | 🟡 | **Deactivate button disabled** (`Customers.tsx:238`) — the last remaining incompleteness marker in the repo |
 | Appointments | ✅ | Confirm / cancel / reschedule |
 | Inventory | 🟡 | Stock-level editor only. `inventory` table is `(product_id, branch_id, stock)` — **no ledger, no movements, no reorder threshold** |
 | Reviews | ✅ | Moderation queue — API-routed |
 | Promotions | 🟡 | Codes: full CRUD. **Banners: create/delete endpoints exist but there is no UI for them** |
 | Branches | ✅ | List + update |
-| Analytics | 🟡 | **Hardcoded `categoryPerformance`** (`Analytics.tsx:30`) — the other incompleteness marker |
+| Analytics | ✅ | Real revenue by category + period-over-period growth, API-routed. The hardcoded `categoryPerformance` fixture was removed in Wave 2 (`2c1fb07`) |
 | Payments | ✅ | Real reconcile + link |
 | Prescriptions | ✅ | Signed-URL viewer, mark processed |
 | **RBAC / multi-role** | ❌ | Single `super_admin`. CR-01 |

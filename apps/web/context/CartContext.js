@@ -80,8 +80,11 @@ export const CartProvider = ({ children }) => {
         setError(err?.message ?? 'Could not add that item to your cart.');
       }
     } else {
-      // Guest — in-memory only. Orders require an account, so this cart is
-      // handed over at sign-in rather than persisted.
+      // Guest — in-memory only, and not carried over at sign-in: the sign-in
+      // effect above replaces local state with the server cart, so a guest who
+      // fills a cart and then logs in to check out loses it. Orders require an
+      // account, so this is worth a proper merge (push local lines through
+      // api.cart.addItem before applying the server cart) — tracked separately.
       // M-2 FIX: include the variant (lens option) in the match key so the same
       // frame with different lens options is not collapsed into one cart item.
       setItems((prev) => {
@@ -139,6 +142,30 @@ export const CartProvider = ({ children }) => {
       value={{ items, addToCart, updateQuantity, removeItem, cartCount, cartId, error }}
     >
       {children}
+      {/*
+        The API owns availability and quantity bounds, so a rejected cart
+        mutation is the only signal the customer gets that (say) stock ran out.
+        Rendering it here rather than in each consumer means every surface that
+        calls addToCart/updateQuantity/removeItem is covered — previously the
+        error was set on every failure path but read by nobody, so a rejected
+        add looked identical to nothing happening.
+      */}
+      {error && (
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-sm text-white shadow-lg"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError('')}
+            aria-label="Dismiss"
+            className="shrink-0 text-lg leading-none opacity-80 hover:opacity-100"
+          >
+            &times;
+          </button>
+        </div>
+      )}
     </CartContext.Provider>
   );
 };

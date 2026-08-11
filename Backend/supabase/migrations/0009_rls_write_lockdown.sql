@@ -47,8 +47,10 @@ drop policy if exists "customer cancels own appt"  on appointments;
 
 -- ─── product_reviews ─────────────────────────────────────────────────────────
 -- A direct insert could set status='approved' and self-publish, bypassing the
--- moderation queue, the one-review-per-product guard and the verified-purchase
--- check — and it counted toward the public aggregate rating.
+-- moderation queue and the one-review-per-product guard — and it counted toward
+-- the public aggregate rating. (Note: there is no verified-purchase check on
+-- either path; ReviewsService.createForProduct does not check that the reviewer
+-- bought the product, and the schema has no verified_purchase column.)
 drop policy if exists "customer submits own review" on product_reviews;
 
 -- ─── carts / cart_items ──────────────────────────────────────────────────────

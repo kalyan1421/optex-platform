@@ -218,7 +218,29 @@ export class AppointmentsService {
       this.logger.error(`Failed to list appointments (admin): ${error.message}`);
       throw new InternalServerErrorException('Failed to list appointments');
     }
-    return (data ?? []) as unknown as AdminAppointmentDto[];
+
+    // PostgREST returns an embedded to-one join as either an object or a
+    // single-element array depending on how it infers the relationship. Against
+    // the current schema both of these resolve to objects, so this is defensive
+    // rather than a live fix — but the admin panel reads
+    // `row.customer?.full_name`, which is `undefined` on the array shape and
+    // would silently render every real booking as "Guest". Adding a second FK
+    // to `customers` is enough to flip the inference, so normalise both shapes
+    // here, the same way reviews and inventory already do.
+    type RawEmbed<T> = T | T[] | null;
+    type RawAdminAppointmentRow = Omit<AdminAppointmentDto, 'customer' | 'branch'> & {
+      customer: RawEmbed<NonNullable<AdminAppointmentDto['customer']>>;
+      branch: RawEmbed<NonNullable<AdminAppointmentDto['branch']>>;
+    };
+
+    const unwrap = <T>(embed: RawEmbed<T>): T | null =>
+      Array.isArray(embed) ? (embed[0] ?? null) : embed;
+
+    return ((data ?? []) as unknown as RawAdminAppointmentRow[]).map((row) => ({
+      ...row,
+      customer: unwrap(row.customer),
+      branch: unwrap(row.branch),
+    }));
   }
 
   /**
