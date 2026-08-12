@@ -86,3 +86,44 @@ jobs:
       - name: Dump service logs on failure
         if: failure()
         run: docker compose logs --tail 200
+
+  smoke:
+    name: Storefront smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @optex/web exec playwright install --with-deps chromium
+
+      - name: Start Supabase
+        run: docker compose up -d supabase-kong
+
+      - name: Apply migrations and seed
+        run: docker compose run --rm supabase-migrate
+
+      # The suite walks shop → PDP → cart → checkout against a production
+      # build (Playwright's webServer runs `pnpm build && pnpm start`), which
+      # is the render mode Wave 4 is about to change.
+      - name: Run storefront smoke suite
+        run: pnpm --filter @optex/web test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_API_URL: http://localhost:1111
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

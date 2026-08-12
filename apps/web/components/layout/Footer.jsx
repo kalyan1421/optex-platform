@@ -72,7 +72,7 @@ const Footer = () => {
                     lineHeight: '21px',
                   }}
                 >
-                  +91 9876543210
+                  +254 700 000 000
                 </span>
               </div>
 
@@ -163,7 +163,7 @@ const Footer = () => {
                     maxWidth: '211px',
                   }}
                 >
-                  123 Vision Street, Optical Plaza, New Delhi, India 110001
+                  Optical Plaza, Nairobi, Kenya
                 </span>
               </div>
             </div>

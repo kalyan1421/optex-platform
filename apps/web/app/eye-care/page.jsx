@@ -552,7 +552,7 @@ export default function EyeCarePage() {
                 </p>
                 <button className="mt-auto flex h-[54.5px] w-full items-center justify-center rounded-[40px] border border-[#FFFFFFB2] transition-colors hover:bg-white/10">
                   <span className="font-poppins text-center text-[14.5px] font-semibold leading-[100%] text-white">
-                    Call +91 98765 43210
+                    Call +254 700 000 000
                   </span>
                 </button>
               </div>

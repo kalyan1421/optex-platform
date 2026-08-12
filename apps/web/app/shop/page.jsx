@@ -24,6 +24,10 @@ const Shop = () => {
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  // Starts true: the catalogue is fetched client-side, so without this the
+  // first paint has products === [] and renders "Our collection is being
+  // updated" to every visitor for the length of the round-trip.
+  const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -36,7 +40,8 @@ const Shop = () => {
           ...cats.map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
         ]);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const { filtered, activeFilters, clearFilters, selection, sidebarProps } = useProductFacets(
@@ -109,18 +114,31 @@ const Shop = () => {
                 className="flex items-center whitespace-nowrap text-[#717182] lg:h-[24px]"
                 style={{ fontFamily: 'Arimo, sans-serif', fontSize: '16px', lineHeight: '24px' }}
               >
-                {visible.length === 0
-                  ? 'No products'
-                  : pageCount > 1
-                    ? `Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, visible.length)} of ${visible.length} products`
-                    : `Showing ${visible.length} ${visible.length === 1 ? 'product' : 'products'}`}
+                {loading
+                  ? 'Loading products…'
+                  : visible.length === 0
+                    ? 'No products'
+                    : pageCount > 1
+                      ? `Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, visible.length)} of ${visible.length} products`
+                      : `Showing ${visible.length} ${visible.length === 1 ? 'product' : 'products'}`}
               </span>
 
               {/* The design leaves an empty slot at this corner; sort fills it. */}
               <SortSelect value={sortBy} onChange={setSortBy} />
             </div>
 
-            {visible.length === 0 && (
+            {loading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[918px] lg:grid-cols-3 lg:gap-[24px]">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="h-[480px] w-full animate-pulse rounded-[32px] bg-[#F3F3F6] lg:w-[290px]"
+                  />
+                ))}
+              </div>
+            )}
+
+            {!loading && visible.length === 0 && (
               <div className="flex flex-col items-center justify-center rounded-[32px] border-[0.8px] border-[#D4D4D4] px-6 py-[80px] text-center lg:w-[918px]">
                 <h2 className="font-poppins mb-[8px] text-[22px] font-semibold text-[#0A0A0A]">
                   No frames match these filters

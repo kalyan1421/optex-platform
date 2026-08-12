@@ -376,8 +376,8 @@ const Contact = () => {
                 lineHeight: '29.25px',
               }}
             >
-              Visit our showroom in New Delhi or contact us through any of our channels. We're
-              always available to help.
+              Visit our showroom in Nairobi or contact us through any of our channels. We're always
+              available to help.
             </p>
 
             <div className="flex flex-col lg:mt-[32px] lg:h-[450.4px] lg:w-[533.6px] lg:gap-[24px]">
@@ -410,7 +410,7 @@ const Contact = () => {
                       lineHeight: '21px',
                     }}
                   >
-                    123 Vision Street, Optical Plaza, New Delhi, India 110001
+                    Optical Plaza, Nairobi, Kenya
                   </p>
                 </div>
               </div>
@@ -444,7 +444,7 @@ const Contact = () => {
                       lineHeight: '21px',
                     }}
                   >
-                    +91 9876543210 / +91 1234567890
+                    +254 700 000 000
                   </p>
                 </div>
               </div>

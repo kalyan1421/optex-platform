@@ -24,9 +24,9 @@ Found and fixed along the way — **the repo's only test suite had never run**:
 - [x] No test tsconfig, so `describe`/`it`/`expect` were untyped
 - [x] The spec asserted `/api/catalog/products` and `/api/catalog/categories`; the real routes are `/api/products` and `/api/categories`
 
-Still open from the original sprint:
+- [x] **Smoke suite: shop → PDP → cart → checkout** · Playwright, 5 specs, `apps/web/e2e/smoke.spec.ts`. Runs against a **production build**, not `next dev` — per-route dev compilation made it flaky, and the suite exists to protect the Wave 4 render rewrite, so it should exercise the rendering customers get. 12s, stable across repeated runs. Third CI job.
 
-- [ ] **Smoke suite: shop → PDP → cart → checkout** · 3 pts · the browser-level suite. Still the hard prerequisite for Wave 4 / C3
+**Sprint 1 is complete.** C3 / Wave 4 is now unblocked.
 
 ## 1. Storefront — Catalogue & Discovery
 
@@ -66,7 +66,7 @@ The full plan for FEATURE-STATUS §1. Sequenced so each phase leaves the storefr
 
 This is [SPEC-03](docs/specs/SPEC-03-storefront-seo-render.md) and the single largest contracted gap. All four catalogue pages are involved. **Hard prerequisite: the smoke suite** — cut from Sprint 1, still owed.
 
-- [!] **Smoke suite: shop → PDP → cart → checkout** · 3 pts · *prerequisite for everything in C3*
+- [x] **Smoke suite: shop → PDP → cart → checkout** · done, the C3 gate is open
 - [ ] **G-7: SSR-capable api-client** · 2 pts · `web/lib/api.js` is `'use client'`, so Server Components cannot use it. Build early — everything else in C3 depends on it, and nothing else does
 - [ ] **Convert `/shop` to a Server Component** · 3 pts
 - [ ] **Convert `/product/[slug]` to a Server Component** · 3 pts · also moves the `Product`/`Offer` JSON-LD out of post-hydration
@@ -93,6 +93,58 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 
 ---
 
+## 2. Storefront — Cart & Checkout
+
+- [ ] **Guest-cart merge at sign-in** · 3 pts · sign-in replaces local state with the server cart, so a guest who fills a cart then logs in to check out loses it — on the one journey where it matters. Needs a UX decision first (merge silently, or ask)
+- [ ] **Cart empty state** · 1 pt · no design, no implementation
+- [ ] **M-Pesa "waiting for confirmation" state at checkout** · 2 pts · STK confirms asynchronously; the customer waits on their phone with no on-screen state
+- [ ] **Invoice / receipt download** · 2 pts · no PDF, no endpoint
+- [!] **Stock check at checkout** · 2 pts · blocked on client H1
+- [!] **Pickup-station delivery** · blocked on client B1–B3 ([SPEC-02](docs/specs/SPEC-02-checkout-fulfilment.md))
+- [!] **Shipping-rule engine** · blocked on B1–B3 · `shipping_kes` is set but never computed
+- [ ] **Guest checkout** · deferred · `orders.customer_id` is NOT NULL since `0006`; a real decision, not an oversight
+
+## 3. Storefront — Account & Orders
+
+- [ ] **Verified-purchase check on reviews** · 2 pts · enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Needs a product decision: gate reviews, or drop the claim
+- [ ] **Customer-initiated order cancel** · 2 pts · no endpoint; `cancelled` is admin-only
+- [ ] **Saved addresses** · 2 pts · `shipping_address` is per order, not per customer
+- [ ] **Reorder** · 1 pt
+- [ ] **Social login** · deferred · no provider configured; the dead Google/Apple buttons were removed from `/login`
+
+## 4. Storefront — Appointments & Branches
+
+- [ ] **Design `/appointments`** · 0 pts (design) · **P0 of the design backlog** — contracted, fully built, never designed
+- [ ] **Branch coordinates + locator map** · 2 pts · `branches.lat`/`lng` exist; **zero of 27 branches have them**. Geocoding is a data task before it is a UI one
+- [!] **Configurable slot duration / capacity / breaks** · blocked on client A5–A6 ([SPEC-04](docs/specs/SPEC-04-appointment-scheduling.md) Phase 2) · `SLOT_MINUTES = 30` is hardcoded and capacity is hardwired to 1
+
+## 5. Storefront — Content & Trust
+
+Launch blockers from [NEXT-PLAN M2](docs/NEXT-PLAN.md) — these are not gaps, they are things currently published that are **wrong**.
+
+- [ ] **Rewrite the returns policy** · 1 pt · 175 lines describing a returns process. Client confirmed **no refunds**
+- [ ] **Rewrite the delivery policy** · 1 pt · 196 lines contradicting the confirmed model
+- [ ] **Delete the invented testimonials** · 0.5 pt · "Sarah Johnson", "Michael Chen", "Emily Rodriguez" on a Kenyan storefront (`Testimonials.jsx:7`). Hide the section until real ones exist
+- [ ] **Hide the VirtualTryOn section** · 0.5 pt · 41 lines advertising "smart camera technology". VTO is Phase 3 by contract — it must ship hidden
+- [ ] **De-duplicate the contact backend** · 1 pt · `web/app/api/contact/route.ts` *and* Nest `POST /api/contact` — two Resend integrations for one form
+- [ ] **FAQ page** · 2 pts · exists only as a footer link
+
+## 6. Admin panel
+
+- [ ] **Customers → Deactivate** · 1 pt · the last `coming soon` marker in the repo (`Customers.tsx:240`)
+- [ ] **Promo banner create/delete UI** · 2 pts · the API has full CRUD; the UI only lists and toggles active
+- [!] **Inventory ledger** · CR-01 · `inventory` is `(product_id, branch_id, stock)` — no movements, no reorder threshold
+- [!] **RBAC / audit log / 2FA** · CR-01 · gate shut until the quote is signed
+
+## 7. API migration — Waves 3 and 5
+
+Wave 4 is C3 above. These are the other two.
+
+- [ ] **Wave 3 — web account & cart reads** · 4 pts · profile, orders, tracking, cart promo. 13 direct Supabase reads remain across 7 files
+- [ ] **Wave 5 — delete the read helpers** · 1 pt · once Waves 3–4 land, remove them from `packages/db` so the old path cannot come back. A deleted function cannot be called
+
+---
+
 ## Cross-cutting debt
 
 - [ ] **ESLint config** · 1 pt · `pnpm -r lint` is broken; no config or dependency anywhere in the repo
@@ -101,6 +153,21 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 - [ ] **Resolve the two nav bar heights** · 0 pts (design) · 135px on most pages, 87px on About and Eye care. Both ship
 - [ ] **Clean the Figma placeholder content** · 0 pts (design) · the `+91` phone, Oakley/Rayban sample brands, `(124 Customer Reviews)`, `Frame: Midnight Matte | Lens: Blue Light Filter`, and the USD-scale price ladder are all still in the file. Fixed in code, live in design — see [DESIGN-STATUS §4](docs/DESIGN-STATUS.md)
 - [ ] **Archive Figma `v2` and `v3`** · 0 pts (design) · `v1` is canonical as of 2026-08-11
+
+---
+
+## Design backlog — blocked on Figma access
+
+I have **view-only** access to the Asan file, so none of these can be drawn. Each is specified in [DESIGN-STATUS.md](docs/DESIGN-STATUS.md) well enough for a designer to work from.
+
+- [!] `/appointments` — P0. Contracted, built, undesigned
+- [!] `/orders/[id]/tracking` and `/order-confirmation/[orderId]` — the entire post-purchase experience
+- [!] `/search` and `/category/[slug]`
+- [!] The 6 Shop facets, sort and pagination now shipping in code
+- [!] The nav search field — 4 nav variants exist, none has one
+- [!] `/forgot-password`, `/reset-password`, and the 4 policy pages
+- [!] **Mobile and tablet breakpoints for every page** — every frame is 1440 desktop only, so every responsive layout in production was a developer guess
+- [!] Lens configurator — contracted, no design and no price model
 
 ---
 
