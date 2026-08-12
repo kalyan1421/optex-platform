@@ -8,6 +8,12 @@ import { listProducts } from '@optex/db';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 import { useCart } from '@/context/CartContext';
+import {
+  useProductFacets,
+  ProductFilterSidebar,
+  SortSelect,
+  sortProducts,
+} from '@/components/shop/ProductFilters';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -138,6 +144,12 @@ function SearchInner() {
   const [inputValue, setInputValue] = useState(q);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sortBy, setSortBy] = useState('featured');
+
+  // Facets narrow within the result set. No category list is passed — /search
+  // has no category rail of its own, so that facet simply does not render.
+  const { filtered, activeFilters, clearFilters, sidebarProps } = useProductFacets(products);
+  const visible = sortProducts(filtered, sortBy);
 
   const runSearch = useCallback(async (query) => {
     if (!query.trim()) {
@@ -273,28 +285,58 @@ function SearchInner() {
           </>
         )}
 
-        {/* Results */}
+        {/* Results — the same facet sidebar /shop uses, narrowing within the
+            result set rather than across the whole catalogue. */}
         {!loading && hasQuery && products.length > 0 && (
-          <>
-            <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <p className="text-[12px] font-bold uppercase tracking-widest text-gray-400">
-                <span className="text-[16px] font-black text-[#2A3182]">{products.length}</span>{' '}
-                result{products.length !== 1 ? 's' : ''} for{' '}
-                <span className="text-[#1a1a1a]">&quot;{q}&quot;</span>
-              </p>
-              <Link
-                href="/shop"
-                className="text-[12px] font-bold uppercase tracking-widest text-[#2A3182] hover:underline"
-              >
-                View All Products
-              </Link>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-[40px]">
+            <ProductFilterSidebar {...sidebarProps} />
+
+            <div className="min-w-0 flex-1">
+              <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <p className="text-[12px] font-bold uppercase tracking-widest text-gray-400">
+                  <span className="text-[16px] font-black text-[#2A3182]">{visible.length}</span>{' '}
+                  result{visible.length !== 1 ? 's' : ''} for{' '}
+                  <span className="text-[#1a1a1a]">&quot;{q}&quot;</span>
+                  {activeFilters > 0 && (
+                    <span className="normal-case tracking-normal text-gray-400">
+                      {' '}
+                      (filtered from {products.length})
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center gap-4">
+                  <SortSelect value={sortBy} onChange={setSortBy} />
+                  <Link
+                    href="/shop"
+                    className="whitespace-nowrap text-[12px] font-bold uppercase tracking-widest text-[#2A3182] hover:underline"
+                  >
+                    View All Products
+                  </Link>
+                </div>
+              </div>
+
+              {visible.length === 0 ? (
+                <div className="rounded-2xl border border-gray-200 bg-white px-6 py-12 text-center">
+                  <p className="mb-4 text-[15px] font-semibold text-[#1a1a1a]">
+                    No results match these filters
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-[13px] font-bold uppercase tracking-widest text-[#2A3182] hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {visible.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </>
+          </div>
         )}
 
         {/* Empty state */}

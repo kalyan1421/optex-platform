@@ -43,14 +43,15 @@ The full plan for FEATURE-STATUS §1. Sequenced so each phase leaves the storefr
 - [ ] **Draw the 6 facets + sort + pagination into Figma `0:1835`** · 0 pts (design) · **the file now lags the code in seven places.** Trace from the running page; pattern is 250px block, hairline rule, 40px rows, `#2E3192` active
 - [!] **Decide the catalogue import shape** · blocked on client · 27 branches of real stock; the seed has 4 products. Every estimate below assumes a real catalogue lands
 
-### C2 — Discovery · ~7 pts
+### C2 — Discovery · ~7 pts · **build DONE 2026-08-11** (designs still owed)
 
-- [ ] **Design `/search`** · 0 pts (design) · results grid reusing the 290×480 card, result count, empty state, query echo. Should share the Shop sidebar
+- [x] **Search autocomplete** · debounced 250ms, min 2 chars, 6 suggestions with image/brand/price, full keyboard nav (↑↓ wrap, Enter opens the highlighted product, Escape closes), "See all results for X" footer, outside-click close, and a monotonic request id so a slow early response cannot overwrite a fast later one
+- [x] **Nav search input** · was **already built** — the overlay, input and submit-to-`/search` existed. Only the autocomplete was missing, so this cost nothing
+- [x] **Share the filter sidebar with `/search`** · extracted `components/shop/ProductFilters.jsx` — `useProductFacets`, `ProductFilterSidebar`, `SortSelect`, `Pagination`, `sortProducts`. `/shop` dropped from 496 to 264 lines
+- [x] **Facets narrow within the result set on `/search`** · header reads "1 result for X (filtered from 3)". Categories is not passed, so that facet does not render there
+- [ ] **Design `/search`** · 0 pts (design) · now built against the Shop pattern rather than a spec — worth a designer pass
 - [ ] **Design `/category/[slug]`** · 0 pts (design) · hero, description, grid. Must render without client JS — it is the only Server Component
-- [ ] **Search autocomplete** · 3 pts · debounce + suggest against `search_tsv`. An implementation exists on `archive/venky-optex` to crib from
-- [ ] **Nav search input** · 1 pt · nav has 4 variants, none with a search field. Needs designing first
-- [ ] **Share the filter sidebar with `/search`** · 2 pts · extract `FacetBlock` + facet logic out of `shop/page.jsx` into a component both pages use
-- [ ] **Sync the Figma nav variants** · 0 pts (design) · 4 variants with no documented meaning
+- [ ] **Sync the Figma nav variants** · 0 pts (design) · 4 variants with no documented meaning, and none includes the search field that ships
 
 ### C3 — Wave 4: catalogue SSR + SEO · ~12 pts · **contracted**
 

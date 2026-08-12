@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
+import SearchAutocomplete from '@/components/search/SearchAutocomplete';
 
 const CATEGORIES = [
   { name: 'Eyeglasses', slug: 'eyeglasses' },
@@ -300,25 +301,16 @@ export default function Navbar() {
           <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={closeSearch} />
           {/* Search bar panel */}
           <div className="absolute left-0 top-full z-50 w-full border-t border-gray-100 bg-white px-6 py-5 shadow-2xl">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="site-container mx-auto flex max-w-3xl items-center gap-3"
-            >
-              <div className="flex flex-1 items-center overflow-hidden rounded-xl border border-gray-200 bg-[#f4f6f8] transition-colors focus-within:border-[#2A3182]">
-                <div className="flex-shrink-0 pl-4 pr-2 text-gray-400">
-                  <SearchNavIcon />
-                </div>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  placeholder="Search frames, sunglasses, brands…"
-                  className="flex-1 bg-transparent px-2 py-3 text-[15px] font-medium text-[#1a1a1a] placeholder-gray-300 outline-none"
-                />
-              </div>
+            <div className="site-container mx-auto flex max-w-3xl items-start gap-3">
+              <SearchAutocomplete
+                value={searchValue}
+                onChange={setSearchValue}
+                onNavigate={closeSearch}
+                inputRef={searchInputRef}
+              />
               <button
-                type="submit"
+                type="button"
+                onClick={handleSearchSubmit}
                 className="flex-shrink-0 rounded-xl bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
               >
                 Search
@@ -331,7 +323,7 @@ export default function Navbar() {
               >
                 <CloseIcon />
               </button>
-            </form>
+            </div>
           </div>
         </>
       )}
