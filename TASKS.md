@@ -33,12 +33,14 @@ The full plan for FEATURE-STATUS §1. Sequenced so each phase leaves the storefr
 - [x] **Clear-all-filters control** · `f03d809`
 - [x] **Fix `frame_shape || 'Sunglasses'` fallback** · was labelling eyeglasses as sunglasses
 
-### C1 — Finish the Shop surface · ~4 pts
+### C1 — Finish the Shop surface · ~4 pts · **DONE 2026-08-11** (except the Figma sync)
 
-- [ ] **Draw the 4 facets + sort into Figma `0:1835`** · 0 pts (design) · **blocks nothing, but the file now lags the code.** Trace from the running page; pattern is 250px block, hairline rule, 40px rows, `#2E3192` active
-- [ ] **Shop empty state** · 1 pt · no "no products match" treatment exists; now reachable, because filters can exclude everything
-- [ ] **Shop pagination** · 2 pts · query caps at `limit: 100` with no paging UI. Fine at 4 products, breaks at a real catalogue
-- [ ] **Facet counts per option** · 1 pt · `FacetBlock` already accepts a `counts` prop, unused. Categories show counts; the new facets do not
+- [x] **Shop empty state** · two copy branches — an empty catalogue reads "Our collection is being updated", a zero-result filter reads "Try widening your search", with a Clear-all action. The sidebar hides entirely when the catalogue itself is empty, since every facet would read (0)
+- [x] **Shop pagination** · 12/page (4 rows of the design's 3-up grid), numbered pages + Prev/Next, `Showing 13–24 of 24`, resets to page 1 on any filter change, clamps rather than trusting `page`
+- [x] **Facet counts per option** · all six facets, computed **excluding their own selection** so "Round (6)" means what you would get by picking Round given the other filters
+- [x] **Zero-count options disabled** · not in the original plan. A `(0)` row could only ever lead to the empty state; the active selection stays clickable so it can be switched away from
+- [x] **Categories + Brands moved onto `FacetBlock`** · they were duplicated markup; all six facets now share one implementation
+- [ ] **Draw the 6 facets + sort + pagination into Figma `0:1835`** · 0 pts (design) · **the file now lags the code in seven places.** Trace from the running page; pattern is 250px block, hairline rule, 40px rows, `#2E3192` active
 - [!] **Decide the catalogue import shape** · blocked on client · 27 branches of real stock; the seed has 4 products. Every estimate below assumes a real catalogue lands
 
 ### C2 — Discovery · ~7 pts
