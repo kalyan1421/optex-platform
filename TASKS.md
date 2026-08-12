@@ -97,8 +97,8 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 
 ## 2. Storefront — Cart & Checkout
 
-- [ ] **Guest-cart merge at sign-in** · 3 pts · sign-in replaces local state with the server cart, so a guest who fills a cart then logs in to check out loses it — on the one journey where it matters. Needs a UX decision first (merge silently, or ask)
-- [ ] **Cart empty state** · 1 pt · no design, no implementation
+- [x] **Guest-cart merge at sign-in** · merges silently — asking "keep your items?" is a question with one sensible answer. Guest cart now persists in localStorage (it was in-memory only, so any full page load discarded it and made the merge pointless), carries over line by line at sign-in, and clears before the requests so a half-failed merge cannot double an order. Covered by `e2e/cart-merge.spec.ts`
+- [ ] **Cart empty state** · 1 pt · no design, no implementation. Sprint 2 P1
 - [ ] **M-Pesa "waiting for confirmation" state at checkout** · 2 pts · STK confirms asynchronously; the customer waits on their phone with no on-screen state
 - [ ] **Invoice / receipt download** · 2 pts · no PDF, no endpoint
 - [!] **Stock check at checkout** · 2 pts · blocked on client H1

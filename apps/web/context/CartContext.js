@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -28,6 +28,39 @@ function apiItemToCartItem(item) {
   };
 }
 
+/**
+ * Where the guest cart lives between page loads.
+ *
+ * A signed-out cart has no server row — orders require an account — so without
+ * this it existed only in React state and any full page load discarded it.
+ * That made it impossible to fill a cart and then sign in to buy, which is the
+ * one journey a guest cart exists to support.
+ */
+const GUEST_CART_KEY = 'optex.guest-cart.v1';
+
+function readGuestCart() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(GUEST_CART_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    // Corrupt or unavailable (private mode, quota) — an empty cart is a safe
+    // fallback, and never worth breaking the page over.
+    return [];
+  }
+}
+
+function writeGuestCart(items) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (items.length === 0) window.localStorage.removeItem(GUEST_CART_KEY);
+    else window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+  } catch {
+    // Storage full or blocked. The in-memory cart still works for this page.
+  }
+}
+
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([]);
   const [cartId, setCartId] = useState(null);
@@ -40,24 +73,117 @@ export const CartProvider = ({ children }) => {
     setItems((cart?.items ?? []).map(apiItemToCartItem));
   }
 
+  // Guards the merge below. A ref, not state, because it must be read and
+  // written synchronously inside the effect — a state flag would still be
+  // stale on a second invocation in the same tick, which is exactly the
+  // double-fire we are defending against (React 18 StrictMode runs effects
+  // twice in development).
+  const mergingRef = useRef(false);
+
+  // Distinguishes "not signed in yet" from "just signed out" — the effect below
+  // sees `user == null` in both cases, but only the second should empty a cart.
+  const wasAuthedRef = useRef(false);
+
+  // Mirrors `items` so the sign-in effect can read the guest cart without
+  // listing `items` as a dependency — which would re-run the whole merge every
+  // time the cart changed.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  // Restore the guest cart after mount rather than in the initial state, so
+  // the server-rendered HTML and the first client render agree. Reading
+  // localStorage during render would hydrate a different tree than the server
+  // sent.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (user) return; // an authenticated cart comes from the server instead
+    const stored = readGuestCart();
+    if (stored.length > 0) setItems(stored);
+  }, [user]);
+
+  // Persist every guest-cart change. Skipped while signed in: that cart is the
+  // server's, and mirroring it here would resurrect stale lines after sign-out.
+  useEffect(() => {
+    if (!hydratedRef.current || user) return;
+    writeGuestCart(items);
+  }, [items, user]);
+
   // Load the server cart on sign-in; clear it on sign-out. Auth state comes
   // from AuthContext rather than a second Supabase session listener.
   useEffect(() => {
     if (!user) {
-      setItems([]);
+      // Only clear on an actual sign-out. This branch also runs on first mount
+      // for every signed-out visitor, and clearing there wiped the guest cart
+      // that had just been restored from storage — the persist effect then
+      // wrote the empty result back, so the cart never survived a reload.
+      if (wasAuthedRef.current) {
+        wasAuthedRef.current = false;
+        setItems([]);
+        writeGuestCart([]);
+      }
       setCartId(null);
+      mergingRef.current = false;
       return;
     }
+    wasAuthedRef.current = true;
 
     let cancelled = false;
-    api.cart
-      .get()
-      .then((cart) => {
+
+    /**
+     * Hand the guest cart over at sign-in.
+     *
+     * Orders require an account, so the customer who fills a cart signed out
+     * has to sign in to check out — the one moment this cart matters most.
+     * Previously that sign-in replaced local state with the server cart and
+     * the guest lines were silently gone, losing the order at the last step.
+     *
+     * Lines are pushed one at a time rather than in parallel: `addItem`
+     * returns the whole recomputed cart, and concurrent writes to the same
+     * cart race on the line-merge rule the API owns. Sequential is slower and
+     * correct, and a guest cart is a handful of items.
+     *
+     * A failed line is logged and skipped rather than aborting: arriving with
+     * three of four items beats arriving with none. The server cart is applied
+     * either way, so what the customer sees is always what the server holds.
+     */
+    async function loadAndMerge() {
+      // Prefer storage over React state: on a fresh page load the sign-in
+      // effect can run before the hydration effect has copied the stored cart
+      // into state, and the stored copy is the one that survived the reload.
+      const stored = readGuestCart();
+      const guestLines = stored.length > 0 ? stored : itemsRef.current;
+      const shouldMerge = guestLines.length > 0 && !mergingRef.current;
+
+      if (shouldMerge) {
+        mergingRef.current = true;
+        // Clear before the requests, not after. A merge that fails halfway
+        // must not leave lines that a later sign-in would add a second time —
+        // losing a line is recoverable, silently doubling an order is not.
+        writeGuestCart([]);
+        for (const line of guestLines) {
+          if (cancelled) return;
+          try {
+            await api.cart.addItem({
+              productId: line.productId ?? line.id,
+              quantity: line.quantity ?? 1,
+            });
+          } catch (err) {
+            console.error('Cart merge: could not carry over a line:', err);
+          }
+        }
+      }
+
+      try {
+        const cart = await api.cart.get();
         if (!cancelled) applyCart(cart);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) console.error('Cart load error:', err);
-      });
+      }
+    }
+
+    void loadAndMerge();
 
     return () => {
       cancelled = true;
