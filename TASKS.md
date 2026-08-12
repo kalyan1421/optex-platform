@@ -1,0 +1,103 @@
+# TASKS — OPTEX
+
+**Owner:** Kalyan (solo) · **Capacity:** ~6 build points per 2-week sprint (1 pt ≈ 1 focused engineer-day)
+**Sources:** [docs/FEATURE-STATUS.md](docs/FEATURE-STATUS.md) · [docs/DESIGN-STATUS.md](docs/DESIGN-STATUS.md) · [docs/SPRINT-01.md](docs/SPRINT-01.md) · [docs/ROADMAP.md](docs/ROADMAP.md)
+
+Status: `[ ]` open · `[~]` in progress · `[x]` done · `[!]` blocked
+
+---
+
+## Now — Sprint 1 (2026-08-11 → 08-22) · "Make it safe"
+
+Not catalogue work. These are the three payment defects that let a customer get free glasses, verified still open against `main` @ `f03d809`. Nothing below this section should start before they land.
+
+- [ ] **CI pipeline** — typecheck + build + API e2e on every PR · 2 pts · *nothing else is safe without it*
+- [ ] **Close the unguarded M-Pesa credit path** · 1 pt · `applyMpesaSuccess` skips amount verification entirely when `info.amount` is `undefined`; a forged callback with `ResultCode: 0` and no `CallbackMetadata`, against a real CheckoutRequestID, credits the order. Endpoint is `@Public()` + `@SkipThrottle()`
+- [ ] **PostgREST injection fix** · 1 pt · `payments.service.ts:958` interpolates `checkoutRequestId` into `.or()`; the DTO only enforces `@IsString() @IsNotEmpty()`
+- [ ] **Migration `0010`: revoke `place_order` + `increment_promo_uses` from `authenticated`** · 1 pt · `0009` is RLS lockdown only, no `REVOKE` exists
+- [ ] **Reject COD server-side** · 1 pt · client removed COD; `orders.service.ts:159` still queues COD orders for fulfilment
+
+---
+
+## 1. Storefront — Catalogue & Discovery
+
+The full plan for FEATURE-STATUS §1. Sequenced so each phase leaves the storefront shippable.
+
+### Shipped this session
+
+- [x] **Filter — price range** · 5 bands, `f03d809`
+- [x] **Filter — frame shape** · `f03d809`
+- [x] **Filter — gender** · `f03d809`, self-hides (all seed products are `unisex`)
+- [x] **Filter — frame material** · `f03d809`, case-insensitive grouping
+- [x] **Sort control** · featured / price ↑↓ / name, fills the empty 918×36 slot the design leaves
+- [x] **Clear-all-filters control** · `f03d809`
+- [x] **Fix `frame_shape || 'Sunglasses'` fallback** · was labelling eyeglasses as sunglasses
+
+### C1 — Finish the Shop surface · ~4 pts
+
+- [ ] **Draw the 4 facets + sort into Figma `0:1835`** · 0 pts (design) · **blocks nothing, but the file now lags the code.** Trace from the running page; pattern is 250px block, hairline rule, 40px rows, `#2E3192` active
+- [ ] **Shop empty state** · 1 pt · no "no products match" treatment exists; now reachable, because filters can exclude everything
+- [ ] **Shop pagination** · 2 pts · query caps at `limit: 100` with no paging UI. Fine at 4 products, breaks at a real catalogue
+- [ ] **Facet counts per option** · 1 pt · `FacetBlock` already accepts a `counts` prop, unused. Categories show counts; the new facets do not
+- [!] **Decide the catalogue import shape** · blocked on client · 27 branches of real stock; the seed has 4 products. Every estimate below assumes a real catalogue lands
+
+### C2 — Discovery · ~7 pts
+
+- [ ] **Design `/search`** · 0 pts (design) · results grid reusing the 290×480 card, result count, empty state, query echo. Should share the Shop sidebar
+- [ ] **Design `/category/[slug]`** · 0 pts (design) · hero, description, grid. Must render without client JS — it is the only Server Component
+- [ ] **Search autocomplete** · 3 pts · debounce + suggest against `search_tsv`. An implementation exists on `archive/venky-optex` to crib from
+- [ ] **Nav search input** · 1 pt · nav has 4 variants, none with a search field. Needs designing first
+- [ ] **Share the filter sidebar with `/search`** · 2 pts · extract `FacetBlock` + facet logic out of `shop/page.jsx` into a component both pages use
+- [ ] **Sync the Figma nav variants** · 0 pts (design) · 4 variants with no documented meaning
+
+### C3 — Wave 4: catalogue SSR + SEO · ~12 pts · **contracted**
+
+This is [SPEC-03](docs/specs/SPEC-03-storefront-seo-render.md) and the single largest contracted gap. All four catalogue pages are involved. **Hard prerequisite: the smoke suite** — cut from Sprint 1, still owed.
+
+- [!] **Smoke suite: shop → PDP → cart → checkout** · 3 pts · *prerequisite for everything in C3*
+- [ ] **G-7: SSR-capable api-client** · 2 pts · `web/lib/api.js` is `'use client'`, so Server Components cannot use it. Build early — everything else in C3 depends on it, and nothing else does
+- [ ] **Convert `/shop` to a Server Component** · 3 pts
+- [ ] **Convert `/product/[slug]` to a Server Component** · 3 pts · also moves the `Product`/`Offer` JSON-LD out of post-hydration
+- [ ] **`generateMetadata` for product + category** · 1 pt · currently exists in `category/[slug]` only; no per-product `<title>` or OG tags
+- [ ] **`sitemap.xml` + `robots.txt`** · 1 pt · neither exists
+- [ ] **BreadcrumbList schema on PDP** · 1 pt · the design already specifies a breadcrumb (1240×21)
+
+### C4 — Commerce depth · ~10 pts
+
+- [ ] **Design the lens / coating configurator** · 0 pts (design) · **contracted** ([SPEC-07](docs/specs/SPEC-07-lens-configurator.md)). No design and no price model
+- [!] **Lens price list from client** · blocked · cannot build a configurator without it
+- [ ] **Build the lens configurator** · 5 pts · PDP currently emits a fixed `Lens: Standard` string into the cart variant
+- [ ] **PDP stock / availability indicator** · 2 pts · `inventory` is per-branch and nothing surfaces it
+- [!] **Stock check at checkout** · 2 pts · blocked on the client's out-of-stock rule (H1)
+- [ ] **Mobile + tablet breakpoints for all catalogue pages** · 3 pts · **every Figma frame is 1440 desktop only.** Shop, PDP, category and search are all live on breakpoints that were developer guesses
+
+### C5 — Deferred, not scoped
+
+Real gaps, but nothing downstream waits on them. Implementations for the first two exist on `archive/venky-optex`.
+
+- [ ] Wishlist / favourites · needs design + `wishlists` table + endpoints
+- [ ] Product comparison · needs design
+- [ ] FAQ page · exists only as a footer link in the design
+
+---
+
+## Cross-cutting debt
+
+- [ ] **ESLint config** · 1 pt · `pnpm -r lint` is broken; no config or dependency anywhere in the repo
+- [ ] **`typecheck` script for `apps/web`** · 0.5 pt · 40 `.jsx` files, and it is the only workspace package without one
+- [ ] **Resolve the two navies** · 1 pt · design uses `#2E3192`, `packages/config/tailwind.preset.js:28` defines `brand.blue` as `#2A3182`; 20 files use one, 15 the other
+- [ ] **Resolve the two nav bar heights** · 0 pts (design) · 135px on most pages, 87px on About and Eye care. Both ship
+- [ ] **Clean the Figma placeholder content** · 0 pts (design) · the `+91` phone, Oakley/Rayban sample brands, `(124 Customer Reviews)`, `Frame: Midnight Matte | Lens: Blue Light Filter`, and the USD-scale price ladder are all still in the file. Fixed in code, live in design — see [DESIGN-STATUS §4](docs/DESIGN-STATUS.md)
+- [ ] **Archive Figma `v2` and `v3`** · 0 pts (design) · `v1` is canonical as of 2026-08-11
+
+---
+
+## Client-blocked
+
+Nothing here moves without an answer. All were sent in [CLIENT-QUESTIONS.md](docs/CLIENT-QUESTIONS.md).
+
+- [!] **Block A** — catalogue shape, appointment rules · blocks C1 import, SPEC-04 Phase 2
+- [!] **B1–B3** — pickup stations, shipping rules · blocks SPEC-02 Phase 2
+- [!] **H1** — out-of-stock behaviour · blocks the checkout stock check
+- [!] **Lens price list** · blocks C4 entirely
+- [!] **CR-01 quote** · Phase 1B gate is shut until signed

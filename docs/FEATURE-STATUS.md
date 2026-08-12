@@ -49,15 +49,20 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | Category landing pages | ✅ | `app/category/[slug]/page.jsx` — the **only Server Component in the app** |
 | Full-text search | ✅ | `search_tsv` GIN index; `GET /api/products/search` |
 | Related products | ✅ | `GET /api/products/:id/related` |
-| Filter — category / brand / sort | ✅ | `shop/page.jsx` |
-| **Filter — price range** | ❌ | No state variable exists |
-| **Filter — frame shape** | ❌ | `products.frame_shape` exists, unused by the UI |
-| **Filter — gender** | ❌ | `products.gender` exists, unused |
-| **Filter — frame material** | ❌ | `products.frame_material` exists, unused |
+| Filter — category / brand | ✅ | `shop/page.jsx` |
+| Filter — price range | ✅ | 5 bands, `f03d809` |
+| Filter — frame shape | ✅ | `f03d809` |
+| Filter — gender | ✅ | `f03d809`. Self-hides below 2 distinct values — every seeded product is `unisex`, so it correctly does not render today |
+| Filter — frame material | ✅ | `f03d809`. Values grouped case-insensitively; the seed carries both `Metal` and `metal` |
+| Sort | ✅ | Featured / price ↑↓ / name, `f03d809` |
+| **Pagination** | ❌ | `listProducts` caps at `limit: 100` with no paging UI |
+| **Empty state** | ❌ | No "no products match" treatment — now reachable, since filters can exclude everything |
 | **Search autocomplete** | ❌ | No debounce, suggest or typeahead code |
 | **Wishlist / favourites** | ❌ | No table, no endpoint, no UI |
 | **Product comparison** | ❌ | |
 | **Lens / coating configurator** | ❌ | No price model. PDP emits a fixed `Lens: Standard` string into the cart variant |
+
+> The four filters and sort shipped in `f03d809` but are **not yet in Figma** — the Shop screen still specifies only Categories and Brands. See [DESIGN-STATUS §5](DESIGN-STATUS.md). Full plan for this section: [TASKS.md §1](../TASKS.md).
 
 > An implementation of search autocomplete, product filters and a wishlist exists on the archived `archive/venky-optex` tag. It is an orphan tree that predates Waves 1–2 and its migrations collide with `0009`, so it is a cherry-pick source, not a merge.
 
@@ -232,7 +237,7 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 
 | Area | ✅ Done | 🟡 Partial | ❌ Absent |
 | --- | --- | --- | --- |
-| Catalogue & discovery | 7 | 0 | 8 |
+| Catalogue & discovery | 12 | 0 | 6 |
 | Cart & checkout | 9 | 1 | 4 |
 | Account & orders | 8 | 0 | 5 |
 | Appointments & branches | 7 | 0 | 5 |
@@ -243,15 +248,15 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 | Integrations | 7 | 0 | 4 |
 | SEO | 2 | 2 | 6 |
 | Engineering | 6 | 1 | 4 |
-| **Total** | **63** | **10** | **41** |
+| **Total** | **68** | **10** | **39** |
 
 Of the 41 absent items, **~20 are CR-01 or Phase 2/3** (RBAC, audit log, 2FA, inventory ledger, doctor module, branch P&L, product analytics, Flutter, VTO) — correctly out of scope.
 
-**That leaves ~21 genuinely missing Phase 1A features.** Largest clusters, in the order they should be attacked:
+**That leaves ~19 genuinely missing Phase 1A features.** Largest clusters, in the order they should be attacked (sequenced plan: [TASKS.md](../TASKS.md)):
 
 1. **SEO / render mode — 8 items.** No sitemap, no robots, `generateMetadata` in one file only, 15 of 23 pages client-rendered. This is Wave 4, it is a contracted deliverable, and it is the biggest single gap.
 2. **Engineering hygiene — 5 items.** No CI, no tests, no lint, `apps/web` untyped. Wave 0 was skipped to ship Waves 1–2; that debt is now the main thing standing between the codebase and safe further change.
-3. **Catalogue filters — 4 items.** Price, shape, gender, material. All three attribute columns already exist in `products` and are simply unused by the UI — UI work only. An implementation exists on `archive/venky-optex` to crib from.
+3. ~~**Catalogue filters — 4 items.**~~ **Closed in `f03d809`** — price, shape, gender and material all ship, plus sort. They still need drawing into Figma. What remains on the Shop surface is pagination and an empty state.
 4. **Commerce model — 4 items.** Guest-cart merge, pickup-station delivery, shipping rules, lens configurator.
 5. **Integrations — 4 items.** Google Maps, eTIMS, GA4, WhatsApp.
 
