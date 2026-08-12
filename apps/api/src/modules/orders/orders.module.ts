@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { OrdersAdminController } from './orders-admin.controller';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { CancellationService } from './cancellation.service';
 
 /**
  * ORDERS module — checkout + order history + admin order management.
@@ -25,7 +26,7 @@ import { OrdersService } from './orders.service';
  */
 @Module({
   controllers: [OrdersController, OrdersAdminController],
-  providers: [OrdersService],
-  exports: [OrdersService],
+  providers: [OrdersService, CancellationService],
+  exports: [OrdersService, CancellationService],
 })
 export class OrdersModule {}

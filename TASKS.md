@@ -109,7 +109,15 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 ## 3. Storefront — Account & Orders
 
 - [ ] **Verified-purchase check on reviews** · 2 pts · enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Needs a product decision: gate reviews, or drop the claim
-- [ ] **Customer-initiated order cancel** · 2 pts · no endpoint; `cancelled` is admin-only
+- [~] **Customer-initiated order cancel** · **re-estimated 2 pts → ~7**. It is not a status flip: CLIENT-ANSWERS B5 and [SPEC-06](docs/specs/SPEC-06-order-lifecycle.md) specify a request/approval workflow with admin-set thresholds, notifications and a paid-order acknowledgement.
+  - [x] **R2 eligibility, server-side** · `CancellationService` + `app_settings` (first slice of SPEC-05). 24h window and not-after-dispatch cut-off, both configurable, with documented defaults that never fall back to zero
+  - [x] **R1 customer request** · `GET`/`POST /api/orders/:id/cancellation`. Reason optional, one pending request per order enforced by a partial unique index, response says *received* not *approved*
+  - [x] **R6 guest appointment path closed** · shipped as Sprint 2 #2/#3
+  - [ ] **R3 admin approval workflow** · list, approve/decline with reason, decision attribution, direct admin cancel
+  - [ ] **R4 outcome notifications** · email + SMS on approve/decline, best-effort
+  - [ ] **R5 paid-order acknowledgement** · explicit "no automatic refund" step, and a flag on the admin Payments screen
+  - [ ] **R7 reversed payments surfaced** · `reversed` is recorded and then ignored
+  - [ ] Customer UI on order history and tracking
 - [ ] **Saved addresses** · 2 pts · `shipping_address` is per order, not per customer
 - [ ] **Reorder** · 1 pt
 - [ ] **Social login** · deferred · no provider configured; the dead Google/Apple buttons were removed from `/login`

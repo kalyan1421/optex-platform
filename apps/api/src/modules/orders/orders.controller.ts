@@ -11,6 +11,8 @@ import {
   PaginatedOrders,
 } from './dto/order-views';
 import { OrdersService } from './orders.service';
+import { CancellationService } from './cancellation.service';
+import { RequestCancellationDto } from './dto/request-cancellation.dto';
 
 /**
  * Customer-facing checkout + order endpoints. Every route requires a valid JWT
@@ -21,7 +23,10 @@ import { OrdersService } from './orders.service';
 @ApiTags('orders')
 @Controller()
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly cancellation: CancellationService,
+  ) {}
 
   @Post('checkout')
   @ApiOperation({
@@ -69,5 +74,28 @@ export class OrdersController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<OrderTrackingView> {
     return this.orders.getTracking(authUserId, id);
+  }
+
+  @Get('orders/:id/cancellation')
+  @ApiOperation({
+    summary: 'Whether the caller may still cancel this order, and any open request',
+  })
+  @ApiOkResponse({ description: 'Eligibility and the latest request, if any' })
+  cancellationStatus(
+    @CurrentUser('id') authUserId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.cancellation.statusFor(authUserId, id);
+  }
+
+  @Post('orders/:id/cancellation')
+  @ApiOperation({ summary: "Request cancellation of the caller's order" })
+  @ApiCreatedResponse({ description: 'The recorded request — pending an admin decision' })
+  requestCancellation(
+    @CurrentUser('id') authUserId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RequestCancellationDto,
+  ) {
+    return this.cancellation.request(authUserId, id, dto.reason);
   }
 }
