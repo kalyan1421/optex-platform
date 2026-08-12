@@ -64,12 +64,41 @@ services:
       - -c
       - log_min_messages=fatal
 
+  # ─── ROLE PASSWORDS (one-shot, idempotent) ────────────────────────────────
+  # Must run before gotrue/postgrest/storage start — they authenticate with the
+  # shared password, which the base image does not set. Split out of
+  # migrate.sh because migration 0001 needs `auth.jwt()`, which only exists
+  # once gotrue has started; see docker/set-role-passwords.sh.
+  supabase-roles:
+    image: postgres:15-alpine
+    restart: on-failure
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PGHOST: supabase-db
+      PGPORT: "5432"
+      PGDATABASE: postgres
+      PGPASSWORD: your-super-secret-and-long-postgres-password
+    volumes:
+      - ./docker/set-role-passwords.sh:/set-role-passwords.sh:ro
+    command: ["sh", "/set-role-passwords.sh"]
+
   # ─── MIGRATIONS (one-shot, idempotent) ────────────────────────────────────
   supabase-migrate:
     image: postgres:15-alpine
     restart: on-failure
     depends_on:
-      supabase-db:
+      # Not just the DB. Our migrations sit on top of schemas the Supabase
+      # services own and create at boot:
+      #   0001 references auth.jwt()            → needs gotrue migrated
+      #   0003 inserts storage.buckets(public)  → needs storage-api migrated
+      #                                           (the base image ships an
+      #                                           older buckets table without
+      #                                           that column)
+      supabase-auth:
+        condition: service_healthy
+      supabase-storage:
         condition: service_healthy
     environment:
       PGHOST: supabase-db
@@ -90,6 +119,8 @@ services:
     depends_on:
       supabase-db:
         condition: service_healthy
+      supabase-roles:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
       interval: 5s
@@ -126,6 +157,8 @@ services:
     depends_on:
       supabase-db:
         condition: service_healthy
+      supabase-roles:
+        condition: service_completed_successfully
     environment:
       PGRST_DB_URI: postgres://authenticator:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
       PGRST_DB_SCHEMAS: public,storage
@@ -143,6 +176,8 @@ services:
     depends_on:
       supabase-db:
         condition: service_healthy
+      supabase-roles:
+        condition: service_completed_successfully
       supabase-rest:
         condition: service_started
     healthcheck:

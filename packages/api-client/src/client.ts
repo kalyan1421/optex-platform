@@ -564,8 +564,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         }),
     },
     branches: {
-      listAll: (q) =>
-        request<Branch[]>('/branches/admin/all', { query: q ? { q } : undefined }),
+      listAll: (q) => request<Branch[]>('/branches/admin/all', { query: q ? { q } : undefined }),
       create: (input) => request<Branch>('/branches', { method: 'POST', body: input }),
       update: (id, input) =>
         request<Branch>(`/branches/${encodeURIComponent(id)}`, {
