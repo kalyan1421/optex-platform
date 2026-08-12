@@ -22,6 +22,12 @@ env:
   SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM
   SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE
   SUPABASE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+  # apps/web and apps/admin read the NEXT_PUBLIC_ names, and `next build`
+  # prerenders pages that construct a Supabase client — so these are required
+  # for the build, not only at runtime.
+  NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM
+  NEXT_PUBLIC_API_URL: http://localhost:1111
 
 jobs:
   static:
@@ -116,10 +122,6 @@ jobs:
       # is the render mode Wave 4 is about to change.
       - name: Run storefront smoke suite
         run: pnpm --filter @optex/web test:e2e
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_API_URL: http://localhost:1111
 
       - uses: actions/upload-artifact@v4
         if: failure()

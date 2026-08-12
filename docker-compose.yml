@@ -43,6 +43,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
     ports:
       - "54322:5432"
     environment:
@@ -94,6 +95,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
+      start_period: 60s
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: "9999"
@@ -150,6 +152,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
+      start_period: 30s
     environment:
       ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM
       SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE
@@ -206,6 +209,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
   # ─── SUPABASE STUDIO (optional admin UI at :54323) ─────────────────────────
   supabase-studio:
