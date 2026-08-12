@@ -4,11 +4,15 @@ import { IsEnum, IsOptional, IsString, MaxLength, ValidateNested } from 'class-v
 import { ShippingAddressDto } from './shipping-address.dto';
 
 /**
- * Payment methods accepted at checkout. Mirrors the `payment_method` Postgres
- * enum (`mpesa | pesapal | cod`).
+ * Payment methods accepted at checkout.
+ *
+ * The Postgres `payment_method` enum is still `mpesa | pesapal | cod` and
+ * historical COD orders remain readable — the admin COD ledger depends on that.
+ * But cash on delivery is no longer *offered*: the client withdrew it
+ * (CLIENT-ANSWERS E6), so it is absent here and `@IsEnum` rejects it at the
+ * edge. `OrdersService.checkout` repeats the check as a backstop.
  */
 export enum CheckoutPaymentMethod {
-  COD = 'cod',
   MPESA = 'mpesa',
   PESAPAL = 'pesapal',
 }

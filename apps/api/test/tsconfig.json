@@ -1,0 +1,15 @@
+{
+  // Test-only TypeScript config.
+  //
+  // The app's tsconfig deliberately sets `types: ["node"]` and `include:
+  // ["src/**/*"]` so tests never end up in the build output. That also meant
+  // ts-jest compiled the e2e spec without Jest's globals, so `describe`, `it`
+  // and `expect` were all unresolved. Extending here keeps the build clean and
+  // gives the tests the types they need.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "noEmit": true
+  },
+  "include": ["./**/*.ts", "../src/**/*"]
+}

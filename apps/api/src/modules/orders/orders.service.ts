@@ -113,6 +113,19 @@ export class OrdersService {
    * and an optional promo code.
    */
   async checkout(authUserId: string, dto: CheckoutDto): Promise<CheckoutResultView> {
+    // Cash on delivery was withdrawn by the client (CLIENT-ANSWERS E6). It is
+    // already absent from CheckoutPaymentMethod, so @IsEnum rejects it before
+    // we get here — this is the server-side backstop the client asked for, and
+    // it matters because `place_order` still accepts 'cod' at the database
+    // level (the Postgres enum keeps it for historical rows). Without this,
+    // any future caller that reaches the service directly could still create
+    // an unpaid, immediately-fulfillable order.
+    if ((dto.paymentMethod as string) === 'cod') {
+      throw new BadRequestException(
+        'Cash on delivery is no longer offered. Please pay with M-Pesa or card.',
+      );
+    }
+
     const customer = await this.resolveCustomer(authUserId);
 
     const deliveryOption = dto.deliveryOption ?? CheckoutDeliveryOption.DELIVERY;
@@ -154,27 +167,18 @@ export class OrdersService {
     // ownership, though we just created it).
     const detail = await this.getOrderDetail(authUserId, orderId);
 
-    // COD enters the fulfilment queue immediately (payment on delivery); online
-    // orders wait on the Payments module to confirm the M-Pesa/Pesapal charge.
-    const isCod = dto.paymentMethod === CheckoutPaymentMethod.COD;
-    const payment: PaymentInstruction = isCod
-      ? {
-          method: dto.paymentMethod,
-          requiresPayment: false,
-          status: 'confirmed',
-          orderId,
-          amountKes: detail.totalKes,
-          message: 'Order received. Payment will be collected on delivery (COD).',
-        }
-      : {
-          method: dto.paymentMethod,
-          requiresPayment: true,
-          status: 'pending_payment',
-          orderId,
-          amountKes: detail.totalKes,
-          message:
-            'Order created. Initiate payment via the Payments endpoint to confirm this order.',
-        };
+    // Every accepted order now waits on the Payments module to confirm the
+    // M-Pesa/Pesapal charge. The COD branch that used to sit here returned
+    // `requiresPayment: false, status: 'confirmed'` — an unpaid order already
+    // in the fulfilment queue — and went with the method itself (E6).
+    const payment: PaymentInstruction = {
+      method: dto.paymentMethod,
+      requiresPayment: true,
+      status: 'pending_payment',
+      orderId,
+      amountKes: detail.totalKes,
+      message: 'Order created. Initiate payment via the Payments endpoint to confirm this order.',
+    };
 
     // ── Best-effort confirmation notifications (never block / fail checkout) ──
     void this.sendOrderConfirmation(detail, customer);

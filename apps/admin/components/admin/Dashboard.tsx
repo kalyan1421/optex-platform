@@ -214,10 +214,7 @@ export function Dashboard() {
               <Skeleton className="h-[280px] w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  key={period}
-                  data={chartData}
-                >
+                <BarChart key={period} data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
@@ -256,14 +253,12 @@ export function Dashboard() {
                   outerRadius={80}
                   dataKey="value"
                 >
-                  {paymentData.map(
-                    (entry, index) => (
-                      <Cell
-                        key={`pm-cell-${entry.name}`}
-                        fill={COLORS_PAYMENT[index % COLORS_PAYMENT.length]}
-                      />
-                    ),
-                  )}
+                  {paymentData.map((entry, index) => (
+                    <Cell
+                      key={`pm-cell-${entry.name}`}
+                      fill={COLORS_PAYMENT[index % COLORS_PAYMENT.length]}
+                    />
+                  ))}
                 </Pie>
                 <Tooltip
                   formatter={(value: number, _name, props) => [
@@ -407,10 +402,7 @@ export function Dashboard() {
                 </thead>
                 <tbody>
                   {topProducts.map((product, i) => (
-                    <tr
-                      key={product.productId}
-                      className="border-b last:border-0 hover:bg-gray-50"
-                    >
+                    <tr key={product.productId} className="border-b last:border-0 hover:bg-gray-50">
                       <td className="px-2 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#141776] text-xs font-medium text-white">

@@ -1,0 +1,88 @@
+name: CI
+
+# The gate Wave 0 called for and Waves 1-2 shipped without. Three of eight
+# code-review findings were criticals inside features already marked done,
+# because nothing tested them. See docs/SPRINT-01.md.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  # A new push to the same branch supersedes the run in flight.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Local-dev defaults from the .env.example files. These are the well-known
+  # Supabase demo keys signed with the shared local JWT secret — they are not
+  # secrets, they only ever address the throwaway stack this workflow starts.
+  SUPABASE_URL: http://localhost:54321
+  SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM
+  SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE
+  SUPABASE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+
+jobs:
+  static:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      # `pnpm -r build`, not `pnpm build` — the root `build` script has a
+      # `prebuild` that regenerates database.types.ts, which needs the Supabase
+      # CLI and a live database. `-r` runs each workspace package's own build
+      # and skips the root lifecycle entirely.
+      - name: Build
+        run: pnpm -r build
+
+      # Code only. The root `format` script also covers Markdown, but the docs
+      # are hand-laid-out tables that Prettier reflows wholesale — enforcing it
+      # would turn every doc edit into a diff nobody reads. Run
+      # `pnpm format` locally if you want Markdown tidied too.
+      - name: Check formatting
+        run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,css}"
+
+  e2e:
+    name: API e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The e2e spec boots the whole AppModule and queries real tables, so it
+      # needs the stack up and migrated — the same one `pnpm docker:up` starts
+      # locally, so a green CI run and a green local run mean the same thing.
+      - name: Start Supabase
+        run: docker compose up -d supabase-kong
+
+      - name: Apply migrations and seed
+        run: docker compose run --rm supabase-migrate
+
+      - name: Run API e2e
+        run: pnpm --filter @optex/api test:e2e
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose logs --tail 200

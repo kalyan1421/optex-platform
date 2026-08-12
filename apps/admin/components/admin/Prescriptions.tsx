@@ -184,9 +184,7 @@ export function Prescriptions() {
         const updated = await api.admin.prescriptions.updateStatus(id, { status: 'processed' });
         setPrescriptions((prev) =>
           prev.map((p) =>
-            p.id === id
-              ? { ...p, status: updated.status, processed_at: updated.processed_at }
-              : p,
+            p.id === id ? { ...p, status: updated.status, processed_at: updated.processed_at } : p,
           ),
         );
         setActionError('');

@@ -91,12 +91,9 @@ const PAYMENT_METHODS = [
     description: 'Pay via Pesapal (card, bank, mobile)',
     value: 'pesapal',
   },
-  {
-    id: 'cod',
-    label: 'Cash on Delivery',
-    description: 'Pay in cash when your order arrives',
-    value: 'cod',
-  },
+  // Cash on delivery was withdrawn by the client (CLIENT-ANSWERS E6) and is now
+  // rejected by the API, so offering it here would only produce a 400 at the
+  // end of a filled-in checkout form.
 ];
 
 const KENYA_COUNTIES = [
@@ -221,13 +218,9 @@ export default function Page() {
         },
       });
 
-      // 2. Route by payment method.
-      if (paymentMethod === 'cod') {
-        // COD: already accepted into the fulfilment queue — straight to confirmation.
-        router.push(`/order-confirmation/${order.id}`);
-        return;
-      }
-
+      // 2. Route by payment method. Every remaining method requires payment
+      // before fulfilment — the COD branch that skipped straight to the
+      // confirmation page went with the method itself (E6).
       if (paymentMethod === 'mpesa') {
         // Trigger the STK push to the customer's phone, then poll briefly for the
         // result. Final confirmation also arrives via the Daraja webhook + cron.

@@ -32,10 +32,14 @@ describe('OPTEX API (e2e)', () => {
     });
   });
 
-  describe('GET /api/catalog/products', () => {
+  // Paths corrected from /api/catalog/* to /api/*: CatalogModule mounts
+  // @Controller('products') and @Controller('categories'), with no `catalog`
+  // segment. The spec had asserted the wrong routes since it was written — it
+  // never ran, because ts-jest could not resolve its tsconfig.
+  describe('GET /api/products', () => {
     it('returns paginated product list', () => {
       return request(app.getHttpServer())
-        .get('/api/catalog/products')
+        .get('/api/products')
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('items');
@@ -45,10 +49,10 @@ describe('OPTEX API (e2e)', () => {
     });
   });
 
-  describe('GET /api/catalog/categories', () => {
+  describe('GET /api/categories', () => {
     it('returns array of categories', () => {
       return request(app.getHttpServer())
-        .get('/api/catalog/categories')
+        .get('/api/categories')
         .expect(200)
         .expect((res) => {
           expect(Array.isArray(res.body)).toBe(true);

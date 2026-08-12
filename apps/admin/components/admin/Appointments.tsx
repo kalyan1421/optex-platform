@@ -511,7 +511,7 @@ export function Appointments() {
                 </SelectContent>
               </Select>
               {newDate && !slotsLoading && slotOptions.length === 0 && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   This branch is closed or fully booked on that date.
                 </p>
               )}

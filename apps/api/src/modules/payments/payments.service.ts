@@ -28,6 +28,14 @@ import {
   ReconcileResult,
 } from './dto/payment-views';
 
+/**
+ * Daraja CheckoutRequestIDs look like `ws_CO_04112024103045123456789` — letters,
+ * digits and underscores only. Anything else cannot be one of ours, and is
+ * rejected before it reaches a query. Deliberately excludes `,` `.` `(` `)` and
+ * `:`, the characters PostgREST's filter grammar is built from.
+ */
+const MPESA_CHECKOUT_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
 /** Minimal `orders` row shape needed across the payment flows. */
 interface OrderRow {
   id: string;
@@ -285,24 +293,37 @@ export class PaymentsService {
   ): Promise<void> {
     if (FINAL_TX_STATUSES.includes(tx.status)) return;
 
-    // AMOUNT VERIFICATION: Daraja STK callbacks are not signed, so before we
-    // credit the order we confirm the amount the customer actually paid matches
-    // what we pushed (tx.amount_kes, itself derived from order.total_kes at push
-    // time). A mismatch (underpayment, tampered/replayed callback) is recorded
-    // for manual reconciliation and never auto-credits the order.
-    if (info.amount !== undefined && Math.abs(Number(info.amount) - Number(tx.amount_kes)) > 0.01) {
+    // AMOUNT VERIFICATION: Daraja STK callbacks are not signed and the endpoint
+    // is public, so the paid amount is the only thing standing between a forged
+    // callback and a credited order. We confirm it matches what we pushed
+    // (tx.amount_kes, itself derived from order.total_kes at push time).
+    //
+    // A MISSING amount is treated exactly like a mismatched one. It used to be
+    // treated as "nothing to check" and fell through to crediting the order —
+    // which meant a forged callback carrying ResultCode 0 and no
+    // CallbackMetadata, replayed against a real CheckoutRequestID from the
+    // attacker's own unpaid STK push, marked that order paid. A success
+    // callback that cannot prove its amount is not a success.
+    const paidAmount = info.amount === undefined ? null : Number(info.amount);
+    const amountUnverified = paidAmount === null || !Number.isFinite(paidAmount);
+    const amountMismatched =
+      !amountUnverified && Math.abs(paidAmount - Number(tx.amount_kes)) > 0.01;
+
+    if (amountUnverified || amountMismatched) {
       this.logger.error(
-        `M-Pesa amount mismatch on tx ${tx.id}: expected ${tx.amount_kes}, paid ${info.amount} — holding for manual reconcile`,
+        amountUnverified
+          ? `M-Pesa success callback for tx ${tx.id} carried no usable amount — refusing to credit, holding for manual reconcile`
+          : `M-Pesa amount mismatch on tx ${tx.id}: expected ${tx.amount_kes}, paid ${paidAmount} — holding for manual reconcile`,
       );
       await this.db
         .from('mpesa_transactions')
         .update({
           raw: {
             ...(tx.raw ?? {}),
-            stage: 'amount_mismatch',
+            stage: amountUnverified ? 'amount_missing' : 'amount_mismatch',
             source: info.source,
             expected_amount: tx.amount_kes,
-            paid_amount: info.amount,
+            paid_amount: info.amount ?? null,
             callback: info.raw ?? null,
           },
         })
@@ -952,18 +973,42 @@ export class PaymentsService {
     // The CheckoutRequestID is stored both as `mpesa_ref` (pre-receipt) and in
     // `raw.CheckoutRequestID`. Match either so we find the row before AND after
     // the receipt swap.
-    const { data, error } = await this.db
-      .from('mpesa_transactions')
-      .select('id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at')
-      .or(`mpesa_ref.eq.${checkoutRequestId},raw->>CheckoutRequestID.eq.${checkoutRequestId}`)
-      .order('received_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) {
-      this.logger.error(`M-Pesa tx lookup failed: ${error.message}`);
+    //
+    // This used to be a single `.or()` built by interpolating the id straight
+    // into PostgREST's filter grammar, where a comma or a dot starts a new
+    // clause — so a crafted id could rewrite the filter and select a row that
+    // was never its own. DTO validation was not a fix on its own: the hot path
+    // here is handleMpesaCallback, whose body arrives as `unknown` from a
+    // public unauthenticated webhook and never passes through a DTO.
+    //
+    // Two guards, because either alone is thin:
+    //   1. reject anything outside Daraja's id charset outright, and
+    //   2. use `.eq()` for both lookups, whose values the client encodes as
+    //      parameters, so there is no filter grammar left to escape.
+    if (!MPESA_CHECKOUT_ID_RE.test(checkoutRequestId)) {
+      this.logger.warn(
+        `Rejected malformed CheckoutRequestID in M-Pesa tx lookup: ${JSON.stringify(checkoutRequestId).slice(0, 120)}`,
+      );
       return null;
     }
-    return (data as MpesaTxRow | null) ?? null;
+
+    const columns = 'id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at';
+
+    for (const column of ['mpesa_ref', 'raw->>CheckoutRequestID'] as const) {
+      const { data, error } = await this.db
+        .from('mpesa_transactions')
+        .select(columns)
+        .eq(column, checkoutRequestId)
+        .order('received_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        this.logger.error(`M-Pesa tx lookup failed on ${column}: ${error.message}`);
+        return null;
+      }
+      if (data) return data as MpesaTxRow;
+    }
+    return null;
   }
 
   private async findPesapalTx(orderTrackingId: string): Promise<PesapalTxRow | null> {

@@ -217,7 +217,9 @@ export function Branches() {
     // `/branches/admin/all` includes inactive branches; the public list does not.
     api.admin.branches
       .listAll()
-      .then((rows) => setBranches(rows.map((r) => mapDbRowToBranch(r as unknown as Record<string, unknown>))))
+      .then((rows) =>
+        setBranches(rows.map((r) => mapDbRowToBranch(r as unknown as Record<string, unknown>))),
+      )
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

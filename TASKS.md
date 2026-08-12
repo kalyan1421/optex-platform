@@ -9,15 +9,24 @@ Status: `[ ]` open · `[~]` in progress · `[x]` done · `[!]` blocked
 
 ## Now — Sprint 1 (2026-08-11 → 08-22) · "Make it safe"
 
-Not catalogue work. These are the three payment defects that let a customer get free glasses, verified still open against `main` @ `f03d809`. Nothing below this section should start before they land.
+**All five P0 items landed 2026-08-12**, verified against the running stack.
 
-- [ ] **CI pipeline** — typecheck + build + API e2e on every PR · 2 pts · *nothing else is safe without it*
-- [ ] **Close the unguarded M-Pesa credit path** · 1 pt · `applyMpesaSuccess` skips amount verification entirely when `info.amount` is `undefined`; a forged callback with `ResultCode: 0` and no `CallbackMetadata`, against a real CheckoutRequestID, credits the order. Endpoint is `@Public()` + `@SkipThrottle()`
-- [ ] **PostgREST injection fix** · 1 pt · `payments.service.ts:958` interpolates `checkoutRequestId` into `.or()`; the DTO only enforces `@IsString() @IsNotEmpty()`
-- [ ] **Migration `0010`: revoke `place_order` + `increment_promo_uses` from `authenticated`** · 1 pt · `0009` is RLS lockdown only, no `REVOKE` exists
-- [ ] **Reject COD server-side** · 1 pt · client removed COD; `orders.service.ts:159` still queues COD orders for fulfilment
+- [x] **CI pipeline** · `.github/workflows/ci.yml` — two jobs. `static`: typecheck, build, prettier. `e2e`: brings up the Docker Supabase stack, migrates, runs the API suite
+- [x] **Close the unguarded M-Pesa credit path** (C-1) · a success callback with no usable amount is now refused and recorded as `amount_missing` instead of falling through to crediting the order
+- [x] **PostgREST injection fix** (C-2) · `checkoutRequestId` is charset-checked before any query, and both lookups moved from an interpolated `.or()` to parameterised `.eq()`
+- [x] **Migration `0010`** (C-3) · `place_order` and `increment_promo_uses` revoked from `public`, `anon` and `authenticated`; `service_role` keeps EXECUTE
+- [x] **Reject COD server-side** · removed from `CheckoutPaymentMethod` so `@IsEnum` rejects it, with a service-level backstop, and removed from the checkout UI. Admin COD views stay — historical orders must remain readable
+- [x] **Payment regression tests** · `apps/api/test/payments.e2e-spec.ts`, 6 cases covering all three defects plus the genuine-payment happy path
 
----
+Found and fixed along the way — **the repo's only test suite had never run**:
+
+- [x] `jest-e2e.json` pointed at `../tsconfig.json`, which resolved to a file that does not exist
+- [x] No test tsconfig, so `describe`/`it`/`expect` were untyped
+- [x] The spec asserted `/api/catalog/products` and `/api/catalog/categories`; the real routes are `/api/products` and `/api/categories`
+
+Still open from the original sprint:
+
+- [ ] **Smoke suite: shop → PDP → cart → checkout** · 3 pts · the browser-level suite. Still the hard prerequisite for Wave 4 / C3
 
 ## 1. Storefront — Catalogue & Discovery
 
