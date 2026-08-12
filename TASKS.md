@@ -98,7 +98,7 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 ## 2. Storefront — Cart & Checkout
 
 - [x] **Guest-cart merge at sign-in** · merges silently — asking "keep your items?" is a question with one sensible answer. Guest cart now persists in localStorage (it was in-memory only, so any full page load discarded it and made the merge pointless), carries over line by line at sign-in, and clears before the requests so a half-failed merge cannot double an order. Covered by `e2e/cart-merge.spec.ts`
-- [ ] **Cart empty state** · 1 pt · no design, no implementation. Sprint 2 P1
+- [x] **Cart empty state** · Sprint 2 P1. Replaces the two-column layout — which offered a promo box with nothing to discount, a KSH 0.00 summary and a checkout button leading nowhere — with one panel and two ways forward. `CartContext` now exposes `loading`, so it does not flash for a customer whose cart is still arriving
 - [ ] **M-Pesa "waiting for confirmation" state at checkout** · 2 pts · STK confirms asynchronously; the customer waits on their phone with no on-screen state
 - [ ] **Invoice / receipt download** · 2 pts · no PDF, no endpoint
 - [!] **Stock check at checkout** · 2 pts · blocked on client H1

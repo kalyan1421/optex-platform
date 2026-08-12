@@ -65,6 +65,11 @@ export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([]);
   const [cartId, setCartId] = useState(null);
   const [error, setError] = useState('');
+  // Starts true. Both carts arrive asynchronously — the guest cart from
+  // localStorage after mount, the account cart from the API — so `items` is
+  // briefly `[]` for a customer who has one. Without this, any consumer that
+  // renders an empty state shows it to everyone on first paint.
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   /** Apply a `Cart` response — every mutation returns the full, current cart. */
@@ -101,6 +106,7 @@ export const CartProvider = ({ children }) => {
     if (user) return; // an authenticated cart comes from the server instead
     const stored = readGuestCart();
     if (stored.length > 0) setItems(stored);
+    setLoading(false);
   }, [user]);
 
   // Persist every guest-cart change. Skipped while signed in: that cart is the
@@ -180,6 +186,8 @@ export const CartProvider = ({ children }) => {
         if (!cancelled) applyCart(cart);
       } catch (err) {
         if (!cancelled) console.error('Cart load error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -265,7 +273,7 @@ export const CartProvider = ({ children }) => {
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, updateQuantity, removeItem, cartCount, cartId, error }}
+      value={{ items, addToCart, updateQuantity, removeItem, cartCount, cartId, error, loading }}
     >
       {children}
       {/*

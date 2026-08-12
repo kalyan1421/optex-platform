@@ -79,6 +79,7 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | VAT calculation | ✅ | `orders.vat_kes` |
 | Money formatting | ✅ | `formatKes` / `formatKesNumber`, both NaN/null-safe, both grouped |
 | Order confirmation page | ✅ | `app/order-confirmation/[orderId]` |
+| Cart empty state | ✅ | Single panel with Browse / Book-an-eye-test. Gated on `CartContext.loading` so it does not flash while a cart loads |
 | Guest cart → account merge | ✅ | Guest cart persists in `localStorage` and merges into the server cart at sign-in. Storage clears before the requests, so a half-failed merge cannot double an order. Covered by `e2e/cart-merge.spec.ts` |
 | **Guest checkout** | 🟡 | `orders.customer_id` NOT NULL since `0006`; cart endpoints require auth |
 | **Pickup-station delivery** | ❌ | Checkout collects a street address. No station model |
@@ -238,7 +239,7 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 | Area | ✅ Done | 🟡 Partial | ❌ Absent |
 | --- | --- | --- | --- |
 | Catalogue & discovery | 15 | 0 | 3 |
-| Cart & checkout | 10 | 1 | 3 |
+| Cart & checkout | 11 | 1 | 3 |
 | Account & orders | 8 | 0 | 5 |
 | Appointments & branches | 7 | 0 | 5 |
 | Content & trust | 3 | 1 | 2 |
@@ -248,7 +249,7 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 | Integrations | 7 | 0 | 4 |
 | SEO | 2 | 2 | 6 |
 | Engineering | 6 | 1 | 4 |
-| **Total** | **72** | **10** | **35** |
+| **Total** | **73** | **10** | **35** |
 
 Of the 41 absent items, **~20 are CR-01 or Phase 2/3** (RBAC, audit log, 2FA, inventory ledger, doctor module, branch P&L, product analytics, Flutter, VTO) — correctly out of scope.
 

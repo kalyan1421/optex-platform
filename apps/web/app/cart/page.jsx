@@ -49,7 +49,7 @@ const ArrowRotateIcon = () => (
 );
 
 const Cart = () => {
-  const { items, updateQuantity, removeItem } = useCart();
+  const { items, updateQuantity, removeItem, loading } = useCart();
   const [promoInput, setPromoInput] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoApplied, setPromoApplied] = useState('');
@@ -110,6 +110,84 @@ const Cart = () => {
     }
   }
 
+  // An empty cart got the full two-column layout: a promo-code box with
+  // nothing to discount, an order summary of KSH 0.00, and a "Proceed to
+  // Checkout" button that led to a checkout with nothing in it. Give it a
+  // single panel and one obvious way forward instead.
+  //
+  // Gated on `loading` because both carts arrive asynchronously — the guest
+  // cart from localStorage after mount, the account cart from the API — so
+  // `items` is briefly empty for a customer who has one.
+  if (!loading && items.length === 0) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="mx-auto w-full max-w-[1440px] px-6 pb-[100px] pt-[20px] lg:px-[100px]">
+          <h1
+            className="m-0 mb-[27px] text-[#141776]"
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontSize: '36px',
+              lineHeight: '46.8px',
+              fontWeight: 700,
+            }}
+          >
+            Shopping Cart
+          </h1>
+
+          <div className="mx-auto flex max-w-[736px] flex-col items-center rounded-[36px] border-[1.13px] border-[rgba(199,197,212,0.3)] bg-white px-6 py-[72px] text-center">
+            <div className="mb-[24px] flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#F3F3F6]">
+              <svg
+                className="h-[40px] w-[40px] text-[#141776]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 0a2 2 0 100 4 2 2 0 000-4z"
+                />
+              </svg>
+            </div>
+
+            <h2
+              className="m-0 mb-[9px] text-[#141776]"
+              style={{ fontFamily: 'Poppins, sans-serif', fontSize: '27px', fontWeight: 700 }}
+            >
+              Your cart is empty
+            </h2>
+            <p
+              className="m-0 mb-[32px] max-w-[420px] text-[#464652]"
+              style={{ fontFamily: 'Manrope, sans-serif', fontSize: '18px', lineHeight: '27px' }}
+            >
+              Nothing here yet. Browse the collection, or book an eye test and let an optometrist
+              help you choose.
+            </p>
+
+            <div className="flex flex-col items-center gap-[16px] sm:flex-row">
+              <Link
+                href="/shop"
+                className="flex h-[54px] items-center justify-center rounded-[26843500px] bg-[#141776] px-[36px] text-white transition-colors hover:bg-[#2A3182]"
+                style={{ fontFamily: 'Manrope, sans-serif', fontSize: '16px', fontWeight: 700 }}
+              >
+                Browse the collection
+              </Link>
+              <Link
+                href="/appointments"
+                className="flex h-[54px] items-center justify-center rounded-[26843500px] border-[1.13px] border-[#C7C5D4] px-[36px] text-[#141776] transition-colors hover:bg-[#F3F3F6]"
+                style={{ fontFamily: 'Manrope, sans-serif', fontSize: '16px', fontWeight: 700 }}
+              >
+                Book an eye test
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[1440px] px-[100px] pb-[100px] pt-[20px]">
@@ -138,7 +216,7 @@ const Cart = () => {
                   fontWeight: 400,
                 }}
               >
-                You have {items.length} items in your bag.
+                You have {items.length} {items.length === 1 ? 'item' : 'items'} in your bag.
               </p>
             </div>
 
