@@ -1,6 +1,6 @@
 # OPTEX — Feature Status (derived from the codebase)
 
-**Date:** 2026-08-11 · **Commit:** `main` @ `e8cfcec`
+**Date:** 2026-08-13 · **Commit:** `main` @ `65387d3`
 
 Every entry below was determined by reading the code, not from any tracker or checklist. Status means:
 
@@ -24,16 +24,16 @@ The migration sequence is defined in [API-MIGRATION-PLAN.md §3](API-MIGRATION-P
 | **1** — Kill all 17 writes | Every browser-side Supabase write → API | ✅ **Done** (`f74b009`, verified `34bf15f`) |
 | **2** — Admin reads | All 12 admin pages read via API | ✅ **Done** (`2c1fb07`) |
 | **3** — Web account & cart reads | Profile, orders, tracking, cart promo | ⬜ **Not started** |
-| **4** — Web catalogue reads + render mode | Shop/PDP/category server-rendered — this is [SPEC-03](specs/SPEC-03-storefront-seo-render.md), the contracted SEO deliverable | ⬜ **Not started.** The big one |
+| **4** — Web catalogue reads + render mode | Shop/PDP/category server-rendered — [SPEC-03](specs/SPEC-03-storefront-seo-render.md), the contracted SEO deliverable | 🟡 **Started.** G-7 (SSR api-client) and `/shop` done — `/shop` is now `○ (Static)` with products in the initial HTML. PDP, sitemap, robots and JSON-LD remain |
 | **5** — Lock the door | Delete read helpers so the old path cannot return | ⬜ **Not started** |
 
 **Verified counts on the merged tree** (excluding `.next` build output and `Array.from` false positives):
 
 - Direct Supabase **writes** in `apps/web` + `apps/admin`: **0** — Wave 1 holds after the merge
 - Direct Supabase **reads** in `apps/admin`: **0** — Wave 2 holds
-- Direct Supabase **reads** in `apps/web`: **13**, across 7 files — this is exactly the Wave 3 + Wave 4 backlog:
+- Direct Supabase **reads** in `apps/web`: **13**, across 7 files — the Wave 3 + Wave 4 backlog. `/shop` left this list when it moved to the server:
 
-  `category/[slug]` ×2 · `product/[slug]` ×4 · `order-confirmation/[orderId]` ×2 · `profile` ×2 · `branch-locator` ×1 · `cart` ×1 · `orders/[id]/tracking` ×1
+  `product/[slug]` ×4 · `category/[slug]` ×2 · `order-confirmation/[orderId]` ×2 · `profile` ×2 · `branch-locator` ×1 · `cart` ×1 · `orders/[id]/tracking` ×1
 
 The merge was the risk point here — `feature-changes` was built on the pre-Wave-1 tree, so taking its version of the storefront could have silently reintroduced direct writes. It did not: the one file that mattered, the PDP review form, was hand-merged back onto `api.reviews.create`.
 
@@ -55,9 +55,9 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | Filter — gender | ✅ | `f03d809`. Self-hides below 2 distinct values — every seeded product is `unisex`, so it correctly does not render today |
 | Filter — frame material | ✅ | `f03d809`. Values grouped case-insensitively; the seed carries both `Metal` and `metal` |
 | Sort | ✅ | Featured / price ↑↓ / name, `f03d809` |
-| **Pagination** | ❌ | `listProducts` caps at `limit: 100` with no paging UI |
-| **Empty state** | ❌ | No "no products match" treatment — now reachable, since filters can exclude everything |
-| **Search autocomplete** | ❌ | No debounce, suggest or typeahead code |
+| Pagination | ✅ | 12/page, numbered + Prev/Next, resets on filter change |
+| Empty state | ✅ | Two copy branches — empty catalogue vs zero-result filter — with a Clear-all action |
+| Search autocomplete | ✅ | 250ms debounce, keyboard nav, request-id guard against out-of-order responses |
 | **Wishlist / favourites** | ❌ | No table, no endpoint, no UI |
 | **Product comparison** | ❌ | |
 | **Lens / coating configurator** | ❌ | No price model. PDP emits a fixed `Lens: Standard` string into the cart variant |
@@ -79,7 +79,7 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | VAT calculation | ✅ | `orders.vat_kes` |
 | Money formatting | ✅ | `formatKes` / `formatKesNumber`, both NaN/null-safe, both grouped |
 | Order confirmation page | ✅ | `app/order-confirmation/[orderId]` |
-| **Guest cart → account merge** | ❌ | Sign-in **replaces** local state with the server cart, so a guest who fills a cart then logs in to check out loses it. Documented in `CartContext`; unbuilt |
+| Guest cart → account merge | ✅ | Guest cart persists in `localStorage` and merges into the server cart at sign-in. Storage clears before the requests, so a half-failed merge cannot double an order. Covered by `e2e/cart-merge.spec.ts` |
 | **Guest checkout** | 🟡 | `orders.customer_id` NOT NULL since `0006`; cart endpoints require auth |
 | **Pickup-station delivery** | ❌ | Checkout collects a street address. No station model |
 | **Shipping-rule engine** | ❌ | No threshold, no geo-scoping; `shipping_kes` is set but never computed |
@@ -108,7 +108,7 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | Feature | Status | Evidence |
 | --- | --- | --- |
 | Slot availability lookup | ✅ | `GET /api/appointments/slots` |
-| Booking (incl. guest) | ✅ | `contact_name`/`contact_phone` support guests |
+| Booking | ✅ | **Account required** — `POST /appointments` returns 401 anonymously, `/appointments` redirects on mount, and `customer_id` is NOT NULL since `0011`. `contact_name`/`contact_phone` remain for booking on behalf of a family member |
 | Cancel / reschedule | ✅ | `PATCH /api/appointments/:id/{cancel,reschedule}` |
 | Slot validation | ✅ | `assertSlotBookable()` — branch hours, grid alignment, double-book guard |
 | Confirmation SMS | ✅ | `sms.service.ts`, best-effort, never rolls back a booking |
@@ -188,11 +188,11 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 
 > Payments, SMS and email are **read from the code, not observed**. They need real Daraja / Pesapal / Africa's Talking credentials to exercise, so their ✅ means "wired end to end", not "seen working".
 
-## 10. Database — 16 tables, 9 migrations
+## 10. Database — 16 tables, 11 migrations
 
 `branches · categories · products · inventory · customers · orders · order_items · carts · cart_items · appointments · prescriptions · product_reviews · promo_codes · promo_banners · mpesa_transactions · pesapal_transactions`
 
-All ✅ with RLS. `0001`–`0009`. `products.try_on_image_url` already exists for Phase 3.
+All ✅ with RLS. `0001`–`0011`. `products.try_on_image_url` already exists for Phase 3.
 
 `0009_rls_write_lockdown` closed the direct-write bypass: customer-writable policies dropped on `appointments` and `product_reviews`, `carts`/`cart_items` downgraded to SELECT-only. The `is_super_admin()`-gated admin policies remain as break-glass.
 
@@ -237,8 +237,8 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 
 | Area | ✅ Done | 🟡 Partial | ❌ Absent |
 | --- | --- | --- | --- |
-| Catalogue & discovery | 12 | 0 | 6 |
-| Cart & checkout | 9 | 1 | 4 |
+| Catalogue & discovery | 15 | 0 | 3 |
+| Cart & checkout | 10 | 1 | 3 |
 | Account & orders | 8 | 0 | 5 |
 | Appointments & branches | 7 | 0 | 5 |
 | Content & trust | 3 | 1 | 2 |
@@ -248,7 +248,7 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 | Integrations | 7 | 0 | 4 |
 | SEO | 2 | 2 | 6 |
 | Engineering | 6 | 1 | 4 |
-| **Total** | **68** | **10** | **39** |
+| **Total** | **72** | **10** | **35** |
 
 Of the 41 absent items, **~20 are CR-01 or Phase 2/3** (RBAC, audit log, 2FA, inventory ledger, doctor module, branch P&L, product analytics, Flutter, VTO) — correctly out of scope.
 

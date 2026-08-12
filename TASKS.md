@@ -116,6 +116,7 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 
 ## 4. Storefront — Appointments & Branches
 
+- [x] **Account required to book** · Sprint 2 #2/#3. `/appointments` redirects on mount (it used to bounce the customer only on submit, after they had picked a branch, date, slot and filled in details), and migration `0011` makes `customer_id` NOT NULL so the schema agrees with the API
 - [ ] **Design `/appointments`** · 0 pts (design) · **P0 of the design backlog** — contracted, fully built, never designed
 - [ ] **Branch coordinates + locator map** · 2 pts · `branches.lat`/`lng` exist; **zero of 27 branches have them**. Geocoding is a data task before it is a UI one
 - [!] **Configurable slot duration / capacity / breaks** · blocked on client A5–A6 ([SPEC-04](docs/specs/SPEC-04-appointment-scheduling.md) Phase 2) · `SLOT_MINUTES = 30` is hardcoded and capacity is hardwired to 1

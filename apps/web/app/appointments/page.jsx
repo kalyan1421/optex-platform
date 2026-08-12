@@ -288,6 +288,21 @@ export default function Page() {
       .finally(() => setBranchLoading(false));
   }, []);
 
+  // Bookings require an account — `POST /appointments` rejects an anonymous
+  // caller with a 401. Send the customer to sign in on arrival rather than
+  // after they have picked a branch, a date, a slot and filled in their
+  // details, which is what the submit-time check used to do. Matches
+  // /checkout, which has always redirected on mount.
+  //
+  // Guarded on `authLoading`: `user` is undefined while the session resolves,
+  // and redirecting then would bounce signed-in customers too (the H-3 fix on
+  // checkout was exactly this bug).
+  useEffect(() => {
+    if (!authLoading && user === null) {
+      router.replace(`/login?redirect=${encodeURIComponent('/appointments')}`);
+    }
+  }, [authLoading, user, router]);
+
   // Pre-fill contact details from the caller's own profile (best-effort).
   useEffect(() => {
     if (!user) return;
@@ -351,9 +366,10 @@ export default function Page() {
     e.preventDefault();
     if (!selectedBranch) return;
 
-    // An account is required to book (client decision B4). The API enforces
-    // this; we check here only so the customer is redirected rather than
-    // shown a 401 after filling in the whole form.
+    // An account is required to book (client decision B4). The mount-time
+    // effect above is the real gate; this remains as a backstop for the
+    // session expiring while the form is open, which would otherwise surface
+    // as a raw 401 on submit.
     if (!user) {
       router.push(`/login?redirect=${encodeURIComponent('/appointments')}`);
       return;
