@@ -4,7 +4,7 @@
 # Brings up:
 #   • Supabase (postgres, auth, rest, storage, meta, kong gateway, studio)
 #   • supabase-migrate   — one-shot idempotent migration runner
-#   • api                — NestJS backend on :4000
+#   • api                — NestJS backend on :1111
 #
 # Usage:
 #   docker compose up --build          # first run (builds api image)
@@ -282,16 +282,25 @@ services:
       supabase-migrate:
         condition: service_completed_successfully
     env_file:
-      - apps/api/.env
+      # Optional: the compose defaults below are enough to boot, and CI has no
+      # apps/api/.env. A missing file used to abort `docker compose up api`.
+      - path: apps/api/.env
+        required: false
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      PORT: "4000"
+      # 1111, matching `pnpm dev:api` and CLAUDE.md. This service was still on
+      # 4000 — one of the stale ports c068fa9 set out to remove — which meant
+      # the containerised API answered somewhere nothing was configured to look.
+      PORT: "1111"
       SUPABASE_URL: http://supabase-kong:8000
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
     ports:
-      - "4000:4000"
+      - "1111:1111"
     init: true
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:1111/api/health"]
       interval: 30s
       timeout: 5s
       start_period: 20s

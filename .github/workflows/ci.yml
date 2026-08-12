@@ -117,9 +117,26 @@ jobs:
       - name: Apply migrations and seed
         run: docker compose run --rm supabase-migrate
 
+      # /shop is a Server Component now: it fetches the catalogue through the
+      # API at build and revalidation time, so the API has to be up before the
+      # build runs. Before Wave 4 the page read Supabase from the browser and
+      # this job never needed it.
+      - name: Start the API
+        run: docker compose up -d --build api
+
+      - name: Wait for the API
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:1111/api/health >/dev/null 2>&1; then
+              echo "API healthy after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not become healthy"; docker compose logs api --tail 80; exit 1
+
       # The suite walks shop → PDP → cart → checkout against a production
       # build (Playwright's webServer runs `pnpm build && pnpm start`), which
-      # is the render mode Wave 4 is about to change.
+      # is the render mode Wave 4 changed.
       - name: Run storefront smoke suite
         run: pnpm --filter @optex/web test:e2e
 
