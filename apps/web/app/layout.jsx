@@ -5,6 +5,12 @@ import AosInit from '@/components/AosInit';
 import MainLayout from '@/components/layout/MainLayout';
 
 export const metadata = {
+  // Without metadataBase, per-page `alternates.canonical` and OpenGraph URLs
+  // render relative ("/shop"), which search engines cannot resolve — a
+  // relative canonical is treated as no canonical at all. Set from
+  // NEXT_PUBLIC_SITE_URL so preview deployments point at themselves rather
+  // than at production.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://optexopticians.co.ke'),
   title: 'Optex Opticians',
   description: 'Premium eyewear in Kenya — frames, lenses, sunglasses, and eye care.',
 };

@@ -67,8 +67,10 @@ The full plan for FEATURE-STATUS §1. Sequenced so each phase leaves the storefr
 This is [SPEC-03](docs/specs/SPEC-03-storefront-seo-render.md) and the single largest contracted gap. All four catalogue pages are involved. **Hard prerequisite: the smoke suite** — cut from Sprint 1, still owed.
 
 - [x] **Smoke suite: shop → PDP → cart → checkout** · done, the C3 gate is open
-- [ ] **G-7: SSR-capable api-client** · 2 pts · `web/lib/api.js` is `'use client'`, so Server Components cannot use it. Build early — everything else in C3 depends on it, and nothing else does
-- [ ] **Convert `/shop` to a Server Component** · 3 pts
+- [x] **G-7: SSR-capable api-client** · `apps/web/lib/api-server.js`. Two factories: `publicApi()` (no cookies, cacheable — what the catalogue wants) and `sessionApi()` (cookies, dynamic). The split is explicit because picking the wrong one silently costs the caching Wave 4 exists to gain
+- [x] **Convert `/shop` to a Server Component** · now `○ (Static)` prerendered. Products, prices and links are in the raw HTML; a crawler previously saw an empty grid. Interactive half split into `components/shop/ShopBrowser.jsx`
+- [x] **`metadataBase` on the root layout** · not in the original plan. Without it every `alternates.canonical` rendered relative (`/shop`), and a relative canonical is treated as no canonical at all
+- [ ] **Server-side faceting for `/shop`** · 2 pts · the page still fetches `limit: 100` and facets in the browser, because the counts beside each facet span the whole set. The API already accepts category/brand/shape/gender/material/price/sort — move it once the real catalogue lands
 - [ ] **Convert `/product/[slug]` to a Server Component** · 3 pts · also moves the `Product`/`Offer` JSON-LD out of post-hydration
 - [ ] **`generateMetadata` for product + category** · 1 pt · currently exists in `category/[slug]` only; no per-product `<title>` or OG tags
 - [ ] **`sitemap.xml` + `robots.txt`** · 1 pt · neither exists
