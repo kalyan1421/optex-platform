@@ -104,6 +104,7 @@ import type {
   ValidatePromoInput,
   AdminCancellationRequest,
   CancellationStatus,
+  PaymentsNeedingAttention,
 } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -518,6 +519,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         ),
     },
     payments: {
+      needingAttention: () => request<PaymentsNeedingAttention>('/admin/payments/attention'),
       list: (query) =>
         request<PaginatedPayments<AdminPayment>>('/admin/payments', {
           query: query as QueryParams,
@@ -846,6 +848,8 @@ export interface AdminApi {
     decline: (id: string, reason?: string) => Promise<{ id: string; status: string }>;
   };
   payments: {
+    /** `GET /admin/payments/attention` — paid-and-cancelled orders, and reversals. */
+    needingAttention: () => Promise<PaymentsNeedingAttention>;
     /** `GET /admin/payments` */
     list: (query?: AdminListPaymentsQuery) => Promise<PaginatedPayments<AdminPayment>>;
     /** `POST /admin/payments/:id/reconcile` */

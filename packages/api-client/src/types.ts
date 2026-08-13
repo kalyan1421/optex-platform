@@ -1149,3 +1149,25 @@ export interface CancellationStatus {
     decided_at: string | null;
   } | null;
 }
+
+/** Money the system deliberately does not act on — SPEC-06 R5 and R7. */
+export interface PaymentsNeedingAttention {
+  /** Paid, then cancelled. No automatic refund: someone must decide. */
+  paidAndCancelled: {
+    orderId: string;
+    orderNumber: string;
+    totalKes: number;
+    paymentMethod: string | null;
+    updatedAt: string | null;
+  }[];
+  /** Provider-reversed transactions. Recorded, never acted on automatically. */
+  reversed: {
+    id: string;
+    provider: 'mpesa' | 'pesapal';
+    reference: string | null;
+    amountKes: number | null;
+    orderId: string | null;
+    orderNumber: string | null;
+    receivedAt: string;
+  }[];
+}

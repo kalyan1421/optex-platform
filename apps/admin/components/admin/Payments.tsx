@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Skeleton } from '../ui/skeleton';
 import { api } from '@/lib/api';
+import type { PaymentsNeedingAttention } from '@optex/api-client';
 
 // ── Types derived from the real DB schema ───────────────────────────────────
 
@@ -99,6 +100,9 @@ export function Payments() {
   const [mpesa, setMpesa] = useState<MpesaRow[]>([]);
   const [pesapal, setPesapal] = useState<PesapalRow[]>([]);
   const [cod, setCod] = useState<CodOrder[]>([]);
+  // SPEC-06 R5 + R7 — money the system deliberately does not act on.
+  const [attention, setAttention] = useState<PaymentsNeedingAttention | null>(null);
+  const [tab, setTab] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,11 +121,13 @@ export function Payments() {
       // All data now flows through the NestJS API (system of record): the
       // unified payment ledger for M-Pesa/Pesapal, and the admin orders list
       // filtered to COD for the cash-on-delivery tab.
-      const [mpesaRes, pesapalRes, codRes] = await Promise.all([
+      const [mpesaRes, pesapalRes, codRes, attentionRes] = await Promise.all([
         api.admin.payments.list({ provider: 'mpesa', pageSize: 50 }),
         api.admin.payments.list({ provider: 'pesapal', pageSize: 50 }),
         api.admin.orders.list({ paymentMethod: 'cod', pageSize: 50 }),
+        api.admin.payments.needingAttention(),
       ]);
+      setAttention(attentionRes);
 
       setMpesa(
         mpesaRes.items.map((p) => ({
@@ -227,6 +233,18 @@ export function Payments() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  // Both groups are "someone has to look at this", so they share one count and
+  // one tab — an admin should not have to know which of two lists a stranded
+  // payment landed in.
+  const attentionCount =
+    (attention?.paidAndCancelled.length ?? 0) + (attention?.reversed.length ?? 0);
+
+  // `defaultValue` is read once, on the first render — when `attention` is
+  // still null and the count is 0 — so the tab that exists to be noticed was
+  // never the one shown. Controlled instead: fall back to the attention tab
+  // while the admin has not picked one, and respect their choice after that.
+  const activeTab = tab ?? (attentionCount > 0 ? 'attention' : 'mpesa');
+
   return (
     <div className="space-y-6">
       <div>
@@ -296,8 +314,16 @@ export function Payments() {
         </Card>
       </div>
 
-      <Tabs defaultValue="mpesa">
+      <Tabs value={activeTab} onValueChange={setTab}>
         <TabsList>
+          <TabsTrigger value="attention">
+            Needs attention
+            {attentionCount > 0 && (
+              <span className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                {attentionCount}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="mpesa">
             M-Pesa Log
             {unmatchedMpesa.length > 0 && (
@@ -309,6 +335,75 @@ export function Payments() {
           <TabsTrigger value="pesapal">Pesapal</TabsTrigger>
           <TabsTrigger value="cod">COD Tracking</TabsTrigger>
         </TabsList>
+
+        {/* ── Needs attention (SPEC-06 R5 + R7) ── */}
+        <TabsContent value="attention" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Paid, then cancelled</CardTitle>
+              <CardDescription>
+                The customer paid and the order was cancelled. Optex policy is no automatic refunds,
+                so nothing has been returned and nothing will be — decide what happens to this
+                money.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!attention || attention.paidAndCancelled.length === 0 ? (
+                <p className="text-muted-foreground py-6 text-center text-sm">
+                  No paid orders have been cancelled.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {attention.paidAndCancelled.map((o) => (
+                    <div
+                      key={o.orderId}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium">{o.orderNumber}</span>
+                      <span className="text-muted-foreground capitalize">
+                        {o.paymentMethod ?? '—'}
+                      </span>
+                      <span className="font-semibold">{fmtKes(Number(o.totalKes))}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Reversed by the provider</CardTitle>
+              <CardDescription>
+                The provider reversed these. The system records the reversal and takes no action —
+                reconcile them by hand.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!attention || attention.reversed.length === 0 ? (
+                <p className="text-muted-foreground py-6 text-center text-sm">
+                  No reversed transactions.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {attention.reversed.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm"
+                    >
+                      <span className="font-mono text-xs">{t.reference ?? t.id.slice(0, 8)}</span>
+                      <span className="uppercase">{t.provider}</span>
+                      <span>{t.orderNumber ?? 'unlinked'}</span>
+                      <span className="font-semibold">
+                        {t.amountKes != null ? fmtKes(Number(t.amountKes)) : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* ── M-Pesa tab ── */}
         <TabsContent value="mpesa" className="mt-6 space-y-4">

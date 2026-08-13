@@ -50,4 +50,12 @@ export class PaymentsAdminController {
   ): Promise<ReconcileResult> {
     return this.payments.adminLinkPayment(id, dto.provider, dto.orderNumber);
   }
+  @Get('attention')
+  @ApiOperation({
+    summary: 'Payments needing manual handling — paid-and-cancelled orders, and reversals',
+  })
+  @ApiOkResponse({ description: 'Two groups; read-only, no action is taken' })
+  needingAttention() {
+    return this.payments.adminPaymentsNeedingAttention();
+  }
 }

@@ -1058,4 +1058,108 @@ export class PaymentsService {
       TransactionDate: out.TransactionDate as string | undefined,
     };
   }
+  /**
+   * Money that needs a human — SPEC-06 R5 and R7.
+   *
+   * Two situations the system deliberately does not act on, and so would
+   * otherwise sit invisible:
+   *
+   *   paidAndCancelled  the customer paid and the order was then cancelled.
+   *                     Client policy is "no refunds", so nothing is refunded
+   *                     automatically and nothing ever calls a provider — but
+   *                     somebody has to decide what happens to that money, and
+   *                     they can only decide if they can see it (R5).
+   *
+   *   reversed          the provider reversed a transaction. The system already
+   *                     records the status and then does nothing with it (H5:
+   *                     the admin handles reversals manually), which means
+   *                     today it is recorded and forgotten (R7).
+   *
+   * Read-only by design. Surfacing is the whole feature; no automated action is
+   * taken on either group.
+   */
+  async adminPaymentsNeedingAttention(): Promise<{
+    paidAndCancelled: {
+      orderId: string;
+      orderNumber: string;
+      totalKes: number;
+      paymentMethod: string | null;
+      updatedAt: string | null;
+    }[];
+    reversed: {
+      id: string;
+      provider: 'mpesa' | 'pesapal';
+      reference: string | null;
+      amountKes: number | null;
+      orderId: string | null;
+      orderNumber: string | null;
+      receivedAt: string;
+    }[];
+  }> {
+    const unwrap = <T>(embed: T | T[] | null): T | null =>
+      Array.isArray(embed) ? (embed[0] ?? null) : embed;
+
+    const { data: cancelledPaid, error: ordersError } = await this.db
+      .from('orders')
+      .select('id, order_number, total_kes, payment_method, updated_at')
+      .eq('payment_status', 'paid')
+      .eq('status', 'cancelled')
+      .order('updated_at', { ascending: false })
+      .limit(200);
+    if (ordersError) {
+      this.logger.error(`Could not load paid+cancelled orders: ${ordersError.message}`);
+      throw new InternalServerErrorException('Could not load payments needing attention.');
+    }
+
+    const [mpesa, pesapal] = await Promise.all([
+      this.db
+        .from('mpesa_transactions')
+        .select(
+          'id, mpesa_ref, amount_kes, order_id, received_at, order:orders!order_id(order_number)',
+        )
+        .eq('status', TX_STATUS.REVERSED)
+        .order('received_at', { ascending: false })
+        .limit(200),
+      this.db
+        .from('pesapal_transactions')
+        .select(
+          'id, pesapal_order_id, amount_kes, order_id, received_at, order:orders!order_id(order_number)',
+        )
+        .eq('status', TX_STATUS.REVERSED)
+        .order('received_at', { ascending: false })
+        .limit(200),
+    ]);
+
+    const reversed = [
+      ...((mpesa.data ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
+        id: r.id as string,
+        provider: 'mpesa' as const,
+        reference: (r.mpesa_ref as string) ?? null,
+        amountKes: (r.amount_kes as number) ?? null,
+        orderId: (r.order_id as string) ?? null,
+        orderNumber: unwrap(r.order as { order_number: string } | null)?.order_number ?? null,
+        receivedAt: r.received_at as string,
+      })),
+      ...((pesapal.data ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
+        id: r.id as string,
+        provider: 'pesapal' as const,
+        reference: (r.pesapal_order_id as string) ?? null,
+        amountKes: (r.amount_kes as number) ?? null,
+        orderId: (r.order_id as string) ?? null,
+        orderNumber: unwrap(r.order as { order_number: string } | null)?.order_number ?? null,
+        receivedAt: r.received_at as string,
+      })),
+    ].sort((a, b) => (a.receivedAt < b.receivedAt ? 1 : -1));
+
+    return {
+      paidAndCancelled: (cancelledPaid ?? []).map((o) => ({
+        orderId: o.id as string,
+        orderNumber: o.order_number as string,
+        totalKes: o.total_kes as number,
+        paymentMethod: (o.payment_method as string) ?? null,
+        updatedAt: (o.updated_at as string) ?? null,
+      })),
+      reversed,
+    };
+  }
 }

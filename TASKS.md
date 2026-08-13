@@ -111,13 +111,13 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 - [ ] **Verified-purchase check on reviews** · 2 pts · enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Needs a product decision: gate reviews, or drop the claim
 - [~] **Customer-initiated order cancel** · **re-estimated 2 pts → ~7**. It is not a status flip: CLIENT-ANSWERS B5 and [SPEC-06](docs/specs/SPEC-06-order-lifecycle.md) specify a request/approval workflow with admin-set thresholds, notifications and a paid-order acknowledgement.
   - [x] **R2 eligibility, server-side** · `CancellationService` + `app_settings` (first slice of SPEC-05). 24h window and not-after-dispatch cut-off, both configurable, with documented defaults that never fall back to zero
-  - [x] **R1 customer request** · `GET`/`POST /api/orders/:id/cancellation`. Reason optional, one pending request per order enforced by a partial unique index, response says *received* not *approved*
+  - [x] **R1 customer request** · `GET`/`POST /api/orders/:id/cancellation`. Reason optional, one pending request per order enforced by a partial unique index, response says _received_ not _approved_
   - [x] **R6 guest appointment path closed** · shipped as Sprint 2 #2/#3
   - [x] **R3 admin approval workflow** · `/cancellations` admin screen with a live pending badge in the nav. Each row carries what the decision depends on — payment status, fulfilment stage, reason, time waiting — and flags an order that moved on while the request sat pending. Approve cancels the order; decline records a customer-facing reason and changes nothing. Every decision stores `decided_by` and `decided_at`
   - [ ] **R3 remainder: direct admin cancel without a request** · the phone-call path
-  - [x] **R4 outcome notifications** · email + SMS on both outcomes, sent *after* the decision commits and wrapped so a failure cannot reverse it. The decline message carries the admin's reason — a decline without one is the phone call this feature replaces. Covered by a test that forces both channels to throw and asserts the approval still stands
-  - [~] **R5 paid-order acknowledgement** · the API refuses to approve a paid order without `acknowledgePaid`, and the admin screen makes it a dialog rather than a second click. Still to do: the flag on the admin Payments screen
-  - [ ] **R7 reversed payments surfaced** · `reversed` is recorded and then ignored
+  - [x] **R4 outcome notifications** · email + SMS on both outcomes, sent _after_ the decision commits and wrapped so a failure cannot reverse it. The decline message carries the admin's reason — a decline without one is the phone call this feature replaces. Covered by a test that forces both channels to throw and asserts the approval still stands
+  - [x] **R5 paid-order acknowledgement** · the API refuses to approve a paid order without `acknowledgePaid`, and the admin screen makes it a dialog rather than a second click. Money already taken on a now-cancelled order is also listed on the Payments screen, so it survives the click that dismissed the dialog
+  - [x] **R7 reversed payments surfaced** · a **Needs attention** tab on `/payments` carries both groups — paid-then-cancelled orders and provider-reversed transactions — and opens by default whenever either is non-empty, since a tab that exists to be noticed is worthless if you have to go looking for it. Neither group is actioned automatically: policy is that Optex never initiates a refund, so the screen names the money and leaves the decision to a person
   - [x] **Customer UI on order history and tracking** · `components/orders/CancelOrder.jsx`, four states from one API call: requestable, pending, decided, ineligible-with-reason. Renders whatever the server says and decides nothing
   - [x] **Two page-breaking bugs found while wiring it** · `/profile` order history filtered `customer_id` by the **auth user id**, so it had never shown an order to anyone; the tracking page selected `orders.shipping_address`, a column that does not exist, so it returned "Order not found" for **every** order
 - [ ] **Saved addresses** · 2 pts · `shipping_address` is per order, not per customer
@@ -139,7 +139,7 @@ Launch blockers from [NEXT-PLAN M2](docs/NEXT-PLAN.md) — these are not gaps, t
 - [ ] **Rewrite the delivery policy** · 1 pt · 196 lines contradicting the confirmed model
 - [ ] **Delete the invented testimonials** · 0.5 pt · "Sarah Johnson", "Michael Chen", "Emily Rodriguez" on a Kenyan storefront (`Testimonials.jsx:7`). Hide the section until real ones exist
 - [ ] **Hide the VirtualTryOn section** · 0.5 pt · 41 lines advertising "smart camera technology". VTO is Phase 3 by contract — it must ship hidden
-- [ ] **De-duplicate the contact backend** · 1 pt · `web/app/api/contact/route.ts` *and* Nest `POST /api/contact` — two Resend integrations for one form
+- [ ] **De-duplicate the contact backend** · 1 pt · `web/app/api/contact/route.ts` _and_ Nest `POST /api/contact` — two Resend integrations for one form
 - [ ] **FAQ page** · 2 pts · exists only as a footer link
 
 ## 6. Admin panel
