@@ -89,7 +89,7 @@ This is [SPEC-03](docs/specs/SPEC-03-storefront-seo-render.md) and the single la
 
 Real gaps, but nothing downstream waits on them. Implementations for the first two exist on `archive/venky-optex`.
 
-- [ ] Wishlist / favourites · needs design + `wishlists` table + endpoints
+- [ ] Wishlist / favourites · specced: [SPEC-10](docs/specs/SPEC-10-wishlist.md). Prior art on `archive/venky-optex` (not directly reusable — direct browser writes, predates the API migration), P0 estimate 2-3 days
 - [ ] Product comparison · needs design
 - [ ] FAQ page · exists only as a footer link in the design
 
@@ -108,7 +108,7 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
 
 ## 3. Storefront — Account & Orders
 
-- [ ] **Verified-purchase check on reviews** · 2 pts · enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Needs a product decision: gate reviews, or drop the claim
+- [ ] **Verified-purchase check on reviews** · specced: [SPEC-09](docs/specs/SPEC-09-verified-purchase-reviews.md), default is label-only (not gated), estimate 2-3 days
 - [x] **Customer-initiated order cancel** · **re-estimated 2 pts → ~7, actual ~8**. It is not a status flip: CLIENT-ANSWERS B5 and [SPEC-06](docs/specs/SPEC-06-order-lifecycle.md) specify a request/approval workflow with admin-set thresholds, notifications and a paid-order acknowledgement. All P0 requirements (R1–R7) shipped; R8–R10 are P1 and tracked below.
   - [x] **R2 eligibility, server-side** · `CancellationService` + `app_settings` (first slice of SPEC-05). 24h window and not-after-dispatch cut-off, both configurable, with documented defaults that never fall back to zero
   - [x] **R1 customer request** · `GET`/`POST /api/orders/:id/cancellation`. Reason optional, one pending request per order enforced by a partial unique index, response says _received_ not _approved_
@@ -163,6 +163,7 @@ Wave 4 is C3 above. These are the other two.
 
 ## Cross-cutting debt
 
+- [x] **Risk-tiered test pass** · [TEST-PLAN.md](docs/TEST-PLAN.md) — Tier 1 (money/auth/data-isolation/concurrency) closed: appointments (12 tests, found and fixed a live double-booking race — migration `0014`), order history/tracking (10 tests, protects two already-fixed bugs), prescriptions (10 tests, found the local storage container was down), authenticated checkout (3 Playwright tests, to the M-Pesa-unconfigured boundary). 34→66 API tests, 10→13 Playwright. Tier 2 (cart line items, reviews, promo codes) and Tier 3 (`apps/admin` — zero tests, needs its own Playwright project) queued
 - [ ] **ESLint config** · 1 pt · `pnpm -r lint` is broken; no config or dependency anywhere in the repo
 - [ ] **`typecheck` script for `apps/web`** · 0.5 pt · 40 `.jsx` files, and it is the only workspace package without one
 - [ ] **Resolve the two navies** · 1 pt · design uses `#2E3192`, `packages/config/tailwind.preset.js:28` defines `brand.blue` as `#2A3182`; 20 files use one, 15 the other

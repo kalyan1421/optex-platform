@@ -58,7 +58,7 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | Pagination                      | ✅     | 12/page, numbered + Prev/Next, resets on filter change                                                                  |
 | Empty state                     | ✅     | Two copy branches — empty catalogue vs zero-result filter — with a Clear-all action                                     |
 | Search autocomplete             | ✅     | 250ms debounce, keyboard nav, request-id guard against out-of-order responses                                           |
-| **Wishlist / favourites**       | ❌     | No table, no endpoint, no UI                                                                                            |
+| **Wishlist / favourites**       | ❌     | No table, no endpoint, no UI. Specced: [SPEC-10](specs/SPEC-10-wishlist.md)                                             |
 | **Product comparison**          | ❌     |                                                                                                                         |
 | **Lens / coating configurator** | ❌     | No price model. PDP emits a fixed `Lens: Standard` string into the cart variant                                         |
 
@@ -98,7 +98,7 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | Prescription upload                    | ✅     | `POST /api/prescriptions/upload`, private bucket, per-customer namespacing                                                                                                                                                                                                                                                                        |
 | Prescription download                  | ✅     | Ownership-checked 60s signed URL                                                                                                                                                                                                                                                                                                                  |
 | Write a product review                 | ✅     | `POST /api/products/:productId/reviews`, moderation + one-per-product guard                                                                                                                                                                                                                                                                       |
-| **Verified-purchase check on reviews** | ❌     | Enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Migration `0009`'s comment used to claim otherwise; corrected                                                                                                                                                                  |
+| **Verified-purchase check on reviews** | ❌     | Enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Migration `0009`'s comment documents the gap honestly. Specced: [SPEC-09](specs/SPEC-09-verified-purchase-reviews.md)                                                                                                          |
 | **Social login (Google / Apple)**      | ❌     | No provider configured. The non-functional buttons were removed from `/login`                                                                                                                                                                                                                                                                     |
 | **Customer-initiated order cancel**    | ✅     | SPEC-06 R1–R7 (all P0) shipped: server-side eligibility, customer request, admin approve/decline with paid-order acknowledgement, notifications, direct admin cancel (phone-call path), reversed/paid-cancelled payments surfaced on `/payments`. R9 (P1, auto-decline stale requests) also shipped. R8 (analytics) and R10 (reorder) not started |
 | **Reorder**                            | ❌     |                                                                                                                                                                                                                                                                                                                                                   |
@@ -218,19 +218,19 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 
 ## 12. Engineering infrastructure
 
-| Item                               | Status | Evidence                                                                        |
-| ---------------------------------- | ------ | ------------------------------------------------------------------------------- |
-| pnpm monorepo, 3 apps + 5 packages | ✅     |                                                                                 |
-| Docker Supabase dev stack          | ✅     | Postgres, Auth, REST, Storage, Kong                                             |
-| Typed API client                   | ✅     | `@optex/api-client`                                                             |
-| Prettier                           | ✅     | `.prettierrc`, applied tree-wide                                                |
-| API migration — writes             | ✅     | 0 direct writes remain in web or admin                                          |
-| API migration — admin reads        | ✅     | 0 direct reads remain in admin                                                  |
-| **API migration — web reads**      | 🟡     | **13 sites across 7 files.** Waves 3–4                                          |
-| **CI / CD**                        | ❌     | No `.github/` directory. This was Wave 0's hard prerequisite and it was skipped |
-| **Tests**                          | ❌     | One API smoke spec (`apps/api/test/app.e2e-spec.ts`). **Zero in web and admin** |
-| **ESLint**                         | ❌     | `pnpm -r lint` is broken — no config or dependency anywhere                     |
-| **TypeScript in `apps/web`**       | ❌     | **40 `.jsx` files**, no `typecheck` script                                      |
+| Item                               | Status | Evidence                                                                                                                                                                                                                    |
+| ---------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pnpm monorepo, 3 apps + 5 packages | ✅     |                                                                                                                                                                                                                             |
+| Docker Supabase dev stack          | ✅     | Postgres, Auth, REST, Storage, Kong                                                                                                                                                                                         |
+| Typed API client                   | ✅     | `@optex/api-client`                                                                                                                                                                                                         |
+| Prettier                           | ✅     | `.prettierrc`, applied tree-wide                                                                                                                                                                                            |
+| API migration — writes             | ✅     | 0 direct writes remain in web or admin                                                                                                                                                                                      |
+| API migration — admin reads        | ✅     | 0 direct reads remain in admin                                                                                                                                                                                              |
+| **API migration — web reads**      | 🟡     | **13 sites across 7 files.** Waves 3–4                                                                                                                                                                                      |
+| CI / CD                            | ✅     | `.github/workflows/ci.yml` — `static` (typecheck/build/prettier), `e2e` (Docker Supabase + API suite), `smoke` (+ Playwright against a production build). Wave 0's prerequisite, shipped after Waves 1–2 rather than before |
+| **Tests**                          | 🟡     | 66 API e2e tests (6 files) + 13 Playwright tests (5 files), risk-tiered per [TEST-PLAN](TEST-PLAN.md). **Zero in `apps/admin`**                                                                                             |
+| **ESLint**                         | ❌     | `pnpm -r lint` is broken — no config or dependency anywhere                                                                                                                                                                 |
+| **TypeScript in `apps/web`**       | ❌     | **40 `.jsx` files**, no `typecheck` script                                                                                                                                                                                  |
 
 ---
 
@@ -248,15 +248,15 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 | API                     | 2       | 0          | 0         |
 | Integrations            | 7       | 0          | 4         |
 | SEO                     | 2       | 2          | 6         |
-| Engineering             | 6       | 1          | 4         |
-| **Total**               | **73**  | **10**     | **35**    |
+| Engineering             | 7       | 2          | 2         |
+| **Total**               | **74**  | **11**     | **33**    |
 
 Of the 41 absent items, **~20 are CR-01 or Phase 2/3** (RBAC, audit log, 2FA, inventory ledger, doctor module, branch P&L, product analytics, Flutter, VTO) — correctly out of scope.
 
 **That leaves ~19 genuinely missing Phase 1A features.** Largest clusters, in the order they should be attacked (sequenced plan: [TASKS.md](../TASKS.md)):
 
 1. **SEO / render mode — 8 items.** No sitemap, no robots, `generateMetadata` in one file only, 15 of 23 pages client-rendered. This is Wave 4, it is a contracted deliverable, and it is the biggest single gap.
-2. **Engineering hygiene — 5 items.** No CI, no tests, no lint, `apps/web` untyped. Wave 0 was skipped to ship Waves 1–2; that debt is now the main thing standing between the codebase and safe further change.
+2. **Engineering hygiene — remaining items.** No lint, `apps/web` untyped, zero `apps/admin` tests. CI now exists and test coverage on `apps/api` and `apps/web` is risk-tiered (see [TEST-PLAN](TEST-PLAN.md)); lint and typed `apps/web` are what's left standing between the codebase and safe further change.
 3. ~~**Catalogue filters — 4 items.**~~ **Closed in `f03d809`** — price, shape, gender and material all ship, plus sort. They still need drawing into Figma. What remains on the Shop surface is pagination and an empty state.
 4. **Commerce model — 4 items.** Guest-cart merge, pickup-station delivery, shipping rules, lens configurator.
 5. **Integrations — 4 items.** Google Maps, eTIMS, GA4, WhatsApp.
