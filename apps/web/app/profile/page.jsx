@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createBrowserSupabase } from '@optex/db/browser';
-import { listOrdersForCustomer } from '@optex/db';
 import { formatKes, formatKesNumber } from '@optex/ui';
+import CancelOrder from '@/components/orders/CancelOrder';
+import { api } from '@/lib/api';
 
 // Icons
 const VerifyBadgeIcon = () => (
@@ -245,9 +246,17 @@ export default function Page() {
     }
     if (!user) return;
     const db = createBrowserSupabase();
-    // Fetch orders
-    listOrdersForCustomer(db, user.id)
-      .then(setOrders)
+    // Order history through the API.
+    //
+    // This used to call listOrdersForCustomer(db, user.id), which filters
+    // `orders.customer_id` — but `user.id` is the auth user id, and those are
+    // different values, so the table was empty for every customer who had ever
+    // ordered. The API scopes to the caller's customers.id from the JWT, so
+    // there is no id to pass and no id to get wrong. Also one fewer direct
+    // Supabase read for Wave 3.
+    api.orders
+      .list()
+      .then((res) => setOrders(res?.data ?? []))
       .catch(console.error)
       .finally(() => setOrdersLoading(false));
     // Fetch most recent prescription via customer bridge
@@ -625,12 +634,12 @@ export default function Page() {
                       key={order.id}
                       className="border-b border-gray-50 transition-colors hover:bg-gray-50"
                     >
-                      <td className="px-6 py-6 font-bold sm:px-8">{order.order_number}</td>
+                      <td className="px-6 py-6 font-bold sm:px-8">{order.orderNumber}</td>
                       <td className="px-6 py-6 text-gray-500 sm:px-8">
-                        {formatDate(order.created_at)}
+                        {formatDate(order.createdAt)}
                       </td>
                       <td className="px-6 py-6 capitalize text-gray-500 sm:px-8">
-                        {order.payment_method?.replace(/_/g, ' ')}
+                        {order.paymentMethod?.replace(/_/g, ' ')}
                       </td>
                       <td className="px-6 py-6 sm:px-8">
                         <span
@@ -647,16 +656,27 @@ export default function Page() {
                           KSH.
                         </span>
                         <span className="text-[16px] font-black">
-                          {formatKesNumber(order.total_kes)}
+                          {formatKesNumber(order.totalKes)}
                         </span>
                       </td>
                       <td className="px-6 py-6 sm:px-8">
-                        <Link
-                          href={`/orders/${order.id}/tracking`}
-                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#2A3182] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#1e2461]"
-                        >
-                          Track
-                        </Link>
+                        <div className="flex flex-col items-start gap-2">
+                          <Link
+                            href={`/orders/${order.id}/tracking`}
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#2A3182] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#1e2461]"
+                          >
+                            Track
+                          </Link>
+                          {/* SPEC-06 R1 — also reachable from order history, so a
+                              customer does not have to open the order first. */}
+                          {order.status !== 'cancelled' && (
+                            <CancelOrder
+                              orderId={order.id}
+                              variant="compact"
+                              onChanged={() => window.location.reload()}
+                            />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

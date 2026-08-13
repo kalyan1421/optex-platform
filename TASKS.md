@@ -118,7 +118,8 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
   - [ ] **R4 outcome notifications** · email + SMS on approve/decline, best-effort
   - [~] **R5 paid-order acknowledgement** · the API refuses to approve a paid order without `acknowledgePaid`, and the admin screen makes it a dialog rather than a second click. Still to do: the flag on the admin Payments screen
   - [ ] **R7 reversed payments surfaced** · `reversed` is recorded and then ignored
-  - [ ] Customer UI on order history and tracking
+  - [x] **Customer UI on order history and tracking** · `components/orders/CancelOrder.jsx`, four states from one API call: requestable, pending, decided, ineligible-with-reason. Renders whatever the server says and decides nothing
+  - [x] **Two page-breaking bugs found while wiring it** · `/profile` order history filtered `customer_id` by the **auth user id**, so it had never shown an order to anyone; the tracking page selected `orders.shipping_address`, a column that does not exist, so it returned "Order not found" for **every** order
 - [ ] **Saved addresses** · 2 pts · `shipping_address` is per order, not per customer
 - [ ] **Reorder** · 1 pt
 - [ ] **Social login** · deferred · no provider configured; the dead Google/Apple buttons were removed from `/login`

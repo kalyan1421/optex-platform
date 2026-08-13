@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import CancelOrder from '@/components/orders/CancelOrder';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -169,7 +170,7 @@ export default function OrderTrackingPage() {
     const db = createBrowserSupabase();
     db.from('orders')
       .select(
-        'id, order_number, status, payment_status, payment_method, mpesa_ref, total_kes, created_at, updated_at, shipping_address, order_items(id, quantity, unit_price_kes, product:products(name, images))',
+        'id, order_number, status, payment_status, payment_method, mpesa_ref, total_kes, created_at, updated_at, shipping, order_items(id, quantity, unit_price_kes, product:products(name, images))',
       )
       .eq('id', orderId)
       .maybeSingle()
@@ -221,7 +222,10 @@ export default function OrderTrackingPage() {
   const isCancelled = order.status === 'cancelled';
   const activeStageIndex = getActiveStageIndex(order.status);
   const orderItems = order.order_items ?? [];
-  const shippingAddr = order.shipping_address;
+  // The column is `shipping`, not `shipping_address`. Selecting the wrong name
+  // made PostgREST reject the whole query, so this page rendered "Order not
+  // found" for every order — the select fails, so nothing loads at all.
+  const shippingAddr = order.shipping;
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] pb-16 pt-[15px] sm:pb-24">
@@ -293,6 +297,15 @@ export default function OrderTrackingPage() {
               </span>
             </div>
           </div>
+
+          {/* SPEC-06 R1 — request cancellation from the tracking page. The
+              component decides nothing: it renders whatever the API says, and
+              shows nothing at all once the order is cancelled. */}
+          {!isCancelled && (
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <CancelOrder orderId={order.id} onChanged={() => window.location.reload()} />
+            </div>
+          )}
         </div>
 
         {/* Cancelled Banner */}

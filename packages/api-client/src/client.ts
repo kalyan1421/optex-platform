@@ -103,6 +103,7 @@ import type {
   UploadPrescriptionFields,
   ValidatePromoInput,
   AdminCancellationRequest,
+  CancellationStatus,
 } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -375,6 +376,13 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       }),
     get: (id) => request<OrderDetail>(`/orders/${encodeURIComponent(id)}`),
     tracking: (id) => request<OrderTracking>(`/orders/${encodeURIComponent(id)}/tracking`),
+    cancellationStatus: (id) =>
+      request<CancellationStatus>(`/orders/${encodeURIComponent(id)}/cancellation`),
+    requestCancellation: (id, reason) =>
+      request<{ id: string; status: string; createdAt: string; message: string }>(
+        `/orders/${encodeURIComponent(id)}/cancellation`,
+        { method: 'POST', body: { reason } },
+      ),
   };
 
   // ── payments ───────────────────────────────────────────────────────────────
@@ -729,6 +737,13 @@ export interface OrdersApi {
   get: (id: string) => Promise<OrderDetail>;
   /** `GET /orders/:id/tracking` */
   tracking: (id: string) => Promise<OrderTracking>;
+  /** `GET /orders/:id/cancellation` — eligibility plus any open request. */
+  cancellationStatus: (id: string) => Promise<CancellationStatus>;
+  /** `POST /orders/:id/cancellation` — asks; does not cancel. */
+  requestCancellation: (
+    id: string,
+    reason?: string,
+  ) => Promise<{ id: string; status: string; createdAt: string; message: string }>;
 }
 
 /** Authenticated payment rails (`/payments/...`). */
