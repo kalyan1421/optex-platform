@@ -115,7 +115,7 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
   - [x] **R6 guest appointment path closed** · shipped as Sprint 2 #2/#3
   - [x] **R3 admin approval workflow** · `/cancellations` admin screen with a live pending badge in the nav. Each row carries what the decision depends on — payment status, fulfilment stage, reason, time waiting — and flags an order that moved on while the request sat pending. Approve cancels the order; decline records a customer-facing reason and changes nothing. Every decision stores `decided_by` and `decided_at`
   - [ ] **R3 remainder: direct admin cancel without a request** · the phone-call path
-  - [ ] **R4 outcome notifications** · email + SMS on approve/decline, best-effort
+  - [x] **R4 outcome notifications** · email + SMS on both outcomes, sent *after* the decision commits and wrapped so a failure cannot reverse it. The decline message carries the admin's reason — a decline without one is the phone call this feature replaces. Covered by a test that forces both channels to throw and asserts the approval still stands
   - [~] **R5 paid-order acknowledgement** · the API refuses to approve a paid order without `acknowledgePaid`, and the admin screen makes it a dialog rather than a second click. Still to do: the flag on the admin Payments screen
   - [ ] **R7 reversed payments surfaced** · `reversed` is recorded and then ignored
   - [x] **Customer UI on order history and tracking** · `components/orders/CancelOrder.jsx`, four states from one API call: requestable, pending, decided, ineligible-with-reason. Renders whatever the server says and decides nothing

@@ -3,6 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppModule } from '../src/app.module';
+import { EmailService } from '../src/modules/notifications/email.service';
+import { SmsService } from '../src/modules/notifications/sms.service';
 
 /**
  * Customer-requested order cancellation — SPEC-06 R1, R2.
@@ -356,6 +358,46 @@ describe('Order cancellation (e2e)', () => {
       // Declining means nothing changed.
       const { data: order } = await db.from('orders').select('status').eq('id', declineId).single();
       expect(order!.status).toBe('processing');
+    });
+    it('a failing notification does not reverse the decision (R4)', async () => {
+      // R4: "notification failure never blocks or reverses the decision".
+      // Force both channels to throw, then check the decision still stands —
+      // the no-credentials path only proves they no-op, not that a genuine
+      // failure is survivable.
+      const emailSvc = app.get(EmailService);
+      const smsSvc = app.get(SmsService);
+      const emailSpy = jest
+        .spyOn(emailSvc, 'sendEmail')
+        .mockRejectedValue(new Error('resend is down'));
+      const smsSpy = jest.spyOn(smsSvc, 'sendSms').mockRejectedValue(new Error('AT is down'));
+
+      try {
+        const orderId = await seedOrder('E2E-CANCEL-NOTIFY', 'received', new Date().toISOString());
+        const { data: req } = await db
+          .from('order_cancellation_requests')
+          .insert({ order_id: orderId, customer_id: customerId, status_at_request: 'received' })
+          .select('id')
+          .single();
+
+        await request(app.getHttpServer())
+          .patch(`/api/admin/cancellations/${req!.id}/approve`)
+          .set(auth(adminToken))
+          .send({})
+          .expect(200);
+
+        const { data: order } = await db.from('orders').select('status').eq('id', orderId).single();
+        expect(order!.status).toBe('cancelled');
+
+        const { data: row } = await db
+          .from('order_cancellation_requests')
+          .select('status')
+          .eq('id', req!.id)
+          .single();
+        expect(row!.status).toBe('approved');
+      } finally {
+        emailSpy.mockRestore();
+        smsSpy.mockRestore();
+      }
     });
   });
 });

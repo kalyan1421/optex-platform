@@ -7,6 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { EmailService } from '../notifications/email.service';
+import { SmsService } from '../notifications/sms.service';
 
 /**
  * Customer-requested order cancellation — SPEC-06.
@@ -66,7 +68,11 @@ interface OrderRow {
 export class CancellationService {
   private readonly logger = new Logger(CancellationService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly email: EmailService,
+    private readonly sms: SmsService,
+  ) {}
 
   private get db() {
     return this.supabase.client;
@@ -380,6 +386,9 @@ export class CancellationService {
       );
     }
 
+    // After the write, never before — see notifyDecision.
+    void this.notifyDecision(order.id, 'approved');
+
     return { id: req.id, status: 'approved', orderStatus: 'cancelled' };
   }
 
@@ -401,8 +410,69 @@ export class CancellationService {
       throw new InternalServerErrorException('Could not decline that request.');
     }
 
+    void this.notifyDecision(req.order_id, 'declined', reason?.trim() || null);
+
     // Deliberately no order write. Declining means nothing changed, so the
     // order keeps the status it already had — R3.
     return { id: req.id, status: 'declined' };
+  }
+  /**
+   * Tell the customer what was decided — SPEC-06 R4.
+   *
+   * Best-effort, and deliberately called *after* the decision is committed:
+   * "notification failure never blocks or reverses the decision". An admin who
+   * approved a cancellation has approved it, whether or not Resend was
+   * reachable. Matches the pattern OrdersService already uses for confirmations.
+   *
+   * The decline path carries the admin's reason, because a decline without one
+   * is the thing this feature exists to replace — a customer left to phone a
+   * branch and ask why.
+   */
+  private async notifyDecision(
+    orderId: string,
+    outcome: 'approved' | 'declined',
+    declineReason?: string | null,
+  ): Promise<void> {
+    try {
+      const { data } = await this.db
+        .from('orders')
+        .select('order_number, customer:customers(email, phone)')
+        .eq('id', orderId)
+        .maybeSingle();
+      if (!data) return;
+
+      const embed = (data as { customer: unknown }).customer;
+      const customer = (Array.isArray(embed) ? embed[0] : embed) as {
+        email: string | null;
+        phone: string | null;
+      } | null;
+      const orderNumber = (data as { order_number: string }).order_number;
+
+      const approved = outcome === 'approved';
+      const subject = approved
+        ? `Your Optex order ${orderNumber} has been cancelled`
+        : `About your cancellation request — ${orderNumber}`;
+      const body = approved
+        ? `Order ${orderNumber} has been cancelled as you requested.`
+        : `We could not cancel order ${orderNumber}.${
+            declineReason ? ` ${declineReason}` : ''
+          } Please call your branch if you would like to discuss it.`;
+
+      if (customer?.email) {
+        await this.email.sendEmail({
+          to: customer.email,
+          subject,
+          html: `<p>${body}</p>`,
+          text: body,
+        });
+      }
+      if (customer?.phone) {
+        await this.sms.sendSms(customer.phone, `Optex: ${body}`);
+      }
+    } catch (e) {
+      this.logger.warn(
+        `Cancellation ${outcome} notification failed for order ${orderId}: ${(e as Error).message}`,
+      );
+    }
   }
 }
