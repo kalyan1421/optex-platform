@@ -52,6 +52,9 @@ const NAIROBI_OFFSET_MS = 3 * 60 * 60 * 1000;
 /** Short weekday keys matching `branches.hours` jsonb keys. Sunday-indexed. */
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
+/** Postgres unique-violation code, raised by `appointments_one_per_slot` (0014). */
+const PG_UNIQUE_VIOLATION = '23505';
+
 /** Slim branch-hours shape — `{ mon: ["09:00","18:00"], sun: null, ... }`. */
 type BranchHours = Record<string, [string, string] | null | undefined>;
 
@@ -127,6 +130,13 @@ export class AppointmentsService {
       .single<AppointmentDto>();
 
     if (error || !data) {
+      // `assertSlotBookable()`'s check is advisory — `appointments_one_per_slot`
+      // (migration 0014) is what actually stops two concurrent requests from
+      // both landing. A unique-violation here means the race the check alone
+      // cannot close: same response as the check catching it sequentially.
+      if (error?.code === PG_UNIQUE_VIOLATION) {
+        throw new ConflictException('That slot is already booked');
+      }
       this.logger.error(`Failed to create appointment: ${error?.message}`);
       throw new InternalServerErrorException('Failed to create appointment');
     }
@@ -398,6 +408,13 @@ export class AppointmentsService {
       .maybeSingle<AppointmentDto>();
 
     if (error) {
+      // Reschedules (customer and admin) both funnel through here, and both
+      // race the same way `create()` does — a `scheduled_at` update can
+      // collide with another booking that landed after `assertSlotBookable()`
+      // last checked. Same guard, same response.
+      if (error.code === PG_UNIQUE_VIOLATION) {
+        throw new ConflictException('That slot is already booked');
+      }
       this.logger.error(`Failed to update appointment ${id}: ${error.message}`);
       throw new InternalServerErrorException('Failed to update appointment');
     }
