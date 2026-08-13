@@ -113,9 +113,10 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
   - [x] **R2 eligibility, server-side** · `CancellationService` + `app_settings` (first slice of SPEC-05). 24h window and not-after-dispatch cut-off, both configurable, with documented defaults that never fall back to zero
   - [x] **R1 customer request** · `GET`/`POST /api/orders/:id/cancellation`. Reason optional, one pending request per order enforced by a partial unique index, response says *received* not *approved*
   - [x] **R6 guest appointment path closed** · shipped as Sprint 2 #2/#3
-  - [ ] **R3 admin approval workflow** · list, approve/decline with reason, decision attribution, direct admin cancel
+  - [x] **R3 admin approval workflow** · `/cancellations` admin screen with a live pending badge in the nav. Each row carries what the decision depends on — payment status, fulfilment stage, reason, time waiting — and flags an order that moved on while the request sat pending. Approve cancels the order; decline records a customer-facing reason and changes nothing. Every decision stores `decided_by` and `decided_at`
+  - [ ] **R3 remainder: direct admin cancel without a request** · the phone-call path
   - [ ] **R4 outcome notifications** · email + SMS on approve/decline, best-effort
-  - [ ] **R5 paid-order acknowledgement** · explicit "no automatic refund" step, and a flag on the admin Payments screen
+  - [~] **R5 paid-order acknowledgement** · the API refuses to approve a paid order without `acknowledgePaid`, and the admin screen makes it a dialog rather than a second click. Still to do: the flag on the admin Payments screen
   - [ ] **R7 reversed payments surfaced** · `reversed` is recorded and then ignored
   - [ ] Customer UI on order history and tracking
 - [ ] **Saved addresses** · 2 pts · `shipping_address` is per order, not per customer

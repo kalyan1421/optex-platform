@@ -1110,3 +1110,42 @@ export interface SetStockInput {
   branch_id: string;
   stock: number;
 }
+
+// ── Order cancellation (SPEC-06) ────────────────────────────────────────────
+
+/** A customer's request to cancel an order, as the admin panel sees it. */
+export interface AdminCancellationRequest {
+  id: string;
+  order_id: string;
+  reason: string | null;
+  status: 'pending' | 'approved' | 'declined';
+  status_at_request: string;
+  decline_reason: string | null;
+  decided_at: string | null;
+  created_at: string;
+  orderNumber: string | null;
+  orderStatus: string | null;
+  paymentStatus: string | null;
+  totalKes: number | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  /** The order moved to a later stage while the request sat pending. */
+  movedSinceRequest: boolean;
+}
+
+/** Eligibility + any open request, for a customer's own order. */
+export interface CancellationStatus {
+  orderId: string;
+  canRequest: boolean;
+  ineligibleReason: string | null;
+  windowHours: number;
+  request: {
+    id: string;
+    status: 'pending' | 'approved' | 'declined';
+    reason: string | null;
+    decline_reason: string | null;
+    created_at: string;
+    decided_at: string | null;
+  } | null;
+}

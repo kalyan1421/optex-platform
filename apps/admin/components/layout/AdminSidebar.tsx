@@ -15,11 +15,14 @@ import {
   MapPin,
   CreditCard,
   AlertTriangle,
+  Ban,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 
 const lowStockCount = 3;
 
@@ -45,6 +48,7 @@ const navGroups = [
       { id: 'appointments', label: 'Appointments', icon: CalendarCheck },
       { id: 'customers', label: 'Customers', icon: Users },
       { id: 'prescriptions', label: 'Prescriptions', icon: FileText },
+      { id: 'cancellations', label: 'Cancellations', icon: Ban, badge: 'pendingCancellations' },
     ],
   },
   {
@@ -66,6 +70,25 @@ const navGroups = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  // A real count, from the API — SPEC-06 R3 wants pending requests visible
+  // without opening the screen, so nothing sits unanswered. Re-read on
+  // navigation so deciding a request updates the badge.
+  const [pendingCancellations, setPendingCancellations] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    api.admin.cancellations
+      .pendingCount()
+      .then(({ count }) => {
+        if (!cancelled) setPendingCancellations(count);
+      })
+      // A failed badge must never break the sidebar — it is decoration on a
+      // navigation element every admin page renders.
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   async function handleLogout() {
     const db = createBrowserSupabase();
@@ -95,7 +118,13 @@ export default function AdminSidebar() {
                 const Icon = item.icon;
                 const href = '/' + item.id;
                 const isActive = pathname === href || pathname.startsWith(href + '/');
-                const showBadge = item.badge === 'lowStock' && lowStockCount > 0;
+                const badgeCount =
+                  item.badge === 'lowStock'
+                    ? lowStockCount
+                    : item.badge === 'pendingCancellations'
+                      ? pendingCancellations
+                      : 0;
+                const showBadge = !!item.badge && badgeCount > 0;
                 return (
                   <Link
                     key={item.id}
@@ -119,7 +148,7 @@ export default function AdminSidebar() {
                         )}
                       >
                         <AlertTriangle className="h-3 w-3" />
-                        {lowStockCount}
+                        {badgeCount}
                       </span>
                     )}
                   </Link>

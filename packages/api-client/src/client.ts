@@ -102,6 +102,7 @@ import type {
   UpdateReviewInput,
   UploadPrescriptionFields,
   ValidatePromoInput,
+  AdminCancellationRequest,
 } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -491,6 +492,23 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           body: input,
         }),
     },
+    cancellations: {
+      list: (status) =>
+        request<AdminCancellationRequest[]>('/admin/cancellations', {
+          query: status ? { status } : undefined,
+        }),
+      pendingCount: () => request<{ count: number }>('/admin/cancellations/pending-count'),
+      approve: (id, acknowledgePaid = false) =>
+        request<{ id: string; status: string; orderStatus: string }>(
+          `/admin/cancellations/${encodeURIComponent(id)}/approve`,
+          { method: 'PATCH', body: { acknowledgePaid } },
+        ),
+      decline: (id, reason) =>
+        request<{ id: string; status: string }>(
+          `/admin/cancellations/${encodeURIComponent(id)}/decline`,
+          { method: 'PATCH', body: { reason } },
+        ),
+    },
     payments: {
       list: (query) =>
         request<PaginatedPayments<AdminPayment>>('/admin/payments', {
@@ -797,6 +815,20 @@ export interface AdminApi {
     get: (id: string) => Promise<OrderDetail>;
     /** `PATCH /admin/orders/:id/status` */
     updateStatus: (id: string, input: AdminOrderStatusInput) => Promise<OrderDetail>;
+  };
+  /** Customer cancellation requests — SPEC-06 R3. */
+  cancellations: {
+    /** `GET /admin/cancellations` */
+    list: (status?: string) => Promise<AdminCancellationRequest[]>;
+    /** `GET /admin/cancellations/pending-count` */
+    pendingCount: () => Promise<{ count: number }>;
+    /** `PATCH /admin/cancellations/:id/approve` — cancels the order. */
+    approve: (
+      id: string,
+      acknowledgePaid?: boolean,
+    ) => Promise<{ id: string; status: string; orderStatus: string }>;
+    /** `PATCH /admin/cancellations/:id/decline` — the order keeps its status. */
+    decline: (id: string, reason?: string) => Promise<{ id: string; status: string }>;
   };
   payments: {
     /** `GET /admin/payments` */

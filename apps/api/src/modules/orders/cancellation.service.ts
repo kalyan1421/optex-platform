@@ -229,4 +229,180 @@ export class CancellationService {
       request: existing ?? null,
     };
   }
+  // ─── Admin ────────────────────────────────────────────────────────────────
+
+  /**
+   * Pending requests first, then decided ones — SPEC-06 R3.
+   *
+   * Each row carries what an admin needs to decide without opening the order:
+   * who asked, why, how long ago, whether the money has been taken, and how far
+   * into fulfilment it is now. `statusAtRequest` is kept alongside the order's
+   * current status because they can differ — an order dispatched while the
+   * request sat pending is the case R3 wants flagged.
+   */
+  async listForAdmin(status?: string) {
+    let q = this.db
+      .from('order_cancellation_requests')
+      .select(
+        'id, order_id, reason, status, status_at_request, decline_reason, decided_at, created_at, ' +
+          'order:orders(order_number, status, payment_status, total_kes), ' +
+          'customer:customers(full_name, email, phone)',
+      )
+      .order('created_at', { ascending: false });
+
+    if (status) q = q.eq('status', status);
+
+    const { data, error } = await q;
+    if (error) {
+      this.logger.error(`Could not list cancellation requests: ${error.message}`);
+      throw new InternalServerErrorException('Could not load cancellation requests.');
+    }
+
+    // PostgREST returns a to-one embed as either an object or a single-element
+    // array depending on how it infers the relationship — the same shape the
+    // reviews and inventory services normalise.
+    interface EmbeddedOrder {
+      order_number: string;
+      status: string;
+      payment_status: string;
+      total_kes: number;
+    }
+    interface EmbeddedCustomer {
+      full_name: string | null;
+      email: string | null;
+      phone: string | null;
+    }
+    type Embed<T> = T | T[] | null;
+    const unwrap = <T>(embed: Embed<T>): T | null =>
+      Array.isArray(embed) ? (embed[0] ?? null) : embed;
+
+    type Row = {
+      order: Embed<EmbeddedOrder>;
+      customer: Embed<EmbeddedCustomer>;
+      status_at_request: string;
+      [key: string]: unknown;
+    };
+
+    return ((data ?? []) as unknown as Row[]).map((row) => {
+      const { order, customer, ...rest } = row;
+      const o = unwrap<EmbeddedOrder>(order);
+      const c = unwrap<EmbeddedCustomer>(customer);
+      return {
+        ...rest,
+        orderNumber: o?.order_number ?? null,
+        orderStatus: o?.status ?? null,
+        paymentStatus: o?.payment_status ?? null,
+        totalKes: o?.total_kes ?? null,
+        customerName: c?.full_name ?? null,
+        customerEmail: c?.email ?? null,
+        customerPhone: c?.phone ?? null,
+        // R3: the order moved on while the request waited. Surfaced as a field
+        // rather than left for the admin to spot by comparing two columns.
+        movedSinceRequest: !!o && o.status !== rest.status_at_request,
+      };
+    });
+  }
+
+  /** Count of requests still awaiting a decision — for the admin nav badge. */
+  async pendingCount(): Promise<number> {
+    const { count, error } = await this.db
+      .from('order_cancellation_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    if (error) {
+      this.logger.error(`Could not count pending cancellations: ${error.message}`);
+      return 0;
+    }
+    return count ?? 0;
+  }
+
+  private async loadPendingRequest(requestId: string) {
+    const { data, error } = await this.db
+      .from('order_cancellation_requests')
+      .select('id, order_id, status')
+      .eq('id', requestId)
+      .maybeSingle();
+    if (error) {
+      this.logger.error(`Cancellation request lookup failed: ${error.message}`);
+      throw new InternalServerErrorException('Could not load that request.');
+    }
+    if (!data) throw new NotFoundException('Cancellation request not found.');
+    if (data.status !== 'pending') {
+      throw new ConflictException(`This request has already been ${data.status}.`);
+    }
+    return data;
+  }
+
+  /**
+   * Approve a request: the order is cancelled — SPEC-06 R3.
+   *
+   * `acknowledgePaid` is required when the money has already been taken (R5).
+   * Client policy is "no refunds", so cancelling a paid order is a decision
+   * with a financial consequence that someone has to own; the API refuses to
+   * infer consent for it. Nothing here ever calls a payment provider.
+   */
+  async approve(adminUserId: string, requestId: string, acknowledgePaid = false) {
+    const req = await this.loadPendingRequest(requestId);
+
+    const { data: order } = await this.db
+      .from('orders')
+      .select('id, status, payment_status')
+      .eq('id', req.order_id)
+      .maybeSingle();
+    if (!order) throw new NotFoundException('The order for this request no longer exists.');
+
+    if (order.payment_status === 'paid' && !acknowledgePaid) {
+      throw new BadRequestException(
+        'This order has been paid. Cancelling it does not refund the customer — confirm you will handle the refund manually.',
+      );
+    }
+
+    const { error: orderError } = await this.db
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', order.id);
+    if (orderError) {
+      this.logger.error(`Could not cancel order ${order.id}: ${orderError.message}`);
+      throw new InternalServerErrorException('Could not cancel that order.');
+    }
+
+    const { error } = await this.db
+      .from('order_cancellation_requests')
+      .update({ status: 'approved', decided_by: adminUserId, decided_at: new Date().toISOString() })
+      .eq('id', req.id);
+    if (error) {
+      // The order is already cancelled. Surfacing the failure is better than
+      // pretending it worked — the request row can be reconciled by hand, but a
+      // silent mismatch between order and request would mislead the next admin.
+      this.logger.error(`Order ${order.id} cancelled but request not updated: ${error.message}`);
+      throw new InternalServerErrorException(
+        'The order was cancelled but the request could not be updated. Please check the request list.',
+      );
+    }
+
+    return { id: req.id, status: 'approved', orderStatus: 'cancelled' };
+  }
+
+  /** Decline a request: the order keeps the status it already had — R3. */
+  async decline(adminUserId: string, requestId: string, reason?: string) {
+    const req = await this.loadPendingRequest(requestId);
+
+    const { error } = await this.db
+      .from('order_cancellation_requests')
+      .update({
+        status: 'declined',
+        decline_reason: reason?.trim() || null,
+        decided_by: adminUserId,
+        decided_at: new Date().toISOString(),
+      })
+      .eq('id', req.id);
+    if (error) {
+      this.logger.error(`Could not decline request ${req.id}: ${error.message}`);
+      throw new InternalServerErrorException('Could not decline that request.');
+    }
+
+    // Deliberately no order write. Declining means nothing changed, so the
+    // order keeps the status it already had — R3.
+    return { id: req.id, status: 'declined' };
+  }
 }

@@ -18,6 +18,7 @@ describe('Order cancellation (e2e)', () => {
   let db: SupabaseClient;
   let token: string;
   let otherToken: string;
+  let adminToken: string;
   let customerId: string;
   const orderIds: Record<string, string> = {};
   const emails: string[] = [];
@@ -86,6 +87,27 @@ describe('Order cancellation (e2e)', () => {
     token = primary.token;
     const other = await newAccount();
     otherToken = other.token;
+
+    // A real super_admin, promoted through the admin API. The roles guard
+    // verifies the token against Supabase rather than trusting its claims, so
+    // a hand-minted JWT would not do — the role has to actually be on the user.
+    const admin = await newAccount();
+    const { data: adminUser } = await db.auth.admin.listUsers();
+    const adminRow = adminUser.users.find((u) => u.email === admin.email);
+    await db.auth.admin.updateUserById(adminRow!.id, {
+      app_metadata: { role: 'super_admin' },
+    });
+    // Re-authenticate so the token carries the new role.
+    const anon = createClient(
+      process.env.SUPABASE_URL as string,
+      process.env.SUPABASE_ANON_KEY as string,
+      { auth: { persistSession: false } },
+    );
+    const { data: session } = await anon.auth.signInWithPassword({
+      email: admin.email,
+      password: PASSWORD,
+    });
+    adminToken = session.session!.access_token;
 
     // The signup trigger (0004) creates the customers row.
     const { data: customer } = await db
@@ -203,5 +225,137 @@ describe('Order cancellation (e2e)', () => {
     await request(app.getHttpServer())
       .get(`/api/orders/${orderIds['E2E-CANCEL-FRESH']}/cancellation`)
       .expect(401);
+  });
+  describe('admin approval workflow (R3)', () => {
+    it('refuses a customer on every admin route', async () => {
+      await request(app.getHttpServer())
+        .get('/api/admin/cancellations')
+        .set(auth(otherToken))
+        .expect(403);
+      await request(app.getHttpServer())
+        .get('/api/admin/cancellations/pending-count')
+        .set(auth(otherToken))
+        .expect(403);
+    });
+
+    it('lists a request with the context needed to decide it', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/admin/cancellations?status=pending')
+        .set(auth(adminToken))
+        .expect(200);
+
+      const row = res.body.find(
+        (r: { order_id: string }) => r.order_id === orderIds['E2E-CANCEL-FRESH'],
+      );
+      expect(row).toBeDefined();
+      // Everything an admin needs without opening the order.
+      expect(row.orderNumber).toBe('E2E-CANCEL-FRESH');
+      expect(row.paymentStatus).toBe('pending');
+      expect(row.orderStatus).toBe('received');
+      expect(row.reason).toMatch(/wrong frame size/i);
+      expect(row.movedSinceRequest).toBe(false);
+    });
+
+    it('will not approve a paid order without an explicit acknowledgement', async () => {
+      const paidId = await seedOrder(
+        'E2E-CANCEL-PAID',
+        'received',
+        new Date().toISOString(),
+        'paid',
+      );
+      const { data: req } = await db
+        .from('order_cancellation_requests')
+        .insert({
+          order_id: paidId,
+          customer_id: customerId,
+          status_at_request: 'received',
+        })
+        .select('id')
+        .single();
+
+      // Client policy is "no refunds", so this has to be a deliberate act.
+      const refused = await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${req!.id}/approve`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(400);
+      expect(refused.body.message).toMatch(/does not refund/i);
+
+      // The order must not have moved.
+      const { data: still } = await db.from('orders').select('status').eq('id', paidId).single();
+      expect(still!.status).toBe('received');
+
+      await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${req!.id}/approve`)
+        .set(auth(adminToken))
+        .send({ acknowledgePaid: true })
+        .expect(200);
+    });
+
+    it('approving cancels the order; the same request cannot be decided twice', async () => {
+      const { data: req } = await db
+        .from('order_cancellation_requests')
+        .select('id')
+        .eq('order_id', orderIds['E2E-CANCEL-FRESH'])
+        .single();
+
+      const res = await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${req!.id}/approve`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(200);
+      expect(res.body.status).toBe('approved');
+
+      const { data: order } = await db
+        .from('orders')
+        .select('status')
+        .eq('id', orderIds['E2E-CANCEL-FRESH'])
+        .single();
+      expect(order!.status).toBe('cancelled');
+
+      await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${req!.id}/approve`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(409);
+    });
+
+    it('declining records the reason and leaves the order where it was', async () => {
+      const declineId = await seedOrder(
+        'E2E-CANCEL-DECLINE',
+        'processing',
+        new Date().toISOString(),
+      );
+      const { data: req } = await db
+        .from('order_cancellation_requests')
+        .insert({
+          order_id: declineId,
+          customer_id: customerId,
+          status_at_request: 'processing',
+        })
+        .select('id')
+        .single();
+
+      await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${req!.id}/decline`)
+        .set(auth(adminToken))
+        .send({ reason: 'Frames already picked and packed.' })
+        .expect(200);
+
+      const { data: row } = await db
+        .from('order_cancellation_requests')
+        .select('status, decline_reason, decided_by, decided_at')
+        .eq('id', req!.id)
+        .single();
+      expect(row!.status).toBe('declined');
+      expect(row!.decline_reason).toMatch(/picked and packed/i);
+      // R3: every decision is attributable.
+      expect(row!.decided_by).toBeTruthy();
+      expect(row!.decided_at).toBeTruthy();
+
+      // Declining means nothing changed.
+      const { data: order } = await db.from('orders').select('status').eq('id', declineId).single();
+      expect(order!.status).toBe('processing');
+    });
   });
 });
