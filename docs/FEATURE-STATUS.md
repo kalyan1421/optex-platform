@@ -144,23 +144,23 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 
 ## 7. Admin panel — 12 pages, all API-routed
 
-| Page                  | Status | Note                                                                                                                     |
-| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Dashboard             | ✅     | Real KPIs, revenue chart, payment-method pie                                                                             |
-| Products              | ✅     | Full CRUD + image upload                                                                                                 |
-| Orders                | ✅     | List, detail, status update                                                                                              |
-| Appointments          | ✅     | Confirm / cancel / reschedule; embeds normalised                                                                         |
-| Reviews               | ✅     | Moderation queue                                                                                                         |
-| Branches              | ✅     | List + update, real per-weekday hours shape                                                                              |
-| Analytics             | ✅     | Real revenue by category + period-over-period growth                                                                     |
-| Payments              | ✅     | Real reconcile + link                                                                                                    |
-| Prescriptions         | ✅     | Signed-URL viewer, mark processed                                                                                        |
-| **Customers**         | 🟡     | **Deactivate action disabled** (`Customers.tsx:240`, `title="Coming soon"`) — the last incompleteness marker in the repo |
-| **Inventory**         | 🟡     | Stock-level editor only. `inventory` is `(product_id, branch_id, stock)` — no ledger, no movements, no reorder threshold |
-| **Promotions**        | 🟡     | Codes: full CRUD. Banners: list + activate toggle only — **the create and delete endpoints exist but have no UI**        |
-| **RBAC / multi-role** | ❌     | Single `super_admin`. CR-01                                                                                              |
-| **Audit log**         | ❌     | CR-01                                                                                                                    |
-| **2FA**               | ❌     | CR-01                                                                                                                    |
+| Page                  | Status | Note                                                                                                                                                                                                                                                                    |
+| --------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard             | ✅     | Real KPIs, revenue chart, payment-method pie                                                                                                                                                                                                                            |
+| **Products**          | 🟡     | Full CRUD, verified end to end (`apps/admin/e2e/products.spec.ts`). **Image upload has no UI** — `Products.tsx`'s only image field is a plain URL text input; the multipart upload endpoint (`POST /products/:id/images`) is fully built and typed but nothing calls it |
+| Orders                | ✅     | List, detail, status update                                                                                                                                                                                                                                             |
+| Appointments          | ✅     | Confirm / cancel / reschedule; embeds normalised                                                                                                                                                                                                                        |
+| Reviews               | ✅     | Moderation queue                                                                                                                                                                                                                                                        |
+| Branches              | ✅     | List + update, real per-weekday hours shape                                                                                                                                                                                                                             |
+| Analytics             | ✅     | Real revenue by category + period-over-period growth                                                                                                                                                                                                                    |
+| Payments              | ✅     | Real reconcile + link                                                                                                                                                                                                                                                   |
+| Prescriptions         | ✅     | Signed-URL viewer, mark processed                                                                                                                                                                                                                                       |
+| **Customers**         | 🟡     | **Deactivate action disabled** (`Customers.tsx:240`, `title="Coming soon"`) — the last incompleteness marker in the repo                                                                                                                                                |
+| **Inventory**         | 🟡     | Stock-level editor only. `inventory` is `(product_id, branch_id, stock)` — no ledger, no movements, no reorder threshold                                                                                                                                                |
+| **Promotions**        | 🟡     | Codes: full CRUD. Banners: list + activate toggle only — **the create and delete endpoints exist but have no UI**                                                                                                                                                       |
+| **RBAC / multi-role** | ❌     | Single `super_admin`. CR-01                                                                                                                                                                                                                                             |
+| **Audit log**         | ❌     | CR-01                                                                                                                                                                                                                                                                   |
+| **2FA**               | ❌     | CR-01                                                                                                                                                                                                                                                                   |
 
 ## 8. API — 16 modules
 
@@ -244,12 +244,12 @@ This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md)
 | Appointments & branches | 7       | 0          | 5         |
 | Content & trust         | 3       | 1          | 2         |
 | Home sections           | 3       | 2          | 0         |
-| Admin                   | 9       | 3          | 3         |
+| Admin                   | 8       | 4          | 3         |
 | API                     | 2       | 0          | 0         |
 | Integrations            | 7       | 0          | 4         |
 | SEO                     | 2       | 2          | 6         |
 | Engineering             | 7       | 2          | 2         |
-| **Total**               | **74**  | **11**     | **33**    |
+| **Total**               | **73**  | **12**     | **33**    |
 
 Of the 41 absent items, **~20 are CR-01 or Phase 2/3** (RBAC, audit log, 2FA, inventory ledger, doctor module, branch P&L, product analytics, Flutter, VTO) — correctly out of scope.
 
