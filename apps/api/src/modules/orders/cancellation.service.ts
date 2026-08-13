@@ -392,6 +392,79 @@ export class CancellationService {
     return { id: req.id, status: 'approved', orderStatus: 'cancelled' };
   }
 
+  /**
+   * Cancel an order with no customer request behind it — SPEC-06 R3, "the
+   * phone-call path". A customer who rings the branch instead of using the
+   * app still gets the same protections as one who went through
+   * `approve()`: the same paid-order acknowledgement gate, the same
+   * never-refund guarantee, the same notification afterwards.
+   *
+   * Declines to run if a request is already pending for this order — that
+   * request is the record of what the customer asked for, and letting two
+   * code paths both decide it would leave it unclear which decision, and
+   * whose, actually stuck. The admin resolves the pending request instead.
+   */
+  async adminCancel(
+    adminUserId: string,
+    orderId: string,
+    reason?: string,
+    acknowledgePaid = false,
+  ) {
+    const { data: order, error } = await this.db
+      .from('orders')
+      .select('id, status, payment_status, notes')
+      .eq('id', orderId)
+      .maybeSingle();
+    if (error) {
+      this.logger.error(`Order lookup failed: ${error.message}`);
+      throw new InternalServerErrorException('Could not load that order.');
+    }
+    if (!order) throw new NotFoundException('Order not found.');
+    if (order.status === 'cancelled') {
+      throw new ConflictException('This order has already been cancelled.');
+    }
+    if (order.status === 'delivered') {
+      throw new BadRequestException('Delivered orders cannot be cancelled.');
+    }
+
+    const { data: pending } = await this.db
+      .from('order_cancellation_requests')
+      .select('id')
+      .eq('order_id', orderId)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (pending) {
+      throw new ConflictException(
+        'This order has a pending cancellation request — decide it from Cancellation requests instead.',
+      );
+    }
+
+    if (order.payment_status === 'paid' && !acknowledgePaid) {
+      throw new BadRequestException(
+        'This order has been paid. Cancelling it does not refund the customer — confirm you will handle the refund manually.',
+      );
+    }
+
+    const trimmedReason = reason?.trim() || null;
+    const note = trimmedReason
+      ? `Cancelled by admin: ${trimmedReason}`
+      : 'Cancelled by admin (no reason given).';
+    const mergedNotes = [order.notes as string | null, note].filter(Boolean).join('\n');
+
+    const { error: updateError } = await this.db
+      .from('orders')
+      .update({ status: 'cancelled', notes: mergedNotes })
+      .eq('id', order.id);
+    if (updateError) {
+      this.logger.error(`Could not cancel order ${order.id}: ${updateError.message}`);
+      throw new InternalServerErrorException('Could not cancel that order.');
+    }
+
+    void this.notifyDecision(order.id, 'direct', trimmedReason);
+
+    return { id: order.id, status: 'cancelled' };
+  }
+
   /** Decline a request: the order keeps the status it already had — R3. */
   async decline(adminUserId: string, requestId: string, reason?: string) {
     const req = await this.loadPendingRequest(requestId);
@@ -427,10 +500,14 @@ export class CancellationService {
    * The decline path carries the admin's reason, because a decline without one
    * is the thing this feature exists to replace — a customer left to phone a
    * branch and ask why.
+   *
+   * `direct` covers `adminCancel()` — there is no request to say "as you
+   * requested" about, since a phone call leaves no record here, so the
+   * wording stays neutral and only adds the admin's reason when one was given.
    */
   private async notifyDecision(
     orderId: string,
-    outcome: 'approved' | 'declined',
+    outcome: 'approved' | 'declined' | 'direct',
     declineReason?: string | null,
   ): Promise<void> {
     try {
@@ -448,15 +525,22 @@ export class CancellationService {
       } | null;
       const orderNumber = (data as { order_number: string }).order_number;
 
-      const approved = outcome === 'approved';
-      const subject = approved
-        ? `Your Optex order ${orderNumber} has been cancelled`
-        : `About your cancellation request — ${orderNumber}`;
-      const body = approved
-        ? `Order ${orderNumber} has been cancelled as you requested.`
-        : `We could not cancel order ${orderNumber}.${
-            declineReason ? ` ${declineReason}` : ''
-          } Please call your branch if you would like to discuss it.`;
+      let subject: string;
+      let body: string;
+      if (outcome === 'approved') {
+        subject = `Your Optex order ${orderNumber} has been cancelled`;
+        body = `Order ${orderNumber} has been cancelled as you requested.`;
+      } else if (outcome === 'direct') {
+        subject = `Your Optex order ${orderNumber} has been cancelled`;
+        body = `Order ${orderNumber} has been cancelled.${
+          declineReason ? ` ${declineReason}` : ''
+        } Please call your branch if you have any questions.`;
+      } else {
+        subject = `About your cancellation request — ${orderNumber}`;
+        body = `We could not cancel order ${orderNumber}.${
+          declineReason ? ` ${declineReason}` : ''
+        } Please call your branch if you would like to discuss it.`;
+      }
 
       if (customer?.email) {
         await this.email.sendEmail({

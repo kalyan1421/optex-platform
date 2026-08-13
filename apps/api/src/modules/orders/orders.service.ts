@@ -31,18 +31,19 @@ import {
  * the single server-authoritative source for checkout amounts.
  *
  * Legal forward transitions for the admin status workflow. Keyed by current
- * status → set of allowed next statuses. `cancelled` and `delivered` are
- * terminal. This prevents nonsensical moves (e.g. delivered → pending_payment).
+ * status → set of allowed next statuses. `delivered` is terminal.
+ *
+ * `cancelled` is deliberately absent from every list: this endpoint has no R5
+ * paid-order acknowledgement gate and no customer notification, so routing a
+ * cancellation through it would silently bypass both. `CancellationService`
+ * (`approve()` for a customer request, `adminCancel()` for the phone-call path
+ * — SPEC-06 R3) is the only way an order becomes `cancelled`.
  */
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING_PAYMENT]: [
-    OrderStatus.RECEIVED,
-    OrderStatus.PROCESSING,
-    OrderStatus.CANCELLED,
-  ],
-  [OrderStatus.RECEIVED]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-  [OrderStatus.PROCESSING]: [OrderStatus.DISPATCHED, OrderStatus.CANCELLED],
-  [OrderStatus.DISPATCHED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.RECEIVED, OrderStatus.PROCESSING],
+  [OrderStatus.RECEIVED]: [OrderStatus.PROCESSING],
+  [OrderStatus.PROCESSING]: [OrderStatus.DISPATCHED],
+  [OrderStatus.DISPATCHED]: [OrderStatus.DELIVERED],
   [OrderStatus.DELIVERED]: [],
   [OrderStatus.CANCELLED]: [],
 };

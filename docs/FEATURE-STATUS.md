@@ -100,7 +100,7 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 | Write a product review | ✅ | `POST /api/products/:productId/reviews`, moderation + one-per-product guard |
 | **Verified-purchase check on reviews** | ❌ | Enforced on **neither** path. No `verified_purchase` column, no order lookup in `ReviewsService.createForProduct`. Migration `0009`'s comment used to claim otherwise; corrected |
 | **Social login (Google / Apple)** | ❌ | No provider configured. The non-functional buttons were removed from `/login` |
-| **Customer-initiated order cancel** | ❌ | No endpoint; `cancelled` is admin-only |
+| **Customer-initiated order cancel** | ✅ | SPEC-06 R1–R7 (all P0) shipped: server-side eligibility, customer request, admin approve/decline with paid-order acknowledgement, notifications, direct admin cancel (phone-call path), reversed/paid-cancelled payments surfaced on `/payments`. R8–R10 (P1: analytics, auto-decline, reorder) not started |
 | **Reorder** | ❌ | |
 | **Saved addresses** | ❌ | `shipping_address` is per order, not per customer |
 

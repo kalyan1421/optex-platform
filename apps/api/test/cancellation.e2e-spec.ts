@@ -13,7 +13,8 @@ import { SmsService } from '../src/modules/notifications/sms.service';
  * customer asks, an admin decides. These assert the customer half — that
  * eligibility is decided by the server, that an ineligible order cannot be
  * requested however the call is made, and that one customer cannot reach
- * another's order.
+ * another's order — plus the admin approval workflow (R3) and the
+ * request-less "phone-call path" direct cancel (R3's last checklist item).
  */
 describe('Order cancellation (e2e)', () => {
   let app: INestApplication;
@@ -398,6 +399,102 @@ describe('Order cancellation (e2e)', () => {
         emailSpy.mockRestore();
         smsSpy.mockRestore();
       }
+    });
+  });
+
+  describe('admin direct cancel — no customer request (R3, the phone-call path)', () => {
+    it('refuses a customer', async () => {
+      const id = await seedOrder('E2E-DIRECT-AUTH', 'received', new Date().toISOString());
+      await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(otherToken))
+        .send({})
+        .expect(403);
+    });
+
+    it('cancels an unpaid order with no request behind it', async () => {
+      const id = await seedOrder('E2E-DIRECT-OK', 'received', new Date().toISOString());
+      const res = await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(adminToken))
+        .send({ reason: 'Customer called the branch and asked to cancel.' })
+        .expect(200);
+      expect(res.body.status).toBe('cancelled');
+
+      const { data: order } = await db.from('orders').select('status, notes').eq('id', id).single();
+      expect(order!.status).toBe('cancelled');
+      // No dedicated audit column exists yet, so the reason is kept on notes.
+      expect(order!.notes).toMatch(/called the branch/i);
+    });
+
+    it('will not cancel a paid order without an explicit acknowledgement', async () => {
+      const id = await seedOrder('E2E-DIRECT-PAID', 'received', new Date().toISOString(), 'paid');
+
+      const refused = await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(400);
+      expect(refused.body.message).toMatch(/does not refund/i);
+
+      const { data: still } = await db.from('orders').select('status').eq('id', id).single();
+      expect(still!.status).toBe('received');
+
+      await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(adminToken))
+        .send({ acknowledgePaid: true })
+        .expect(200);
+
+      const { data: order } = await db.from('orders').select('status').eq('id', id).single();
+      expect(order!.status).toBe('cancelled');
+    });
+
+    it('refuses when a request is already pending for the order', async () => {
+      const id = await seedOrder('E2E-DIRECT-PENDING', 'received', new Date().toISOString());
+      await db
+        .from('order_cancellation_requests')
+        .insert({ order_id: id, customer_id: customerId, status_at_request: 'received' });
+
+      const res = await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(409);
+      expect(res.body.message).toMatch(/pending cancellation request/i);
+
+      const { data: order } = await db.from('orders').select('status').eq('id', id).single();
+      expect(order!.status).toBe('received');
+    });
+
+    it('refuses an order that is already cancelled', async () => {
+      const id = await seedOrder('E2E-DIRECT-ALREADY', 'cancelled', new Date().toISOString());
+      await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(409);
+    });
+
+    it('refuses a delivered order', async () => {
+      const id = await seedOrder('E2E-DIRECT-DELIVERED', 'delivered', new Date().toISOString());
+      await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/cancel`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(400);
+    });
+
+    it('the generic status endpoint can no longer cancel an order', async () => {
+      // Cancellation must go through the gated path above — it has the R5
+      // paid-order acknowledgement check that this endpoint does not.
+      const id = await seedOrder('E2E-DIRECT-BACKDOOR', 'received', new Date().toISOString());
+      const res = await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${id}/status`)
+        .set(auth(adminToken))
+        .send({ status: 'cancelled' })
+        .expect(400);
+      expect(res.body.message).toMatch(/illegal status transition/i);
     });
   });
 });

@@ -31,6 +31,7 @@ import type {
   SignupInput,
   AdminListOrdersQuery,
   AdminListPaymentsQuery,
+  AdminOrderCancelInput,
   AdminOrderStatusInput,
   AdminOrderSummary,
   AdminPayment,
@@ -500,6 +501,11 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           method: 'PATCH',
           body: input,
         }),
+      cancel: (id, input) =>
+        request<{ id: string; status: string }>(`/admin/orders/${encodeURIComponent(id)}/cancel`, {
+          method: 'PATCH',
+          body: input ?? {},
+        }),
     },
     cancellations: {
       list: (status) =>
@@ -832,6 +838,13 @@ export interface AdminApi {
     get: (id: string) => Promise<OrderDetail>;
     /** `PATCH /admin/orders/:id/status` */
     updateStatus: (id: string, input: AdminOrderStatusInput) => Promise<OrderDetail>;
+    /**
+     * `PATCH /admin/orders/:id/cancel` — SPEC-06 R3, the phone-call path.
+     * Cancels an order with no customer request behind it. Refused when a
+     * request is already pending for the order (decide that one instead),
+     * and refused on a paid order until `acknowledgePaid` is set.
+     */
+    cancel: (id: string, input?: AdminOrderCancelInput) => Promise<{ id: string; status: string }>;
   };
   /** Customer cancellation requests — SPEC-06 R3. */
   cancellations: {

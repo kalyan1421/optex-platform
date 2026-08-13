@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Search, Eye, Download, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Eye, Download, CheckCircle, Loader2, XCircle, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -23,13 +24,15 @@ const STATUS_TABS: { key: string; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
+// `cancelled` is deliberately absent: the generic status endpoint has no paid-
+// order acknowledgement gate and no customer notification. Cancelling goes
+// through the dedicated "Cancel order" action below instead (SPEC-06 R3/R5).
 const DB_STATUSES: OrderStatus[] = [
   'pending_payment',
   'received',
   'processing',
   'dispatched',
   'delivered',
-  'cancelled',
 ];
 const STATUS_TIMELINE: OrderStatus[] = [
   'pending_payment',
@@ -99,6 +102,11 @@ export function Orders() {
   const [newStatus, setNewStatus] = useState<OrderStatus | ''>('');
   const [updating, setUpdating] = useState(false);
 
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
+
   useEffect(() => {
     api.admin.orders
       .list({ pageSize: 100 })
@@ -112,6 +120,9 @@ export function Orders() {
     setNewStatus('');
     setDetail(null);
     setDetailLoading(true);
+    setCancelling(false);
+    setCancelReason('');
+    setCancelError('');
     void (async () => {
       try {
         setDetail(await api.admin.orders.get(order.id));
@@ -138,6 +149,32 @@ export function Orders() {
       console.error(e);
     } finally {
       setUpdating(false);
+    }
+  }
+
+  async function handleCancelOrder(acknowledgePaid: boolean) {
+    if (!selected) return;
+    setCancelBusy(true);
+    setCancelError('');
+    try {
+      await api.admin.orders.cancel(selected.id, {
+        reason: cancelReason.trim() || undefined,
+        acknowledgePaid,
+      });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === selected.id ? { ...o, status: 'cancelled' } : o)),
+      );
+      setSelected((prev) => (prev ? { ...prev, status: 'cancelled' } : null));
+      setDetail((prev) => (prev ? { ...prev, status: 'cancelled' } : null));
+      setCancelling(false);
+      setCancelReason('');
+    } catch (e) {
+      // The API returns a specific, readable reason — paid without
+      // acknowledgement, a pending request already covering this order, or
+      // an order already decided. Show that, not a generic failure.
+      setCancelError(e instanceof Error ? e.message : 'Could not cancel that order.');
+    } finally {
+      setCancelBusy(false);
     }
   }
 
@@ -469,6 +506,84 @@ export function Orders() {
                   Close
                 </Button>
               </div>
+
+              {/* Cancel order — SPEC-06 R3, the phone-call path: a customer
+                  who called or walked in rather than using the app still gets
+                  the same protections as a request approved through
+                  Cancellations — the paid-order acknowledgement, never a
+                  refund initiated here. */}
+              {selected.status !== 'cancelled' && selected.status !== 'delivered' && (
+                <div className="border-t pt-4">
+                  {!cancelling ? (
+                    <Button
+                      variant="outline"
+                      className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => setCancelling(true)}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancel order
+                    </Button>
+                  ) : (
+                    <div className="space-y-3 rounded-lg border border-red-200 bg-red-50/60 p-4">
+                      <p className="text-sm font-medium text-red-800">Cancel this order</p>
+                      <p className="text-xs text-red-700">
+                        For a cancellation asked for by phone or in person, not through the
+                        customer&apos;s own request.
+                      </p>
+                      <Textarea
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        placeholder="Why is this order being cancelled? Shown to the customer."
+                        rows={2}
+                      />
+                      {cancelError && (
+                        <p className="rounded-md bg-red-100 px-3 py-2 text-xs text-red-800">
+                          {cancelError}
+                        </p>
+                      )}
+                      {selected.paymentStatus === 'paid' && (
+                        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <span>
+                            This order has been paid. Cancelling does <strong>not</strong> refund
+                            the customer — Optex policy is no automatic refunds, and nothing here
+                            contacts M-Pesa or Pesapal. If money is to go back, arrange it yourself.
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCancelling(false);
+                            setCancelError('');
+                          }}
+                        >
+                          Never mind
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="bg-red-600 hover:bg-red-700"
+                          disabled={cancelBusy}
+                          onClick={() => handleCancelOrder(selected.paymentStatus === 'paid')}
+                        >
+                          {cancelBusy ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : selected.paymentStatus === 'paid' ? (
+                            'I understand — cancel the order'
+                          ) : (
+                            'Cancel order'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

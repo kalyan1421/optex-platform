@@ -6,7 +6,11 @@ import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
 import { AdminOrderSummaryView, OrderDetailView, PaginatedOrders } from './dto/order-views';
 import { OrdersService } from './orders.service';
 import { CancellationService } from './cancellation.service';
-import { ApproveCancellationDto, DeclineCancellationDto } from './dto/decide-cancellation.dto';
+import {
+  AdminDirectCancelDto,
+  ApproveCancellationDto,
+  DeclineCancellationDto,
+} from './dto/decide-cancellation.dto';
 
 /**
  * Super-admin order management. Mounted at `/api/admin`. Every route is gated by
@@ -50,6 +54,19 @@ export class OrdersAdminController {
     @Body() dto: AdminOrderStatusDto,
   ): Promise<OrderDetailView> {
     return this.orders.adminUpdateStatus(id, dto);
+  }
+
+  @Patch('orders/:id/cancel')
+  @ApiOperation({
+    summary: 'Cancel an order directly, with no customer request behind it — the phone-call path',
+  })
+  @ApiOkResponse({ description: 'The cancelled order' })
+  directCancel(
+    @CurrentUser('id') adminUserId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: AdminDirectCancelDto,
+  ) {
+    return this.cancellation.adminCancel(adminUserId, id, dto.reason, dto.acknowledgePaid ?? false);
   }
 
   // ─── Cancellation requests (SPEC-06 R3) ─────────────────────────────────

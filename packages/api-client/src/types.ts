@@ -403,6 +403,12 @@ export interface AdminOrderStatusInput {
   note?: string;
 }
 
+/** Body for `PATCH /admin/orders/:id/cancel` (`AdminDirectCancelDto`) — SPEC-06 R3. */
+export interface AdminOrderCancelInput {
+  reason?: string;
+  acknowledgePaid?: boolean;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Payments — M-Pesa + Pesapal + admin ledger
 // ─────────────────────────────────────────────────────────────────────────────

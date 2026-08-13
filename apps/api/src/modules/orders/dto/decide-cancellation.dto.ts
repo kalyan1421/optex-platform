@@ -24,3 +24,28 @@ export class DeclineCancellationDto {
   @MaxLength(500)
   reason?: string;
 }
+
+/**
+ * Body for `PATCH /api/admin/orders/:id/cancel` — SPEC-06 R3, the phone-call
+ * path. An admin cancels an order with no customer-submitted request behind
+ * it, so there is no request row's `reason` to fall back on.
+ */
+export class AdminDirectCancelDto {
+  @ApiPropertyOptional({
+    description: 'Why the order was cancelled. Shown to the customer and kept on the order.',
+    example: 'Customer called the branch and asked to cancel — frame out of stock.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Required when the order is already paid. Confirms the admin understands that cancelling does not refund the customer — client policy is "no refunds" (SPEC-06 R5).',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  acknowledgePaid?: boolean;
+}
