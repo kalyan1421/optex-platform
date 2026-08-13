@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-13 · Written against `docs/FEATURE-STATUS.md`'s 73 ✅-done features.
 
-Starting point: 3 API test files (34 Jest+supertest e2e tests) and 4 Playwright files (10 tests) — covering checkout's signed-out boundary, cart guest-merge, cart empty states, the appointments auth gate, and SPEC-06 order cancellation end to end. Everything else "done" per FEATURE-STATUS was unverified by anything automated. Two passes later: 8 API test files (96 tests) and 5 Playwright files (13 tests). `apps/admin` still has zero tests — it's Tier 3, not attempted yet.
+Starting point: 3 API test files (34 Jest+supertest e2e tests) and 4 Playwright files (10 tests) — covering checkout's signed-out boundary, cart guest-merge, cart empty states, the appointments auth gate, and SPEC-06 order cancellation end to end. Everything else "done" per FEATURE-STATUS was unverified by anything automated. Three passes later: 8 API test files (96 tests), 5 `apps/web` Playwright files (13 tests), and — new this pass — `apps/admin`'s first-ever test infrastructure plus 2 Playwright files (7 tests).
 
 ## Method
 
@@ -35,14 +35,19 @@ Risk-tiered, not feature-by-feature: 73 items is too many to test with equal wei
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Full paid-checkout path | `checkout-authenticated.spec.ts` stops at the payment boundary by necessity — M-Pesa/Pesapal are both unconfigured in local dev. If Daraja/Pesapal sandbox credentials become available, extend it (or add an API-level test using mocked provider responses) to reach a genuinely `paid` order | API e2e with a mocked `MpesaService`/`PesapalService`, or Playwright against real sandbox creds if the client provides them |
 
-## Tier 3 — Medium (admin panel): zero coverage, unchanged by this pass
+## Tier 3 — Medium (admin panel): infrastructure built, Orders closed
 
-`apps/admin` has no test infrastructure at all — no Playwright config, no fixtures. Before writing admin tests, the panel needs its own Playwright project (mirroring `apps/web`'s, pointed at :1113) and an authenticated-admin fixture. Candidates once that exists, in order:
+`apps/admin` had no test infrastructure at all before this pass — no Playwright config, no fixtures, nothing. Built:
 
-1. Orders — status transitions, the direct-cancel flow (SPEC-06 R3), the paid-order acknowledgement dialog
-2. Products — CRUD + image upload
-3. Payments — reconcile, the "Needs attention" tab
-4. Reviews moderation
+- **`playwright.config.ts`** mirroring `apps/web`'s (production build, not `next dev`; same reasoning — per-route dev compilation is exactly the flakiness a smoke suite shouldn't have to work around).
+- **`global-setup.ts`** — every route except `/login` is gated by `middleware.ts` on `app_metadata.role === 'super_admin'`, checked via a real Supabase SSR **cookie** session, not a bearer token. A hand-minted JWT (the shape the API's Jest fixtures use) would not satisfy it. Setup creates a throwaway admin account, logs in through the actual `/login` form once, and saves the resulting cookie session as `storageState` for every test to reuse.
+- **`global-teardown.ts`** — deletes every `@optex-test.local` auth user after the run. Found and fixed a real leak while writing it: `listUsers()` paginates at 50/page by default, and an unpaginated call only ever cleans the first page — 144 stale accounts had accumulated across this session's Jest runs (which delete their `customers` row but never the linked `auth.users` row) before this was caught. Also found the exact same latent bug in `apps/web/e2e/checkout-authenticated.spec.ts` from the prior pass — cleaned the stray data, left the code fix as backlog rather than expanding this pass's scope.
+
+| Area                                                          | Gap found                                                                                                                                                                                                                                                                                                              | Test added                                    | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Orders — status transitions and the R3 direct-cancel flow** | Zero coverage. SPEC-06 R3's phone-call path is fully tested at the API layer but the actual admin UI — whether "Cancelled" really no longer appears in the status dropdown, whether the paid-order warning renders only when it should, whether cancelling reaches the Payments "Needs attention" tab — was unverified | `orders.spec.ts`, 5 tests + 2 auth-gate tests | Passing, three times in a row. Found three bugs in the test itself while writing it (not the app): asserting the wrong element for "update succeeded" (the Update button's own disabled state, which is correctly disabled again post-submit — the dropdown resetting to its placeholder is the real signal); shadcn's Dialog renders an X icon whose accessible name is _also_ "Close" (a `sr-only` span), so `/close/i` matched two elements — needed `.first()`, not a regex |
+
+**Net: 0 → 7 admin Playwright tests.** Remaining Tier 3 candidates, in order: Products (CRUD + image upload), Payments (reconcile), Reviews moderation.
 
 ## Tier 4 — Low: intentionally not tested
 
@@ -50,4 +55,4 @@ Static marketing sections, content pages, policy pages — no logic to regress. 
 
 ## Backlog note on scope
 
-Tier 1 and Tier 2 are now closed end to end (96 API tests, 13 Playwright, all green twice in a row). What remains: the full paid-checkout path (blocked on payment-provider sandbox credentials or mocking, not effort), and Tier 3 (`apps/admin` — zero tests, needs its own Playwright project before anything else there can be tested).
+Tier 1 and Tier 2 are closed end to end. Tier 3's infrastructure is built and Orders is closed; Products, Payments and Reviews moderation remain, now unblocked (the fixture and auth pattern is established — each is a new spec file, not new plumbing). What's left overall: the full paid-checkout path (blocked on payment-provider sandbox credentials or mocking, not effort), the three remaining Tier 3 admin areas, and the `checkout-authenticated.spec.ts` auth-user leak noted above.
