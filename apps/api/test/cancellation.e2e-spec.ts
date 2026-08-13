@@ -5,6 +5,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppModule } from '../src/app.module';
 import { EmailService } from '../src/modules/notifications/email.service';
 import { SmsService } from '../src/modules/notifications/sms.service';
+import { CancellationService } from '../src/modules/orders/cancellation.service';
 
 /**
  * Customer-requested order cancellation — SPEC-06 R1, R2.
@@ -495,6 +496,142 @@ describe('Order cancellation (e2e)', () => {
         .send({ status: 'cancelled' })
         .expect(400);
       expect(res.body.message).toMatch(/illegal status transition/i);
+    });
+  });
+
+  describe('auto-decline stale requests (R9)', () => {
+    it('declines a request older than the configured threshold, and leaves a fresh one alone', async () => {
+      const staleOrderId = await seedOrder(
+        'E2E-AUTODECLINE-STALE',
+        'received',
+        new Date().toISOString(),
+      );
+      const freshOrderId = await seedOrder(
+        'E2E-AUTODECLINE-FRESH',
+        'received',
+        new Date().toISOString(),
+      );
+
+      // The configured threshold is 72h (seeded default) — well past it, and
+      // well within it.
+      const staleCreatedAt = new Date(Date.now() - 96 * 3600_000).toISOString();
+      const freshCreatedAt = new Date(Date.now() - 1 * 3600_000).toISOString();
+
+      const { data: stale } = await db
+        .from('order_cancellation_requests')
+        .insert({
+          order_id: staleOrderId,
+          customer_id: customerId,
+          status_at_request: 'received',
+          created_at: staleCreatedAt,
+        })
+        .select('id')
+        .single();
+      const { data: fresh } = await db
+        .from('order_cancellation_requests')
+        .insert({
+          order_id: freshOrderId,
+          customer_id: customerId,
+          status_at_request: 'received',
+          created_at: freshCreatedAt,
+        })
+        .select('id')
+        .single();
+
+      const cancellation = app.get(CancellationService);
+      const result = await cancellation.autoDeclineStale();
+      expect(result.declined).toBeGreaterThanOrEqual(1);
+
+      const { data: staleRow } = await db
+        .from('order_cancellation_requests')
+        .select('status, decline_reason, decided_by, decided_at')
+        .eq('id', stale!.id)
+        .single();
+      expect(staleRow!.status).toBe('declined');
+      expect(staleRow!.decline_reason).toMatch(/automatically declined/i);
+      // Nobody decided this — the clock did.
+      expect(staleRow!.decided_by).toBeNull();
+      expect(staleRow!.decided_at).toBeTruthy();
+
+      const { data: freshRow } = await db
+        .from('order_cancellation_requests')
+        .select('status')
+        .eq('id', fresh!.id)
+        .single();
+      expect(freshRow!.status).toBe('pending');
+
+      // Declining, auto or not, never moves the order.
+      const { data: order } = await db
+        .from('orders')
+        .select('status')
+        .eq('id', staleOrderId)
+        .single();
+      expect(order!.status).toBe('received');
+    });
+
+    it('running the sweep twice does not re-decline or double-notify', async () => {
+      const orderId = await seedOrder(
+        'E2E-AUTODECLINE-IDEMPOTENT',
+        'received',
+        new Date().toISOString(),
+      );
+      const { data: req } = await db
+        .from('order_cancellation_requests')
+        .insert({
+          order_id: orderId,
+          customer_id: customerId,
+          status_at_request: 'received',
+          created_at: new Date(Date.now() - 96 * 3600_000).toISOString(),
+        })
+        .select('id, decided_at')
+        .single();
+
+      const cancellation = app.get(CancellationService);
+      const first = await cancellation.autoDeclineStale();
+      expect(first.declined).toBeGreaterThanOrEqual(1);
+
+      const { data: afterFirst } = await db
+        .from('order_cancellation_requests')
+        .select('decided_at')
+        .eq('id', req!.id)
+        .single();
+
+      // The WHERE clause is `status = 'pending'` — already-declined rows no
+      // longer match, so a second run must not touch this row again.
+      await cancellation.autoDeclineStale();
+      const { data: afterSecond } = await db
+        .from('order_cancellation_requests')
+        .select('decided_at')
+        .eq('id', req!.id)
+        .single();
+      expect(afterSecond!.decided_at).toBe(afterFirst!.decided_at);
+    });
+
+    it('notifies the customer, best-effort, same as a human decline', async () => {
+      const orderId = await seedOrder(
+        'E2E-AUTODECLINE-NOTIFY',
+        'received',
+        new Date().toISOString(),
+      );
+      await db.from('order_cancellation_requests').insert({
+        order_id: orderId,
+        customer_id: customerId,
+        status_at_request: 'received',
+        created_at: new Date(Date.now() - 96 * 3600_000).toISOString(),
+      });
+
+      const emailSvc = app.get(EmailService);
+      const emailSpy = jest.spyOn(emailSvc, 'sendEmail').mockResolvedValue({ ok: true });
+
+      try {
+        const cancellation = app.get(CancellationService);
+        await cancellation.autoDeclineStale();
+        expect(emailSpy).toHaveBeenCalled();
+        const [[call]] = emailSpy.mock.calls;
+        expect((call as { subject: string }).subject).toMatch(/cancellation/i);
+      } finally {
+        emailSpy.mockRestore();
+      }
     });
   });
 });

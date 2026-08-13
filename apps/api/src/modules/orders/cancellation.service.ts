@@ -47,6 +47,14 @@ const STAGE_ORDER = [
  */
 const DEFAULT_WINDOW_HOURS = 24;
 const DEFAULT_MAX_STAGE = 'processing';
+/**
+ * SPEC-06 R9's threshold default. Same "ours, not the client's" posture as
+ * the two above — CLIENT-ANSWERS O-4 is still open. Unlike the eligibility
+ * window, falling back to 0 here wouldn't disable anything (it would just
+ * auto-decline instantly), but it would still be a silent, surprising
+ * behaviour change, so it gets the same never-zero guard for consistency.
+ */
+const DEFAULT_AUTO_DECLINE_HOURS = 72;
 
 export interface CancellationEligibility {
   eligible: boolean;
@@ -105,6 +113,21 @@ export class CancellationService {
         : DEFAULT_MAX_STAGE;
 
     return { windowHours, maxStage };
+  }
+
+  /** SPEC-06 R9's threshold, falling back to the documented default. */
+  private async loadAutoDeclineHours(): Promise<number> {
+    const { data, error } = await this.db
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'cancellation.auto_decline_hours')
+      .maybeSingle();
+    if (error) {
+      this.logger.error(`Could not read auto-decline setting: ${error.message}`);
+      return DEFAULT_AUTO_DECLINE_HOURS;
+    }
+    const raw = Number(data?.value);
+    return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_AUTO_DECLINE_HOURS;
   }
 
   /**
@@ -489,6 +512,56 @@ export class CancellationService {
     // order keeps the status it already had — R3.
     return { id: req.id, status: 'declined' };
   }
+
+  /**
+   * Auto-decline requests nobody has answered — SPEC-06 R9. Run on a cron
+   * ({@link CancellationAutoDeclineJob}), not from a route: this is upkeep,
+   * not something an admin triggers.
+   *
+   * A single bulk `UPDATE ... WHERE status = 'pending'` rather than a
+   * read-then-write loop: the WHERE clause is the concurrency guard, so an
+   * admin who approves or declines a request in the same instant this runs
+   * simply doesn't match it — there's no window where both writers act on the
+   * same row. `decided_by` stays null; nobody decided this, the clock did.
+   *
+   * Like every other outcome here, this never reaches for a refund — an
+   * auto-declined request leaves the order exactly where it was.
+   *
+   * Unlike `approve()`/`decline()`, the notifications here are awaited rather
+   * than fire-and-forget: those exist to keep an admin's HTTP response fast,
+   * and nothing here is waiting on a response. `notifyDecision` still catches
+   * its own errors, so one bad send can't fail the sweep or leave the DB
+   * write reflecting anything but what actually happened.
+   */
+  async autoDeclineStale(): Promise<{ declined: number }> {
+    const hours = await this.loadAutoDeclineHours();
+    const cutoff = new Date(Date.now() - hours * 3_600_000).toISOString();
+    const reason = `Automatically declined — nobody responded within ${hours} hours. Please call your branch if you would still like to cancel this order.`;
+
+    const { data, error } = await this.db
+      .from('order_cancellation_requests')
+      .update({
+        status: 'declined',
+        decline_reason: reason,
+        decided_by: null,
+        decided_at: new Date().toISOString(),
+      })
+      .eq('status', 'pending')
+      .lt('created_at', cutoff)
+      .select('id, order_id');
+
+    if (error) {
+      this.logger.error(`Auto-decline sweep failed: ${error.message}`);
+      return { declined: 0 };
+    }
+
+    const rows = data ?? [];
+    await Promise.all(
+      rows.map((row) => this.notifyDecision(row.order_id as string, 'declined', reason)),
+    );
+    return { declined: rows.length };
+  }
+
   /**
    * Tell the customer what was decided — SPEC-06 R4.
    *

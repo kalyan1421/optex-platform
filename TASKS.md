@@ -121,7 +121,7 @@ Real gaps, but nothing downstream waits on them. Implementations for the first t
   - [x] **Customer UI on order history and tracking** · `components/orders/CancelOrder.jsx`, four states from one API call: requestable, pending, decided, ineligible-with-reason. Renders whatever the server says and decides nothing
   - [x] **Two page-breaking bugs found while wiring it** · `/profile` order history filtered `customer_id` by the **auth user id**, so it had never shown an order to anyone; the tracking page selected `orders.shipping_address`, a column that does not exist, so it returned "Order not found" for **every** order
   - [ ] **R8 (P1) cancellation reasons in admin analytics** · the highest-signal product feedback Optex will get for free. Not started
-  - [ ] **R9 (P1) auto-decline stale pending requests** · a configurable period after which an unanswered request is auto-declined rather than sitting forever. Not started
+  - [x] **R9 (P1) auto-decline stale pending requests** · `CancellationAutoDeclineJob` sweeps every 15 min for requests pending past the configurable `cancellation.auto_decline_hours` (`app_settings`, default 72h, same never-fall-back-to-zero posture as R2's thresholds). A single bulk `UPDATE ... WHERE status = 'pending'` is the concurrency guard against a human deciding the same row mid-sweep — `decided_by` stays null, since nobody decided it, the clock did. Notifies the customer the same way a human decline does
   - [ ] **R10 (P1) reorder from a cancelled order** · the most common next action after "wrong item". Overlaps with the plain "Reorder" item below
 - [ ] **Saved addresses** · 2 pts · `shipping_address` is per order, not per customer
 - [ ] **Reorder** · 1 pt
