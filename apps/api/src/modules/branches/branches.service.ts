@@ -23,11 +23,13 @@ export interface BranchRow {
   lng: number | null;
   hours: Record<string, unknown> | null;
   is_active: boolean;
+  capacity: number;
   created_at: string;
 }
 
 /** Columns selected for every branch response. */
-const BRANCH_COLUMNS = 'id, slug, name, address, phone, lat, lng, hours, is_active, created_at';
+const BRANCH_COLUMNS =
+  'id, slug, name, address, phone, lat, lng, hours, is_active, capacity, created_at';
 
 /**
  * Data access for retail branches. Reads/writes the `branches` table through

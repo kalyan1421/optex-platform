@@ -294,6 +294,83 @@ describe('Appointments (e2e)', () => {
     expect(rows ?? []).toHaveLength(1);
   });
 
+  /**
+   * SPEC-04 R6 — configurable capacity (migration 0018). The 5-way race
+   * above proves "exactly 1 of N" for the shipped default; this proves the
+   * general case the trigger actually implements: "exactly capacity of N",
+   * with the same same-branch-different-customers, no-await-between-requests
+   * setup, against a dedicated capacity=2 branch so it can't interact with
+   * this file's other (capacity=1) fixtures or tests.
+   */
+  it('allows exactly capacity (2) of five concurrent bookings for the same slot', async () => {
+    const CAPACITY_BRANCH_SLUG = 'e2e-appointments-capacity-branch';
+    const wideOpen: [string, string] = ['00:00', '23:30'];
+    await db.from('branches').delete().eq('slug', CAPACITY_BRANCH_SLUG);
+    const { data: capacityBranch, error: branchError } = await db
+      .from('branches')
+      .insert({
+        slug: CAPACITY_BRANCH_SLUG,
+        name: 'E2E Appointments Capacity Branch',
+        capacity: 2,
+        hours: {
+          sun: wideOpen,
+          mon: wideOpen,
+          tue: wideOpen,
+          wed: wideOpen,
+          thu: wideOpen,
+          fri: wideOpen,
+          sat: wideOpen,
+        },
+        is_active: true,
+      })
+      .select('id')
+      .single();
+    if (branchError) throw branchError;
+    const capacityBranchId = capacityBranch!.id;
+
+    try {
+      const date = futureDate(14);
+      const time = '16:00';
+      const racers = await Promise.all(Array.from({ length: 5 }, () => newAccount()));
+
+      const results = await Promise.all(
+        racers.map((r) =>
+          request(app.getHttpServer())
+            .post('/api/appointments')
+            .set(auth(r.token))
+            .send({ branchId: capacityBranchId, date, time }),
+        ),
+      );
+
+      const succeeded = results.filter((r) => r.status === 201);
+      const conflicted = results.filter((r) => r.status === 409);
+
+      // The DB is the ground truth, same as the capacity=1 race above.
+      const { data: rows } = await db
+        .from('appointments')
+        .select('id, status')
+        .eq('branch_id', capacityBranchId)
+        .gte('scheduled_at', `${date}T00:00:00+03:00`)
+        .lt('scheduled_at', `${date}T23:59:59+03:00`)
+        .neq('status', 'cancelled');
+
+      expect(succeeded).toHaveLength(2);
+      expect(conflicted).toHaveLength(3);
+      expect(rows ?? []).toHaveLength(2);
+
+      // A 6th booking at the now-full slot must still be refused sequentially.
+      const sixth = await newAccount();
+      await request(app.getHttpServer())
+        .post('/api/appointments')
+        .set(auth(sixth.token))
+        .send({ branchId: capacityBranchId, date, time })
+        .expect(409);
+    } finally {
+      await db.from('appointments').delete().eq('branch_id', capacityBranchId);
+      await db.from('branches').delete().eq('slug', CAPACITY_BRANCH_SLUG);
+    }
+  });
+
   it('cancels the caller’s own booking, and refuses to cancel it twice', async () => {
     const date = futureDate(8);
     const created = await request(app.getHttpServer())

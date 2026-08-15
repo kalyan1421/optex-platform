@@ -916,6 +916,8 @@ export interface Branch {
   lng: number | null;
   hours: Record<string, unknown> | null;
   is_active: boolean;
+  /** Max concurrent non-cancelled bookings per slot at this branch (SPEC-04 R6). */
+  capacity: number;
   created_at: string;
 }
 
@@ -929,6 +931,7 @@ export interface CreateBranchInput {
   lng?: number;
   hours?: BranchHours;
   is_active?: boolean;
+  capacity?: number;
 }
 
 /** Body for `PATCH /branches/:id` (`UpdateBranchDto`). */

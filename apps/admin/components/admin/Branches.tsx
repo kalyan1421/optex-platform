@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { MapPin, Phone, Clock, Edit, Check } from 'lucide-react';
+import { MapPin, Phone, Clock, Edit, Check, Users } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -20,6 +20,8 @@ interface Branch {
   lat: string;
   lng: string;
   mapEmbedUrl: string;
+  /** Max concurrent non-cancelled bookings per slot at this branch (SPEC-04 R6). */
+  capacity: number;
 }
 
 /** Weekday keys of `branches.hours`, in the order the slot engine expects. */
@@ -71,6 +73,7 @@ function mapDbRowToBranch(branch: Record<string, unknown>): Branch {
     lat,
     lng,
     mapEmbedUrl,
+    capacity: Number(branch.capacity) || 1,
   };
 }
 
@@ -163,6 +166,21 @@ function EditBranchDialog({
               />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label>Slot Capacity</Label>
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              value={draft.capacity}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, capacity: Math.max(1, Number(e.target.value) || 1) }))
+              }
+            />
+            <p className="text-xs text-gray-500">
+              Max appointments this branch can take at the same time slot.
+            </p>
+          </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -250,6 +268,7 @@ export function Branches() {
           ...(Number.isFinite(lat) ? { lat } : {}),
           ...(Number.isFinite(lng) ? { lng } : {}),
           hours,
+          capacity: updated.capacity,
         });
         setSaveError('');
       } catch (e) {
@@ -330,6 +349,13 @@ export function Branches() {
                         <p>Sat: {branch.hoursSaturday}</p>
                         <p>Sun: {branch.hoursSunday}</p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-gray-600">
+                      <Users className="h-4 w-4 shrink-0 text-[#141776]" />
+                      <span>
+                        Slot capacity: {branch.capacity} concurrent{' '}
+                        {branch.capacity === 1 ? 'booking' : 'bookings'}
+                      </span>
                     </div>
                   </div>
 

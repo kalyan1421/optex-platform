@@ -110,12 +110,12 @@ Name, address, phone and manager are supplied and ready ([ROADMAP A.1](../ROADMA
 - [ ] Slot generation follows the configured duration
 - [ ] Given duration changes with future bookings existing, then those bookings are preserved and surfaced as off-grid rather than deleted
 
-**R6. Configurable capacity per slot.** Currently hardwired to one — the check is set-membership, not a count.
+**R6. Configurable capacity per slot.** Shipped — `branches.capacity` (migration `0018_appointments_configurable_capacity.sql`, default 1, admin-editable in `apps/admin`'s Branch Management panel).
 
-- [ ] Capacity is set per branch
-- [ ] A slot shows as available until capacity is reached
-- [ ] R1's constraint enforces the configured capacity, not a fixed 1
-- [ ] Given capacity is reduced below existing bookings, then existing bookings are honoured and the slot is simply full
+- [x] Capacity is set per branch — `branches.capacity int not null default 1 check (capacity > 0)`, editable via `PATCH /branches/:id` and the admin Branches UI
+- [x] A slot shows as available until capacity is reached — `getAvailableSlots()` compares a per-slot booking count against `capacity`, not set membership
+- [x] R1's constraint enforces the configured capacity, not a fixed 1 — the `appointments_one_per_slot` partial unique index (migration 0014) was replaced by the `appointments_enforce_capacity` trigger, which serializes with `pg_advisory_xact_lock` before counting non-cancelled bookings at the slot and rejects once the count reaches `capacity`; proven under real concurrent load by a 5-racer/capacity-2 e2e test in `appointments.e2e-spec.ts` (exactly 2 succeed, 3 conflict), the same rigor as R1's own 5-way capacity-1 race test
+- [x] Given capacity is reduced below existing bookings, then existing bookings are honoured and the slot is simply full — the trigger only fires on new inserts/updates to `scheduled_at`, `branch_id`, or `status`; it never retroactively touches or cancels existing rows, so a lowered `capacity` just stops new bookings at an already-over-capacity slot
 
 **R7. Breaks and buffers.**
 The missing-code half is closed — `generateSlots()` now takes an optional break window and excludes any overlapping slot (migration `0015_branch_breaks.sql`, `branches.breaks`, same per-weekday shape as `hours`). The rest of R7 is still open:

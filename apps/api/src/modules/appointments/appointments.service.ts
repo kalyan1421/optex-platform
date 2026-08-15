@@ -52,8 +52,14 @@ const NAIROBI_OFFSET_MS = 3 * 60 * 60 * 1000;
 /** Short weekday keys matching `branches.hours` jsonb keys. Sunday-indexed. */
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
-/** Postgres unique-violation code, raised by `appointments_one_per_slot` (0014). */
-const PG_UNIQUE_VIOLATION = '23505';
+/**
+ * Message raised by the `appointments_enforce_capacity` trigger (0018) when
+ * a slot is already at its configured capacity. Matched on message text,
+ * not the SQLSTATE alone (the default P0001 for a bare `RAISE EXCEPTION`),
+ * since other functions in this schema (`place_order`) also raise plain
+ * P0001 exceptions for unrelated reasons.
+ */
+const SLOT_AT_CAPACITY_MESSAGE = 'appointment_slot_at_capacity';
 
 /**
  * Slim per-weekday window shape shared by `hours` and `breaks` —
@@ -88,7 +94,7 @@ export class AppointmentsService {
    * excluded.
    */
   async getAvailableSlots(branchId: string, date: string): Promise<SlotsResponseDto> {
-    const { hours, breaks } = await this.loadBranchSchedule(branchId);
+    const { hours, breaks, capacity } = await this.loadBranchSchedule(branchId);
     const dayKey = WEEKDAY_KEYS[this.weekdayIndex(date)];
     const window = hours?.[dayKey];
 
@@ -98,8 +104,8 @@ export class AppointmentsService {
     }
 
     const candidates = this.generateSlots(window[0], window[1], breaks?.[dayKey]);
-    const taken = await this.takenTimes(branchId, date);
-    const slots = candidates.filter((t) => !taken.has(t));
+    const taken = await this.takenCounts(branchId, date);
+    const slots = candidates.filter((t) => (taken.get(t) ?? 0) < capacity);
 
     return { branchId, date, slots };
   }
@@ -133,11 +139,12 @@ export class AppointmentsService {
       .single<AppointmentDto>();
 
     if (error || !data) {
-      // `assertSlotBookable()`'s check is advisory — `appointments_one_per_slot`
-      // (migration 0014) is what actually stops two concurrent requests from
-      // both landing. A unique-violation here means the race the check alone
-      // cannot close: same response as the check catching it sequentially.
-      if (error?.code === PG_UNIQUE_VIOLATION) {
+      // `assertSlotBookable()`'s check is advisory — the `appointments_enforce_capacity`
+      // trigger (migration 0018) is what actually stops concurrent requests from
+      // together exceeding the branch's configured capacity. A match on this
+      // message here means the race the check alone cannot close: same response
+      // as the check catching it sequentially.
+      if (error?.message?.includes(SLOT_AT_CAPACITY_MESSAGE)) {
         throw new ConflictException('That slot is already booked');
       }
       this.logger.error(`Failed to create appointment: ${error?.message}`);
@@ -298,7 +305,7 @@ export class AppointmentsService {
     time: string,
     excludeId?: string,
   ): Promise<void> {
-    const { hours, breaks } = await this.loadBranchSchedule(branchId);
+    const { hours, breaks, capacity } = await this.loadBranchSchedule(branchId);
     const dayKey = WEEKDAY_KEYS[this.weekdayIndex(date)];
     const window = hours?.[dayKey];
 
@@ -311,21 +318,22 @@ export class AppointmentsService {
       throw new BadRequestException('The requested time is not an available slot for this branch');
     }
 
-    const taken = await this.takenTimes(branchId, date, excludeId);
-    if (taken.has(time)) {
+    const taken = await this.takenCounts(branchId, date, excludeId);
+    if ((taken.get(time) ?? 0) >= capacity) {
       throw new ConflictException('That slot is already booked');
     }
   }
 
   /**
-   * Returns the set of taken `HH:MM` slot times for a branch on a date,
-   * derived from non-cancelled appointments. Optionally excludes one id.
+   * Returns non-cancelled booking counts per `HH:MM` slot time for a branch
+   * on a date. Optionally excludes one id (rescheduling a booking must not
+   * count it against its own former or prospective slot).
    */
-  private async takenTimes(
+  private async takenCounts(
     branchId: string,
     date: string,
     excludeId?: string,
-  ): Promise<Set<string>> {
+  ): Promise<Map<string, number>> {
     const start = this.toUtcIso(date, '00:00');
     const end = new Date(new Date(start).getTime() + 24 * 60 * 60 * 1000).toISOString();
 
@@ -345,22 +353,27 @@ export class AppointmentsService {
       throw new InternalServerErrorException('Failed to load availability');
     }
 
-    const taken = new Set<string>();
+    const counts = new Map<string, number>();
     for (const row of (data ?? []) as { scheduled_at: string }[]) {
-      taken.add(this.toNairobiTime(row.scheduled_at));
+      const key = this.toNairobiTime(row.scheduled_at);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    return taken;
+    return counts;
   }
 
-  /** Loads (and validates existence of) a branch's `hours` and `breaks` jsonb. */
+  /** Loads (and validates existence of) a branch's `hours`, `breaks`, and `capacity`. */
   private async loadBranchSchedule(
     branchId: string,
-  ): Promise<{ hours: WeekdayWindows | null; breaks: WeekdayWindows | null }> {
+  ): Promise<{ hours: WeekdayWindows | null; breaks: WeekdayWindows | null; capacity: number }> {
     const { data, error } = await this.supabase.client
       .from('branches')
-      .select('hours, breaks')
+      .select('hours, breaks, capacity')
       .eq('id', branchId)
-      .maybeSingle<{ hours: WeekdayWindows | null; breaks: WeekdayWindows | null }>();
+      .maybeSingle<{
+        hours: WeekdayWindows | null;
+        breaks: WeekdayWindows | null;
+        capacity: number;
+      }>();
 
     if (error) {
       this.logger.error(`Failed to load branch ${branchId}: ${error.message}`);
@@ -369,7 +382,7 @@ export class AppointmentsService {
     if (!data) {
       throw new NotFoundException(`Branch ${branchId} not found`);
     }
-    return { hours: data.hours ?? null, breaks: data.breaks ?? null };
+    return { hours: data.hours ?? null, breaks: data.breaks ?? null, capacity: data.capacity ?? 1 };
   }
 
   /** Fetches an appointment by id, or 404. */
@@ -415,9 +428,9 @@ export class AppointmentsService {
     if (error) {
       // Reschedules (customer and admin) both funnel through here, and both
       // race the same way `create()` does — a `scheduled_at` update can
-      // collide with another booking that landed after `assertSlotBookable()`
+      // collide with other bookings that land after `assertSlotBookable()`
       // last checked. Same guard, same response.
-      if (error.code === PG_UNIQUE_VIOLATION) {
+      if (error.message?.includes(SLOT_AT_CAPACITY_MESSAGE)) {
         throw new ConflictException('That slot is already booked');
       }
       this.logger.error(`Failed to update appointment ${id}: ${error.message}`);

@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsInt,
   IsLatitude,
   IsLongitude,
   IsObject,
@@ -9,6 +10,7 @@ import {
   IsString,
   Length,
   Matches,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { BranchHoursDto } from './branch-hours.dto';
@@ -108,4 +110,16 @@ export class CreateBranchDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Max concurrent non-cancelled bookings per slot at this branch (SPEC-04 R6). Defaults to 1.',
+    example: 2,
+    minimum: 1,
+    default: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  capacity?: number;
 }
