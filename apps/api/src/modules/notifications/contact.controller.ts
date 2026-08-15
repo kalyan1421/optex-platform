@@ -20,7 +20,7 @@ interface ContactResponse {
 @ApiTags('notifications')
 @Controller('contact')
 export class ContactController {
-  private static readonly DEFAULT_INBOX = 'hello@optexopticians.com';
+  private static readonly DEFAULT_INBOX = 'hello@optexopticians.co.ke';
 
   constructor(
     private readonly email: EmailService,

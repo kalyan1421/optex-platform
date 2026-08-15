@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { api } from '../../lib/api';
 
 // SVG Icons for Contact Details
 const LocationIcon = () => (
@@ -73,13 +74,7 @@ const Contact = () => {
     setSubmitting(true);
     setFormError('');
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      await api.contact.submit(form);
       setSubmitted(true);
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (err) {

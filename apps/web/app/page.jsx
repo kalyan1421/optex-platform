@@ -7,7 +7,6 @@ import WhyOptex from '@/components/home/WhyOptex';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import FaceShape from '@/components/home/FaceShape';
 import VirtualTryOn from '@/components/home/VirtualTryOn';
-import Testimonials from '@/components/home/Testimonials';
 import FinalCTA from '@/components/home/FinalCTA';
 
 const Home = () => {
@@ -21,7 +20,6 @@ const Home = () => {
       <FaceShape />
       <WhyOptex />
       <Promotional />
-      <Testimonials />
       <FinalCTA />
     </>
   );

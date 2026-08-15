@@ -123,14 +123,14 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 
 ## 5. Storefront — Content & Trust
 
-| Feature                                          | Status | Evidence                                                                                                        |
-| ------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------- |
-| Privacy / Delivery / Returns / Warranty policies | ✅     | 4 pages, ~780 lines; privacy references DPA 2019                                                                |
-| Eye Care page                                    | ✅     | `app/eye-care/page.jsx` — patient record + booking intake                                                       |
-| About page                                       | ✅     | `app/about/page.jsx`                                                                                            |
-| Contact page + form                              | 🟡     | **Duplicated backend** — `web/app/api/contact/route.ts` _and_ Nest `POST /api/contact`, two Resend integrations |
-| **WhatsApp chat**                                | ❌     | Zero references in the repo                                                                                     |
-| **FAQ page**                                     | ❌     |                                                                                                                 |
+| Feature                                          | Status | Evidence                                                                                                                              |
+| ------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Privacy / Delivery / Returns / Warranty policies | ✅     | 4 pages, ~780 lines; privacy references DPA 2019                                                                                      |
+| Eye Care page                                    | ✅     | `app/eye-care/page.jsx` — patient record + booking intake                                                                             |
+| About page                                       | ✅     | `app/about/page.jsx`                                                                                                                  |
+| Contact page + form                              | ✅     | Consolidated onto the Nest `POST /contact` endpoint via the typed api-client; the duplicate `web/app/api/contact/route.ts` is deleted |
+| **WhatsApp chat**                                | ❌     | Zero references in the repo                                                                                                           |
+| **FAQ page**                                     | ❌     |                                                                                                                                       |
 
 ## 6. Storefront — Home page sections
 

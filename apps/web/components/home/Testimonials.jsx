@@ -1,32 +1,14 @@
 import React from 'react';
 
-const Testimonials = () => {
-  const testimonials = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      role: 'Marketing Director',
-      text: '"Best eyewear shopping experience ever! The virtual try-on feature helped me find the perfect frames, and the quality is outstanding. Highly recommend!"',
-      image: 'https://i.pravatar.cc/150?u=sarah',
-      rating: 5,
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      role: 'Software Engineer',
-      text: '"The blue light blocking lenses have made a huge difference for my eye strain. Professional service and great product quality."',
-      image: 'https://i.pravatar.cc/150?u=michael',
-      rating: 5,
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      role: 'Graphic Designer',
-      text: '"Love my new glasses! The staff helped me choose frames that perfectly match my style. The whole process was smooth and enjoyable."',
-      image: 'https://i.pravatar.cc/150?u=emily',
-      rating: 5,
-    },
-  ];
+/**
+ * Not rendered on the homepage (see app/page.jsx) until real testimonials
+ * exist — docs/CLIENT-QUESTIONS.md E2 asked the client for 3-5 genuine
+ * quotes with permission to publish, or approval to drop the section.
+ * Takes real data via props rather than shipping any built-in fallback, so
+ * this can't silently render fabricated people again if re-added.
+ */
+const Testimonials = ({ testimonials = [] }) => {
+  if (testimonials.length === 0) return null;
 
   return (
     <section className="flex w-full flex-col items-center bg-[#F9F9F9] px-6 lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
