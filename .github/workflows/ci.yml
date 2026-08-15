@@ -58,6 +58,14 @@ jobs:
       - name: Lint
         run: pnpm -r lint
 
+      # Audit F-08: the suite was an inverted pyramid — 150 integration tests
+      # and zero unit tests, so pure logic (MSISDN normalisation, timestamp
+      # formatting, money rounding) was only reachable through HTTP against a
+      # real database. These need neither, so they run in the fast static job
+      # rather than the one that boots Supabase.
+      - name: Unit tests
+        run: pnpm -r test
+
       # `pnpm -r build`, not `pnpm build` — the root `build` script has a
       # `prebuild` that regenerates database.types.ts, which needs the Supabase
       # CLI and a live database. `-r` runs each workspace package's own build

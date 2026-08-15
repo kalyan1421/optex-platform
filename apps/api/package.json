@@ -2,7 +2,7 @@
   "name": "@optex/api",
   "version": "0.1.0",
   "private": true,
-  "description": "OPTEX backend API (NestJS) — Optex Opticians Kenya",
+  "description": "OPTEX backend API (NestJS) \u2014 Optex Opticians Kenya",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "nest start --watch",
@@ -11,7 +11,10 @@
     "start:prod": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test:e2e": "jest --config test/jest-e2e.json --runInBand --forceExit"
+    "test:e2e": "jest --config test/jest-e2e.json --runInBand --forceExit",
+    "test": "jest --config test/jest-unit.json",
+    "test:watch": "jest --config test/jest-unit.json --watch",
+    "test:cov": "jest --config test/jest-unit.json --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

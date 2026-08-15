@@ -1,0 +1,20 @@
+{
+  "//": "Audit F-08. The suite was an inverted pyramid: 150 integration tests, zero unit tests. Pure logic — MSISDN normalisation, timestamp formatting, status transitions, money rounding — was only reachable through HTTP against a real database, which is slow and makes edge cases expensive enough that they go untested. This config runs the base of the pyramid: no database, no Nest container, no network.",
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "test/unit/.*\\.spec\\.ts$",
+  "testPathIgnorePatterns": ["/node_modules/", "/dist/", "\\.e2e-spec\\.ts$"],
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "<rootDir>/test/tsconfig.json" }]
+  },
+  "moduleNameMapper": {
+    "^@optex/(.*)$": "<rootDir>/../../packages/$1/src/index.ts"
+  },
+  "collectCoverageFrom": [
+    "src/**/*.ts",
+    "!src/**/*.module.ts",
+    "!src/**/dto/**",
+    "!src/main.ts"
+  ]
+}
