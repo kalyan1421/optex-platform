@@ -18,6 +18,7 @@
 
 import type {
   AddCartItemInput,
+  Address,
   AdminAppointmentQuery,
   AdminCustomer,
   AdminReview,
@@ -47,6 +48,7 @@ import type {
   CheckoutResult,
   ContactInput,
   ContactResult,
+  CreateAddressInput,
   CreateAppointmentInput,
   CreateBranchInput,
   CreateProductInput,
@@ -93,6 +95,7 @@ import type {
   UpdatePrescriptionStatusInput,
   Slots,
   SlotsQuery,
+  UpdateAddressInput,
   UpdateAppointmentInput,
   UpdateBranchInput,
   UpdateCartItemInput,
@@ -248,6 +251,7 @@ export interface ApiClient {
   payments: PaymentsApi;
   appointments: AppointmentsApi;
   prescriptions: PrescriptionsApi;
+  addresses: AddressesApi;
   reviews: ReviewsApi;
   promotions: PromotionsApi;
   branches: BranchesApi;
@@ -449,6 +453,18 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     listMine: () => request<Prescription[]>('/prescriptions'),
     download: (id) =>
       request<SignedDownloadUrl>(`/prescriptions/${encodeURIComponent(id)}/download`),
+  };
+
+  // ── addresses ────────────────────────────────────────────────────────────
+  const addresses: AddressesApi = {
+    listMine: () => request<Address[]>('/addresses'),
+    create: (input) => request<Address>('/addresses', { method: 'POST', body: input }),
+    update: (id, input) =>
+      request<Address>(`/addresses/${encodeURIComponent(id)}`, { method: 'PATCH', body: input }),
+    remove: (id) =>
+      request<{ id: string }>(`/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    setDefault: (id) =>
+      request<Address>(`/addresses/${encodeURIComponent(id)}/default`, { method: 'POST' }),
   };
 
   // ── reviews ──────────────────────────────────────────────────────────────
@@ -678,6 +694,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     payments,
     appointments,
     prescriptions,
+    addresses,
     reviews,
     promotions,
     branches,
@@ -791,6 +808,20 @@ export interface PrescriptionsApi {
   listMine: () => Promise<Prescription[]>;
   /** `GET /prescriptions/:id/download` */
   download: (id: string) => Promise<SignedDownloadUrl>;
+}
+
+/** Saved addresses (`/addresses/...`). */
+export interface AddressesApi {
+  /** `GET /addresses` — default first, then newest first */
+  listMine: () => Promise<Address[]>;
+  /** `POST /addresses` */
+  create: (input: CreateAddressInput) => Promise<Address>;
+  /** `PATCH /addresses/:id` */
+  update: (id: string, input: UpdateAddressInput) => Promise<Address>;
+  /** `DELETE /addresses/:id` */
+  remove: (id: string) => Promise<{ id: string }>;
+  /** `POST /addresses/:id/default` */
+  setDefault: (id: string) => Promise<Address>;
 }
 
 /** Product reviews (`/products/:productId/reviews`). `list` is public. */

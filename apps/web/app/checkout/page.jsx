@@ -166,11 +166,73 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Saved addresses. `selectedAddressId === null` means "typing a new one" —
+  // the only state that matters for whether the free-text form or a saved
+  // card is driving `shipping`. Starts empty/null so a customer with no
+  // saved addresses sees exactly today's plain form, unchanged.
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [saveAddress, setSaveAddress] = useState(false);
+
   // H-3 FIX: guard on authLoading so we don't redirect while the session is
   // still being resolved (user starts as undefined, not null, during load).
   useEffect(() => {
     if (!authLoading && user === null) router.push('/login?redirect=/checkout');
   }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    api.addresses
+      .listMine()
+      .then((list) => {
+        if (cancelled) return;
+        setSavedAddresses(list);
+        const preferred = list.find((a) => a.is_default) ?? list[0];
+        if (preferred) {
+          selectSavedAddress(preferred);
+        } else {
+          // No saved addresses yet — offer to save the one they're about to
+          // type, since there's nothing to pick from instead.
+          setSaveAddress(true);
+        }
+      })
+      .catch((err) => console.error('Failed to load saved addresses:', err));
+    return () => {
+      cancelled = true;
+    };
+    // Deliberately keyed on `user` alone — `selectSavedAddress` is re-created
+    // every render but only ever called with the freshly-fetched list here.
+  }, [user]);
+
+  /** Populates the shipping form from a saved address and marks it selected. */
+  function selectSavedAddress(addr) {
+    setSelectedAddressId(addr.id);
+    const [firstName, ...rest] = addr.name.split(' ');
+    setShipping({
+      firstName: firstName ?? '',
+      lastName: rest.join(' '),
+      phone: addr.phone,
+      address: addr.address,
+      city: addr.city,
+      county: addr.county,
+      postal: addr.postal ?? '',
+    });
+  }
+
+  /** Switches to a blank free-text form, e.g. for a first-time delivery address. */
+  function startNewAddress() {
+    setSelectedAddressId(null);
+    setShipping({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      address: '',
+      city: '',
+      county: '',
+      postal: '',
+    });
+  }
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   const shippingKes = DELIVERY_FEE_KES;
@@ -217,6 +279,28 @@ export default function Page() {
           postal: shipping.postal || undefined,
         },
       });
+
+      // 1b. Save the address for next time, if asked — after order creation
+      // succeeds, never before: a failed save here must not block a checkout
+      // that otherwise went through, and there's nothing to save until the
+      // form has actually been validated above.
+      if (selectedAddressId === null && saveAddress) {
+        try {
+          await api.addresses.create({
+            name: `${shipping.firstName} ${shipping.lastName}`.trim(),
+            phone: shipping.phone,
+            address: shipping.address,
+            city: shipping.city,
+            county: shipping.county,
+            postal: shipping.postal || undefined,
+            // The customer's first saved address becomes their default —
+            // nothing to prefer it over yet.
+            isDefault: savedAddresses.length === 0,
+          });
+        } catch (err) {
+          console.error('Could not save address for next time:', err);
+        }
+      }
 
       // 2. Route by payment method. Every remaining method requires payment
       // before fulfilment — the COD branch that skipped straight to the
@@ -369,148 +453,238 @@ export default function Page() {
                   <div className="px-5 pb-6 lg:px-[36px] lg:pb-[36px]">
                     <div className="border-t border-[#F8FAFC] pt-[27px]">
                       <div className="flex flex-col gap-[27px]">
-                        {/* Name Row */}
-                        <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
-                          <div className="flex flex-col gap-[9px]">
-                            <label
-                              className="text-[18px] text-[#141776]"
-                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                        {savedAddresses.length > 0 && (
+                          <div className="flex flex-col gap-[12px]">
+                            {savedAddresses.map((addr) => (
+                              <label
+                                key={addr.id}
+                                className={`flex cursor-pointer items-start gap-4 rounded-[18px] border p-[18px] transition-colors ${
+                                  selectedAddressId === addr.id
+                                    ? 'border-[#141776] bg-white'
+                                    : 'border-[#C7C5D4] bg-[#F3F3F6] hover:border-[#141776]'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="savedAddress"
+                                  checked={selectedAddressId === addr.id}
+                                  onChange={() => selectSavedAddress(addr)}
+                                  className="mt-1 accent-[#141776]"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    {addr.label && (
+                                      <span
+                                        className="text-[13px] font-semibold text-[#141776]"
+                                        style={{ fontFamily: 'Manrope, sans-serif' }}
+                                      >
+                                        {addr.label}
+                                      </span>
+                                    )}
+                                    {addr.is_default && (
+                                      <span
+                                        className="rounded-full bg-[#E8E7F5] px-2 py-0.5 text-[11px] font-medium text-[#141776]"
+                                        style={{ fontFamily: 'Manrope, sans-serif' }}
+                                      >
+                                        Default
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p
+                                    className="mt-1 text-[15px] text-[#141776]"
+                                    style={{ fontFamily: 'Manrope, sans-serif' }}
+                                  >
+                                    {addr.name} &middot; {addr.phone}
+                                  </p>
+                                  <p
+                                    className="text-[14px] text-[#6B7280]"
+                                    style={{ fontFamily: 'Manrope, sans-serif' }}
+                                  >
+                                    {addr.address}, {addr.city}, {addr.county}
+                                  </p>
+                                </div>
+                              </label>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={startNewAddress}
+                              className={`flex items-center rounded-[18px] border border-dashed p-[18px] text-left transition-colors ${
+                                selectedAddressId === null
+                                  ? 'border-[#141776] bg-white'
+                                  : 'border-[#C7C5D4] hover:border-[#141776]'
+                              }`}
                             >
-                              First Name
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Jane"
-                              value={shipping.firstName}
-                              onChange={(e) =>
-                                setShipping((s) => ({ ...s, firstName: e.target.value }))
-                              }
-                              className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
-                              style={{ fontFamily: 'Manrope, sans-serif' }}
-                            />
+                              <span
+                                className="text-[16px] text-[#141776]"
+                                style={{ fontFamily: 'Manrope, sans-serif' }}
+                              >
+                                + Add a new address
+                              </span>
+                            </button>
                           </div>
-                          <div className="flex flex-col gap-[9px]">
-                            <label
-                              className="text-[18px] text-[#141776]"
-                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
-                            >
-                              Last Name
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Doe"
-                              value={shipping.lastName}
-                              onChange={(e) =>
-                                setShipping((s) => ({ ...s, lastName: e.target.value }))
-                              }
-                              className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
-                              style={{ fontFamily: 'Manrope, sans-serif' }}
-                            />
-                          </div>
-                        </div>
+                        )}
 
-                        {/* Address Row */}
-                        <div className="flex flex-col gap-[9px]">
-                          <label
-                            className="text-[18px] text-[#141776]"
-                            style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
-                          >
-                            Address Line 1
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="123 Vision Avenue"
-                            value={shipping.address}
-                            onChange={(e) =>
-                              setShipping((s) => ({ ...s, address: e.target.value }))
-                            }
-                            className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
-                            style={{ fontFamily: 'Manrope, sans-serif' }}
-                          />
-                        </div>
+                        {selectedAddressId === null && (
+                          <>
+                            {/* Name Row */}
+                            <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
+                              <div className="flex flex-col gap-[9px]">
+                                <label
+                                  className="text-[18px] text-[#141776]"
+                                  style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                                >
+                                  First Name
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Jane"
+                                  value={shipping.firstName}
+                                  onChange={(e) =>
+                                    setShipping((s) => ({ ...s, firstName: e.target.value }))
+                                  }
+                                  className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
+                                  style={{ fontFamily: 'Manrope, sans-serif' }}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-[9px]">
+                                <label
+                                  className="text-[18px] text-[#141776]"
+                                  style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                                >
+                                  Last Name
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Doe"
+                                  value={shipping.lastName}
+                                  onChange={(e) =>
+                                    setShipping((s) => ({ ...s, lastName: e.target.value }))
+                                  }
+                                  className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
+                                  style={{ fontFamily: 'Manrope, sans-serif' }}
+                                />
+                              </div>
+                            </div>
 
-                        {/* City/Postcode Row */}
-                        <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
-                          <div className="flex flex-col gap-[9px]">
-                            <label
-                              className="text-[18px] text-[#141776]"
-                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
-                            >
-                              City
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="London"
-                              value={shipping.city}
-                              onChange={(e) => setShipping((s) => ({ ...s, city: e.target.value }))}
-                              className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
-                              style={{ fontFamily: 'Manrope, sans-serif' }}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-[9px]">
-                            <label
-                              className="text-[18px] text-[#141776]"
-                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
-                            >
-                              Postcode
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="EC1V 2NX"
-                              value={shipping.postal}
-                              onChange={(e) =>
-                                setShipping((s) => ({ ...s, postal: e.target.value }))
-                              }
-                              className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
-                              style={{ fontFamily: 'Manrope, sans-serif' }}
-                            />
-                          </div>
-                        </div>
+                            {/* Address Row */}
+                            <div className="flex flex-col gap-[9px]">
+                              <label
+                                className="text-[18px] text-[#141776]"
+                                style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                              >
+                                Address Line 1
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="123 Vision Avenue"
+                                value={shipping.address}
+                                onChange={(e) =>
+                                  setShipping((s) => ({ ...s, address: e.target.value }))
+                                }
+                                className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
+                                style={{ fontFamily: 'Manrope, sans-serif' }}
+                              />
+                            </div>
 
-                        {/* Phone/County Row */}
-                        <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
-                          <div className="flex flex-col gap-[9px]">
+                            {/* City/Postcode Row */}
+                            <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
+                              <div className="flex flex-col gap-[9px]">
+                                <label
+                                  className="text-[18px] text-[#141776]"
+                                  style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                                >
+                                  City
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="London"
+                                  value={shipping.city}
+                                  onChange={(e) =>
+                                    setShipping((s) => ({ ...s, city: e.target.value }))
+                                  }
+                                  className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
+                                  style={{ fontFamily: 'Manrope, sans-serif' }}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-[9px]">
+                                <label
+                                  className="text-[18px] text-[#141776]"
+                                  style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                                >
+                                  Postcode
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="EC1V 2NX"
+                                  value={shipping.postal}
+                                  onChange={(e) =>
+                                    setShipping((s) => ({ ...s, postal: e.target.value }))
+                                  }
+                                  className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
+                                  style={{ fontFamily: 'Manrope, sans-serif' }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Phone/County Row */}
+                            <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
+                              <div className="flex flex-col gap-[9px]">
+                                <label
+                                  className="text-[18px] text-[#141776]"
+                                  style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                                >
+                                  Phone Number
+                                </label>
+                                <input
+                                  type="tel"
+                                  placeholder="0712 345 678"
+                                  value={shipping.phone}
+                                  onChange={(e) =>
+                                    setShipping((s) => ({ ...s, phone: e.target.value }))
+                                  }
+                                  className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
+                                  style={{ fontFamily: 'Manrope, sans-serif' }}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-[9px]">
+                                <label
+                                  className="text-[18px] text-[#141776]"
+                                  style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                                >
+                                  County
+                                </label>
+                                <select
+                                  value={shipping.county}
+                                  onChange={(e) =>
+                                    setShipping((s) => ({ ...s, county: e.target.value }))
+                                  }
+                                  className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors focus:border-[#141776] focus:bg-white"
+                                  style={{ fontFamily: 'Manrope, sans-serif' }}
+                                >
+                                  <option value="">Select county</option>
+                                  {KENYA_COUNTIES.map((c) => (
+                                    <option key={c} value={c}>
+                                      {c}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
                             <label
-                              className="text-[18px] text-[#141776]"
-                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
-                            >
-                              Phone Number
-                            </label>
-                            <input
-                              type="tel"
-                              placeholder="0712 345 678"
-                              value={shipping.phone}
-                              onChange={(e) =>
-                                setShipping((s) => ({ ...s, phone: e.target.value }))
-                              }
-                              className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors placeholder:text-[#6B7280] focus:border-[#141776] focus:bg-white"
-                              style={{ fontFamily: 'Manrope, sans-serif' }}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-[9px]">
-                            <label
-                              className="text-[18px] text-[#141776]"
-                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
-                            >
-                              County
-                            </label>
-                            <select
-                              value={shipping.county}
-                              onChange={(e) =>
-                                setShipping((s) => ({ ...s, county: e.target.value }))
-                              }
-                              className="h-[56.5px] w-full rounded-[18px] border border-[#C7C5D4] bg-[#F3F3F6] px-[18px] text-[18px] text-[#6B7280] outline-none transition-colors focus:border-[#141776] focus:bg-white"
+                              className="flex items-center gap-[9px] text-[15px] text-[#141776]"
                               style={{ fontFamily: 'Manrope, sans-serif' }}
                             >
-                              <option value="">Select county</option>
-                              {KENYA_COUNTIES.map((c) => (
-                                <option key={c} value={c}>
-                                  {c}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
+                              <input
+                                type="checkbox"
+                                checked={saveAddress}
+                                onChange={(e) => setSaveAddress(e.target.checked)}
+                                className="h-[18px] w-[18px] accent-[#141776]"
+                              />
+                              Save this address for next time
+                            </label>
+                          </>
+                        )}
 
                         {/* Button */}
                         <div className="pt-[9px]">

@@ -668,6 +668,46 @@ export interface UploadPrescriptionFields {
   order_id?: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Addresses
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A saved address (`AddressRow`). Field names deliberately match
+ * `ShippingAddressDto` (`name`, `phone`, `address`, `city`, `county`,
+ * `postal`) so a saved row maps onto the checkout payload with no
+ * translation.
+ */
+export interface Address {
+  id: string;
+  customer_id: string;
+  label: string | null;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  county: string;
+  postal: string | null;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Body for `POST /addresses` (`CreateAddressDto`). */
+export interface CreateAddressInput {
+  label?: string;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  county: string;
+  postal?: string;
+  isDefault?: boolean;
+}
+
+/** Body for `PATCH /addresses/:id` (`UpdateAddressDto`) — every field optional. */
+export type UpdateAddressInput = Partial<CreateAddressInput>;
+
 /** Query for `GET /admin/prescriptions` (`PrescriptionQueryDto`). */
 export interface PrescriptionQuery {
   /** Filter by `customers.id` (the `prescriptions.customer_id` value). */

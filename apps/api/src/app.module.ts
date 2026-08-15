@@ -15,6 +15,7 @@ import { CommonModule } from './common/common.module';
 import { validate } from './config/env';
 import { HealthModule } from './health/health.module';
 import { AccountModule } from './modules/account/account.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 import { AdminMetricsModule } from './modules/admin-metrics/admin-metrics.module';
 import { AuthFlowModule } from './modules/auth/auth-flow.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
@@ -91,6 +92,8 @@ import { SupabaseModule } from './supabase/supabase.module';
     // Admin surfaces that replaced direct browser-to-Supabase access
     CustomersModule,
     InventoryModule,
+    // Pending-features sprint plan (Sprint 2)
+    AddressesModule,
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorize.
