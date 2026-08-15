@@ -60,8 +60,8 @@ export function Analytics() {
 
     // The dashboard endpoint carries the calendar KPIs and the payment
     // breakdown; the analytics endpoint carries the 90-day series, the top
-    // products and revenue-by-category — including the growth comparison that
-    // replaces the hardcoded category chart.
+    // products and revenue-by-category (with a growth-vs-prior-window
+    // comparison).
     Promise.all([api.admin.dashboard({ range: '90d' }), api.admin.analytics()])
       .then(([dash, an]) => {
         if (cancelled) return;
@@ -317,7 +317,7 @@ export function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Category performance — static fixture (no category query yet) */}
+      {/* Category performance — from api.admin.analytics().revenueByCategory */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>

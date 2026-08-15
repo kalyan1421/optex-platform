@@ -65,11 +65,11 @@ This is a full refresh of the previous 2026-06-09 audit. **Almost everything mar
 
 | #   | Admin Page                    | Status | Notes                                                                                                                                                     |
 | --- | ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A-1 | Analytics page                | 🟡     | Live DB-backed except one hardcoded `categoryPerformance` array in `Analytics.tsx:14-24` (self-documented in a code comment as "no equivalent query yet") |
+| A-1 | Analytics page                | ✅     | Was 🟡 as of this audit's original 2026-07-22 pass; fixed 2026-08-07 (`300139b`) — `GET /api/admin/analytics`'s `revenueByCategory` now backs the category chart with a real revenue/growth query, no fixture remains |
 | A-2 | Payments page                 | ✅     | See P-6                                                                                                                                                   |
 | A-3 | Prescriptions page            | ✅     | Real DB query + ownership-checked signed-URL viewer                                                                                                       |
 | A-4 | Dashboard revenue chart       | ✅     | `GET /api/admin/dashboard` returns real KPIs                                                                                                              |
-| A-5 | Customers "Deactivate" action | 🟡     | Disabled in UI, `title="Coming soon"` (`Customers.tsx:216-221`) — small, isolated gap, not tracked in the original audit                                  |
+| A-5 | Customers "Deactivate" action | ✅     | Fixed 2026-08-15 — `PATCH /api/admin/customers/:id` (migration `0019`, `deactivated_at` column) bans/unbans the linked `auth.users` row via the Supabase Admin API in lockstep with the flag, so a deactivated customer genuinely cannot sign in, not just a display badge |
 
 ### Group 5: Communications
 
@@ -150,7 +150,7 @@ Full Docker Compose stack (Postgres/Auth/REST/Storage/Kong) with working migrati
 1. ~~Fix S-7 (auth privilege escalation)~~ — **done, verified 2026-07-22.**
 2. **Wire up ESLint** — `pnpm -r lint` is currently broken (no ESLint config/deps anywhere in the repo).
 3. **Add real test coverage** — currently one 78-line e2e smoke spec for the whole API, zero tests in web/admin, no CI.
-4. **Close the two small admin gaps** — Analytics' hardcoded chart series (A-1), Customers' disabled deactivate action (A-5).
+4. ~~Close the two small admin gaps~~ — **done.** Analytics (A-1) 2026-08-07; Customers' deactivate action (A-5) 2026-08-15.
 5. **Re-verify Group 6 (SEO) and D-4** — not covered by this pass's direct-inspection scope.
 6. **Core Web Vitals / UAT / deploy cutover** (SOW Week 7) and **Play Store / mobile handover** (Week 8, Flutter app — separate repo) — no evidence of work in this repo yet.
 7. **CR-01 (Phase 1B)** — RBAC, inventory ledger, doctor consultation, product analytics, branch P&L — not started, correctly sequenced to come after Phase 1A fully closes.

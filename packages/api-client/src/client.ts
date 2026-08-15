@@ -24,6 +24,7 @@ import type {
   AdminReview,
   InventoryResponse,
   InventoryStock,
+  SetCustomerStatusInput,
   SetStockInput,
   AuthResult,
   AuthUser,
@@ -682,6 +683,11 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         request<AdminCustomer[]>('/admin/customers', {
           query: search ? { search } : undefined,
         }),
+      setStatus: (id, input) =>
+        request<AdminCustomer>(`/admin/customers/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: input,
+        }),
     },
     inventory: {
       list: () => request<InventoryResponse>('/admin/inventory'),
@@ -995,6 +1001,8 @@ export interface AdminApi {
   customers: {
     /** `GET /admin/customers?search=` */
     list: (search?: string) => Promise<AdminCustomer[]>;
+    /** `PATCH /admin/customers/:id` */
+    setStatus: (id: string, input: SetCustomerStatusInput) => Promise<AdminCustomer>;
   };
   inventory: {
     /** `GET /admin/inventory` */

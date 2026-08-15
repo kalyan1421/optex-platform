@@ -1131,7 +1131,14 @@ export interface AdminCustomer {
   email: string | null;
   phone: string | null;
   created_at: string;
+  /** When an admin deactivated this account, or null if active. */
+  deactivated_at: string | null;
   orders: CustomerOrderSummary[];
+}
+
+/** Body for `PATCH /admin/customers/:id` (`SetCustomerStatusDto`). */
+export interface SetCustomerStatusInput {
+  status: 'active' | 'deactivated';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

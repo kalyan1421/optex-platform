@@ -27,6 +27,7 @@ interface Customer {
   email: string;
   phone: string | null;
   created_at: string;
+  deactivatedAt: string | null;
   orders: DbOrder[];
   orderCount: number;
   totalSpent: number;
@@ -80,6 +81,7 @@ export function Customers() {
             email: row.email ?? '',
             phone: row.phone ?? null,
             created_at: row.created_at ?? '',
+            deactivatedAt: row.deactivated_at ?? null,
             orders,
             orderCount: orders.length,
             totalSpent,
@@ -94,6 +96,34 @@ export function Customers() {
       }
     })();
   }, []);
+
+  async function handleSetStatus(customer: Customer, deactivate: boolean) {
+    const verb = deactivate ? 'Deactivate' : 'Reactivate';
+    const warning = deactivate
+      ? `${verb} ${customer.full_name || customer.email}? They will no longer be able to sign in.`
+      : `${verb} ${customer.full_name || customer.email}? They will be able to sign in again.`;
+    if (!confirm(warning)) return;
+
+    const previous = customers;
+    const deactivatedAt = deactivate ? new Date().toISOString() : null;
+    setCustomers((prev) => prev.map((c) => (c.id === customer.id ? { ...c, deactivatedAt } : c)));
+    setSelectedCustomer((prev) =>
+      prev && prev.id === customer.id ? { ...prev, deactivatedAt } : prev,
+    );
+
+    try {
+      await api.admin.customers.setStatus(customer.id, {
+        status: deactivate ? 'deactivated' : 'active',
+      });
+    } catch (e) {
+      console.error('Failed to set customer status:', e);
+      setCustomers(previous);
+      setSelectedCustomer((prev) =>
+        prev && prev.id === customer.id ? { ...prev, deactivatedAt: customer.deactivatedAt } : prev,
+      );
+      alert('Could not update this customer. Please try again.');
+    }
+  }
 
   const filtered = customers.filter(
     (c) =>
@@ -133,7 +163,9 @@ export function Customers() {
             {loading ? (
               <Skeleton className="mt-1 h-8 w-12" />
             ) : (
-              <p className="mt-1 text-2xl font-bold">{customers.length}</p>
+              <p className="mt-1 text-2xl font-bold">
+                {customers.filter((c) => !c.deactivatedAt).length}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -211,9 +243,15 @@ export function Customers() {
                           {joinDateDisplay(customer.created_at)}
                         </td>
                         <td className="px-3 py-3">
-                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                            Active
-                          </span>
+                          {customer.deactivatedAt ? (
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                              Inactive
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                              Active
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1">
@@ -234,13 +272,20 @@ export function Customers() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>View Orders</DropdownMenuItem>
                                 <DropdownMenuItem>Send Email</DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled
-                                  className="cursor-not-allowed text-gray-400"
-                                  title="Coming soon"
-                                >
-                                  Deactivate
-                                </DropdownMenuItem>
+                                {customer.deactivatedAt ? (
+                                  <DropdownMenuItem
+                                    onClick={() => handleSetStatus(customer, false)}
+                                  >
+                                    Reactivate
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    className="text-red-600"
+                                    onClick={() => handleSetStatus(customer, true)}
+                                  >
+                                    Deactivate
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -282,9 +327,15 @@ export function Customers() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Account status</p>
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                    Active
-                  </span>
+                  {selectedCustomer.deactivatedAt ? (
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      Inactive
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      Active
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -323,7 +374,23 @@ export function Customers() {
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {selectedCustomer.deactivatedAt ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSetStatus(selectedCustomer, false)}
+                  >
+                    Reactivate
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="text-red-600 hover:text-red-600"
+                    onClick={() => handleSetStatus(selectedCustomer, true)}
+                  >
+                    Deactivate
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setSelectedCustomer(null)}>
                   Close
                 </Button>

@@ -39,6 +39,12 @@ export class AdminCustomerDto {
   created_at!: string;
 
   @ApiProperty({
+    description: 'When an admin deactivated this account, or null if active.',
+    nullable: true,
+  })
+  deactivated_at!: string | null;
+
+  @ApiProperty({
     type: [CustomerOrderSummaryDto],
     description: "The customer's orders, newest first.",
   })
