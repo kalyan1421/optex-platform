@@ -141,27 +141,50 @@ export default function ReviewForm({ productId }) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* F-16: role="alert" so a screen reader announces the failure. The
+              message used to render silently — a blind reviewer pressed submit,
+              nothing was spoken, and the form appeared to do nothing at all. */}
           {formError && (
-            <div className="rounded-[12px] border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">
+            <div
+              role="alert"
+              className="rounded-[12px] border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600"
+            >
               {formError}
             </div>
           )}
           <div>
-            <label className="mb-2 block text-[12px] font-bold text-gray-900">Your Rating *</label>
-            <StarSelector value={rating} onChange={setRating} />
+            {/* The star selector is a group of buttons, not a single control, so
+                this is a group label rather than a `for=` label. */}
+            <span
+              id="review-rating-label"
+              className="mb-2 block text-[12px] font-bold text-gray-900"
+            >
+              Your Rating *
+            </span>
+            <div role="group" aria-labelledby="review-rating-label">
+              <StarSelector value={rating} onChange={setRating} />
+            </div>
           </div>
           <div>
-            <label className="mb-2 block text-[12px] font-bold text-gray-900">Your Review *</label>
+            <label htmlFor="review-body" className="mb-2 block text-[12px] font-bold text-gray-900">
+              Your Review *
+            </label>
             <textarea
+              id="review-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
               minLength={10}
+              // Points at the character counter, so the length requirement is
+              // read out with the field instead of being visual-only.
+              aria-describedby="review-body-count"
               placeholder="Share your thoughts about this product (min. 10 characters)…"
               disabled={submitting}
               className="w-full resize-none rounded-[14px] border border-gray-200 bg-[#fdfdfd] px-4 py-3 text-[14px] text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 focus:border-[#2A3182] focus:shadow-sm disabled:opacity-60"
             />
-            <p className="mt-1 text-right text-[11px] text-gray-400">{body.length} chars</p>
+            <p id="review-body-count" className="mt-1 text-right text-[11px] text-gray-400">
+              {body.length} chars — 10 minimum
+            </p>
           </div>
           <button
             type="submit"

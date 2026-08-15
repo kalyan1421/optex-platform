@@ -57,6 +57,12 @@ export default function SearchBox({ initialQuery }) {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Search frames, sunglasses, brands…"
+          // Only on an EMPTY search page. Arriving at /search with no query means
+          // the visitor came here to type, so the field is the page's purpose
+          // rather than an interruption. Landing with results (`initialQuery` set)
+          // does not focus, so it never takes focus from results someone came
+          // back to read.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus={!initialQuery}
           className="flex-1 bg-transparent px-3 py-4 text-[16px] font-medium text-[#1a1a1a] placeholder-gray-300 outline-none"
         />

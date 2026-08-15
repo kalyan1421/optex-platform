@@ -2,9 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserSupabase } from '@optex/db/browser';
-import { listProducts } from '@optex/db';
 import { formatKes } from '@optex/ui';
+import { api } from '@/lib/api';
 import { getProductImageUrl } from '@/lib/product-image';
 
 /** Wait this long after the last keystroke before querying. */
@@ -26,10 +25,12 @@ const SearchGlyph = () => (
 /**
  * Typeahead over the product catalogue.
  *
- * Reads Supabase directly through `listProducts`, the same path `/shop`,
- * `/search` and `/category` use today. That is deliberate: the storefront's
- * reads all migrate together in Wave 4, and adding a second access pattern now
- * would just be one more call site to convert. See docs/API-MIGRATION-PLAN.md.
+ * Suggestions come from the API's `/products/search`, the SAME endpoint the
+ * `/search` results page uses (audit F-13). This previously read Supabase
+ * directly with the anon key, which left the storefront with two different
+ * search implementations that could disagree with each other for the same
+ * query — the suggestion list said one thing, the page it navigated to said
+ * another.
  */
 export default function SearchAutocomplete({
   value,
@@ -61,11 +62,18 @@ export default function SearchAutocomplete({
     setLoading(true);
     const id = ++requestId.current;
     const timer = setTimeout(() => {
-      const db = createBrowserSupabase();
-      listProducts(db, { search: query, limit: MAX_SUGGESTIONS })
-        .then((rows) => {
+      // F-13 FIX: this used to query PostgREST directly with the anon key via
+      // `listProducts(db, …)`, which meant the storefront had TWO search
+      // implementations — a plain filter here, and the API's
+      // `websearch_to_tsquery` with an ilike fallback on /search. The same
+      // typing could produce suggestions that disagreed with the results page
+      // it led to. Going through the API also puts these requests back under
+      // its rate limiting and input validation, which the direct path skipped.
+      api.catalog
+        .searchProducts({ q: query, limit: MAX_SUGGESTIONS })
+        .then((res) => {
           if (id !== requestId.current) return; // a newer keystroke won
-          setSuggestions(rows ?? []);
+          setSuggestions(res?.items ?? []);
           setHighlight(-1);
           setOpen(true);
         })
@@ -153,6 +161,11 @@ export default function SearchAutocomplete({
             aria-controls="search-suggestions"
             aria-autocomplete="list"
             autoComplete="off"
+            // Caller-controlled, and only ever passed true when the user has just
+            // opened the search overlay. Moving focus into the field they asked
+            // for is correct for every user, screen-reader included; the rule
+            // guards against focus stealing on page load, which is not this.
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={autoFocus}
             value={value}
             onChange={(e) => onChange(e.target.value)}

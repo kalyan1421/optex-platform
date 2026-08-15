@@ -368,8 +368,14 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-10 pt-32 lg:bg-white lg:pb-[50px] lg:pt-[50px]">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 lg:px-[100px]">
+        {/* F-16: role="alert" so the failure is ANNOUNCED, not just shown.
+            Checkout is where this mattered most — a silent refusal here reads
+            as a broken button. */}
         {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[14px] font-medium text-red-600">
+          <div
+            role="alert"
+            className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[14px] font-medium text-red-600"
+          >
             {error}
           </div>
         )}

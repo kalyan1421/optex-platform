@@ -4,6 +4,28 @@
 // 127.0.0.1 rather than localhost to avoid Node IPv6 resolution quirks.
 const API_PROXY_ORIGIN = process.env.API_PROXY_ORIGIN || 'http://127.0.0.1:1111';
 
+/**
+ * Origin of the Supabase instance the BROWSER talks to, for the CSP below.
+ *
+ * The storefront's Supabase client (auth session, token refresh, storage reads)
+ * runs in the browser and connects to `NEXT_PUBLIC_SUPABASE_URL` — a different
+ * origin to this app: Kong on :54321 locally, `*.supabase.co` in production. A
+ * bare `connect-src 'self'` blocks every one of those requests, which silently
+ * breaks sign-in and made the checkout e2e specs hang on a page that never
+ * settled. Derived rather than hardcoded so each environment allows its own.
+ */
+function supabaseOrigin() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return '';
+  try {
+    return new URL(raw).origin;
+  } catch {
+    // A malformed URL must not take the whole build down; the app will fail
+    // loudly elsewhere if Supabase is genuinely misconfigured.
+    return '';
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -89,9 +111,9 @@ const nextConfig = {
               // The face files themselves come from the gstatic host, which is
               // a different origin to the stylesheet above.
               "font-src 'self' data: https://fonts.gstatic.com",
-              // Same-origin only: the browser calls /api on this host and the
-              // rewrite proxies onward, so no third-party origin is needed.
-              "connect-src 'self'",
+              // Same-origin for the API (the /api rewrite proxies onward), plus
+              // the Supabase origin the browser client authenticates against.
+              `connect-src 'self' ${supabaseOrigin()}`.trim(),
               // The counterpart to X-Frame-Options, for browsers that prefer it.
               "frame-ancestors 'none'",
               // Nothing on this site posts to another origin.

@@ -130,10 +130,20 @@ describe('Checkout stock enforcement (e2e)', () => {
       .limit(1)
       .single<{ id: string }>();
     branchId = branch!.id;
+
+    // Self-healing sweep. `test:e2e` runs jest with `--forceExit`, which can cut
+    // `afterAll` short mid-delete — and a leaked fixture here is not inert: these
+    // products are ACTIVE and some deliberately have zero stock, so they show up
+    // in the shop grid and the storefront's Playwright checkout picks one and
+    // gets a legitimate 409. That is exactly what happened once. Clearing the
+    // slug prefix up front means a previous crashed run cannot poison this one.
+    await db.from('products').delete().like('slug', 'e2e-stock-%');
   });
 
   afterAll(async () => {
     if (productIds.length) await db.from('products').delete().in('id', productIds);
+    // Belt and braces against the same forceExit race.
+    await db.from('products').delete().like('slug', 'e2e-stock-%');
     for (const id of userIds) await db.auth.admin.deleteUser(id);
     await db.from('categories').delete().eq('slug', CATEGORY_SLUG);
     await app.close();

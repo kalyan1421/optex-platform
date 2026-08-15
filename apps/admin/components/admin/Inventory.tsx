@@ -38,6 +38,10 @@ function StockCell({ value, onSave }: { value: number; onSave: (v: number) => vo
           className="w-16 rounded border border-gray-300 px-2 py-0.5 text-sm"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          // An inline edit-in-place cell: this input only exists because the
+          // user just clicked to edit it, so focus belongs here. Without it they
+          // would have to click the cell and then click the field.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
         />
         <button

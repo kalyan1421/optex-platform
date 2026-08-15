@@ -873,8 +873,14 @@ export default function Page() {
                 />
               </div>
 
+              {/* F-16: role="alert" so the failure is ANNOUNCED, not just shown.
+                  Booking refusals are often about a slot someone else just took,
+                  which the customer has to hear in order to pick another. */}
               {submitError && (
-                <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[14px] font-medium text-red-600">
+                <div
+                  role="alert"
+                  className="mb-5 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[14px] font-medium text-red-600"
+                >
                   {submitError}
                 </div>
               )}

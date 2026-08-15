@@ -224,8 +224,12 @@ const Signup = () => {
           </p>
         </div>
 
+        {/* F-16: role="alert" so the failure is ANNOUNCED, not just shown. */}
         {error && (
-          <div className="mx-auto mb-4 w-full max-w-[411.75px] rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+          <div
+            role="alert"
+            className="mx-auto mb-4 w-full max-w-[411.75px] rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600"
+          >
             {error}
           </div>
         )}

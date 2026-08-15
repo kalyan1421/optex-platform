@@ -4,6 +4,21 @@
 // 127.0.0.1 rather than localhost to avoid Node IPv6 resolution quirks.
 const API_PROXY_ORIGIN = process.env.API_PROXY_ORIGIN || 'http://127.0.0.1:1111';
 
+/**
+ * Origin of the Supabase instance the BROWSER talks to, for the CSP below.
+ * See apps/web/next.config.js for the full reasoning — in short, a bare
+ * `connect-src 'self'` blocks the Supabase auth client and breaks sign-in.
+ */
+function supabaseOrigin() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return '';
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return '';
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -69,7 +84,9 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self'",
+              // Same-origin for the API, plus the Supabase origin the admin
+              // middleware and browser client authenticate against.
+              `connect-src 'self' ${supabaseOrigin()}`.trim(),
               "frame-ancestors 'none'",
               "form-action 'self'",
               "base-uri 'self'",

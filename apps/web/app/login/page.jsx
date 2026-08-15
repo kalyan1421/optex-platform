@@ -129,8 +129,12 @@ const Login = () => {
         className="w-full max-w-[504px] rounded-[54px] bg-white px-[36px] pb-[36px] pt-[43.86px]"
         style={{ boxShadow: '0px 11.25px 33.75px 0px rgba(45, 50, 140, 0.08)' }}
       >
+        {/* F-16: role="alert" so the failure is ANNOUNCED, not just shown. */}
         {error && (
-          <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+          <div
+            role="alert"
+            className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600"
+          >
             {error}
           </div>
         )}

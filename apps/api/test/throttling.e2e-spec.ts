@@ -28,7 +28,7 @@ describe('Rate limiting (e2e)', () => {
   let app: NestExpressApplication;
 
   /** Comfortably above the per-route auth override, below the global bucket. */
-  const BURST = 30;
+  const BURST = 12;
 
   beforeAll(async () => {
     // Keep the credential override tight so this suite can actually reach it —
@@ -52,66 +52,80 @@ describe('Rate limiting (e2e)', () => {
   });
 
   it('never rate-limits the liveness probe (F-03)', async () => {
-    // The regression that would restart healthy containers under load: far more
-    // requests than any bucket allows, all of which must succeed.
+    // The regression that would restart healthy containers under load.
     //
-    // Sequential, not `Promise.all`. Firing hundreds at once resets the
-    // connection on the ephemeral test server and fails for reasons that have
-    // nothing to do with throttling — a flaky test dressed up as a real one.
+    // The ABSENCE of the quota headers is the real proof: they are emitted on
+    // every throttled route, so their absence means `@SkipThrottle` applied and
+    // no counter exists for this route at all. A large burst adds nothing to
+    // that — and an earlier version of this test fired 400 requests, which
+    // exhausted sockets in the shared `--runInBand` process and made unrelated
+    // suites fail with "socket hang up". The modest burst below still exceeds
+    // any per-second rate a probe would ever produce.
     const statuses: number[] = [];
     let headers: Record<string, unknown> = {};
-    for (let i = 0; i < 400; i++) {
+    for (let i = 0; i < 40; i++) {
       const res = await request(app.getHttpServer()).get('/api/health');
       statuses.push(res.status);
       headers = res.headers;
     }
 
     expect(statuses.every((s) => s === 200)).toBe(true);
-    // No quota headers at all — the guard was skipped, not merely satisfied.
     expect(headers['x-ratelimit-limit']).toBeUndefined();
+    expect(headers['x-ratelimit-remaining']).toBeUndefined();
   }, 30_000);
 
   it('gives distinct bearer tokens independent quotas (F-01)', async () => {
     // The tokens are junk, so every request 401s — which is fine and is the
     // point: the throttler runs BEFORE authentication, so a 401 still consumes
     // quota. What matters is whose quota it consumes.
-    const burn = async (token: string) => {
-      for (let i = 0; i < BURST; i++) {
-        await request(app.getHttpServer())
-          .get('/api/cart')
-          .set('Authorization', `Bearer token-${token}`);
-      }
-      const res = await request(app.getHttpServer())
-        .get('/api/cart')
-        .set('Authorization', `Bearer token-${token}`);
-      return res.headers['x-ratelimit-remaining'];
-    };
-
-    const remainingA = Number(await burn('customer-a'));
-    const remainingB = Number(await burn('customer-b'));
-
-    // If both keyed on the shared IP, B would start where A finished and its
-    // remaining count would be roughly BURST lower. Keyed per token they match.
-    expect(remainingB).toBe(remainingA);
-  }, 30_000);
-
-  it('separates anonymous callers by forwarded address, not by proxy (F-01)', async () => {
-    const remainingFor = async (ip: string) => {
+    //
+    // Asserted against a FRESH key's absolute remaining rather than by
+    // comparing two callers' counts. The throttler store is in-memory and
+    // shared across every suite in this `--runInBand` process, so any
+    // comparison that assumes an untouched bucket breaks depending on which
+    // suites ran first — which is precisely how this test failed the first time.
+    const burn = async (token: string, times: number) => {
       let last = '';
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < times; i++) {
         const res = await request(app.getHttpServer())
-          .get('/api/products')
-          .set('X-Forwarded-For', ip);
+          .get('/api/cart')
+          .set('Authorization', `Bearer ${token}`);
         last = res.headers['x-ratelimit-remaining'];
       }
       return Number(last);
     };
 
-    const first = await remainingFor('203.0.113.10');
-    const second = await remainingFor('203.0.113.11');
+    const limit = Number(
+      (await request(app.getHttpServer()).get('/api/products')).headers['x-ratelimit-limit'],
+    );
 
-    // Two shoppers behind the same proxy must not drain one another's quota.
-    expect(second).toBe(first);
+    const tokenA = `iso-a-${Date.now()}`;
+    const tokenB = `iso-b-${Date.now()}`;
+
+    await burn(tokenA, BURST);
+    // B has never been seen, so its very first request must leave a full
+    // quota minus one — regardless of how much A just spent, or anyone else.
+    const remainingB = await burn(tokenB, 1);
+
+    expect(remainingB).toBe(limit - 1);
+  }, 30_000);
+
+  it('separates anonymous callers by forwarded address, not by proxy (F-01)', async () => {
+    const hit = (ip: string) =>
+      request(app.getHttpServer()).get('/api/products').set('X-Forwarded-For', ip);
+
+    const limit = Number((await hit('203.0.113.1')).headers['x-ratelimit-limit']);
+
+    // Spend several requests as one shopper…
+    const busy = `203.0.113.${(Date.now() % 200) + 10}`;
+    for (let i = 0; i < 5; i++) await hit(busy);
+
+    // …then arrive as a different one behind the same proxy. A full quota minus
+    // one proves the first shopper's spending did not touch this bucket.
+    const fresh = `198.51.100.${(Date.now() % 200) + 10}`;
+    const res = await hit(fresh);
+
+    expect(Number(res.headers['x-ratelimit-remaining'])).toBe(limit - 1);
   });
 
   it('applies a tight ceiling to the credential endpoints', async () => {
