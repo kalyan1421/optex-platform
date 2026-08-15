@@ -205,14 +205,14 @@ All ✅ with RLS. `0001`–`0011`. `products.try_on_image_url` already exists fo
 | -------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
 | `LocalBusiness` + `MedicalOrganization` JSON-LD                | ✅     | `layout.jsx:21`                                                                            |
 | `PostalAddress`, `GeoCoordinates`, `OpeningHoursSpecification` | ✅     |                                                                                            |
-| **`generateMetadata`**                                         | 🟡     | Exists in **one** file — `category/[slug]/page.jsx:9`. No per-product `<title>` or OG tags |
-| **`Product` / `Brand` / `Offer` JSON-LD**                      | 🟡     | On the PDP, but the file is `'use client'`, so it renders **after hydration**              |
-| **Server-side rendering**                                      | ❌     | **15 of 23 pages are `'use client'`.** Only `category/[slug]` is a Server Component        |
+| **`generateMetadata`**                                         | 🟡     | Now on `shop`, `category/[slug]` and `product/[slug]` (per-product `<title>`, description, canonical, OG tags including image). Still missing on search, home and the static content pages |
+| **`Product` / `Brand` / `Offer` JSON-LD**                      | ✅     | `product/[slug]/page.jsx` — server-rendered in the initial HTML (Sprint 5), including `AggregateRating` once a product has approved reviews. No longer injected after hydration |
+| **Server-side rendering**                                      | 🟡     | `shop`, `category/[slug]` and `product/[slug]` are Server Components. Search, home, and the rest of the storefront are still `'use client'`                        |
 | **`sitemap.xml`**                                              | ❌     | Does not exist                                                                             |
 | **`robots.txt`**                                               | ❌     | Does not exist                                                                             |
 | **FAQ schema**                                                 | ❌     |                                                                                            |
-| **BreadcrumbList schema**                                      | ❌     |                                                                                            |
-| **Core Web Vitals tuning**                                     | ❌     | Client-rendering is the root cause                                                         |
+| **BreadcrumbList schema**                                      | 🟡     | Server-rendered on `product/[slug]` (Sprint 5). Not yet on `category/[slug]`               |
+| **Core Web Vitals tuning**                                     | ❌     | Client-rendering on most other pages is the root cause                                     |
 
 This whole section is Wave 4 / [SPEC-03](specs/SPEC-03-storefront-seo-render.md). It is the single largest contracted gap.
 
