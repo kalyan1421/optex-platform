@@ -7,10 +7,21 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  * Node process (global-teardown, and any spec/config code that talks to
  * Supabase directly) does not get Next.js's automatic env loading, unlike the
  * `next build && next start` the webServer itself runs.
+ *
+ * The file is optional: CI (.github/workflows/ci.yml) sets these vars
+ * directly via the workflow's `env:` block and never checks out a
+ * `.env.local` (it's gitignored), so a missing file just means there's
+ * nothing to layer on top of `process.env` — not a failure.
  */
 function loadEnvLocal(): void {
   const envPath = path.join(__dirname, '../../.env.local');
-  const content = fs.readFileSync(envPath, 'utf-8');
+  let content: string;
+  try {
+    content = fs.readFileSync(envPath, 'utf-8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw err;
+  }
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
