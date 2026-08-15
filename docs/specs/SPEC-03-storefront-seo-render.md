@@ -69,12 +69,14 @@ For a 27-branch optician competing on local search in Kenya, organic discovery i
 **R2. Catalogue pages become Server Components.**
 `shop`, `product/[slug]`, `search`, and the three data-driven home components. `category/[slug]` is already a Server Component and is the reference pattern.
 
-`shop` and `product/[slug]` are done (Sprint 5 converted the PDP — gallery, price, description, breadcrumb and the review list now render server-side through `publicApi()`; colour/quantity selection, tabs, the review form, wishlist and cart mutations split into four small client islands: `ProductPurchasePanel`, `ProductTabs`, `ReviewForm`, `SimilarProducts`). `search` and the three home components are still `'use client'` — Sprint 6 per the sprint plan.
+All done. `shop` and `product/[slug]` converted in Sprint 5 (the PDP split into four client islands: `ProductPurchasePanel`, `ProductTabs`, `ReviewForm`, `SimilarProducts`). Sprint 6 converted the rest: `search/page.jsx` (reads `?q=` via the `searchParams` prop instead of the client `useSearchParams` hook — no more `<Suspense>` boundary needed — split into `SearchBox` and `SearchResults`); the three home sections `FeaturedCollection` (+ `FeaturedCollectionTabs`), `FeaturedProducts` (+ `FeaturedProductsGrid`), and `TrendingNow` (no client split needed — no Add to Cart button on that grid, so it renders fully server-side); and `category/[slug]`, which was already a Server Component but read Supabase directly — swapped to `publicApi()` via a new `GET /categories/:slug` endpoint (R7), closing gap G-5 and the last direct-Supabase-read site in the storefront's page tree.
 
-- [x] Product data is present in the initial HTML, verified by fetching with JavaScript disabled — confirmed on `product/[slug]` via `curl` (name, price, description, JSON-LD all present with no JS execution)
-- [x] Interactive parts — filters, add-to-cart, review form — split into small client children — done for the PDP's purchase panel, tabs and review form; `shop`'s filters were already split in the earlier wave
-- [x] Given a non-existent slug, then the response is a genuine HTTP 404 — `findBySlug()` throws `NotFoundException`, caught in `loadProduct()` and re-raised via `notFound()`; confirmed with `curl` returning `404` for an unknown slug
-- [x] No behavioural regression: every interaction working before still works — the existing `smoke.spec.ts` and `checkout-authenticated.spec.ts` suites pass unmodified against the converted page, plus a manual walkthrough (colour/qty, add-to-cart, wishlist toggle, tab switching, review submit + duplicate-review 409, nonexistent-slug 404)
+Sprint 6 also fixed a live bug found while making this change: `categories` has no `description` column (confirmed directly against the schema), so `category/[slug]`'s old `.select('id, name, slug, description')` errored on every request and the page 404'd unconditionally before this pass. Not a regression risk to track — it's fixed, and Sprint 6's own verification (`curl` returning 200 with real product data) is the proof.
+
+- [x] Product data is present in the initial HTML, verified by fetching with JavaScript disabled — confirmed via `curl` on `product/[slug]`, `search`, `category/[slug]`, and the home page (product names, prices, and links present with no JS execution)
+- [x] Interactive parts — filters, add-to-cart, review form — split into small client children — done for the PDP's purchase panel, tabs and review form; `shop`'s filters were already split in the earlier wave; `search`'s facets/sort/add-to-cart now live in `SearchResults`; the two home sections needing interactivity split into `FeaturedCollectionTabs` and `FeaturedProductsGrid`
+- [x] Given a non-existent slug, then the response is a genuine HTTP 404 — true for both `product/[slug]` (`findBySlug()` → `NotFoundException` → `notFound()`) and `category/[slug]` (same pattern against the new `GET /categories/:slug`); confirmed with `curl` for both
+- [x] No behavioural regression: every interaction working before still works — `smoke.spec.ts`, `checkout-authenticated.spec.ts`, `cart-empty.spec.ts` and `cart-merge.spec.ts` all pass unmodified (12/12) against the converted pages, plus manual walkthroughs of home (tab switching, add-to-cart), search (facets, sort, add-to-cart, no-results state), and category (previously-broken page now rendering real products)
 
 **R3. Per-page metadata.**
 
@@ -105,7 +107,7 @@ The rewritten files are being rewritten anyway. Converting `.jsx` → `.tsx` sep
 - [ ] `apps/web` has a `typecheck` script and it passes
 - [ ] `typecheck` runs in CI
 
-**R7. Category endpoint (gap G-5).** `GET /api/categories/:slug` — only the full list exists, and SSR metadata needs one category.
+**R7. Category endpoint (gap G-5).** Done (Sprint 6) — `GET /api/categories/:slug` (`categories.controller.ts` / `categories.service.ts#findBySlug`), returning `404` for an unknown slug. `category/[slug]/page.jsx`'s `generateMetadata` and page body both use it in place of the direct-Supabase lookup.
 
 **R8. Enforcement.**
 

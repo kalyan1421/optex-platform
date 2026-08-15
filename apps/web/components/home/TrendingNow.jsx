@@ -1,21 +1,23 @@
-'use client';
-import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createBrowserSupabase } from '@optex/db/browser';
-import { listProducts } from '@optex/db';
-import { formatKes } from '@optex/ui';
+import { publicApi } from '@/lib/api-server';
 import { getProductImageUrl } from '@/lib/product-image';
 import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
 const BADGES = ['BEST SELLER', 'TRENDING', 'NEW ARRIVAL', 'HOT'];
 
-export default function TrendingNow() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    const db = createBrowserSupabase();
-    listProducts(db, { limit: 4 }).then(setProducts).catch(console.error);
-  }, []);
+/**
+ * Trending Now home section — Server Component (SPEC-03 R2, Sprint 6).
+ *
+ * No client wrapper needed here, unlike the other two home sections: there
+ * is no Add to Cart button on this grid, and `WishlistToggle` is already its
+ * own client component, so the whole section renders server-side directly.
+ */
+export default async function TrendingNow() {
+  const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
+  const { items: products } = await api.catalog.listProducts({ limit: 4 }).catch((err) => {
+    console.error('[home] TrendingNow fetch failed:', err);
+    return { items: [] };
+  });
 
   return (
     <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 lg:px-[100px]">
@@ -166,23 +168,21 @@ export default function TrendingNow() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:flex-wrap lg:h-[381.75px] lg:w-[1240px] lg:flex-nowrap lg:gap-0">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="flex animate-pulse flex-col gap-6 lg:h-[381.75px] lg:w-[261.75px]"
-              >
-                <div
-                  className="aspect-square w-full bg-gray-100"
-                  style={{ borderRadius: '32px' }}
-                />
-                <div className="flex flex-col gap-2">
-                  <div className="h-4 w-1/3 rounded bg-gray-100" />
-                  <div className="h-6 w-2/3 rounded bg-gray-100" />
-                  <div className="mt-2 h-8 w-1/2 rounded bg-gray-100" />
-                </div>
-              </div>
-            ))}
+          // Products are fetched server-side now, so an empty result here means
+          // genuinely no products exist — not "still loading" (there is no
+          // loading phase any more). An animate-pulse skeleton would render
+          // permanently rather than resolving, which is worse than an honest
+          // empty state.
+          <div
+            className="flex flex-col items-center justify-center bg-[#FFFFFF] lg:h-[381.75px] lg:w-[1240px]"
+            style={{ borderRadius: '32px', border: '1px solid #D4D4D4' }}
+          >
+            <h3
+              className="text-[#000000]"
+              style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '24px' }}
+            >
+              Check back soon for new styles
+            </h3>
           </div>
         )}
 

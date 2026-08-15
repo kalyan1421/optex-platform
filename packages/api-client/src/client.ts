@@ -356,6 +356,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     getProduct: (slug) => request<Product>(`/products/${encodeURIComponent(slug)}`),
     getRelatedProducts: (id) => request<Product[]>(`/products/${encodeURIComponent(id)}/related`),
     listCategories: () => request<Category[]>('/categories'),
+    getCategory: (slug) => request<Category>(`/categories/${encodeURIComponent(slug)}`),
   };
 
   // ── cart ─────────────────────────────────────────────────────────────────
@@ -750,6 +751,8 @@ export interface CatalogApi {
   getRelatedProducts: (id: string) => Promise<Product[]>;
   /** `GET /categories` */
   listCategories: () => Promise<Category[]>;
+  /** `GET /categories/:slug` */
+  getCategory: (slug: string) => Promise<Category>;
 }
 
 /** Authenticated server-side cart (`/cart`). */

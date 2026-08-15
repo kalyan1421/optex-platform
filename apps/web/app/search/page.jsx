@@ -1,20 +1,7 @@
-'use client';
-
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { createBrowserSupabase } from '@optex/db/browser';
-import { listProducts } from '@optex/db';
-import { formatKes } from '@optex/ui';
-import { getProductImageUrl } from '@/lib/product-image';
-import { useCart } from '@/context/CartContext';
-import WishlistToggle from '@/components/wishlist/WishlistToggle';
-import {
-  useProductFacets,
-  ProductFilterSidebar,
-  SortSelect,
-  sortProducts,
-} from '@/components/shop/ProductFilters';
+import { publicApi } from '@/lib/api-server';
+import SearchBox from '@/components/search/SearchBox';
+import SearchResults from '@/components/search/SearchResults';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -50,146 +37,41 @@ const ArrowRightIcon = () => (
   </svg>
 );
 
-const XIcon = () => (
-  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
+/**
+ * /search — Server Component (SPEC-03 R2, Sprint 6).
+ *
+ * Was a `'use client'` page (wrapped in `<Suspense>` for `useSearchParams`)
+ * that fetched results from the browser after mount. `?q=` is a URL search
+ * param, which the App Router hands a Server Component directly via the
+ * `searchParams` prop — no client hook, no Suspense boundary needed, and the
+ * results are in the initial HTML for whatever the query was at request
+ * time. `SearchBox` (the input/submit/clear) and `SearchResults` (facets,
+ * sort, add-to-cart) are the only parts that still need a browser.
+ */
 
-// ── Skeleton Card ──────────────────────────────────────────────────────────
-
-function SkeletonCard() {
-  return (
-    <div className="animate-pulse rounded-[25px] border border-[#ddd] bg-white p-2.5">
-      <div className="mb-3 aspect-square rounded-[20px] bg-gray-200" />
-      <div className="space-y-2 p-2">
-        <div className="h-4 w-3/4 rounded-full bg-gray-200" />
-        <div className="h-3 w-full rounded-full bg-gray-100" />
-        <div className="h-3 w-2/3 rounded-full bg-gray-100" />
-        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-2">
-          <div className="h-5 w-1/3 rounded-full bg-gray-200" />
-          <div className="h-8 w-1/4 rounded-full bg-gray-100" />
-        </div>
-      </div>
-    </div>
-  );
+export function generateMetadata({ searchParams }) {
+  const q = searchParams?.q ?? '';
+  return {
+    title: q ? `Search: "${q}" | Optex Opticians` : 'Search Products | Optex Opticians',
+  };
 }
 
-// ── Product Card (mirrors shop page style) ─────────────────────────────────
-
-function ProductCard({ product }) {
-  const { addToCart } = useCart();
-  return (
-    <div className="group flex flex-col rounded-[25px] border border-[#ddd] bg-white p-2.5 transition-all duration-500 hover:shadow-xl">
-      <div className="relative aspect-square overflow-hidden rounded-[20px] bg-[#f8f9fa]">
-        <div className="absolute right-3 top-3 z-10">
-          <div className="rounded-full border border-[#ddd] bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
-            <span className="text-[9px] font-black uppercase tracking-tighter text-[#2A3182]">
-              {product.frame_shape ?? product.brand}
-            </span>
-          </div>
-        </div>
-        <WishlistToggle productId={product.id} className="absolute left-3 top-3 z-10 h-8 w-8" />
-        <Link href={`/product/${product.slug}`}>
-          <img
-            src={getProductImageUrl(product)}
-            alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        </Link>
-      </div>
-      <div className="flex flex-1 flex-col p-4 pt-4">
-        <div className="mb-1 flex items-start justify-between gap-3">
-          <Link href={`/product/${product.slug}`}>
-            <h3 className="text-[16px] font-bold leading-tight text-gray-900 transition-colors group-hover:text-[#2A3182]">
-              {product.name}
-            </h3>
-          </Link>
-          <span className="mt-1 text-[9px] font-bold uppercase tracking-widest text-gray-300">
-            {product.brand}
-          </span>
-        </div>
-        <p className="mb-4 line-clamp-2 flex-1 text-[12px] leading-relaxed text-gray-400">
-          {product.description}
-        </p>
-        <div className="flex items-center justify-between gap-3 border-t border-[#ddd] pt-2">
-          <p className="text-[18px] font-black tracking-tight text-[#2A3182]">
-            {formatKes(Number(product.price_kes))}
-          </p>
-          <button
-            onClick={() =>
-              addToCart({
-                id: product.id,
-                title: product.name,
-                price: String(product.price_kes),
-                image: getProductImageUrl(product),
-                quantity: 1,
-              })
-            }
-            className="whitespace-nowrap rounded-full bg-[#EF4444] px-4 py-2 text-[11px] font-bold text-white shadow-md transition-all hover:bg-red-600 active:scale-95"
-          >
-            Add to Cart
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+async function loadResults(q) {
+  if (!q.trim()) return [];
+  const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
+  try {
+    const { items } = await api.catalog.searchProducts({ q: q.trim(), limit: 40 });
+    return items;
+  } catch (err) {
+    console.error('[search] search fetch failed:', err);
+    return [];
+  }
 }
 
-// ── Inner search component (uses useSearchParams) ──────────────────────────
-
-function SearchInner() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const q = searchParams.get('q') ?? '';
-
-  const [inputValue, setInputValue] = useState(q);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState('featured');
-
-  // Facets narrow within the result set. No category list is passed — /search
-  // has no category rail of its own, so that facet simply does not render.
-  const { filtered, activeFilters, clearFilters, sidebarProps } = useProductFacets(products);
-  const visible = sortProducts(filtered, sortBy);
-
-  const runSearch = useCallback(async (query) => {
-    if (!query.trim()) {
-      setProducts([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const db = createBrowserSupabase();
-      const results = await listProducts(db, { search: query.trim(), limit: 40 });
-      setProducts(results ?? []);
-    } catch (err) {
-      console.error('Search error:', err);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    setInputValue(q);
-    runSearch(q);
-  }, [q, runSearch]);
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    const trimmed = inputValue.trim();
-    if (!trimmed) return;
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
-  }
-
-  function clearSearch() {
-    setInputValue('');
-    router.push('/search');
-  }
-
+export default async function SearchPage({ searchParams }) {
+  const q = searchParams?.q ?? '';
   const hasQuery = q.trim().length > 0;
+  const products = await loadResults(q);
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] pb-16 sm:pb-24">
@@ -212,46 +94,13 @@ function SearchInner() {
             )}
           </h1>
 
-          {/* Search form */}
-          <form onSubmit={handleSubmit} className="relative max-w-2xl">
-            <div className="flex items-center overflow-hidden rounded-2xl border-2 border-white/20 bg-white shadow-xl transition-colors focus-within:border-[#E53935]">
-              <div className="flex-shrink-0 pl-5 pr-2 text-gray-400">
-                <SearchIcon />
-              </div>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Search frames, sunglasses, brands…"
-                autoFocus={!hasQuery}
-                className="flex-1 bg-transparent px-3 py-4 text-[16px] font-medium text-[#1a1a1a] placeholder-gray-300 outline-none"
-              />
-              {inputValue && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="flex-shrink-0 px-3 text-gray-300 transition-colors hover:text-gray-500"
-                  aria-label="Clear search"
-                >
-                  <XIcon />
-                </button>
-              )}
-              <button
-                type="submit"
-                className="flex flex-shrink-0 items-center gap-2 bg-[#E53935] px-6 py-4 text-[14px] font-bold text-white transition-colors hover:bg-red-600"
-              >
-                Search
-                <ArrowRightIcon />
-              </button>
-            </div>
-          </form>
+          <SearchBox initialQuery={q} />
         </div>
       </section>
 
       {/* Results area */}
       <div className="site-container pt-10">
-        {/* No query state */}
-        {!hasQuery && !loading && (
+        {!hasQuery && (
           <div className="py-20 text-center">
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-300 shadow-sm">
               <SearchIcon />
@@ -273,112 +122,8 @@ function SearchInner() {
           </div>
         )}
 
-        {/* Loading skeleton */}
-        {loading && (
-          <>
-            <div className="mb-6">
-              <div className="h-4 w-40 animate-pulse rounded-full bg-gray-200" />
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <SkeletonCard key={i} />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Results — the same facet sidebar /shop uses, narrowing within the
-            result set rather than across the whole catalogue. */}
-        {!loading && hasQuery && products.length > 0 && (
-          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-[40px]">
-            <ProductFilterSidebar {...sidebarProps} />
-
-            <div className="min-w-0 flex-1">
-              <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <p className="text-[12px] font-bold uppercase tracking-widest text-gray-400">
-                  <span className="text-[16px] font-black text-[#2A3182]">{visible.length}</span>{' '}
-                  result{visible.length !== 1 ? 's' : ''} for{' '}
-                  <span className="text-[#1a1a1a]">&quot;{q}&quot;</span>
-                  {activeFilters > 0 && (
-                    <span className="normal-case tracking-normal text-gray-400">
-                      {' '}
-                      (filtered from {products.length})
-                    </span>
-                  )}
-                </p>
-                <div className="flex items-center gap-4">
-                  <SortSelect value={sortBy} onChange={setSortBy} />
-                  <Link
-                    href="/shop"
-                    className="whitespace-nowrap text-[12px] font-bold uppercase tracking-widest text-[#2A3182] hover:underline"
-                  >
-                    View All Products
-                  </Link>
-                </div>
-              </div>
-
-              {visible.length === 0 ? (
-                <div className="rounded-2xl border border-gray-200 bg-white px-6 py-12 text-center">
-                  <p className="mb-4 text-[15px] font-semibold text-[#1a1a1a]">
-                    No results match these filters
-                  </p>
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="text-[13px] font-bold uppercase tracking-widest text-[#2A3182] hover:underline"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                  {visible.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && hasQuery && products.length === 0 && (
-          <div className="py-20 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-200 shadow-sm">
-              <SearchIcon />
-            </div>
-            <h2 className="mb-3 text-[22px] font-black text-[#1a1a1a]">
-              No results for &quot;{q}&quot;
-            </h2>
-            <p className="mx-auto mb-8 max-w-sm text-[14px] font-medium text-gray-400">
-              We couldn&apos;t find any products matching your search. Try different keywords or
-              browse our full collection.
-            </p>
-            <Link
-              href="/shop"
-              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white shadow-md shadow-[#2A3182]/20 transition-colors hover:bg-[#1e2461]"
-            >
-              Browse All Products
-              <ArrowRightIcon />
-            </Link>
-          </div>
-        )}
+        {hasQuery && <SearchResults products={products} query={q} />}
       </div>
     </div>
-  );
-}
-
-// Wrap in Suspense because useSearchParams requires it in Next.js 14 app router
-export default function SearchPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8]">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2A3182] border-t-transparent" />
-        </div>
-      }
-    >
-      <SearchInner />
-    </Suspense>
   );
 }

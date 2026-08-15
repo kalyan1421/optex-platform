@@ -1,19 +1,40 @@
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { createServerSupabase } from '@optex/db/server';
-import { listProducts } from '@optex/db';
+import { publicApi } from '@/lib/api-server';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 
+/**
+ * /category/[slug] — Server Component (SPEC-03 R2, Sprint 6).
+ *
+ * Was already server-rendered, but read directly from Supabase via
+ * `createServerSupabase` — the one page in the storefront still doing that,
+ * and the reason gap G-5 existed (no `GET /categories/:slug` endpoint to
+ * swap to). That endpoint now exists; this reads through `publicApi()` like
+ * every other converted page, so the whole storefront agrees on one data
+ * path and one cache story.
+ *
+ * Also fixes a live bug found while making this change: `categories` has no
+ * `description` column (confirmed directly against the schema — `column
+ * "description" does not exist`), so the old `.select('id, name, slug,
+ * description')` errored on every request and `data` came back `null`,
+ * meaning this page 404'd unconditionally. Dropped here rather than added to
+ * the schema, since nothing populates it and the page never needed it to
+ * render — it only ever showed a computed fallback line.
+ */
+
+async function loadCategory(slug) {
+  const api = publicApi({ revalidate: 60, tags: ['catalogue', `category:${slug}`] });
+  try {
+    return await api.catalog.getCategory(slug);
+  } catch (err) {
+    if (err?.status === 404) return null;
+    throw err;
+  }
+}
+
 export async function generateMetadata({ params }) {
-  const cookieStore = cookies();
-  const supabase = createServerSupabase(cookieStore);
-  const { data: category } = await supabase
-    .from('categories')
-    .select('name, slug')
-    .eq('slug', params.slug)
-    .maybeSingle();
+  const category = await loadCategory(params.slug);
 
   if (!category) {
     return { title: 'Category | Optex Opticians' };
@@ -22,29 +43,18 @@ export async function generateMetadata({ params }) {
   return {
     title: `${category.name} | Optex Opticians`,
     description: `Shop our ${category.name} collection — premium eyewear at Optex Opticians Kenya.`,
+    alternates: { canonical: `/category/${params.slug}` },
   };
 }
 
 export default async function CategoryPage({ params }) {
-  const cookieStore = cookies();
-  const supabase = createServerSupabase(cookieStore);
-
-  // Fetch category
-  const { data: category } = await supabase
-    .from('categories')
-    .select('id, name, slug, description')
-    .eq('slug', params.slug)
-    .maybeSingle();
-
+  const category = await loadCategory(params.slug);
   if (!category) {
     notFound();
   }
 
-  // Fetch active products for this category
-  const products = await listProducts(supabase, {
-    categorySlug: params.slug,
-    limit: 60,
-  });
+  const api = publicApi({ revalidate: 60, tags: ['catalogue', `category:${params.slug}`] });
+  const { items: products } = await api.catalog.listProducts({ category: params.slug, limit: 60 });
 
   const categoryLabels = {
     eyeglasses: 'PRESCRIPTION',
@@ -90,15 +100,9 @@ export default async function CategoryPage({ params }) {
           <h1 className="mb-4 text-[36px] font-black tracking-tight text-white drop-shadow-2xl sm:text-[48px]">
             {category.name}
           </h1>
-          {category.description ? (
-            <p className="mx-auto max-w-lg text-[14px] font-medium leading-relaxed text-white/80 sm:text-[16px]">
-              {category.description}
-            </p>
-          ) : (
-            <p className="text-[14px] font-medium text-white/70">
-              {products.length} product{products.length !== 1 ? 's' : ''} available
-            </p>
-          )}
+          <p className="text-[14px] font-medium text-white/70">
+            {products.length} product{products.length !== 1 ? 's' : ''} available
+          </p>
         </div>
       </section>
 
