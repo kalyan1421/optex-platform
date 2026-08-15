@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { CancellationService } from '../orders/cancellation.service';
+import { CronLeaseService } from './cron-lease.service';
 
 /**
  * CRON · CANCELLATION AUTO-DECLINE (SPEC-06 R9).
@@ -23,11 +24,21 @@ import { CancellationService } from '../orders/cancellation.service';
 export class CancellationAutoDeclineJob {
   private readonly logger = new Logger(CancellationAutoDeclineJob.name);
 
-  constructor(private readonly cancellation: CancellationService) {}
+  constructor(
+    private readonly cancellation: CancellationService,
+    private readonly lease: CronLeaseService,
+  ) {}
 
   @Cron('0 */15 * * * *', { name: 'cancellation-auto-decline' })
   async sweep(): Promise<void> {
     try {
+      // F-05: one runner across replicas. The bulk UPDATE is already its own
+      // concurrency guard against a human deciding the same row, but two
+      // replicas sweeping would still each notify the affected customers.
+      if (!(await this.lease.claim('cancellation-auto-decline', 14 * 60))) {
+        return;
+      }
+
       const { declined } = await this.cancellation.autoDeclineStale();
       if (declined > 0) {
         this.logger.log(`Auto-declined ${declined} stale cancellation request(s).`);

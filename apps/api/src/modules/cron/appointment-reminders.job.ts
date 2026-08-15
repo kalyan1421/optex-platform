@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { SmsService } from '../notifications/sms.service';
+import { CronLeaseService } from './cron-lease.service';
 
-/** Appointment row + joined customer phone, as selected below. */
-interface ReminderRow {
+/** A reminder the database has claimed for us and already flagged as sent. */
+interface ClaimedReminderRow {
   id: string;
   scheduled_at: string;
   status: string;
@@ -12,62 +13,63 @@ interface ReminderRow {
   /** Guest-booking fallback phone (schema: `appointments.contact_phone`). */
   contact_phone: string | null;
   /** Joined `customers.phone` (preferred when the booking has a customer). */
-  customer: { phone: string | null } | null;
+  customer_phone: string | null;
 }
 
 /** Which lead-time bucket a reminder belongs to. */
 type Bucket = '24h' | '1h';
 
-/**
- * Statuses that should still receive a reminder. A `cancelled` or `completed`
- * appointment must NOT be reminded.
- */
-const REMINDABLE_STATUSES = ['pending', 'confirmed', 'rescheduled'] as const;
+const HOUR_MS = 60 * 60_000;
 
 /**
- * The cron cadence in minutes — the idempotency window is derived from this so
- * each appointment lands in each bucket about once. MUST match the @Cron below.
+ * How far ahead each bucket looks for unsent reminders.
+ *
+ * Slightly WIDER than the nominal lead time, which is the whole point: an
+ * appointment whose reminder was missed because a deploy ate the run still
+ * falls inside the horizon on the next tick and gets picked up. The old
+ * window-tiling scheme had no such property — a missed run dropped the
+ * reminder permanently.
  */
-const RUN_CADENCE_MIN = 15;
-/**
- * Half the cadence, in ms. We centre a window of width = cadence on each target
- * lead-time (24h / 1h ahead). Width == cadence means consecutive runs tile the
- * timeline with neither gaps (missed reminders) nor overlaps (duplicates).
- */
-const HALF_WINDOW_MS = (RUN_CADENCE_MIN / 2) * 60_000;
-const HOUR_MS = 60 * 60_000;
+const HORIZONS: Record<Bucket, string> = {
+  '24h': '24 hours',
+  '1h': '1 hour',
+};
+
+/** Most reminders claimed per bucket per run. */
+const BATCH = 200;
 
 /**
  * CRON · APPOINTMENT REMINDERS.
  *
- * Every ~15 minutes, finds bookings due in ~24h and in ~1h (status in
+ * Every ~15 minutes, finds bookings due within each lead-time horizon (status
  * pending/confirmed/rescheduled — never cancelled/completed) and SMSes the
  * customer. Phone is the joined `customers.phone`, falling back to the
  * guest-booking `contact_phone`.
  *
- * ─── IDEMPOTENCY (IMPORTANT — read before changing the cadence) ──────────────
- * The `appointments` table (migration 0001) has NO reminder-tracking column, so
- * there is nothing durable to mark "already reminded". We approximate
- * exactly-once delivery with a TIME WINDOW matched to the run cadence: each run
- * selects appointments whose `scheduled_at` falls within ±(cadence/2) of "now +
- * lead-time". Because the window width equals the cadence, consecutive runs tile
- * the timeline edge-to-edge — an appointment crosses each bucket's window on
- * essentially one run, so it gets ~one SMS per bucket.
+ * ─── IDEMPOTENCY (audit F-04) ────────────────────────────────────────────────
+ * This job used to approximate exactly-once delivery with a ±7.5-minute window
+ * tiled against its own cadence, and its header claimed that `appointments` had
+ * no column to track sends. That was wrong by eleven migrations: 0008 added
+ * `reminder_24h_sent` and `reminder_1h_sent` for exactly this, and listed the
+ * wiring as outstanding follow-up. The columns sat unused while the timing
+ * heuristic quietly double-sent on any overlapping run and dropped reminders on
+ * any missed one.
  *
- * This is best-effort, NOT bullet-proof: a missed run (deploy/restart) drops a
- * reminder; a run that overruns into the next tick, a clock skew, or a manual
- * trigger can double-send. The cadence here MUST equal `RUN_CADENCE_MIN` for the
- * window math to hold.
+ * Delivery is now exactly-once by construction. `claim_due_reminders`
+ * (migration 0022) selects, flags and returns due rows in ONE statement, so two
+ * concurrent runs cannot claim the same appointment — the second's WHERE clause
+ * no longer matches. The cadence is free to change without breaking anything.
  *
- * RECOMMENDED MIGRATION (robust fix): add nullable booleans
- *   `reminder_24h_sent boolean not null default false`
- *   `reminder_1h_sent  boolean not null default false`
- * to `appointments` (or a `reminder_log(appointment_id, bucket, sent_at)` table
- * with a unique (appointment_id, bucket) key). Then this job filters on
- * `reminder_*_sent = false` and flips the flag in the same transaction after a
- * successful send — making it exactly-once and resilient to missed/overlapping
- * runs. Until that ships, the window above is the cleanest possible idempotency
- * with the columns that exist.
+ * CLAIM BEFORE SEND: the flag is set before the SMS goes out, so a send that
+ * fails after claiming is not retried by this job. That is the deliberate
+ * direction to fail — a missed reminder is a disappointment, a duplicate at 3am
+ * is a complaint — and the failure is not actually lost: `SmsService` records it
+ * in `notification_log`, where the retry sweep picks it up (F-06).
+ *
+ * SINGLE RUNNER: the run is additionally gated on a `CronLeaseService` claim so
+ * only one replica sweeps (F-05). Strictly redundant given the atomic claim
+ * above, but it keeps the pattern uniform across all three jobs and avoids N
+ * replicas doing N times the database work to discover they have nothing to do.
  *
  * SAFETY: never throws — catches its own errors and logs per `Logger`.
  */
@@ -78,21 +80,25 @@ export class AppointmentRemindersJob {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly sms: SmsService,
+    private readonly lease: CronLeaseService,
   ) {}
 
   private get db() {
     return this.supabase.client;
   }
 
-  // @nestjs/schedule has no built-in 15-min CronExpression, so we use a cron
-  // string: runs at :00, :15, :30, :45 every hour — matching RUN_CADENCE_MIN=15
-  // (the window math in this file depends on cadence == 15).
   @Cron('0 */15 * * * *', { name: 'appointment-reminders' })
   async sendDueReminders(): Promise<void> {
     try {
-      const now = Date.now();
-      const sent24 = await this.processBucket('24h', now + 24 * HOUR_MS);
-      const sent1 = await this.processBucket('1h', now + HOUR_MS);
+      // Lease is 14 minutes against a 15-minute cadence: long enough that a
+      // second replica firing on the same tick loses, short enough that it has
+      // always expired by the next legitimate run.
+      if (!(await this.lease.claim('appointment-reminders', 14 * 60))) {
+        return;
+      }
+
+      const sent24 = await this.processBucket('24h');
+      const sent1 = await this.processBucket('1h');
 
       if (sent24 + sent1 > 0) {
         this.logger.log(`Appointment reminders sent — 24h: ${sent24}, 1h: ${sent1}.`);
@@ -106,49 +112,47 @@ export class AppointmentRemindersJob {
   }
 
   /**
-   * Sends reminders for one lead-time bucket. `targetMs` is the ideal moment a
-   * reminder fires (now + lead-time); we select appointments whose
-   * `scheduled_at` is within ±HALF_WINDOW_MS of it. Returns the count sent.
+   * Claims and sends one lead-time bucket. Returns the number delivered.
+   *
+   * The claim has already flagged every row it returns, so anything that goes
+   * wrong below costs at most that one reminder — never a duplicate.
    */
-  private async processBucket(bucket: Bucket, targetMs: number): Promise<number> {
-    const windowStart = new Date(targetMs - HALF_WINDOW_MS).toISOString();
-    const windowEnd = new Date(targetMs + HALF_WINDOW_MS).toISOString();
-
-    const { data, error } = await this.db
-      .from('appointments')
-      .select(
-        'id, scheduled_at, status, contact_name, contact_phone, customer:customers!customer_id(phone)',
-      )
-      .gte('scheduled_at', windowStart)
-      .lt('scheduled_at', windowEnd)
-      .in('status', REMINDABLE_STATUSES as unknown as string[])
-      .order('scheduled_at', { ascending: true })
-      .limit(200);
+  private async processBucket(bucket: Bucket): Promise<number> {
+    const { data, error } = await this.db.rpc('claim_due_reminders', {
+      p_bucket: bucket,
+      p_horizon: HORIZONS[bucket],
+      p_max: BATCH,
+    });
 
     if (error) {
-      this.logger.error(`Failed to load ${bucket} reminder appointments: ${error.message}`);
+      this.logger.error(`Failed to claim ${bucket} reminders: ${error.message}`);
       return 0;
     }
 
-    const rows = (data ?? []) as unknown as ReminderRow[];
+    const rows = (data ?? []) as ClaimedReminderRow[];
     let sent = 0;
 
     for (const appt of rows) {
-      // Prefer the linked customer's phone; fall back to the guest contact_phone.
-      const phone = (appt.customer?.phone ?? appt.contact_phone ?? '').trim();
+      // Prefer the linked customer's phone; fall back to the guest contact.
+      const phone = (appt.customer_phone ?? appt.contact_phone ?? '').trim();
       if (!phone) {
         this.logger.debug(`Appointment ${appt.id} has no phone — skipping ${bucket} reminder.`);
         continue;
       }
 
       try {
-        const result = await this.sms.sendSms(phone, this.buildMessage(bucket, appt));
+        const result = await this.sms.sendSms(phone, this.buildMessage(bucket, appt), {
+          // Survives a same-window retry from any other path, and makes the
+          // notification_log row identifiable when someone asks whether a given
+          // customer was actually reminded.
+          dedupeKey: `appointment-reminder:${bucket}:${appt.id}`,
+        });
         // SmsService no-ops (returns {ok:false}) without creds — that's fine,
         // it logs its own warning; we just don't count it as delivered.
         if (result.ok) sent += 1;
       } catch (err) {
         // sendSms already swallows network errors, but stay defensive so one
-        // bad send can't abort the bucket.
+        // bad send can't abort the batch.
         this.logger.warn(
           `Reminder SMS failed for appointment ${appt.id}: ${(err as Error).message}`,
         );
@@ -159,7 +163,7 @@ export class AppointmentRemindersJob {
   }
 
   /** Composes the reminder copy for a bucket. */
-  private buildMessage(bucket: Bucket, appt: ReminderRow): string {
+  private buildMessage(bucket: Bucket, appt: ClaimedReminderRow): string {
     const who = appt.contact_name?.trim() ? `${appt.contact_name.trim()}, ` : '';
     const when = this.formatNairobi(appt.scheduled_at);
     const lead = bucket === '24h' ? 'tomorrow' : 'in about an hour';
@@ -188,3 +192,6 @@ export class AppointmentRemindersJob {
     }
   }
 }
+
+/** Exported for the unit tests that pin the copy and the horizon table. */
+export const __testing = { HORIZONS, HOUR_MS, BATCH };

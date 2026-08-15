@@ -5,6 +5,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { MpesaService } from '../payments/mpesa.service';
 import { FINAL_TX_STATUSES, TX_STATUS } from '../payments/payments.constants';
 import { ReconcileProvider } from '../payments/dto/reconcile-payment.dto';
+import { CronLeaseService } from './cron-lease.service';
 
 /**
  * Minimal `mpesa_transactions` row shape we need to decide whether a row is
@@ -55,6 +56,7 @@ export class MpesaPollingJob {
     private readonly supabase: SupabaseService,
     private readonly payments: PaymentsService,
     private readonly mpesa: MpesaService,
+    private readonly lease: CronLeaseService,
   ) {}
 
   private get db() {
@@ -67,6 +69,13 @@ export class MpesaPollingJob {
     // Cheapest possible early-out: don't hit the DB if M-Pesa is unconfigured.
     if (!this.mpesa.isConfigured()) {
       this.logger.debug('M-Pesa not configured — skipping STK polling run.');
+      return;
+    }
+
+    // F-05: one runner across replicas. `adminReconcile` is idempotent, so a
+    // duplicate run cannot double-credit — but it would double the Daraja
+    // queries, and Daraja rate-limits.
+    if (!(await this.lease.claim('mpesa-status-polling', 110))) {
       return;
     }
 
