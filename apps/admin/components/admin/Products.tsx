@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, type ChangeEvent } from 'react';
+import { Plus, Search, Edit, Trash2, Eye, AlertTriangle, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -67,12 +67,15 @@ function ProductFormDialog({
   product,
   categories,
   onSave,
+  onImageUploaded,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   product?: AdminProduct;
   categories: DbCategory[];
   onSave: (data: Partial<AdminProduct>) => void;
+  /** Fired after a file upload persists server-side, so the parent's list reflects it immediately. */
+  onImageUploaded?: () => void;
 }) {
   const isEdit = !!product;
 
@@ -85,9 +88,11 @@ function ProductFormDialog({
   );
   const [frameMaterial, setFrameMaterial] = useState(product?.frame_material ?? '');
   const [description, setDescription] = useState(product?.description ?? '');
-  const [imageUrl, setImageUrl] = useState(product?.images?.[0] ?? '');
+  const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [tryOnUrl, setTryOnUrl] = useState(product?.try_on_image_url ?? '');
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     setName(product?.name ?? '');
@@ -97,10 +102,33 @@ function ProductFormDialog({
     setPriceKes(product?.price_kes != null ? String(product.price_kes) : '');
     setFrameMaterial(product?.frame_material ?? '');
     setDescription(product?.description ?? '');
-    setImageUrl(product?.images?.[0] ?? '');
+    setImages(product?.images ?? []);
     setTryOnUrl(product?.try_on_image_url ?? '');
     setIsActive(product?.is_active ?? true);
+    setUploadError('');
   }, [product]);
+
+  /**
+   * `addImage` persists the append server-side immediately — independent of
+   * whether "Save Changes" is ever clicked — so this reloads `images` from
+   * its response rather than guessing the new array client-side.
+   */
+  async function handleFileSelected(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !product) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const result = await api.admin.products.uploadImage(product.id, file);
+      setImages(result.product.images ?? []);
+      onImageUploaded?.();
+    } catch (err) {
+      setUploadError((err as Error)?.message ?? 'Could not upload the image.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,13 +218,39 @@ function ProductFormDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pimage">Image URL</Label>
-            <Input
-              id="pimage"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-            />
+            <Label>Images</Label>
+            {images.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {images.map((src, i) => (
+                  <img
+                    key={src + i}
+                    src={src}
+                    alt=""
+                    className="h-14 w-14 rounded-md border object-cover"
+                  />
+                ))}
+              </div>
+            )}
+            {isEdit ? (
+              <>
+                <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? 'Uploading...' : 'Upload image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={handleFileSelected}
+                  />
+                </label>
+                {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Save the product first, then upload images from Edit.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ptryon">Try-On PNG URL (Phase 3)</Label>
@@ -227,7 +281,7 @@ function ProductFormDialog({
                     price_kes: parseFloat(priceKes) || 0,
                     frame_material: frameMaterial || null,
                     description: description || null,
-                    images: imageUrl ? [imageUrl] : [],
+                    images,
                     try_on_image_url: tryOnUrl || null,
                     is_active: isActive,
                   })
@@ -404,6 +458,7 @@ export function Products() {
         product={editProduct}
         categories={categories}
         onSave={handleEditProduct}
+        onImageUploaded={refreshProducts}
       />
 
       {formError && (
