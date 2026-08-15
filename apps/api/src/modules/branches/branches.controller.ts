@@ -21,6 +21,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Public, Roles } from '../../auth/decorators';
 import { BranchesService, type BranchRow } from './branches.service';
 import { BranchDto } from './dto/branch.dto';
@@ -33,6 +34,13 @@ import { UpdateBranchDto } from './dto/update-branch.dto';
  *
  * Mounted at `/api/branches` (global prefix applied in `main.ts`).
  */
+/**
+ * Cheap, cacheable public reads — same high ceiling and same reasoning as the
+ * product catalogue (F-01 / F-07): anonymous callers behind carrier-grade NAT
+ * all share one IP bucket, and these queries are trivial.
+ */
+const CATALOGUE_READ_LIMIT = Number(process.env.CATALOGUE_RATE_LIMIT ?? 2000);
+
 @ApiTags('branches')
 @Controller('branches')
 export class BranchesController {
@@ -42,6 +50,7 @@ export class BranchesController {
    * Lists active branches, ordered by name. Optional `q` filters by a
    * case-insensitive match on name or address (area).
    */
+  @Throttle({ default: { ttl: 60_000, limit: CATALOGUE_READ_LIMIT } })
   @Public()
   @Get()
   @ApiOperation({ summary: 'List active branches' })
@@ -71,6 +80,7 @@ export class BranchesController {
   }
 
   /** Returns a single branch by id; 404 when it does not exist. */
+  @Throttle({ default: { ttl: 60_000, limit: CATALOGUE_READ_LIMIT } })
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a branch by id' })

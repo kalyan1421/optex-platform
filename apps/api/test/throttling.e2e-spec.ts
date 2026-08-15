@@ -57,13 +57,14 @@ describe('Rate limiting (e2e)', () => {
     // The ABSENCE of the quota headers is the real proof: they are emitted on
     // every throttled route, so their absence means `@SkipThrottle` applied and
     // no counter exists for this route at all. A large burst adds nothing to
-    // that — and an earlier version of this test fired 400 requests, which
-    // exhausted sockets in the shared `--runInBand` process and made unrelated
-    // suites fail with "socket hang up". The modest burst below still exceeds
-    // any per-second rate a probe would ever produce.
+    // that — and volume here is actively harmful: an earlier version fired 400
+    // requests, exhausted the process's sockets, and made unrelated suites fail
+    // with "socket hang up". All 14 suites share one `--runInBand` process, so
+    // every request this file makes is a socket the others cannot use. 15 is
+    // more than a probe ever sends in a burst and costs the suite nothing.
     const statuses: number[] = [];
     let headers: Record<string, unknown> = {};
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 15; i++) {
       const res = await request(app.getHttpServer()).get('/api/health');
       statuses.push(res.status);
       headers = res.headers;
@@ -95,8 +96,14 @@ describe('Rate limiting (e2e)', () => {
       return Number(last);
     };
 
+    // Read the ceiling from the SAME route we then exercise. The public
+    // catalogue routes carry their own much higher limit (see
+    // products.controller.ts), so taking the number from /api/products and
+    // asserting it against /api/cart compares two different buckets — which is
+    // exactly how this test broke when those ceilings were introduced.
     const limit = Number(
-      (await request(app.getHttpServer()).get('/api/products')).headers['x-ratelimit-limit'],
+      (await request(app.getHttpServer()).get('/api/cart').set('Authorization', 'Bearer probe'))
+        .headers['x-ratelimit-limit'],
     );
 
     const tokenA = `iso-a-${Date.now()}`;

@@ -48,6 +48,16 @@ jobs:
       - name: Typecheck
         run: pnpm -r typecheck
 
+      # Audit F-24: the repo declared `next lint` in two package.json files with
+      # no ESLint config or dependency anywhere, so `pnpm -r lint` failed for
+      # anyone who ran it — and CI never ran it, which is why that went
+      # unnoticed. The config now exists and this is the gate that keeps it
+      # honest. `jsx-a11y` is part of it, so the class of problem in F-16
+      # (forms that announce nothing to a screen reader) gets caught here
+      # rather than in the next audit.
+      - name: Lint
+        run: pnpm -r lint
+
       # `pnpm -r build`, not `pnpm build` — the root `build` script has a
       # `prebuild` that regenerates database.types.ts, which needs the Supabase
       # CLI and a live database. `-r` runs each workspace package's own build
