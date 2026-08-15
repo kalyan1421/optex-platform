@@ -118,12 +118,13 @@ Name, address, phone and manager are supplied and ready ([ROADMAP A.1](../ROADMA
 - [ ] Given capacity is reduced below existing bookings, then existing bookings are honoured and the slot is simply full
 
 **R7. Breaks and buffers.**
-This is **missing code, not missing configuration** — slot generation is a straight open-to-close range with no concept of an exclusion.
+The missing-code half is closed — `generateSlots()` now takes an optional break window and excludes any overlapping slot (migration `0015_branch_breaks.sql`, `branches.breaks`, same per-weekday shape as `hours`). The rest of R7 is still open:
 
-- [ ] Admin defines one or more unavailable windows per branch per weekday
-- [ ] Slots overlapping a break are not offered
-- [ ] Given a break added where bookings exist, then those bookings are preserved and flagged for staff attention
-- [ ] The exclusion model is general enough to later represent per-doctor availability (CR-01) without redesign — this is the one place where thinking ahead costs almost nothing and saves a rewrite
+- [x] Slots overlapping a break are not offered — both `GET /appointments/slots` and the booking guard (`assertSlotBookable`) apply the same exclusion; verified with an e2e boundary case (a slot starting exactly when the break ends stays bookable, not just "some slot got removed")
+- [ ] Admin defines the break via the admin panel — shipped as DB/seed-editable only, matching A6's default (Mon-Sat lunch break, 13:00-14:00); no admin UI yet, same follow-on gap R6 already has for capacity
+- [ ] One or more windows per branch per weekday — shipped as exactly one window per weekday, matching A6's stated single-lunch-break default; multiple breaks per day (e.g. lunch + a tea break) isn't supported and would need `breaks` to hold an array, or a separate table — not built since nothing has asked for it yet
+- [ ] Given a break added where bookings exist, then those bookings are preserved and flagged for staff attention — not built. There's currently no trigger point for this without the admin UI above: `breaks` can only change via a migration or seed edit today, which happens before any bookings exist for that branch
+- [ ] The exclusion model is general enough to later represent per-doctor availability (CR-01) without redesign — not evaluated; `breaks` is a per-branch column, with no resource/doctor dimension
 
 ### P1 — Should have
 

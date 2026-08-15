@@ -55,8 +55,11 @@ const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 /** Postgres unique-violation code, raised by `appointments_one_per_slot` (0014). */
 const PG_UNIQUE_VIOLATION = '23505';
 
-/** Slim branch-hours shape — `{ mon: ["09:00","18:00"], sun: null, ... }`. */
-type BranchHours = Record<string, [string, string] | null | undefined>;
+/**
+ * Slim per-weekday window shape shared by `hours` and `breaks` —
+ * `{ mon: ["09:00","18:00"], sun: null, ... }`.
+ */
+type WeekdayWindows = Record<string, [string, string] | null | undefined>;
 
 /**
  * APPOINTMENTS domain logic (basic SOW flow — no doctor concept).
@@ -85,7 +88,7 @@ export class AppointmentsService {
    * excluded.
    */
   async getAvailableSlots(branchId: string, date: string): Promise<SlotsResponseDto> {
-    const hours = await this.loadBranchHours(branchId);
+    const { hours, breaks } = await this.loadBranchSchedule(branchId);
     const dayKey = WEEKDAY_KEYS[this.weekdayIndex(date)];
     const window = hours?.[dayKey];
 
@@ -94,7 +97,7 @@ export class AppointmentsService {
       return { branchId, date, slots: [] };
     }
 
-    const candidates = this.generateSlots(window[0], window[1]);
+    const candidates = this.generateSlots(window[0], window[1], breaks?.[dayKey]);
     const taken = await this.takenTimes(branchId, date);
     const slots = candidates.filter((t) => !taken.has(t));
 
@@ -295,7 +298,7 @@ export class AppointmentsService {
     time: string,
     excludeId?: string,
   ): Promise<void> {
-    const hours = await this.loadBranchHours(branchId);
+    const { hours, breaks } = await this.loadBranchSchedule(branchId);
     const dayKey = WEEKDAY_KEYS[this.weekdayIndex(date)];
     const window = hours?.[dayKey];
 
@@ -303,7 +306,7 @@ export class AppointmentsService {
       throw new BadRequestException('The branch is closed on the requested date');
     }
 
-    const candidates = this.generateSlots(window[0], window[1]);
+    const candidates = this.generateSlots(window[0], window[1], breaks?.[dayKey]);
     if (!candidates.includes(time)) {
       throw new BadRequestException('The requested time is not an available slot for this branch');
     }
@@ -349,13 +352,15 @@ export class AppointmentsService {
     return taken;
   }
 
-  /** Loads (and validates existence of) a branch's `hours` jsonb. */
-  private async loadBranchHours(branchId: string): Promise<BranchHours | null> {
+  /** Loads (and validates existence of) a branch's `hours` and `breaks` jsonb. */
+  private async loadBranchSchedule(
+    branchId: string,
+  ): Promise<{ hours: WeekdayWindows | null; breaks: WeekdayWindows | null }> {
     const { data, error } = await this.supabase.client
       .from('branches')
-      .select('hours')
+      .select('hours, breaks')
       .eq('id', branchId)
-      .maybeSingle<{ hours: BranchHours | null }>();
+      .maybeSingle<{ hours: WeekdayWindows | null; breaks: WeekdayWindows | null }>();
 
     if (error) {
       this.logger.error(`Failed to load branch ${branchId}: ${error.message}`);
@@ -364,7 +369,7 @@ export class AppointmentsService {
     if (!data) {
       throw new NotFoundException(`Branch ${branchId} not found`);
     }
-    return data.hours ?? null;
+    return { hours: data.hours ?? null, breaks: data.breaks ?? null };
   }
 
   /** Fetches an appointment by id, or 404. */
@@ -506,13 +511,26 @@ export class AppointmentsService {
 
   /**
    * Generates `HH:MM` slot start times from `open` (inclusive) up to but not
-   * including `close`, stepping by {@link SLOT_MINUTES}.
+   * including `close`, stepping by {@link SLOT_MINUTES}. A slot is dropped
+   * when it overlaps `brk` at all — a slot starting exactly at `brk`'s end
+   * remains bookable, since `[m, m + SLOT_MINUTES)` no longer intersects
+   * `[breakStart, breakEnd)` at that point.
    */
-  private generateSlots(open: string, close: string): string[] {
+  private generateSlots(open: string, close: string, brk?: [string, string] | null): string[] {
     const start = this.minutesOf(open);
     const end = this.minutesOf(close);
+    const breakStart = brk ? this.minutesOf(brk[0]) : null;
+    const breakEnd = brk ? this.minutesOf(brk[1]) : null;
     const slots: string[] = [];
     for (let m = start; m + SLOT_MINUTES <= end; m += SLOT_MINUTES) {
+      if (
+        breakStart !== null &&
+        breakEnd !== null &&
+        m < breakEnd &&
+        m + SLOT_MINUTES > breakStart
+      ) {
+        continue;
+      }
       const hh = String(Math.floor(m / 60)).padStart(2, '0');
       const mm = String(m % 60).padStart(2, '0');
       slots.push(`${hh}:${mm}`);

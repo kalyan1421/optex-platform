@@ -1,18 +1,21 @@
 -- OPTEX — seed data for dev environments
 -- Branches per Notion admin spec, categories per SOW, a handful of placeholder products.
 
-insert into branches (slug, name, address, phone, lat, lng, hours, is_active) values
+insert into branches (slug, name, address, phone, lat, lng, hours, breaks, is_active) values
   ('nairobi-cbd',    'Nairobi CBD',    'Tom Mboya Street, Nairobi',   '+254 700 000 001',
      -1.286389, 36.817223,
      '{"mon":["09:00","18:00"],"tue":["09:00","18:00"],"wed":["09:00","18:00"],"thu":["09:00","18:00"],"fri":["09:00","18:00"],"sat":["10:00","16:00"],"sun":null}',
+     '{"mon":["13:00","14:00"],"tue":["13:00","14:00"],"wed":["13:00","14:00"],"thu":["13:00","14:00"],"fri":["13:00","14:00"],"sat":null,"sun":null}',
      true),
   ('westlands',      'Westlands',      'Sarit Centre, Westlands',     '+254 700 000 002',
      -1.265430, 36.802826,
      '{"mon":["09:00","19:00"],"tue":["09:00","19:00"],"wed":["09:00","19:00"],"thu":["09:00","19:00"],"fri":["09:00","19:00"],"sat":["10:00","18:00"],"sun":["11:00","16:00"]}',
+     '{"mon":["13:00","14:00"],"tue":["13:00","14:00"],"wed":["13:00","14:00"],"thu":["13:00","14:00"],"fri":["13:00","14:00"],"sat":null,"sun":null}',
      true),
   ('mombasa-road',   'Mombasa Road',   'T-Mall, Mombasa Road',        '+254 700 000 003',
      -1.319000, 36.831000,
      '{"mon":["10:00","20:00"],"tue":["10:00","20:00"],"wed":["10:00","20:00"],"thu":["10:00","20:00"],"fri":["10:00","20:00"],"sat":["10:00","20:00"],"sun":["11:00","18:00"]}',
+     null,
      true)
 on conflict (slug) do nothing;
 

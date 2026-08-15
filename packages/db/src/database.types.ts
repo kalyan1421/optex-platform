@@ -66,6 +66,7 @@ export type Database = {
       branches: {
         Row: {
           address: string | null;
+          breaks: Json | null;
           created_at: string;
           hours: Json | null;
           id: string;
@@ -78,6 +79,7 @@ export type Database = {
         };
         Insert: {
           address?: string | null;
+          breaks?: Json | null;
           created_at?: string;
           hours?: Json | null;
           id?: string;
@@ -90,6 +92,7 @@ export type Database = {
         };
         Update: {
           address?: string | null;
+          breaks?: Json | null;
           created_at?: string;
           hours?: Json | null;
           id?: string;

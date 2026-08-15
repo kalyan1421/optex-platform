@@ -97,6 +97,12 @@ describe('Appointments (e2e)', () => {
     // Open every weekday wide (00:00-23:30) so this suite never depends on
     // which real weekday CI happens to run on.
     const wideOpen: [string, string] = ['00:00', '23:30'];
+    // A break window deliberately far from every other test's booking time
+    // in this file (all in the 09:00-17:00 range) so adding it can't collide
+    // with an existing, unrelated assertion. Set on every weekday — like
+    // `hours` above — so the break test below doesn't depend on which real
+    // weekday CI happens to run on.
+    const earlyBreak: [string, string] = ['05:00', '06:00'];
     await db.from('branches').delete().eq('slug', BRANCH_SLUG);
     const { data: branch, error } = await db
       .from('branches')
@@ -111,6 +117,15 @@ describe('Appointments (e2e)', () => {
           thu: wideOpen,
           fri: wideOpen,
           sat: wideOpen,
+        },
+        breaks: {
+          sun: earlyBreak,
+          mon: earlyBreak,
+          tue: earlyBreak,
+          wed: earlyBreak,
+          thu: earlyBreak,
+          fri: earlyBreak,
+          sat: earlyBreak,
         },
         is_active: true,
       })
@@ -177,6 +192,38 @@ describe('Appointments (e2e)', () => {
       .set(auth(token))
       .send({ branchId, date: futureDate(5), time: '11:07' })
       .expect(400);
+  });
+
+  it('excludes slots overlapping a configured break, but keeps the slot starting at the break’s end', async () => {
+    const date = futureDate(13);
+    const slots = await request(app.getHttpServer())
+      .get('/api/appointments/slots')
+      .query({ branchId, date })
+      .expect(200);
+
+    // The branch's break is 05:00-06:00: the 05:00 and 05:30 slots both
+    // overlap it and must be gone, but 06:00 — which starts exactly when the
+    // break ends — must remain bookable. Getting this boundary wrong either
+    // way (excluding 06:00, or leaving 05:30 in) is the actual risk here,
+    // not the happy-path "some slot got removed" case.
+    expect(slots.body.slots).not.toContain('05:00');
+    expect(slots.body.slots).not.toContain('05:30');
+    expect(slots.body.slots).toContain('06:00');
+
+    // The booking guard enforces the same exclusion as the listing, not just
+    // a UI-level filter.
+    await request(app.getHttpServer())
+      .post('/api/appointments')
+      .set(auth(token))
+      .send({ branchId, date, time: '05:00' })
+      .expect(400);
+
+    const booked = await request(app.getHttpServer())
+      .post('/api/appointments')
+      .set(auth(token))
+      .send({ branchId, date, time: '06:00' })
+      .expect(201);
+    appointmentIds.push(booked.body.id);
   });
 
   it('refuses a second booking for an already-taken slot (sequential)', async () => {
