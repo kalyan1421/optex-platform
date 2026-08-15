@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, type ChangeEvent } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent } from 'react';
 import { Plus, Search, Edit, Trash2, Eye, AlertTriangle, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -93,6 +93,15 @@ function ProductFormDialog({
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  /**
+   * ProductFormDialog is reused across products (only the `product` prop
+   * changes, the component never remounts), so an upload started for one
+   * product can resolve after the admin has switched to another. Bumping
+   * this on every product change lets the async handler below detect that
+   * its response is stale and drop it instead of overwriting the wrong
+   * product's state.
+   */
+  const uploadTokenRef = useRef(0);
 
   useEffect(() => {
     setName(product?.name ?? '');
@@ -106,6 +115,8 @@ function ProductFormDialog({
     setTryOnUrl(product?.try_on_image_url ?? '');
     setIsActive(product?.is_active ?? true);
     setUploadError('');
+    setUploading(false);
+    uploadTokenRef.current += 1;
   }, [product]);
 
   /**
@@ -117,16 +128,19 @@ function ProductFormDialog({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !product) return;
+    const token = uploadTokenRef.current;
     setUploading(true);
     setUploadError('');
     try {
       const result = await api.admin.products.uploadImage(product.id, file);
+      if (uploadTokenRef.current !== token) return;
       setImages(result.product.images ?? []);
       onImageUploaded?.();
     } catch (err) {
+      if (uploadTokenRef.current !== token) return;
       setUploadError((err as Error)?.message ?? 'Could not upload the image.');
     } finally {
-      setUploading(false);
+      if (uploadTokenRef.current === token) setUploading(false);
     }
   }
 
@@ -272,6 +286,7 @@ function ProductFormDialog({
               </Button>
               <Button
                 className="bg-[#141776] hover:bg-[#0f1258]"
+                disabled={uploading}
                 onClick={() =>
                   onSave({
                     name,

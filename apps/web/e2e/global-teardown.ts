@@ -33,17 +33,33 @@ export default async function globalTeardown(): Promise<void> {
   }
 
   if (staleIds.length) {
-    const { data: staleCustomers } = await db
+    const { data: staleCustomers, error: customersError } = await db
       .from('customers')
       .select('id')
       .in('auth_user_id', staleIds);
+    if (customersError) throw customersError;
     const customerIds = (staleCustomers ?? []).map((c) => c.id);
     if (customerIds.length) {
-      await db.from('orders').delete().in('customer_id', customerIds);
+      const { error: ordersError } = await db
+        .from('orders')
+        .delete()
+        .in('customer_id', customerIds);
+      if (ordersError) throw ordersError;
     }
   }
 
+  // `deleteUser()` returns GoTrue errors (including a 409 from the
+  // FK-blocked cascade above) as data rather than throwing — checking each
+  // result is what makes a blocked delete fail the run instead of silently
+  // leaving the account behind.
+  const deleteErrors: string[] = [];
   for (const id of staleIds) {
-    await db.auth.admin.deleteUser(id);
+    const { error } = await db.auth.admin.deleteUser(id);
+    if (error) deleteErrors.push(`${id}: ${error.message}`);
+  }
+  if (deleteErrors.length) {
+    throw new Error(
+      `Failed to delete ${deleteErrors.length} stale @optex-test.local auth user(s):\n${deleteErrors.join('\n')}`,
+    );
   }
 }
