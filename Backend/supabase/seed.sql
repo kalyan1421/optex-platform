@@ -50,9 +50,21 @@ insert into products (sku, slug, name, category_id, brand, frame_material, frame
      26000.00, array['/seed/retro_round.png'],     true)
 on conflict (sku) do nothing;
 
--- Per-branch starting stock (10 units per branch).
+-- Per-branch starting stock.
+--
+-- Deliberately large, and it did not used to matter. Before migration 0020
+-- checkout never touched `inventory`, so this number was decorative — the admin
+-- grid displayed it and nothing consumed it. Now every successful checkout
+-- deducts, which makes the e2e suites STATEFUL: each storefront run places real
+-- orders, and at 10 units per branch a few local runs drained the catalogue and
+-- the checkout specs started failing with a legitimate 409. CI reseeds from
+-- scratch every run so it never noticed; a developer running the suite twice
+-- did.
+--
+-- 10,000 is not a realistic shop-floor figure and is not meant to be — this is
+-- the dev seed. Real stock is set per branch in the admin inventory grid.
 insert into inventory (product_id, branch_id, stock)
-select p.id, b.id, 10
+select p.id, b.id, 10000
   from products p cross join branches b
 on conflict do nothing;
 
