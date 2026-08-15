@@ -26,6 +26,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['list']] : [['list']],
   timeout: 60_000,
   expect: { timeout: 15_000 },
+  globalTeardown: require.resolve('./e2e/global-teardown.ts'),
 
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:1112',

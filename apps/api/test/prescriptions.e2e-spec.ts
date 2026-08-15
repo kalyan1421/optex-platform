@@ -17,12 +17,18 @@ describe('Prescriptions (e2e)', () => {
   let token: string;
   let otherToken: string;
   let adminToken: string;
-  const emails: string[] = [];
+  const userIds: string[] = [];
   const prescriptionIds: string[] = [];
 
   const PASSWORD = 'TestPassword123!';
   const PDF_BYTES = Buffer.from('%PDF-1.4 e2e fixture, not a real PDF');
 
+  /**
+   * Capturing `id` (not just `email`) is what lets `afterAll` delete the
+   * `auth.users` row directly — `customers.auth_user_id` cascades, so a
+   * customer row deleted only by email lookup was leaving the auth user
+   * itself behind on every run.
+   */
   async function newAccount(): Promise<{ token: string; email: string }> {
     const anon = createClient(
       process.env.SUPABASE_URL as string,
@@ -32,7 +38,7 @@ describe('Prescriptions (e2e)', () => {
     const email = `rx-e2e-${Date.now()}-${Math.floor(Math.random() * 10000)}@optex-test.local`;
     const { data, error } = await anon.auth.signUp({ email, password: PASSWORD });
     if (error) throw error;
-    emails.push(email);
+    userIds.push(data.user!.id);
     return { token: data.session!.access_token, email };
   }
 
@@ -86,9 +92,10 @@ describe('Prescriptions (e2e)', () => {
       }
       await db.from('prescriptions').delete().eq('id', id);
     }
-    for (const email of emails) {
-      const { data: c } = await db.from('customers').select('id').eq('email', email).maybeSingle();
-      if (c) await db.from('customers').delete().eq('id', c.id);
+    // prescriptions.customer_id has no ON DELETE CASCADE — must be gone
+    // before deleting the auth user, or the cascade to `customers` 409s.
+    for (const id of userIds) {
+      await db.auth.admin.deleteUser(id);
     }
     await app.close();
   });

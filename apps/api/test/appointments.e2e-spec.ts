@@ -23,13 +23,20 @@ describe('Appointments (e2e)', () => {
   let adminToken: string;
   let branchId: string;
   const appointmentIds: string[] = [];
-  const emails: string[] = [];
+  const userIds: string[] = [];
 
   const PASSWORD = 'TestPassword123!';
   const BRANCH_SLUG = 'e2e-appointments-branch';
 
-  /** Sign a fresh account up through gotrue and return its access token. */
-  async function newAccount(): Promise<{ token: string; email: string }> {
+  /**
+   * Sign a fresh account up through gotrue and return its access token.
+   *
+   * Capturing `id` (not just `email`) is what lets `afterAll` delete the
+   * `auth.users` row directly — `customers.auth_user_id` cascades, so a
+   * customer row deleted only by email lookup was leaving the auth user
+   * itself behind on every run.
+   */
+  async function newAccount(): Promise<{ token: string; email: string; id: string }> {
     const anon = createClient(
       process.env.SUPABASE_URL as string,
       process.env.SUPABASE_ANON_KEY as string,
@@ -38,8 +45,8 @@ describe('Appointments (e2e)', () => {
     const email = `appt-e2e-${Date.now()}-${Math.floor(Math.random() * 10000)}@optex-test.local`;
     const { data, error } = await anon.auth.signUp({ email, password: PASSWORD });
     if (error) throw error;
-    emails.push(email);
-    return { token: data.session!.access_token, email };
+    userIds.push(data.user!.id);
+    return { token: data.session!.access_token, email, id: data.user!.id };
   }
 
   /** A future YYYY-MM-DD, far enough out that "today" edge cases never apply. */
@@ -118,9 +125,10 @@ describe('Appointments (e2e)', () => {
       await db.from('appointments').delete().in('id', appointmentIds);
     }
     await db.from('branches').delete().eq('slug', BRANCH_SLUG);
-    for (const email of emails) {
-      const { data: c } = await db.from('customers').select('id').eq('email', email).maybeSingle();
-      if (c) await db.from('customers').delete().eq('id', c.id);
+    // appointments.customer_id has no ON DELETE CASCADE — must be gone
+    // before deleting the auth user, or the cascade to `customers` 409s.
+    for (const id of userIds) {
+      await db.auth.admin.deleteUser(id);
     }
     await app.close();
   });

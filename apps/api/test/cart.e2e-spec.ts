@@ -25,11 +25,17 @@ describe('Cart (e2e)', () => {
   let productAId: string; // 10,000 KES — round numbers make VAT math legible
   let productBId: string; // 2,500 KES
   let inactiveProductId: string;
-  const emails: string[] = [];
+  const userIds: string[] = [];
 
   const PASSWORD = 'TestPassword123!';
   const CATEGORY_SLUG = 'e2e-cart-category';
 
+  /**
+   * Capturing `id` (not just `email`) is what lets `afterAll` delete the
+   * `auth.users` row directly instead of looking up `customers` by email —
+   * `customers.auth_user_id` cascades, and so do `carts`/`cart_items` from
+   * `customers`, so deleting the auth user is enough on its own.
+   */
   async function newAccount(): Promise<{ token: string; email: string }> {
     const anon = createClient(
       process.env.SUPABASE_URL as string,
@@ -39,7 +45,7 @@ describe('Cart (e2e)', () => {
     const email = `cart-e2e-${Date.now()}-${Math.floor(Math.random() * 10000)}@optex-test.local`;
     const { data, error } = await anon.auth.signUp({ email, password: PASSWORD });
     if (error) throw error;
-    emails.push(email);
+    userIds.push(data.user!.id);
     return { token: data.session!.access_token, email };
   }
 
@@ -103,21 +109,14 @@ describe('Cart (e2e)', () => {
     // cart_items row still references it, or the category while a product
     // still does, fails *silently* here (none of these calls check `error`),
     // which corrupts the next run's `beforeAll` with a stale row it can't
-    // re-insert over. Cart lines first, then products, then the category.
-    for (const email of emails) {
-      const { data: c } = await db.from('customers').select('id').eq('email', email).maybeSingle();
-      if (c) {
-        const { data: cart } = await db
-          .from('carts')
-          .select('id')
-          .eq('customer_id', c.id)
-          .maybeSingle();
-        if (cart) {
-          await db.from('cart_items').delete().eq('cart_id', cart.id);
-          await db.from('carts').delete().eq('id', cart.id);
-        }
-        await db.from('customers').delete().eq('id', c.id);
-      }
+    // re-insert over. Cart lines first (via the auth-user cascade), then
+    // products, then the category.
+    //
+    // `carts.customer_id` and `cart_items.cart_id` are both ON DELETE
+    // CASCADE, and so is `customers.auth_user_id` — deleting the auth user
+    // is enough to take the whole chain with it, no manual walk needed.
+    for (const id of userIds) {
+      await db.auth.admin.deleteUser(id);
     }
     await db.from('products').delete().in('sku', ['E2E-CART-A', 'E2E-CART-B', 'E2E-CART-INACTIVE']);
     await db.from('categories').delete().eq('slug', CATEGORY_SLUG);
