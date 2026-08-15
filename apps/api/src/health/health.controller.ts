@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../auth/decorators';
 
 interface HealthResponse {
@@ -15,7 +16,14 @@ interface HealthResponse {
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
+  // F-03 FIX: exempt from rate limiting. The probe used to draw from the same
+  // bucket as customer traffic, so the failure mode inverted under load — at the
+  // exact moment the quota saturated, the orchestrator's health check started
+  // getting 429s and would restart containers that were working fine, shedding
+  // capacity at peak. The webhook receivers already skip the throttler for the
+  // same class of reason.
   @Public()
+  @SkipThrottle()
   @Get()
   @ApiOperation({ summary: 'Liveness check' })
   @ApiOkResponse({

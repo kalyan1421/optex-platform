@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -79,13 +80,13 @@ function round2(n: number): number {
  * and write is scoped through the caller's `customers.id`, resolved from the
  * JWT's `auth_user_id`.
  *
- * ATOMICITY NOTE: the Supabase JS client cannot run a multi-statement DB
- * transaction, and no `place_order` Postgres RPC exists in migrations 0001-0007.
- * `checkout()` therefore performs a best-effort sequence WITH COMPENSATION (it
- * deletes the just-created order if the `order_items` insert fails) so we never
- * leave an empty order behind. A Postgres `place_order(...)` function that wraps
- * the order insert + items insert + cart clear in a single transaction is a
- * RECOMMENDED FOLLOW-UP for true atomicity.
+ * ATOMICITY: the Supabase JS client cannot run a multi-statement transaction, so
+ * `checkout()` delegates the whole thing to the `place_order` Postgres RPC
+ * (migration 0008, extended with stock enforcement in 0020). One transaction
+ * covers the cart lock, stock check, amount recomputation, promo validation,
+ * order + items insert, stock deduction, promo-usage bump and cart clear — all
+ * or nothing. This replaced an earlier best-effort insert/compensation sequence
+ * that could orphan an order or lose a promo-usage update under concurrency.
  */
 @Injectable()
 export class OrdersService {
@@ -153,7 +154,7 @@ export class OrdersService {
       p_promo_code: promoCode,
     });
     if (error) {
-      throw new BadRequestException(error.message);
+      throw this.checkoutError(error.message);
     }
 
     // place_order RETURNS a single `orders` row; the JS client may surface it as
@@ -185,6 +186,40 @@ export class OrdersService {
     void this.sendOrderConfirmation(detail, customer);
 
     return { order: detail, payment };
+  }
+
+  /**
+   * Maps a `place_order` failure onto the right HTTP error.
+   *
+   * F-02: the stock guard raises a machine-readable
+   * `insufficient_stock:<product>:<wanted>:<available>` so the storefront can
+   * tell the customer which item is short and by how much. That is a conflict
+   * with the current state of the world, not a malformed request, so it is a
+   * 409 — the storefront retries it by adjusting the cart, not by re-sending.
+   * Every other RAISE in the function is already a readable validation message
+   * and stays a 400.
+   */
+  private checkoutError(message: string): BadRequestException | ConflictException {
+    const match = /^insufficient_stock:(.*):(\d+):(\d+)$/.exec(message.trim());
+    if (!match) {
+      // The bare `insufficient_stock` from deduct_stock_fifo means stock moved
+      // between the check and the deduction — a genuine race, not a client
+      // error. Same status, generic copy.
+      if (message.includes('insufficient_stock')) {
+        return new ConflictException(
+          'Some items in your cart just went out of stock. Please review your cart and try again.',
+        );
+      }
+      return new BadRequestException(message);
+    }
+
+    const [, name, wanted, available] = match;
+    const detail =
+      Number(available) === 0
+        ? `"${name}" is out of stock.`
+        : `Only ${available} of "${name}" left — you asked for ${wanted}.`;
+
+    return new ConflictException(`${detail} Please update your cart and try again.`);
   }
 
   // ─── Customer reads ──────────────────────────────────────────────────────

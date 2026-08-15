@@ -47,6 +47,25 @@ async function bootstrap(): Promise<void> {
   // Route Nest logs through pino.
   app.useLogger(app.get(PinoLogger));
 
+  // F-01 FIX: trust the forwarding hops in front of us so `req.ip` resolves to
+  // the real client instead of the proxy. Browser traffic arrives via the
+  // Next.js `/api/*` rewrite (apps/web/next.config.js) and production adds an
+  // ingress on top; without this every customer shares one rate-limit bucket.
+  //
+  // The value is a HOP COUNT, not `true`. `true` trusts the entire
+  // `X-Forwarded-For` chain, which lets a caller prepend a forged address and
+  // mint themselves a fresh bucket per request. A count takes the Nth address
+  // from the right — the one our own infrastructure appended — so anything the
+  // client prepends is ignored. Default 1 = the Next rewrite alone; raise it to
+  // match the real chain when deploying behind an additional load balancer.
+  const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 1);
+  if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
+    throw new Error(
+      `TRUST_PROXY_HOPS must be a non-negative integer (got "${process.env.TRUST_PROXY_HOPS}").`,
+    );
+  }
+  app.set('trust proxy', trustProxyHops);
+
   // Security headers.
   app.use(helmet());
 

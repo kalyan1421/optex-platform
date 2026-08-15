@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
@@ -12,6 +12,7 @@ import { RolesGuard } from './auth/roles.guard';
 import { SupabaseAuthGuard } from './auth/supabase-auth.guard';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { CommonModule } from './common/common.module';
+import { UserAwareThrottlerGuard } from './common/user-aware-throttler.guard';
 import { validate } from './config/env';
 import { HealthModule } from './health/health.module';
 import { AccountModule } from './modules/account/account.module';
@@ -61,13 +62,21 @@ import { SupabaseModule } from './supabase/supabase.module';
         },
       },
     }),
-    // Global rate limit: 100 requests / minute / IP by default.
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60_000,
-        limit: 100,
-      },
-    ]),
+    // Global rate limit, keyed per caller by `UserAwareThrottlerGuard` — bearer
+    // token when signed in, real client IP otherwise (F-01).
+    //
+    // ONE global bucket, sized for a browsing storefront: a single page view
+    // costs several calls, so the old 100/min throttled real users the moment
+    // they clicked around.
+    //
+    // Deliberately not a second named bucket for auth. Every entry in this array
+    // applies to every route — a `{ name: 'auth', limit: 10 }` entry here would
+    // cap the WHOLE API at 10/min, which is exactly what it did on the first
+    // attempt (the e2e suite went red with `x-ratelimit-limit-auth: 10` on
+    // /api/cart). The credential endpoints instead OVERRIDE this bucket locally
+    // with `@Throttle({ default: … })`, which is the mechanism that scopes to a
+    // route.
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
     ScheduleModule.forRoot(),
     SupabaseModule,
     AuthModule,
@@ -99,7 +108,7 @@ import { SupabaseModule } from './supabase/supabase.module';
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorize.
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: UserAwareThrottlerGuard },
     { provide: APP_GUARD, useClass: SupabaseAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
