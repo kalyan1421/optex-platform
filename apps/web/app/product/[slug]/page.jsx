@@ -536,8 +536,32 @@ export default async function Page({ params }) {
                         C
                       </div>
                       <div>
-                        <p className="text-[14px] font-bold leading-tight text-gray-900">
+                        <p className="flex flex-wrap items-center gap-2 text-[14px] font-bold leading-tight text-gray-900">
                           Customer
+                          {/* F-12: reviews carry `verified_purchase`, set once by
+                              trigger when the author had actually ordered the
+                              product. Showing it is the whole point of collecting
+                              it — an unbadged review is not hidden or ranked
+                              down, the reader is just told which is which. */}
+                          {review.verified_purchase ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700">
+                              <svg
+                                className="h-3 w-3"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                              Verified purchase
+                            </span>
+                          ) : null}
                         </p>
                         <p className="text-[11px] font-medium text-gray-400">
                           {formatReviewDate(review.created_at)}

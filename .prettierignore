@@ -1,0 +1,22 @@
+# Build output. Prettier does NOT respect .gitignore, so without this file the
+# `Check formatting` step in CI runs against `apps/api/dist` and `.next` — which
+# exist by then, because the build step runs first — and fails on 148 generated
+# files nobody wrote. Found while verifying the audit remediation branch.
+dist/
+build/
+.next/
+out/
+coverage/
+node_modules/
+
+# Generated from the live database by `pnpm db:types`; formatted by that script.
+packages/db/src/database.types.ts
+
+# Playwright artefacts.
+playwright-report/
+test-results/
+
+# Lockfiles and vendored data.
+pnpm-lock.yaml
+*.min.js
+*.min.css

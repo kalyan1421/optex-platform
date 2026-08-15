@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import StarRating from '@/components/ui/StarRating';
 import WishlistToggle from '@/components/wishlist/WishlistToggle';
 import {
   useProductFacets,
@@ -61,6 +62,9 @@ function ProductCard({ product }) {
             {product.brand}
           </span>
         </div>
+        {/* F-11: rating on the results card — the strongest conversion signal
+            in eyewear, previously absent from every listing. */}
+        <StarRating rating={product.rating_avg} count={product.rating_count} className="mb-2" />
         <p className="mb-4 line-clamp-2 flex-1 text-[12px] leading-relaxed text-gray-400">
           {product.description}
         </p>

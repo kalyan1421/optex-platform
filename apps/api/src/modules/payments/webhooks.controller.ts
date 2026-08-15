@@ -13,11 +13,22 @@ import { PaymentsService } from './payments.service';
  * and Pesapal always gets its expected JSON ack, so the provider stops retrying
  * even if our internal processing fails — failures are logged for reconcile.
  *
- * NOTE: `main.ts` does not currently enable raw-body capture, so we cannot
- * cryptographically verify signatures here. Safety instead rests on (a) M-Pesa
- * idempotency keyed by CheckoutRequestID and (b) Pesapal's IPN being treated as
- * untrusted — the IPN handler re-queries GetTransactionStatus for the real
- * outcome rather than believing the posted body.
+ * NOTE ON AUTHENTICITY: `main.ts` captures the raw body (`rawBody: true`), but
+ * neither provider signs its callbacks, so there is no signature to verify —
+ * the raw body is retained for verbatim audit logging and any future signed
+ * event. Safety rests instead on (a) M-Pesa idempotency keyed by
+ * CheckoutRequestID, (b) Pesapal's IPN being treated as untrusted, with the
+ * handler re-querying GetTransactionStatus for the real outcome rather than
+ * believing the posted body, and (c) amount verification before any order is
+ * credited (see PaymentsService).
+ *
+ * These two routes are the only ones exempt from rate limiting. That is
+ * deliberate — dropping a provider callback loses a customer's payment
+ * confirmation — but it makes them the API's only unbounded surface, and the
+ * Pesapal handler amplifies (one inbound request causes one outbound
+ * GetTransactionStatus). The control for that is provider IP allow-listing at
+ * the edge rather than anything in this file; `load/webhook-flood.js` is how to
+ * size it.
  */
 @ApiExcludeController()
 @Controller('webhooks')

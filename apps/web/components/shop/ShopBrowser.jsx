@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import StarRating from '@/components/ui/StarRating';
 import CompareToggle from '@/components/compare/CompareToggle';
 import WishlistToggle from '@/components/wishlist/WishlistToggle';
 import {
@@ -160,6 +161,15 @@ export default function ShopBrowser({ products, categories }) {
                       {product.brand || 'RAYBAN'}
                     </span>
                   </div>
+
+                  {/* F-11: the rating, finally visible outside the PDP. Renders
+                      nothing for an unrated product — a row of empty stars reads
+                      as "rated badly" rather than "not yet rated". */}
+                  <StarRating
+                    rating={product.rating_avg}
+                    count={product.rating_count}
+                    className="lg:mt-[6px]"
+                  />
 
                   {/* Row 2: Description */}
                   <div className="lg:mt-[8px] lg:h-[42px] lg:w-[240.4px]">

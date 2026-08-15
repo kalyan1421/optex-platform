@@ -131,19 +131,41 @@ describe('Checkout stock enforcement (e2e)', () => {
       .single<{ id: string }>();
     branchId = branch!.id;
 
-    // Self-healing sweep. `test:e2e` runs jest with `--forceExit`, which can cut
-    // `afterAll` short mid-delete — and a leaked fixture here is not inert: these
-    // products are ACTIVE and some deliberately have zero stock, so they show up
-    // in the shop grid and the storefront's Playwright checkout picks one and
-    // gets a legitimate 409. That is exactly what happened once. Clearing the
-    // slug prefix up front means a previous crashed run cannot poison this one.
-    await db.from('products').delete().like('slug', 'e2e-stock-%');
+    // Self-healing sweep: retire anything a previous crashed run left visible,
+    // so it cannot poison this run or the storefront suite. See the afterEach
+    // below for why these are deactivated rather than deleted.
+    await db.from('products').update({ is_active: false }).like('slug', 'e2e-stock-%');
+  });
+
+  // DEACTIVATED after every test, not deleted.
+  //
+  // Why this matters: these fixtures are ACTIVE products and several
+  // deliberately have zero stock, so while they are visible they appear in the
+  // shop grid — and the storefront's Playwright checkout picks a product from
+  // that grid and gets a legitimate 409 from the very guard this file exists to
+  // test. Two earlier attempts at cleanup both failed:
+  //
+  //   1. `afterAll` alone — `test:e2e` runs jest with `--forceExit`, which can
+  //      cut it short mid-delete.
+  //   2. `DELETE` — a product that was successfully ordered has `order_items`
+  //      rows pointing at it, and that FK is not ON DELETE CASCADE. The delete
+  //      failed with a constraint violation which nothing checked, so the rows
+  //      survived every sweep and it looked like the sweep was not running.
+  //
+  // Deactivating sidesteps both. It is also what the application itself does
+  // when an admin removes a product (a soft delete — see the admin e2e), so the
+  // fixtures end up in exactly the state a retired product would.
+  afterEach(async () => {
+    if (productIds.length) {
+      const { error } = await db.from('products').update({ is_active: false }).in('id', productIds);
+      if (error) throw new Error(`Failed to retire stock fixtures: ${error.message}`);
+      productIds.length = 0;
+    }
   });
 
   afterAll(async () => {
-    if (productIds.length) await db.from('products').delete().in('id', productIds);
-    // Belt and braces against the same forceExit race.
-    await db.from('products').delete().like('slug', 'e2e-stock-%');
+    // Backstop for anything afterEach missed.
+    await db.from('products').update({ is_active: false }).like('slug', 'e2e-stock-%');
     for (const id of userIds) await db.auth.admin.deleteUser(id);
     await db.from('categories').delete().eq('slug', CATEGORY_SLUG);
     await app.close();
