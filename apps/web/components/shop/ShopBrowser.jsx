@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import CompareToggle from '@/components/compare/CompareToggle';
 import {
   useProductFacets,
   ProductFilterSidebar,
@@ -108,6 +109,11 @@ export default function ShopBrowser({ products, categories }) {
               >
                 {/* Image Box */}
                 <div className="relative flex w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:h-[288.4px]">
+                  <CompareToggle
+                    product={product}
+                    image={getProductImageUrl(product)}
+                    className="absolute left-[16px] top-[16px] z-10"
+                  />
                   {/* Frame-shape pill — omitted rather than guessed when the
                   product has no shape set, so the card never labels an
                   eyeglass frame "Sunglasses". */}

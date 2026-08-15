@@ -1,8 +1,10 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import { CompareProvider } from '@/context/CompareContext';
 import AosInit from '@/components/AosInit';
 import MainLayout from '@/components/layout/MainLayout';
+import CompareTray from '@/components/compare/CompareTray';
 
 export const metadata = {
   // Without metadataBase, per-page `alternates.canonical` and OpenGraph URLs
@@ -75,7 +77,10 @@ export default function RootLayout({ children }) {
         <AosInit />
         <AuthProvider>
           <CartProvider>
-            <MainLayout>{children}</MainLayout>
+            <CompareProvider>
+              <MainLayout>{children}</MainLayout>
+              <CompareTray />
+            </CompareProvider>
           </CartProvider>
         </AuthProvider>
       </body>

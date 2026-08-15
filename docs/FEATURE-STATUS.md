@@ -41,26 +41,26 @@ The merge was the risk point here — `feature-changes` was built on the pre-Wav
 
 ## 1. Storefront — Catalogue & Discovery
 
-| Feature                         | Status | Evidence                                                                                                                |
-| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Home page                       | ✅     | `app/page.jsx` + 11 home components                                                                                     |
-| Product listing (shop)          | ✅     | `app/shop/page.jsx`                                                                                                     |
-| Product detail page             | ✅     | `app/product/[slug]/page.jsx`                                                                                           |
-| Category landing pages          | ✅     | `app/category/[slug]/page.jsx` — the **only Server Component in the app**                                               |
-| Full-text search                | ✅     | `search_tsv` GIN index; `GET /api/products/search`                                                                      |
-| Related products                | ✅     | `GET /api/products/:id/related`                                                                                         |
-| Filter — category / brand       | ✅     | `shop/page.jsx`                                                                                                         |
-| Filter — price range            | ✅     | 5 bands, `f03d809`                                                                                                      |
-| Filter — frame shape            | ✅     | `f03d809`                                                                                                               |
-| Filter — gender                 | ✅     | `f03d809`. Self-hides below 2 distinct values — every seeded product is `unisex`, so it correctly does not render today |
-| Filter — frame material         | ✅     | `f03d809`. Values grouped case-insensitively; the seed carries both `Metal` and `metal`                                 |
-| Sort                            | ✅     | Featured / price ↑↓ / name, `f03d809`                                                                                   |
-| Pagination                      | ✅     | 12/page, numbered + Prev/Next, resets on filter change                                                                  |
-| Empty state                     | ✅     | Two copy branches — empty catalogue vs zero-result filter — with a Clear-all action                                     |
-| Search autocomplete             | ✅     | 250ms debounce, keyboard nav, request-id guard against out-of-order responses                                           |
-| **Wishlist / favourites**       | ❌     | No table, no endpoint, no UI. Specced: [SPEC-10](specs/SPEC-10-wishlist.md)                                             |
-| **Product comparison**          | ❌     |                                                                                                                         |
-| **Lens / coating configurator** | ❌     | No price model. PDP emits a fixed `Lens: Standard` string into the cart variant                                         |
+| Feature                         | Status | Evidence                                                                                                                                             |
+| ------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home page                       | ✅     | `app/page.jsx` + 11 home components                                                                                                                  |
+| Product listing (shop)          | ✅     | `app/shop/page.jsx`                                                                                                                                  |
+| Product detail page             | ✅     | `app/product/[slug]/page.jsx`                                                                                                                        |
+| Category landing pages          | ✅     | `app/category/[slug]/page.jsx` — the **only Server Component in the app**                                                                            |
+| Full-text search                | ✅     | `search_tsv` GIN index; `GET /api/products/search`                                                                                                   |
+| Related products                | ✅     | `GET /api/products/:id/related`                                                                                                                      |
+| Filter — category / brand       | ✅     | `shop/page.jsx`                                                                                                                                      |
+| Filter — price range            | ✅     | 5 bands, `f03d809`                                                                                                                                   |
+| Filter — frame shape            | ✅     | `f03d809`                                                                                                                                            |
+| Filter — gender                 | ✅     | `f03d809`. Self-hides below 2 distinct values — every seeded product is `unisex`, so it correctly does not render today                              |
+| Filter — frame material         | ✅     | `f03d809`. Values grouped case-insensitively; the seed carries both `Metal` and `metal`                                                              |
+| Sort                            | ✅     | Featured / price ↑↓ / name, `f03d809`                                                                                                                |
+| Pagination                      | ✅     | 12/page, numbered + Prev/Next, resets on filter change                                                                                               |
+| Empty state                     | ✅     | Two copy branches — empty catalogue vs zero-result filter — with a Clear-all action                                                                  |
+| Search autocomplete             | ✅     | 250ms debounce, keyboard nav, request-id guard against out-of-order responses                                                                        |
+| **Wishlist / favourites**       | ❌     | No table, no endpoint, no UI. Specced: [SPEC-10](specs/SPEC-10-wishlist.md)                                                                          |
+| **Product comparison**          | ✅     | Client-side only (no schema/API) — `CompareContext`, capped at 4, localStorage-backed like the guest cart; toggle on `/shop` cards, `/compare` table |
+| **Lens / coating configurator** | ❌     | No price model. PDP emits a fixed `Lens: Standard` string into the cart variant                                                                      |
 
 > The four filters and sort shipped in `f03d809` but are **not yet in Figma** — the Shop screen still specifies only Categories and Brands. See [DESIGN-STATUS §5](DESIGN-STATUS.md). Full plan for this section: [TASKS.md §1](../TASKS.md).
 
