@@ -35,6 +35,52 @@ const nextConfig = {
       },
     ];
   },
+
+  // F-09 FIX: the admin panel shipped with no security headers at all, which
+  // made it the sharpest edge of that finding — a frameable super-admin session
+  // that can cancel orders, edit prices and read prescription files. Stricter
+  // than the storefront's policy because nothing here is public.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Stricter than the storefront: an admin URL can carry an order or
+          // customer id, and there is no reason for any of it to leave.
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          // An admin panel has no business being indexed, whatever robots.txt
+          // says — this is the header search engines actually honour.
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self'",
+              "frame-ancestors 'none'",
+              "form-action 'self'",
+              "base-uri 'self'",
+              "object-src 'none'",
+              'upgrade-insecure-requests',
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

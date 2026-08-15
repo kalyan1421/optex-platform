@@ -147,7 +147,10 @@ export class PromotionsService {
     const { data, error } = await this.supabase.client
       .from('promo_codes')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      // F-14: was unbounded. Promo codes are few today but nothing prunes
+      // expired ones, so the list only ever grows.
+      .limit(500);
     if (error) {
       throw new InternalServerErrorException('Failed to list promo codes');
     }
@@ -219,7 +222,9 @@ export class PromotionsService {
     const { data, error } = await this.supabase.client
       .from('promo_banners')
       .select('*')
-      .order('sort_order', { ascending: true });
+      .order('sort_order', { ascending: true })
+      // F-14: was unbounded — same reasoning as listCodes.
+      .limit(500);
     if (error) {
       throw new InternalServerErrorException('Failed to list promo banners');
     }

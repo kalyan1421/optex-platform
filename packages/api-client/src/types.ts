@@ -68,6 +68,17 @@ export interface Product {
   images: string[];
   try_on_image_url: string | null;
   is_active: boolean;
+  /**
+   * Mean of approved review ratings, one decimal, or null when there are none.
+   *
+   * Denormalised onto `products` and maintained by trigger (migration 0024) so
+   * listings can show stars without a per-product round trip — audit F-11 was
+   * that ratings appeared only on the PDP, and could not cheaply appear
+   * anywhere else.
+   */
+  rating_avg: number | null;
+  /** Number of approved reviews. Maintained alongside `rating_avg`. */
+  rating_count: number;
   created_at: string;
   [key: string]: unknown;
 }
@@ -756,6 +767,12 @@ export interface Review {
   body: string | null;
   status: ReviewStatus;
   admin_reply: string | null;
+  /**
+   * True when the author had ordered this product at the time of writing
+   * (migration 0024, audit F-12). Set once at insert and never recomputed, so a
+   * later refund does not rewrite what was true when they wrote it.
+   */
+  verified_purchase: boolean;
   created_at: string;
 }
 

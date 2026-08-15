@@ -28,6 +28,39 @@ const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'ima
 /** Max upload size: 10 MB — a sane ceiling for a scan/photo. */
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
+/**
+ * Collapses the interchangeable spellings of the allowed types so a declared
+ * `image/jpg` compares equal to the sniffed `image/jpeg`.
+ */
+function normalizeMime(mime: string): string {
+  return mime === 'image/jpg' ? 'image/jpeg' : mime;
+}
+
+/**
+ * Identifies a file from its leading bytes, returning the canonical MIME type
+ * or `null` if it is not one of the three we accept (F-26).
+ *
+ * Deliberately hand-rolled rather than pulling in `file-type`: three signatures,
+ * all short, all stable since the 1990s, and the dependency would be the only
+ * ESM-only package in a CommonJS build.
+ */
+function detectFileType(buffer: Buffer): 'application/pdf' | 'image/jpeg' | 'image/png' | null {
+  if (buffer.length < 8) return null;
+
+  // %PDF
+  if (buffer.subarray(0, 4).toString('latin1') === '%PDF') return 'application/pdf';
+
+  // JPEG: SOI marker FF D8, and every JPEG ends FF D9 — the start alone is
+  // enough to identify, and truncation is the storage layer's problem.
+  if (buffer[0] === 0xff && buffer[1] === 0xd8) return 'image/jpeg';
+
+  // PNG: \x89PNG\r\n\x1a\n
+  const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (buffer.subarray(0, 8).equals(PNG_MAGIC)) return 'image/png';
+
+  return null;
+}
+
 /** Columns selected for a prescription row returned to clients. */
 const PRESCRIPTION_COLUMNS =
   'id, customer_id, order_id, file_url, sphere_od, sphere_os, cyl_od, cyl_os, axis_od, axis_os, pd, status, processed_at, created_at';
@@ -94,6 +127,26 @@ export class PrescriptionsService {
       throw new BadRequestException('File too large (max 10 MB)');
     }
 
+    // F-26 FIX: the check above reads the multipart Content-Type header, which
+    // the client writes and can say anything. Sniffing the leading bytes makes
+    // the declared type an assertion we verify rather than trust.
+    //
+    // The real exposure was always modest — the allowlist excludes SVG, storage
+    // is a private bucket, and downloads are ownership-checked signed URLs on a
+    // separate origin — but these are health records, and "we stored whatever
+    // they sent and labelled it a PNG" is not a defensible position for them.
+    const detected = detectFileType(file.buffer);
+    if (!detected) {
+      throw new BadRequestException(
+        'That file does not look like a PDF, JPG or PNG. Please upload a scan or photo of your prescription.',
+      );
+    }
+    if (detected !== normalizeMime(file.mimetype)) {
+      throw new BadRequestException(
+        `File contents do not match the declared type (${file.mimetype}). Please re-upload the original file.`,
+      );
+    }
+
     const customerId = await this.resolveOrCreateCustomerId(user);
 
     const objectPath = `${customerId}/${Date.now()}-${this.sanitizeName(file.originalname)}`;
@@ -101,7 +154,9 @@ export class PrescriptionsService {
     const { error: uploadError } = await this.supabase.client.storage
       .from(PRESCRIPTIONS_BUCKET)
       .upload(objectPath, file.buffer, {
-        contentType: file.mimetype || 'application/octet-stream',
+        // The SNIFFED type, not the declared one — so what we serve back on
+        // download is what the bytes actually are.
+        contentType: detected,
         upsert: false,
       });
 
@@ -146,7 +201,10 @@ export class PrescriptionsService {
       .from('prescriptions')
       .select(PRESCRIPTION_COLUMNS)
       .eq('customer_id', customerId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      // F-14: was unbounded. Prescriptions accumulate one per customer visit
+      // and never expire, so this grows forever; the admin filters instead.
+      .limit(500);
 
     if (error) {
       throw new InternalServerErrorException('Failed to load prescriptions');

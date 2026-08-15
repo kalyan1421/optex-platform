@@ -43,6 +43,12 @@ export class ReviewDto {
   @ApiProperty({ description: 'Public admin reply, if any.', nullable: true })
   admin_reply!: string | null;
 
+  @ApiProperty({
+    description:
+      'True when the author had ordered this product at the time of writing (F-12). Set once at insert; never recomputed, so a later refund does not rewrite history.',
+  })
+  verified_purchase!: boolean;
+
   @ApiProperty({ description: 'Creation timestamp (ISO 8601).' })
   created_at!: string;
 }

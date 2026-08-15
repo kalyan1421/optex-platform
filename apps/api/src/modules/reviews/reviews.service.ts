@@ -12,7 +12,18 @@ import {
 } from './dto/review.dto';
 
 /** Columns selected from `product_reviews`. Mirrors the schema exactly. */
-const REVIEW_COLUMNS = 'id, product_id, customer_id, rating, body, status, admin_reply, created_at';
+const REVIEW_COLUMNS =
+  'id, product_id, customer_id, rating, body, status, admin_reply, verified_purchase, created_at';
+
+/**
+ * Most approved reviews returned for one product (F-14).
+ *
+ * This list is server-rendered on the PDP for every visitor, and used to be
+ * unbounded — a popular frame with thousands of reviews would pull every row
+ * into Node on every page view. A page of 50 is more than anyone scrolls, and
+ * the aggregate no longer depends on having them all (see below).
+ */
+const MAX_PRODUCT_REVIEWS = 50;
 
 /** As `REVIEW_COLUMNS`, plus the author and product names the admin table shows. */
 const ADMIN_REVIEW_COLUMNS = `${REVIEW_COLUMNS}, customer:customers(full_name), product:products(name)`;
@@ -43,25 +54,48 @@ export class ReviewsService {
    * `{ averageRating, count }`. Public — no auth, no pending/flagged rows.
    */
   async listApprovedForProduct(productId: string): Promise<ProductReviewsResponseDto> {
-    const { data, error } = await this.supabase.client
-      .from('product_reviews')
-      .select(REVIEW_COLUMNS)
-      .eq('product_id', productId)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false });
+    // F-14: the aggregate no longer comes from summing the returned rows in
+    // Node, which is what forced this query to be unbounded. `products`
+    // carries a trigger-maintained `rating_avg` / `rating_count` (migration
+    // 0024), so the numbers stay correct across the whole review set while the
+    // list itself is capped.
+    const [reviewsRes, productRes] = await Promise.all([
+      this.supabase.client
+        .from('product_reviews')
+        .select(REVIEW_COLUMNS)
+        .eq('product_id', productId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(MAX_PRODUCT_REVIEWS),
+      this.supabase.client
+        .from('products')
+        .select('rating_avg, rating_count')
+        .eq('id', productId)
+        .maybeSingle<{ rating_avg: number | null; rating_count: number }>(),
+    ]);
 
-    if (error) {
+    if (reviewsRes.error) {
       throw new InternalServerErrorException('Failed to load reviews');
     }
 
-    const reviews = (data ?? []) as ReviewDto[];
-    const count = reviews.length;
-    const averageRating =
-      count === 0
-        ? null
-        : Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / count) * 10) / 10;
+    const reviews = (reviewsRes.data ?? []) as ReviewDto[];
 
-    return { reviews, aggregate: { averageRating, count } };
+    // Falling back to the fetched rows keeps this correct if the product row is
+    // missing — and means the endpoint degrades rather than lying about zero.
+    const aggregate = productRes.data
+      ? {
+          averageRating: productRes.data.rating_avg,
+          count: productRes.data.rating_count,
+        }
+      : {
+          averageRating:
+            reviews.length === 0
+              ? null
+              : Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10,
+          count: reviews.length,
+        };
+
+    return { reviews, aggregate };
   }
 
   /**
@@ -129,7 +163,12 @@ export class ReviewsService {
     let query = this.supabase.client
       .from('product_reviews')
       .select(ADMIN_REVIEW_COLUMNS)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      // F-14: was unbounded. The moderation queue is worked newest-first and
+      // nobody scrolls past a few hundred, but "every review ever written" is
+      // not a page size — it grows without limit and the admin panel loads it
+      // on every visit.
+      .limit(500);
 
     if (status) {
       query = query.eq('status', status);

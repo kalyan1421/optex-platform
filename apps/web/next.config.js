@@ -37,6 +37,74 @@ const nextConfig = {
       },
     ];
   },
+
+  // F-09 FIX: the API sets security headers via helmet, but those only cover
+  // API responses — the storefront itself shipped with none at all. Everything
+  // below is a header the browser enforces on our behalf and that costs nothing
+  // to send.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          // Nothing here should ever be framed. The storefront has no reason to
+          // be embedded, and a frameable checkout is a clickjacking target.
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // Stops a browser second-guessing our Content-Type — the sniffing
+          // that turns a user-uploaded file into executable script.
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Send the origin cross-site, the full URL same-origin. Order ids and
+          // tracking tokens live in our paths and must not leak to third
+          // parties in a Referer header.
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // The storefront asks for none of these; deny them by default so a
+          // future dependency cannot quietly start.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self), payment=()',
+          },
+          // Two years, subdomains included. Kenyan mobile networks are a common
+          // place for downgrade interception, and this site takes payments.
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              // 'unsafe-inline'/'unsafe-eval' are required by Next's own
+              // bootstrap and dev refresh. Removing them needs the nonce-based
+              // setup, which is a separate change — this is the policy that can
+              // ship today without breaking the app, not the endpoint.
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Tailwind and Next inject style tags at runtime. The Google
+              // Fonts stylesheet is loaded from `app/layout.jsx` — omitting
+              // fonts.googleapis.com here silently drops every custom face and
+              // the whole site renders in Times New Roman.
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              // Product images come from Supabase Storage; data: covers inlined
+              // placeholders and blob: the client-side previews.
+              "img-src 'self' data: blob: https:",
+              // The face files themselves come from the gstatic host, which is
+              // a different origin to the stylesheet above.
+              "font-src 'self' data: https://fonts.gstatic.com",
+              // Same-origin only: the browser calls /api on this host and the
+              // rewrite proxies onward, so no third-party origin is needed.
+              "connect-src 'self'",
+              // The counterpart to X-Frame-Options, for browsers that prefer it.
+              "frame-ancestors 'none'",
+              // Nothing on this site posts to another origin.
+              "form-action 'self'",
+              "base-uri 'self'",
+              "object-src 'none'",
+              'upgrade-insecure-requests',
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

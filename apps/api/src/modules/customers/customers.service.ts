@@ -42,7 +42,10 @@ export class CustomersService {
     let query = this.supabase.client
       .from('customers')
       .select(CUSTOMER_COLUMNS)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      // F-14: was unbounded — the admin table pulled every customer ever
+      // registered on each visit. Search narrows it; this bounds the rest.
+      .limit(500);
 
     if (search) {
       // Escape PostgREST's `or` filter delimiters so a comma or paren in the

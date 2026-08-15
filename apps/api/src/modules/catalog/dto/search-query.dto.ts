@@ -1,14 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 /**
  * Query parameters for full-text product search (`GET /products/search`).
  */
 export class SearchQueryDto {
-  @ApiProperty({ description: 'Free-text search query', example: 'ray ban aviator' })
+  @ApiProperty({
+    description: 'Free-text search query',
+    example: 'ray ban aviator',
+    maxLength: 120,
+  })
   @IsString()
   @MinLength(1)
+  // F-19 FIX: the query reaches `websearch_to_tsquery` and, when that returns
+  // nothing, an `ilike` fallback that cannot use an index. Unbounded, that is a
+  // few bytes of request buying an arbitrarily expensive scan. 120 characters is
+  // far more than any real product search and cheap to reject.
+  @MaxLength(120)
   q!: string;
 
   @ApiPropertyOptional({

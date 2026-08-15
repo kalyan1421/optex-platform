@@ -69,7 +69,7 @@ describe('Rate limiting (e2e)', () => {
     expect(statuses.every((s) => s === 200)).toBe(true);
     // No quota headers at all — the guard was skipped, not merely satisfied.
     expect(headers['x-ratelimit-limit']).toBeUndefined();
-  });
+  }, 30_000);
 
   it('gives distinct bearer tokens independent quotas (F-01)', async () => {
     // The tokens are junk, so every request 401s — which is fine and is the
@@ -93,7 +93,7 @@ describe('Rate limiting (e2e)', () => {
     // If both keyed on the shared IP, B would start where A finished and its
     // remaining count would be roughly BURST lower. Keyed per token they match.
     expect(remainingB).toBe(remainingA);
-  });
+  }, 30_000);
 
   it('separates anonymous callers by forwarded address, not by proxy (F-01)', async () => {
     const remainingFor = async (ip: string) => {

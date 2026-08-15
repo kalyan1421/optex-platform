@@ -222,7 +222,10 @@ export class AppointmentsService {
     let q = this.supabase.client
       .from('appointments')
       .select(ADMIN_APPOINTMENT_COLUMNS)
-      .order('scheduled_at', { ascending: false });
+      .order('scheduled_at', { ascending: false })
+      // F-14: was unbounded. The admin view is date-filtered in practice, but
+      // an unfiltered call pulled every booking in the system's history.
+      .limit(500);
 
     if (query.branchId) q = q.eq('branch_id', query.branchId);
     if (query.status) q = q.eq('status', query.status);

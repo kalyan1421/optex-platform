@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 /**
  * Optional prescription measurement fields the customer may submit alongside
@@ -73,7 +73,9 @@ export class UploadPrescriptionDto {
     format: 'uuid',
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(64)
+  // F-25 FIX: was `@IsString() @MaxLength(64)` while advertising `format: uuid`.
+  // A malformed value passed validation and failed at the query instead,
+  // surfacing as a 500 rather than a 400. Ten other DTOs already use @IsUUID.
+  @IsUUID()
   order_id?: string;
 }
