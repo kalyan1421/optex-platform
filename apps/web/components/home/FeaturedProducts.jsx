@@ -6,6 +6,7 @@ import { createBrowserSupabase } from '@optex/db/browser';
 import { listProducts } from '@optex/db';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
 export default function FeaturedProducts() {
   const { addToCart } = useCart();
@@ -100,18 +101,24 @@ export default function FeaturedProducts() {
               }}
             >
               {/* Product Image */}
-              <Link
-                href={`/product/${product.slug}`}
-                className="relative w-full overflow-hidden bg-[#F5F5F5] lg:h-[225.2px] lg:w-[289px]"
-                style={{ borderRadius: '31px 31px 0 0' }}
-              >
-                <img
-                  src={getProductImageUrl(product)}
-                  alt={product.name}
-                  className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
-                  style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+              <div className="relative w-full lg:h-[225.2px] lg:w-[289px]">
+                <WishlistToggle
+                  productId={product.id}
+                  className="absolute left-[12px] top-[12px] z-10"
                 />
-              </Link>
+                <Link
+                  href={`/product/${product.slug}`}
+                  className="block h-full w-full overflow-hidden bg-[#F5F5F5]"
+                  style={{ borderRadius: '31px 31px 0 0' }}
+                >
+                  <img
+                    src={getProductImageUrl(product)}
+                    alt={product.name}
+                    className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                    style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+                  />
+                </Link>
+              </div>
 
               {/* Product Info */}
               <div className="flex flex-col lg:h-[141px] lg:w-[289px] lg:gap-[10px] lg:px-[12px] lg:pb-[12px]">

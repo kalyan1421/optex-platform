@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 import CompareToggle from '@/components/compare/CompareToggle';
+import WishlistToggle from '@/components/wishlist/WishlistToggle';
 import {
   useProductFacets,
   ProductFilterSidebar,
@@ -113,6 +114,10 @@ export default function ShopBrowser({ products, categories }) {
                     product={product}
                     image={getProductImageUrl(product)}
                     className="absolute left-[16px] top-[16px] z-10"
+                  />
+                  <WishlistToggle
+                    productId={product.id}
+                    className="absolute left-[56px] top-[16px] z-10"
                   />
                   {/* Frame-shape pill — omitted rather than guessed when the
                   product has no shape set, so the card never labels an

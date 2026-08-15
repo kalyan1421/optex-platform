@@ -31,6 +31,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { SupabaseModule } from './supabase/supabase.module';
 
 @Module({
@@ -92,8 +93,9 @@ import { SupabaseModule } from './supabase/supabase.module';
     // Admin surfaces that replaced direct browser-to-Supabase access
     CustomersModule,
     InventoryModule,
-    // Pending-features sprint plan (Sprint 2)
+    // Pending-features sprint plan (Sprint 2, Sprint 3)
     AddressesModule,
+    WishlistModule,
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorize.

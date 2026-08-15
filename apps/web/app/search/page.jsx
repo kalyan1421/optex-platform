@@ -8,6 +8,7 @@ import { listProducts } from '@optex/db';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 import { useCart } from '@/context/CartContext';
+import WishlistToggle from '@/components/wishlist/WishlistToggle';
 import {
   useProductFacets,
   ProductFilterSidebar,
@@ -88,6 +89,7 @@ function ProductCard({ product }) {
             </span>
           </div>
         </div>
+        <WishlistToggle productId={product.id} className="absolute left-3 top-3 z-10 h-8 w-8" />
         <Link href={`/product/${product.slug}`}>
           <img
             src={getProductImageUrl(product)}

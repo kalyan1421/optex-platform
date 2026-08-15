@@ -9,6 +9,7 @@ import { getProductBySlug, listProducts } from '@optex/db';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import { api } from '@/lib/api';
 import { getProductImageUrl } from '@/lib/product-image';
+import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
 // ── Reviews helpers ─────────────────────────────────────────────────────────
 
@@ -669,6 +670,12 @@ const ProductDetails = ({ params }) => {
                 Add to Cart
               </button>
             </div>
+
+            {product && (
+              <div className="mb-[32px]">
+                <WishlistToggle productId={product.id} variant="inline" />
+              </div>
+            )}
 
             {/* Info Badges */}
             <div className="flex h-[56.8px] flex-wrap items-center gap-[24px] border-t-[0.8px] border-[#D4D4D4] pt-[20px]">

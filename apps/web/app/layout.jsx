@@ -2,6 +2,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { CompareProvider } from '@/context/CompareContext';
+import { WishlistProvider } from '@/context/WishlistContext';
 import AosInit from '@/components/AosInit';
 import MainLayout from '@/components/layout/MainLayout';
 import CompareTray from '@/components/compare/CompareTray';
@@ -77,10 +78,12 @@ export default function RootLayout({ children }) {
         <AosInit />
         <AuthProvider>
           <CartProvider>
-            <CompareProvider>
-              <MainLayout>{children}</MainLayout>
-              <CompareTray />
-            </CompareProvider>
+            <WishlistProvider>
+              <CompareProvider>
+                <MainLayout>{children}</MainLayout>
+                <CompareTray />
+              </CompareProvider>
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>

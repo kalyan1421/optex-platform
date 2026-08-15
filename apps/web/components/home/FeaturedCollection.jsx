@@ -5,6 +5,7 @@ import { createBrowserSupabase } from '@optex/db/browser';
 import { listProducts, listCategories } from '@optex/db';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
 const UI_CATEGORIES = [
   {
@@ -166,12 +167,11 @@ const FeaturedCollection = () => {
           {activeProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[1143px] lg:grid-cols-4 lg:gap-[24px]">
               {activeProducts.map((product, index) => (
-                <Link
+                <div
                   key={product.id}
-                  href={`/product/${product.slug}`}
                   data-aos="fade-up"
                   data-aos-delay={index * 100}
-                  className="group flex cursor-pointer flex-col bg-[#FFFFFF] transition-colors transition-transform duration-500 hover:-translate-y-1 hover:border-[#2E3192]/50 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
+                  className="group flex flex-col bg-[#FFFFFF] transition-colors transition-transform duration-500 hover:-translate-y-1 hover:border-[#2E3192]/50 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
                   style={{
                     borderRadius: '32px',
                     border: '1px solid #D4D4D4',
@@ -211,17 +211,29 @@ const FeaturedCollection = () => {
                         </span>
                       </div>
                     </div>
-                    {/* Image */}
-                    <img
-                      src={getProductImageUrl(product)}
-                      alt={product.name}
-                      className={`h-full w-full mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
-                        activeCategory === 'lens' ? 'object-contain' : 'object-cover'
-                      }`}
-                      style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+                    <WishlistToggle
+                      productId={product.id}
+                      className="absolute left-[12px] top-[12px] z-10"
                     />
+                    {/* Image */}
+                    <Link
+                      href={`/product/${product.slug}`}
+                      className="block h-full w-full cursor-pointer"
+                    >
+                      <img
+                        src={getProductImageUrl(product)}
+                        alt={product.name}
+                        className={`h-full w-full mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
+                          activeCategory === 'lens' ? 'object-contain' : 'object-cover'
+                        }`}
+                        style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+                      />
+                    </Link>
                   </div>
-                  <div className="flex flex-col lg:h-[55px] lg:w-[241.75px] lg:gap-[4px] lg:px-[12px]">
+                  <Link
+                    href={`/product/${product.slug}`}
+                    className="flex flex-col lg:h-[55px] lg:w-[241.75px] lg:gap-[4px] lg:px-[12px]"
+                  >
                     <p
                       className="uppercase text-[#717182]"
                       style={{
@@ -246,8 +258,8 @@ const FeaturedCollection = () => {
                     >
                       {product.name}
                     </h3>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           ) : (

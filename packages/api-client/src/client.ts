@@ -109,6 +109,7 @@ import type {
   AdminCancellationRequest,
   CancellationStatus,
   PaymentsNeedingAttention,
+  WishlistItem,
 } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -252,6 +253,7 @@ export interface ApiClient {
   appointments: AppointmentsApi;
   prescriptions: PrescriptionsApi;
   addresses: AddressesApi;
+  wishlist: WishlistApi;
   reviews: ReviewsApi;
   promotions: PromotionsApi;
   branches: BranchesApi;
@@ -465,6 +467,19 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       request<{ id: string }>(`/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     setDefault: (id) =>
       request<Address>(`/addresses/${encodeURIComponent(id)}/default`, { method: 'POST' }),
+  };
+
+  // ── wishlist ─────────────────────────────────────────────────────────────
+  const wishlist: WishlistApi = {
+    list: () => request<WishlistItem[]>('/wishlist'),
+    add: (productId) =>
+      request<{ productId: string }>(`/wishlist/${encodeURIComponent(productId)}`, {
+        method: 'POST',
+      }),
+    remove: (productId) =>
+      request<{ productId: string }>(`/wishlist/${encodeURIComponent(productId)}`, {
+        method: 'DELETE',
+      }),
   };
 
   // ── reviews ──────────────────────────────────────────────────────────────
@@ -695,6 +710,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     appointments,
     prescriptions,
     addresses,
+    wishlist,
     reviews,
     promotions,
     branches,
@@ -822,6 +838,16 @@ export interface AddressesApi {
   remove: (id: string) => Promise<{ id: string }>;
   /** `POST /addresses/:id/default` */
   setDefault: (id: string) => Promise<Address>;
+}
+
+/** Saved products (`/wishlist/...`). */
+export interface WishlistApi {
+  /** `GET /wishlist` — most recently saved first */
+  list: () => Promise<WishlistItem[]>;
+  /** `POST /wishlist/:productId` — idempotent */
+  add: (productId: string) => Promise<{ productId: string }>;
+  /** `DELETE /wishlist/:productId` — idempotent */
+  remove: (productId: string) => Promise<{ productId: string }>;
 }
 
 /** Product reviews (`/products/:productId/reviews`). `list` is public. */

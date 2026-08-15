@@ -5,6 +5,7 @@ import { createBrowserSupabase } from '@optex/db/browser';
 import { listProducts } from '@optex/db';
 import { formatKes } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
 const BADGES = ['BEST SELLER', 'TRENDING', 'NEW ARRIVAL', 'HOT'];
 
@@ -74,9 +75,8 @@ export default function TrendingNow() {
         {products.length > 0 ? (
           <div className="flex flex-col justify-between gap-6 sm:flex-row sm:flex-wrap lg:h-[381.75px] lg:w-[1240px] lg:flex-nowrap lg:gap-0">
             {products.map((product, index) => (
-              <Link
+              <div
                 key={product.id}
-                href={`/product/${product.slug}`}
                 data-aos="fade-up"
                 data-aos-delay={index * 100}
                 className="group flex flex-col lg:h-[381.75px] lg:w-[261.75px] lg:gap-[24px]"
@@ -103,16 +103,25 @@ export default function TrendingNow() {
                       {BADGES[index % BADGES.length]}
                     </span>
                   </div>
-                  <img
-                    src={getProductImageUrl(product)}
-                    alt={product.name}
-                    className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
-                    style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+                  <WishlistToggle
+                    productId={product.id}
+                    className="absolute right-[12px] top-[12px] z-10"
                   />
+                  <Link href={`/product/${product.slug}`} className="block h-full w-full">
+                    <img
+                      src={getProductImageUrl(product)}
+                      alt={product.name}
+                      className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                      style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+                    />
+                  </Link>
                 </div>
 
                 {/* Text Block */}
-                <div className="flex flex-col lg:h-[96px] lg:w-[261.75px]">
+                <Link
+                  href={`/product/${product.slug}`}
+                  className="flex flex-col lg:h-[96px] lg:w-[261.75px]"
+                >
                   <p
                     className="uppercase text-[#717182]"
                     style={{
@@ -152,8 +161,8 @@ export default function TrendingNow() {
                       })}
                     </span>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         ) : (

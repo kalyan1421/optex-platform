@@ -708,6 +708,26 @@ export interface CreateAddressInput {
 /** Body for `PATCH /addresses/:id` (`UpdateAddressDto`) — every field optional. */
 export type UpdateAddressInput = Partial<CreateAddressInput>;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Wishlist
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A saved product (`WishlistItemView`), with enough product data to render the wishlist page in one call. */
+export interface WishlistItem {
+  productId: string;
+  addedAt: string;
+  product: {
+    id: string;
+    slug: string;
+    name: string;
+    brand: string | null;
+    priceKes: number;
+    image: string | null;
+    /** `false` means discontinued/deactivated — the row survives, the product just isn't purchasable. */
+    isActive: boolean;
+  };
+}
+
 /** Query for `GET /admin/prescriptions` (`PrescriptionQueryDto`). */
 export interface PrescriptionQuery {
   /** Filter by `customers.id` (the `prescriptions.customer_id` value). */

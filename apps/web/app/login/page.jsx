@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
 
@@ -68,12 +68,22 @@ const EyeIcon = () => (
 
 const Login = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createBrowserSupabase();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Only a same-site relative path is accepted — a leading "//" parses as a
+  // protocol-relative URL to an attacker-controlled host, and checkout/
+  // appointments/wishlist all only ever pass an in-app path here anyway.
+  const redirectParam = searchParams.get('redirect');
+  const destination =
+    redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+      ? redirectParam
+      : '/';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -86,7 +96,7 @@ const Login = () => {
           access_token: session.accessToken,
           refresh_token: session.refreshToken,
         });
-        router.push('/');
+        router.push(destination);
         router.refresh();
       }
     } catch (err) {
@@ -266,5 +276,9 @@ const Login = () => {
 };
 
 export default function Page() {
-  return <Login />;
+  return (
+    <Suspense fallback={null}>
+      <Login />
+    </Suspense>
+  );
 }
