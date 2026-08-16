@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles, CurrentUser } from '../../auth/decorators';
+import { RequirePermission, CurrentUser } from '../../auth/decorators';
 import { AdminListOrdersQueryDto } from './dto/admin-list-orders-query.dto';
 import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
 import { AdminOrderSummaryView, OrderDetailView, PaginatedOrders } from './dto/order-views';
@@ -13,12 +13,13 @@ import {
 } from './dto/decide-cancellation.dto';
 
 /**
- * Super-admin order management. Mounted at `/api/admin`. Every route is gated by
- * `@Roles('super_admin')` on top of the global JWT guard, so these handlers run
- * with full visibility across all customers' orders.
+ * Super-admin order management. Mounted at `/api/admin`. Gated by `orders.*`
+ * and `cancellations.decide` (`@RequirePermission`) on top of the global JWT
+ * guard. Branch-scoping `listOrders`/`getOrder` to a Branch Manager/Staff's
+ * own branch is R1 sub-phase 1b, not yet done here — `orders.branch_id` is
+ * nullable and currently unfiltered.
  */
 @ApiTags('orders')
-@Roles('super_admin')
 @Controller('admin')
 export class OrdersAdminController {
   constructor(
@@ -26,6 +27,7 @@ export class OrdersAdminController {
     private readonly cancellation: CancellationService,
   ) {}
 
+  @RequirePermission('orders.read')
   @Get('orders')
   @ApiOperation({
     summary: 'List all orders with status / payment filters + pagination',
@@ -37,6 +39,7 @@ export class OrdersAdminController {
     return this.orders.adminListOrders(query);
   }
 
+  @RequirePermission('orders.read')
   @Get('orders/:id')
   @ApiOperation({ summary: 'Full detail for any order (items, shipping, totals)' })
   @ApiOkResponse({ description: 'The order detail' })
@@ -44,6 +47,7 @@ export class OrdersAdminController {
     return this.orders.adminOrderDetail(id);
   }
 
+  @RequirePermission('orders.write')
   @Patch('orders/:id/status')
   @ApiOperation({
     summary: 'Advance an order through the fulfilment workflow',
@@ -56,6 +60,7 @@ export class OrdersAdminController {
     return this.orders.adminUpdateStatus(id, dto);
   }
 
+  @RequirePermission('orders.cancel')
   @Patch('orders/:id/cancel')
   @ApiOperation({
     summary: 'Cancel an order directly, with no customer request behind it — the phone-call path',
@@ -71,6 +76,7 @@ export class OrdersAdminController {
 
   // ─── Cancellation requests (SPEC-06 R3) ─────────────────────────────────
 
+  @RequirePermission('cancellations.decide')
   @Get('cancellations')
   @ApiOperation({ summary: 'Cancellation requests, newest first, optionally by status' })
   @ApiOkResponse({ description: 'Requests with order, customer and payment context' })
@@ -78,6 +84,7 @@ export class OrdersAdminController {
     return this.cancellation.listForAdmin(status);
   }
 
+  @RequirePermission('cancellations.decide')
   @Get('cancellations/pending-count')
   @ApiOperation({ summary: 'How many requests are awaiting a decision' })
   @ApiOkResponse({ description: 'The count, for the admin nav badge' })
@@ -85,6 +92,7 @@ export class OrdersAdminController {
     return { count: await this.cancellation.pendingCount() };
   }
 
+  @RequirePermission('cancellations.decide')
   @Patch('cancellations/:id/approve')
   @ApiOperation({ summary: 'Approve a request — cancels the order' })
   @ApiOkResponse({ description: 'The decided request' })
@@ -96,6 +104,7 @@ export class OrdersAdminController {
     return this.cancellation.approve(adminUserId, id, dto.acknowledgePaid ?? false);
   }
 
+  @RequirePermission('cancellations.decide')
   @Patch('cancellations/:id/decline')
   @ApiOperation({ summary: 'Decline a request — the order keeps its status' })
   @ApiOkResponse({ description: 'The decided request' })

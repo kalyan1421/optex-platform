@@ -8,7 +8,8 @@ import { PrescriptionsService } from './prescriptions.service';
  *
  * Customer endpoints (`/api/prescriptions/*`) are JWT-scoped to the caller's
  * own `customers` row; the admin viewer (`/api/admin/prescriptions/*`) is
- * gated by `@Roles('super_admin')`. Files live in the PRIVATE `prescriptions`
+ * gated by `@RequirePermission('prescriptions.read'|'prescriptions.write')`,
+ * held only by Super Admin. Files live in the PRIVATE `prescriptions`
  * storage bucket and are only ever exposed via 60s signed URLs. Relies on the
  * global `SupabaseModule` (service-role client) and global auth guards.
  */

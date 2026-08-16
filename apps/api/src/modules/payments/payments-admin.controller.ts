@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../../auth/decorators';
+import { RequirePermission } from '../../auth/decorators';
 import { AdminListPaymentsQueryDto } from './dto/admin-list-payments-query.dto';
 import { ReconcilePaymentDto } from './dto/reconcile-payment.dto';
 import { LinkPaymentDto } from './dto/link-payment.dto';
@@ -9,15 +9,17 @@ import { PaymentsService } from './payments.service';
 
 /**
  * Super-admin payment management, mounted at `/api/admin/payments`. Gated by
- * `@Roles('super_admin')` on top of the global JWT guard. Addresses
- * MISSING_FEATURES A-2 (unified payment ledger) and P-6 (manual reconcile).
+ * `payments.*` permissions (`@RequirePermission`) on top of the global JWT
+ * guard. Addresses MISSING_FEATURES A-2 (unified payment ledger) and P-6
+ * (manual reconcile). No `branch_id` column on either transaction table, so
+ * this stays Accountant/Super-Admin-only — not scoped to Branch Manager.
  */
 @ApiTags('payments')
-@Roles('super_admin')
 @Controller('admin/payments')
 export class PaymentsAdminController {
   constructor(private readonly payments: PaymentsService) {}
 
+  @RequirePermission('payments.read')
   @Get()
   @ApiOperation({
     summary: 'Unified list of M-Pesa + Pesapal transactions (filters + paging)',
@@ -27,6 +29,7 @@ export class PaymentsAdminController {
     return this.payments.adminListPayments(query);
   }
 
+  @RequirePermission('payments.reconcile')
   @Post(':id/reconcile')
   @ApiOperation({
     summary: 'Re-query the provider and reconcile a transaction + its order',
@@ -39,6 +42,7 @@ export class PaymentsAdminController {
     return this.payments.adminReconcile(id, dto.provider);
   }
 
+  @RequirePermission('payments.reconcile')
   @Post(':id/link')
   @ApiOperation({
     summary: 'Manually link an orphan transaction to an order and credit it',
@@ -50,6 +54,8 @@ export class PaymentsAdminController {
   ): Promise<ReconcileResult> {
     return this.payments.adminLinkPayment(id, dto.provider, dto.orderNumber);
   }
+
+  @RequirePermission('payments.read')
   @Get('attention')
   @ApiOperation({
     summary: 'Payments needing manual handling — paid-and-cancelled orders, and reversals',

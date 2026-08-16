@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../../auth/decorators';
+import { RequirePermission } from '../../auth/decorators';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
 import { CreatePromoCodeDto } from './dto/create-promo-code.dto';
 import { UpdatePromoBannerDto } from './dto/update-promo-banner.dto';
@@ -9,11 +9,10 @@ import { PromotionsService } from './promotions.service';
 
 /**
  * Super-admin management of promo codes and promo banners. Mounted at
- * `/api/admin`. Every route is gated by `@Roles('super_admin')` on top of the
- * global JWT guard.
+ * `/api/admin`. Every route is gated by `promotions.read`/`promotions.write`
+ * (`@RequirePermission`) on top of the global JWT guard.
  */
 @ApiTags('promotions')
-@Roles('super_admin')
 @Controller('admin')
 export class PromotionsAdminController {
   constructor(private readonly promotions: PromotionsService) {}
@@ -21,6 +20,7 @@ export class PromotionsAdminController {
   // ─── Promo codes ──────────────────────────────────────────────────────────
 
   /** List all promo codes, newest first. */
+  @RequirePermission('promotions.read')
   @Get('promo-codes')
   @ApiOperation({ summary: 'List all promo codes' })
   @ApiOkResponse({ description: 'Array of promo codes' })
@@ -29,6 +29,7 @@ export class PromotionsAdminController {
   }
 
   /** Create a new promo code. */
+  @RequirePermission('promotions.write')
   @Post('promo-codes')
   @ApiOperation({ summary: 'Create a promo code' })
   @ApiOkResponse({ description: 'The created promo code' })
@@ -37,6 +38,7 @@ export class PromotionsAdminController {
   }
 
   /** Update an existing promo code. */
+  @RequirePermission('promotions.write')
   @Patch('promo-codes/:id')
   @ApiOperation({ summary: 'Update a promo code' })
   @ApiOkResponse({ description: 'The updated promo code' })
@@ -48,6 +50,7 @@ export class PromotionsAdminController {
   }
 
   /** Delete a promo code. */
+  @RequirePermission('promotions.write')
   @Delete('promo-codes/:id')
   @ApiOperation({ summary: 'Delete a promo code' })
   @ApiOkResponse({ description: 'Deletion confirmation' })
@@ -58,6 +61,7 @@ export class PromotionsAdminController {
   // ─── Promo banners ──────────────────────────────────────────────────────
 
   /** List all promo banners ordered by `sort_order`. */
+  @RequirePermission('promotions.read')
   @Get('promo-banners')
   @ApiOperation({ summary: 'List all promo banners' })
   @ApiOkResponse({ description: 'Array of promo banners' })
@@ -66,6 +70,7 @@ export class PromotionsAdminController {
   }
 
   /** Create a new promo banner. */
+  @RequirePermission('promotions.write')
   @Post('promo-banners')
   @ApiOperation({ summary: 'Create a promo banner' })
   @ApiOkResponse({ description: 'The created promo banner' })
@@ -74,6 +79,7 @@ export class PromotionsAdminController {
   }
 
   /** Update an existing promo banner. */
+  @RequirePermission('promotions.write')
   @Patch('promo-banners/:id')
   @ApiOperation({ summary: 'Update a promo banner' })
   @ApiOkResponse({ description: 'The updated promo banner' })
@@ -85,6 +91,7 @@ export class PromotionsAdminController {
   }
 
   /** Delete a promo banner. */
+  @RequirePermission('promotions.write')
   @Delete('promo-banners/:id')
   @ApiOperation({ summary: 'Delete a promo banner' })
   @ApiOkResponse({ description: 'Deletion confirmation' })

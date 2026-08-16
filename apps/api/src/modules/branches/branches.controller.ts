@@ -22,7 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public, Roles } from '../../auth/decorators';
+import { Public, RequirePermission } from '../../auth/decorators';
 import { BranchesService, type BranchRow } from './branches.service';
 import { BranchDto } from './dto/branch.dto';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -30,7 +30,8 @@ import { UpdateBranchDto } from './dto/update-branch.dto';
 
 /**
  * Retail branch directory. Listing and single-branch reads are public (used by
- * the storefront's "find a store" view); writes require `super_admin`.
+ * the storefront's "find a store" view); the admin listing needs
+ * `branches.read` and writes need `branches.write`.
  *
  * Mounted at `/api/branches` (global prefix applied in `main.ts`).
  */
@@ -70,7 +71,7 @@ export class BranchesController {
    * public route rather than a flag on it — a `@Public()` endpoint must not
    * conditionally widen its result set based on a token it never verifies.
    */
-  @Roles('super_admin')
+  @RequirePermission('branches.read')
   @ApiBearerAuth()
   @Get('admin/all')
   @ApiOperation({ summary: 'List all branches including inactive (admin)' })
@@ -91,7 +92,7 @@ export class BranchesController {
   }
 
   /** Creates a branch. Admin only. */
-  @Roles('super_admin')
+  @RequirePermission('branches.write')
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a branch (super_admin)' })
@@ -101,7 +102,7 @@ export class BranchesController {
   }
 
   /** Patches an existing branch. Admin only. 404 when missing. */
-  @Roles('super_admin')
+  @RequirePermission('branches.write')
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a branch (super_admin)' })
@@ -112,7 +113,7 @@ export class BranchesController {
   }
 
   /** Deletes a branch. Admin only. 404 when missing. */
-  @Roles('super_admin')
+  @RequirePermission('branches.write')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()

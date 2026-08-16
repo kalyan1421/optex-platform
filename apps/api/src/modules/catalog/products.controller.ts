@@ -21,7 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public, Roles } from '../../auth/decorators';
+import { Public, RequirePermission } from '../../auth/decorators';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
@@ -29,7 +29,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Paginated, ProductRow, ProductsService, UploadedImage } from './products.service';
 
 /**
- * Product catalog endpoints. Reads are public; writes require `super_admin`.
+ * Product catalog endpoints. Public reads are unauthenticated; the admin
+ * listing needs `products.read` and writes need `products.write`.
  * Mounted at `/api/products` (global `api` prefix applied in `main.ts`).
  *
  * Route ordering note: the static `/search` route is declared before the
@@ -82,7 +83,7 @@ export class ProductsController {
    * public route rather than a flag on it — a `@Public()` endpoint must not
    * conditionally widen its result set based on a token it never verifies.
    */
-  @Roles('super_admin')
+  @RequirePermission('products.read')
   @ApiBearerAuth()
   @Get('admin/all')
   @ApiOperation({ summary: 'List all products including inactive (admin)' })
@@ -118,7 +119,7 @@ export class ProductsController {
     return this.products.related(id);
   }
 
-  @Roles('super_admin')
+  @RequirePermission('products.write')
   @Post()
   @ApiOperation({ summary: 'Create a product (admin)' })
   @ApiCreatedResponse({ description: 'The created product' })
@@ -126,7 +127,7 @@ export class ProductsController {
     return this.products.create(dto);
   }
 
-  @Roles('super_admin')
+  @RequirePermission('products.write')
   @Patch(':id')
   @ApiOperation({ summary: 'Update a product (admin)' })
   @ApiOkResponse({ description: 'The updated product' })
@@ -137,7 +138,7 @@ export class ProductsController {
     return this.products.update(id, dto);
   }
 
-  @Roles('super_admin')
+  @RequirePermission('products.write')
   @Delete(':id')
   @ApiOperation({ summary: 'Soft-delete (deactivate) a product (admin)' })
   @ApiOkResponse({ description: 'The deactivated product id/state' })
@@ -147,7 +148,7 @@ export class ProductsController {
     return this.products.remove(id);
   }
 
-  @Roles('super_admin')
+  @RequirePermission('products.write')
   @Post(':id/images')
   @ApiOperation({ summary: 'Upload a product image (admin)' })
   @ApiConsumes('multipart/form-data')

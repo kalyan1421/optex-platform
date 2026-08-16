@@ -5,8 +5,8 @@ import type { AuthUser } from './auth-user';
 /** Metadata key marking a route as publicly accessible (skips auth guard). */
 export const IS_PUBLIC_KEY = 'isPublic';
 
-/** Metadata key carrying the list of roles allowed to access a route. */
-export const ROLES_KEY = 'roles';
+/** Metadata key carrying the permission required to access a route. */
+export const PERMISSION_KEY = 'permission';
 
 /**
  * Marks a controller or handler as public — `SupabaseAuthGuard` will skip it.
@@ -18,13 +18,17 @@ export const ROLES_KEY = 'roles';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 /**
- * Restricts a route to the given roles. Enforced by `RolesGuard`.
+ * Restricts a route to callers whose role holds the given permission.
+ * Enforced by `PermissionsGuard` against the data-driven `role_permissions`
+ * table (CR-01 R1) — the permission vocabulary and role matrix live there,
+ * not in this decorator, so granting a role a new permission is a data change,
+ * not a deploy.
  *
  * @example
- *   @Roles('super_admin')
- *   @Get('admin/metrics')
+ *   @RequirePermission('orders.write')
+ *   @Patch('admin/orders/:id/status')
  */
-export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+export const RequirePermission = (permission: string) => SetMetadata(PERMISSION_KEY, permission);
 
 /**
  * Param decorator resolving the authenticated user from the request.

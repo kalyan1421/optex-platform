@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { RolesGuard } from './roles.guard';
+import { PermissionsGuard } from './permissions.guard';
 import { SupabaseAuthGuard } from './supabase-auth.guard';
 
 /**
@@ -8,7 +8,7 @@ import { SupabaseAuthGuard } from './supabase-auth.guard';
  */
 @Global()
 @Module({
-  providers: [SupabaseAuthGuard, RolesGuard],
-  exports: [SupabaseAuthGuard, RolesGuard],
+  providers: [SupabaseAuthGuard, PermissionsGuard],
+  exports: [SupabaseAuthGuard, PermissionsGuard],
 })
 export class AuthModule {}

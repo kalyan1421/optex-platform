@@ -7,19 +7,20 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from '../../auth/decorators';
+import { RequirePermission } from '../../auth/decorators';
 import { ReviewsService } from './reviews.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { AdminReviewDto, REVIEW_STATUSES, ReviewDto, type ReviewStatus } from './dto/review.dto';
 
 /**
  * Super-admin review moderation. Mounted at `/api/admin/reviews` (global prefix
- * applied in `main.ts`). Every route requires `role === 'super_admin'`,
- * enforced by the global `RolesGuard` via `@Roles`.
+ * applied in `main.ts`). Every route requires `reviews.moderate`, enforced by
+ * the global `PermissionsGuard` via `@RequirePermission` — held by Super Admin
+ * and Marketing.
  */
 @ApiTags('reviews')
 @ApiBearerAuth()
-@Roles('super_admin')
+@RequirePermission('reviews.moderate')
 @Controller('admin/reviews')
 export class AdminReviewsController {
   constructor(private readonly reviews: ReviewsService) {}

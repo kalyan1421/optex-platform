@@ -1,21 +1,24 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../../auth/decorators';
+import { RequirePermission } from '../../auth/decorators';
 import { InventoryService } from './inventory.service';
 import { InventoryResponseDto, UpdateStockDto } from './dto/inventory.dto';
 
 /**
  * Super-admin stock management. Mounted at `/api/admin/inventory` (global
- * prefix applied in `main.ts`). Every route requires `role === 'super_admin'`,
- * enforced by the global `RolesGuard` via `@Roles`.
+ * prefix applied in `main.ts`). Every route requires `inventory.*`, enforced
+ * by the global `PermissionsGuard` via `@RequirePermission`. Currently takes
+ * no branch parameter and returns every branch's stock unconditionally —
+ * scoping this to a Branch Manager's own branch (while leaving Inventory
+ * Manager's cross-branch view intact) is R1 sub-phase 1b, not yet done here.
  */
 @ApiTags('inventory')
 @ApiBearerAuth()
-@Roles('super_admin')
 @Controller('admin/inventory')
 export class AdminInventoryController {
   constructor(private readonly inventory: InventoryService) {}
 
+  @RequirePermission('inventory.read')
   @Get()
   @ApiOperation({ summary: 'List stock per product per branch, with branch columns' })
   @ApiOkResponse({ type: InventoryResponseDto, description: 'Branches and stock rows' })
@@ -23,6 +26,7 @@ export class AdminInventoryController {
     return this.inventory.listForAdmin();
   }
 
+  @RequirePermission('inventory.write')
   @Patch()
   @ApiOperation({ summary: 'Set stock for one product at one branch' })
   @ApiOkResponse({ description: 'The updated stock row' })

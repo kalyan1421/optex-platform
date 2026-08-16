@@ -11,13 +11,14 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swa
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, Public } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
+import { PermissionsService } from '../permissions/permissions.service';
 import { AuthFlowService } from './auth-flow.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import type { AuthResult, AuthUserView } from './dto/auth-views';
+import type { AuthResult, MeView } from './dto/auth-views';
 
 /**
  * Requests per minute allowed on the credential endpoints, per address.
@@ -45,7 +46,10 @@ const authRateLimit = (): number => Number(process.env.AUTH_RATE_LIMIT ?? 10);
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthFlowService) {}
+  constructor(
+    private readonly auth: AuthFlowService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   // F-01 FIX: the credential endpoints are pre-auth, so `UserAwareThrottlerGuard`
   // has no bearer token to key on and falls back to the caller's address. They
@@ -128,14 +132,19 @@ export class AuthController {
 
   @Get('me')
   @ApiBearerAuth('supabase')
-  @ApiOperation({ summary: 'The authenticated user from the bearer token' })
+  @ApiOperation({ summary: 'The authenticated user, its branch, and its full permission set' })
   @ApiOkResponse({ description: 'Current user' })
-  me(@CurrentUser() user: AuthUser): AuthUserView {
+  async me(@CurrentUser() user: AuthUser): Promise<MeView> {
+    const permissions = user.role
+      ? await this.permissions.getPermissions(user.role)
+      : new Set<string>();
     return {
       id: user.id,
       email: user.email ?? null,
       fullName: null,
       role: user.role ?? null,
+      branchId: user.branchId ?? null,
+      permissions: Array.from(permissions),
     };
   }
 

@@ -8,8 +8,8 @@ import { AdminMetricsService } from './admin-metrics.service';
  *
  * Exposes `GET /api/admin/dashboard` and `GET /api/admin/analytics`. Relies on
  * the global `SupabaseModule` for the service-role client and the global auth
- * guards for `@Roles('super_admin')` enforcement (applied at the controller
- * class level — every route is admin-only).
+ * guards for `@RequirePermission('dashboard.read'|'analytics.read')`
+ * enforcement.
  *
  * Register in `app.module.ts`:
  *   import { AdminMetricsModule } from './modules/admin-metrics/admin-metrics.module';

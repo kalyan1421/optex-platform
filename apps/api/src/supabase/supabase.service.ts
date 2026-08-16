@@ -7,6 +7,31 @@ export interface VerifiedUser {
   id: string;
   email?: string;
   role?: string;
+  branchId?: string;
+  aal?: 'aal1' | 'aal2';
+}
+
+/**
+ * Reads the `aal` claim straight out of the JWT payload — the same base64url
+ * decode `auth-js` does internally, not a fresh signature check. Safe to do
+ * without re-verifying: this only ever runs on a token `supabase.auth.getUser()`
+ * has already vouched for a few lines above. Malformed input yields `undefined`
+ * rather than throwing, since a missing/odd `aal` claim should fall back to the
+ * safer "not stepped up" assumption, not fail the whole request.
+ */
+function decodeAal(token: string): 'aal1' | 'aal2' | undefined {
+  const payloadSegment = token.split('.')[1];
+  if (!payloadSegment) {
+    return undefined;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(payloadSegment, 'base64url').toString('utf8')) as {
+      aal?: unknown;
+    };
+    return payload.aal === 'aal1' || payload.aal === 'aal2' ? payload.aal : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -56,7 +81,8 @@ export class SupabaseService implements OnModuleInit {
    * authorization — falling back to it would let any signed-up customer grant
    * themselves `super_admin`. This matches `is_super_admin()` (Postgres RLS,
    * migration 0007_security_meta.sql) and `apps/admin/middleware.ts`, which
-   * both correctly check `app_metadata.role` only.
+   * both correctly check `app_metadata.role` only. `branch_id` is the same
+   * trust story — `StaffModule` (R1 1c) is the only writer.
    */
   async verifyAccessToken(token: string): Promise<VerifiedUser> {
     if (!token) {
@@ -71,11 +97,14 @@ export class SupabaseService implements OnModuleInit {
 
     const { user } = data;
     const role = user.app_metadata?.role as string | undefined;
+    const branchId = user.app_metadata?.branch_id as string | undefined;
 
     return {
       id: user.id,
       email: user.email ?? undefined,
       role,
+      branchId,
+      aal: decodeAal(token),
     };
   }
 }

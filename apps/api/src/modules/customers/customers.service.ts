@@ -26,7 +26,7 @@ const BAN_LIFT = 'none';
  * profile through `/api/me`).
  *
  * Uses the service-role client, so RLS is bypassed; access is gated at the
- * controller by `@Roles('super_admin')`.
+ * controller by `@RequirePermission('customers.read'|'customers.write')`.
  */
 @Injectable()
 export class CustomersService {

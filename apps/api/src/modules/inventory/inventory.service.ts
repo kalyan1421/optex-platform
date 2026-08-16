@@ -28,7 +28,7 @@ type RawInventoryRow = {
  * INVENTORY domain logic (admin-facing).
  *
  * Uses the service-role client, so RLS is bypassed; access is gated at the
- * controller by `@Roles('super_admin')`.
+ * controller by `@RequirePermission('inventory.read'|'inventory.write')`.
  */
 @Injectable()
 export class InventoryService {

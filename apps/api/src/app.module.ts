@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
 
 import { AuthModule } from './auth/auth.module';
-import { RolesGuard } from './auth/roles.guard';
+import { PermissionsGuard } from './auth/permissions.guard';
 import { SupabaseAuthGuard } from './auth/supabase-auth.guard';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { CommonModule } from './common/common.module';
@@ -29,6 +29,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
@@ -79,6 +80,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
     ScheduleModule.forRoot(),
     SupabaseModule,
+    PermissionsModule,
     AuthModule,
     CommonModule,
     HealthModule,
@@ -110,7 +112,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     // Order matters: throttle -> authenticate -> authorize.
     { provide: APP_GUARD, useClass: UserAwareThrottlerGuard },
     { provide: APP_GUARD, useClass: SupabaseAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

@@ -1,22 +1,22 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../../auth/decorators';
+import { RequirePermission } from '../../auth/decorators';
 import { CustomersService } from './customers.service';
 import { AdminCustomerDto } from './dto/customer.dto';
 import { SetCustomerStatusDto } from './dto/set-customer-status.dto';
 
 /**
  * Super-admin customer directory. Mounted at `/api/admin/customers` (global
- * prefix applied in `main.ts`). Every route requires `role === 'super_admin'`,
- * enforced by the global `RolesGuard` via `@Roles`.
+ * prefix applied in `main.ts`). Every route requires a `customers.*`
+ * permission, enforced by the global `PermissionsGuard` via `@RequirePermission`.
  */
 @ApiTags('customers')
 @ApiBearerAuth()
-@Roles('super_admin')
 @Controller('admin/customers')
 export class AdminCustomersController {
   constructor(private readonly customers: CustomersService) {}
 
+  @RequirePermission('customers.read')
   @Get()
   @ApiOperation({ summary: 'List customers with their orders' })
   @ApiQuery({
@@ -29,6 +29,7 @@ export class AdminCustomersController {
     return this.customers.listForAdmin(search?.trim() || undefined);
   }
 
+  @RequirePermission('customers.write')
   @Patch(':id')
   @ApiOperation({
     summary: "Set a customer's account status (admin)",
