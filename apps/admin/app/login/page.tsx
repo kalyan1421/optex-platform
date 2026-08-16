@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
+import { isStaffRole } from '../../lib/roles';
+import { firstPermittedRoute } from '../../lib/route-permissions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,11 +24,12 @@ export default function LoginPage() {
       setLoading(true);
       const { session, user } = await api.auth.login({ email, password });
 
-      const role = user?.role;
-      if (role !== 'super_admin') {
-        // Just clear browser session if they are not super_admin
+      // CR-01 R1: gate on "is this one of the 7 known staff roles," not
+      // hardcoded to super_admin. What the role can actually see is entirely
+      // data-driven — computed just below from GET /auth/me's permission set.
+      if (!isStaffRole(user?.role)) {
         await supabase.auth.signOut();
-        setError('Access denied. Super admin credentials required.');
+        setError('Access denied. Staff credentials required.');
         return;
       }
 
@@ -37,7 +40,20 @@ export default function LoginPage() {
         });
       }
 
-      router.push('/dashboard');
+      // Redirect to the first page this role's permissions can actually
+      // reach, rather than a hardcoded /dashboard a Branch Manager (no
+      // dashboard.read in R1) would immediately bounce off of.
+      let destination = '/dashboard';
+      try {
+        const me = await api.auth.me();
+        const route = firstPermittedRoute(me.permissions);
+        if (route) destination = `/${route}`;
+      } catch {
+        // Falls back to /dashboard — PermissionGate there shows a clear
+        // access-denied state rather than this failing the whole login.
+      }
+
+      router.push(destination);
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Invalid login credentials');
@@ -63,7 +79,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-[420px] rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="mb-1 text-2xl font-bold text-gray-900">Sign in</h1>
-        <p className="mb-6 text-sm text-gray-500">Super admin access only</p>
+        <p className="mb-6 text-sm text-gray-500">Staff access only</p>
 
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600">

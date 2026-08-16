@@ -22,12 +22,14 @@ import type {
   AdminAppointmentQuery,
   AdminCustomer,
   AdminReview,
+  AdminStaff,
   InventoryResponse,
   InventoryStock,
   SetCustomerStatusInput,
   SetStockInput,
   AuthResult,
   AuthUser,
+  CurrentUser,
   ForgotPasswordInput,
   LoginInput,
   RefreshInput,
@@ -93,6 +95,7 @@ import type {
   ReconcileResult,
   RescheduleAppointmentInput,
   Review,
+  Role,
   AdminAppointment,
   SignedDownloadUrl,
   UpdatePrescriptionStatusInput,
@@ -113,6 +116,9 @@ import type {
   CancellationStatus,
   PaymentsNeedingAttention,
   WishlistItem,
+  CreateStaffInput,
+  UpdateStaffInput,
+  SetStaffStatusInput,
 } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,7 +351,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     signup: (input) => request<AuthResult>('/auth/signup', { method: 'POST', body: input }),
     refresh: (input) => request<AuthResult>('/auth/refresh', { method: 'POST', body: input }),
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
-    me: () => request<AuthUser>('/auth/me'),
+    me: () => request<CurrentUser>('/auth/me'),
     forgotPassword: (input) =>
       request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: input }),
     // Bearer token comes from the client's normal getAccessToken() flow, same
@@ -700,6 +706,21 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           body: input,
         }),
     },
+    staff: {
+      list: () => request<AdminStaff[]>('/admin/staff'),
+      listRoles: () => request<Role[]>('/admin/staff/roles'),
+      create: (input) => request<AdminStaff>('/admin/staff', { method: 'POST', body: input }),
+      update: (id, input) =>
+        request<AdminStaff>(`/admin/staff/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: input,
+        }),
+      setStatus: (id, input) =>
+        request<AdminStaff>(`/admin/staff/${encodeURIComponent(id)}/status`, {
+          method: 'PATCH',
+          body: input,
+        }),
+    },
     inventory: {
       list: () => request<InventoryResponse>('/admin/inventory'),
       setStock: (input) =>
@@ -752,8 +773,8 @@ export interface AuthApi {
   refresh: (input: RefreshInput) => Promise<AuthResult>;
   /** `POST /auth/logout` (requires a bearer token) */
   logout: () => Promise<void>;
-  /** `GET /auth/me` (requires a bearer token) */
-  me: () => Promise<AuthUser>;
+  /** `GET /auth/me` (requires a bearer token) — branch and full permission set. */
+  me: () => Promise<CurrentUser>;
   /**
    * `POST /auth/forgot-password` (audit F-22). Always resolves — the response
    * never reveals whether the email is registered, matching GoTrue's own
@@ -1026,6 +1047,19 @@ export interface AdminApi {
     list: (search?: string) => Promise<AdminCustomer[]>;
     /** `PATCH /admin/customers/:id` */
     setStatus: (id: string, input: SetCustomerStatusInput) => Promise<AdminCustomer>;
+  };
+  /** Staff directory — CR-01 R1. Every route requires `staff.manage` (Super Admin only). */
+  staff: {
+    /** `GET /admin/staff` */
+    list: () => Promise<AdminStaff[]>;
+    /** `GET /admin/staff/roles` — the 7 roles, for the role picker */
+    listRoles: () => Promise<Role[]>;
+    /** `POST /admin/staff` */
+    create: (input: CreateStaffInput) => Promise<AdminStaff>;
+    /** `PATCH /admin/staff/:id` */
+    update: (id: string, input: UpdateStaffInput) => Promise<AdminStaff>;
+    /** `PATCH /admin/staff/:id/status` */
+    setStatus: (id: string, input: SetStaffStatusInput) => Promise<AdminStaff>;
   };
   inventory: {
     /** `GET /admin/inventory` */

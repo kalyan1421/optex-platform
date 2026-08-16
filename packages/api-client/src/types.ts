@@ -309,6 +309,16 @@ export interface AuthUser {
   role: string | null;
 }
 
+/**
+ * `AuthUser` plus the RBAC (CR-01 R1) fields — only `GET /auth/me` (`MeView`)
+ * returns these, not login/signup/refresh.
+ */
+export interface CurrentUser extends AuthUser {
+  branchId: string | null;
+  /** The caller's full permission set, server-computed from `role_permissions`. */
+  permissions: string[];
+}
+
 /** A session from login / signup / refresh. */
 export interface Session {
   accessToken: string;
@@ -1277,4 +1287,54 @@ export interface PaymentsNeedingAttention {
     orderNumber: string | null;
     receivedAt: string;
   }[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin staff (CR-01 R1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A `roles` row (`RoleDto`), for the Staff page's role picker. */
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  is_branch_scoped: boolean;
+}
+
+/** A `staff_users` row with its role and branch names embedded (`AdminStaffDto`). */
+export interface AdminStaff {
+  id: string;
+  auth_user_id: string;
+  full_name: string;
+  email: string;
+  role_id: string;
+  role_name: string;
+  branch_id: string | null;
+  branch_name: string | null;
+  /** When an admin deactivated this account, or null if active. */
+  deactivated_at: string | null;
+  created_at: string;
+}
+
+/** Body for `POST /admin/staff` (`CreateStaffDto`). */
+export interface CreateStaffInput {
+  email: string;
+  password: string;
+  fullName: string;
+  roleId: string;
+  /** Required when the role is branch-scoped. */
+  branchId?: string;
+}
+
+/** Body for `PATCH /admin/staff/:id` (`UpdateStaffDto`). Every field optional. */
+export interface UpdateStaffInput {
+  roleId?: string;
+  /** `null` clears the assignment; `undefined` leaves it unchanged. */
+  branchId?: string | null;
+  fullName?: string;
+}
+
+/** Body for `PATCH /admin/staff/:id/status` (`SetStaffStatusDto`). */
+export interface SetStaffStatusInput {
+  status: 'active' | 'deactivated';
 }
