@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
@@ -333,9 +334,19 @@ export class OrdersService {
 
   // ─── Admin ────────────────────────────────────────────────────────────────
 
-  /** Admin order list with optional status / payment filters + pagination. */
+  /**
+   * Admin order list with optional status / payment filters + pagination.
+   *
+   * R1 1b (branch scoping): a branch-scoped caller (`user.branchId` set) only
+   * ever sees orders assigned to their branch. `orders.branch_id` is nullable
+   * (orders carry no fulfilment branch today — see migration
+   * 0020_checkout_stock_enforcement.sql), so this also means a branch-scoped
+   * caller does not see unassigned orders; that is intentional, not a gap to
+   * fix here.
+   */
   async adminListOrders(
     query: AdminListOrdersQueryDto,
+    user: AuthUser,
   ): Promise<PaginatedOrders<AdminOrderSummaryView>> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
@@ -356,6 +367,7 @@ export class OrdersService {
       .order('created_at', { ascending: false })
       .range(from, to);
 
+    if (user.branchId) builder = builder.eq('branch_id', user.branchId);
     if (query.status) builder = builder.eq('status', query.status);
     if (query.paymentStatus) {
       builder = builder.eq('payment_status', query.paymentStatus);
@@ -398,15 +410,27 @@ export class OrdersService {
    * Move an order through the fulfilment workflow. Validates the transition,
    * persists the new status (and optional note), and fires best-effort SMS +
    * email when the order is dispatched or delivered.
+   *
+   * R1 1b (branch scoping): a branch-scoped caller cannot advance an order
+   * outside their own branch — 404 rather than 403, matching the "don't
+   * confirm existence of what you can't see" convention this endpoint already
+   * used for a genuinely missing order.
    */
-  async adminUpdateStatus(orderId: string, dto: AdminOrderStatusDto): Promise<OrderDetailView> {
+  async adminUpdateStatus(
+    orderId: string,
+    dto: AdminOrderStatusDto,
+    user: AuthUser,
+  ): Promise<OrderDetailView> {
     const { data: current, error: readError } = await this.supabase.client
       .from('orders')
-      .select('id, status, notes, customer_id')
+      .select('id, status, notes, customer_id, branch_id')
       .eq('id', orderId)
       .maybeSingle();
     if (readError) throw new BadRequestException(readError.message);
     if (!current) throw new NotFoundException('Order not found.');
+    if (user.branchId && (current as { branch_id: string | null }).branch_id !== user.branchId) {
+      throw new NotFoundException('Order not found.');
+    }
 
     const currentStatus = (current as { status: OrderStatus }).status;
     const nextStatus = dto.status;
@@ -434,7 +458,7 @@ export class OrdersService {
     // Re-read the full detail via the admin path (no ownership requirement).
     // H-2 FIX: use the variant that returns contact details explicitly rather
     // than stashing them as a hidden property on the view object.
-    const { detail, contact } = await this.adminGetOrderDetailWithContact(orderId);
+    const { detail, contact } = await this.adminGetOrderDetailWithContact(orderId, user);
 
     if (nextStatus === OrderStatus.DISPATCHED || nextStatus === OrderStatus.DELIVERED) {
       void this.sendStatusUpdate(detail, contact);
@@ -443,9 +467,12 @@ export class OrdersService {
     return detail;
   }
 
-  /** Full detail for any order (admin; no ownership check). */
-  async adminOrderDetail(orderId: string): Promise<OrderDetailView> {
-    return this.adminGetOrderDetail(orderId);
+  /**
+   * Full detail for any order (admin; no per-customer ownership check).
+   * Branch-scoped for Branch Manager/Staff — see `adminGetOrderDetailWithContact`.
+   */
+  async adminOrderDetail(orderId: string, user: AuthUser): Promise<OrderDetailView> {
+    return this.adminGetOrderDetail(orderId, user);
   }
 
   // ─── Internals ─────────────────────────────────────────────────────────────
@@ -481,7 +508,15 @@ export class OrdersService {
 
   // H-2 FIX: explicit contact shape returned alongside the view so that
   // sendStatusUpdate never needs to reach inside the view via a type cast.
-  private async adminGetOrderDetailWithContact(orderId: string): Promise<{
+  //
+  // R1 1b (branch scoping): `user` is required (not optional) precisely so a
+  // caller can't be added later without remembering to thread it through —
+  // both call sites (adminOrderDetail, adminUpdateStatus's re-read) always
+  // have an authenticated caller.
+  private async adminGetOrderDetailWithContact(
+    orderId: string,
+    user: AuthUser,
+  ): Promise<{
     detail: OrderDetailView;
     contact: { email: string | null; phone: string | null } | null;
   }> {
@@ -491,7 +526,7 @@ export class OrdersService {
         `
         id, order_number, status, payment_status, payment_method,
         subtotal_kes, discount_kes, vat_kes, shipping_kes, total_kes,
-        promo_code, shipping, notes, created_at, customer_id,
+        promo_code, shipping, notes, created_at, customer_id, branch_id,
         customer:customers!customer_id ( id, email, full_name, phone ),
         order_items (
           id, product_id, quantity, unit_price_kes, lens_option,
@@ -505,6 +540,7 @@ export class OrdersService {
     if (!data) throw new NotFoundException('Order not found.');
 
     const row = data as unknown as OrderDetailRow & {
+      branch_id: string | null;
       customer: {
         id: string;
         email: string | null;
@@ -512,15 +548,20 @@ export class OrdersService {
         phone: string | null;
       } | null;
     };
+
+    if (user.branchId && row.branch_id !== user.branchId) {
+      throw new NotFoundException('Order not found.');
+    }
+
     return {
       detail: this.toDetail(row),
       contact: row.customer ? { email: row.customer.email, phone: row.customer.phone } : null,
     };
   }
 
-  /** Admin order-detail read (no ownership check). */
-  private async adminGetOrderDetail(orderId: string): Promise<OrderDetailView> {
-    const { detail } = await this.adminGetOrderDetailWithContact(orderId);
+  /** Admin order-detail read (no per-customer ownership check; branch-scoped for staff). */
+  private async adminGetOrderDetail(orderId: string, user: AuthUser): Promise<OrderDetailView> {
+    const { detail } = await this.adminGetOrderDetailWithContact(orderId, user);
     return detail;
   }
 

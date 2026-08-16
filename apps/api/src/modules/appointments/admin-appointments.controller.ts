@@ -8,7 +8,8 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { RequirePermission } from '../../auth/decorators';
+import { CurrentUser, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { AppointmentsService } from './appointments.service';
 import { AdminAppointmentQueryDto } from './dto/admin-appointment-query.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -18,8 +19,8 @@ import { AdminAppointmentDto, AppointmentDto } from './dto/appointment.dto';
  * Super-admin appointment management. Mounted at `/api/admin/appointments`
  * (global prefix applied in `main.ts`). Every route requires an
  * `appointments.*` permission, enforced by the global `PermissionsGuard`.
- * Branch-scoping the `list` results to Branch Manager/Staff's own branch is
- * R1 sub-phase 1b, not yet done here — see `appointments.service.ts:227`.
+ * `list` is branch-scoped server-side for Branch Manager/Staff (R1 1b) — see
+ * `appointments.service.ts`'s `listForAdmin`.
  */
 @ApiTags('appointments')
 @ApiBearerAuth()
@@ -31,8 +32,11 @@ export class AdminAppointmentsController {
   @Get()
   @ApiOperation({ summary: 'List appointments (optional branch/status/date filters)' })
   @ApiOkResponse({ type: [AppointmentDto], description: 'Matching appointments' })
-  list(@Query() query: AdminAppointmentQueryDto): Promise<AdminAppointmentDto[]> {
-    return this.appointments.listForAdmin(query);
+  list(
+    @Query() query: AdminAppointmentQueryDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<AdminAppointmentDto[]> {
+    return this.appointments.listForAdmin(query, user);
   }
 
   @RequirePermission('appointments.write')

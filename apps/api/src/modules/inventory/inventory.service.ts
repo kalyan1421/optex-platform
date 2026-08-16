@@ -1,4 +1,10 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import type {
   InventoryBranchDto,
@@ -38,16 +44,28 @@ export class InventoryService {
    * Returns active branches plus every product/branch stock row. The admin grid
    * renders one column per branch, so both halves are fetched together to keep
    * the client from having to make two round-trips and join them itself.
+   *
+   * R1 1b (branch scoping): a branch-scoped caller (Branch Manager,
+   * `user.branchId` set) gets both halves scoped to just that branch — one
+   * column, their own stock. Inventory Manager and Super Admin are NOT
+   * branch-scoped (`roles.is_branch_scoped = false`), so they keep today's
+   * cross-branch view. There is no client-supplied branch filter to guard
+   * against here — this endpoint never took one.
    */
-  async listForAdmin(): Promise<InventoryResponseDto> {
-    const [branchesRes, inventoryRes] = await Promise.all([
-      this.supabase.client
-        .from('branches')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name', { ascending: true }),
-      this.supabase.client.from('inventory').select(INVENTORY_COLUMNS),
-    ]);
+  async listForAdmin(user: AuthUser): Promise<InventoryResponseDto> {
+    let branchesQuery = this.supabase.client
+      .from('branches')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+    let inventoryQuery = this.supabase.client.from('inventory').select(INVENTORY_COLUMNS);
+
+    if (user.branchId) {
+      branchesQuery = branchesQuery.eq('id', user.branchId);
+      inventoryQuery = inventoryQuery.eq('branch_id', user.branchId);
+    }
+
+    const [branchesRes, inventoryRes] = await Promise.all([branchesQuery, inventoryQuery]);
 
     if (branchesRes.error || inventoryRes.error) {
       throw new InternalServerErrorException('Failed to load inventory');
@@ -88,10 +106,20 @@ export class InventoryService {
    * missing (product_id, branch_id) pair is a 404 rather than a silent no-op —
    * the browser-direct version this replaced updated zero rows without any
    * indication that the write had not landed.
+   *
+   * R1 1b (branch scoping): `dto.branch_id` is entirely client-supplied — a
+   * Branch Manager holding `inventory.write` could otherwise set stock at any
+   * branch, not just their own. Checked here rather than at the controller so
+   * the same guarantee holds regardless of caller.
    */
   async setStock(
     dto: UpdateStockDto,
+    user: AuthUser,
   ): Promise<{ product_id: string; branch_id: string; stock: number }> {
+    if (user.branchId && dto.branch_id !== user.branchId) {
+      throw new ForbiddenException('Cannot set stock for a branch other than your own');
+    }
+
     const { data, error } = await this.supabase.client
       .from('inventory')
       .update({ stock: dto.stock })

@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
@@ -426,16 +427,21 @@ export class CancellationService {
    * request is the record of what the customer asked for, and letting two
    * code paths both decide it would leave it unclear which decision, and
    * whose, actually stuck. The admin resolves the pending request instead.
+   *
+   * R1 1b (branch scoping): a branch-scoped caller (`user.branchId` set)
+   * cannot cancel an order outside their own branch — 404, matching
+   * `orders.service.ts`'s `adminUpdateStatus`.
    */
   async adminCancel(
     adminUserId: string,
     orderId: string,
+    user: AuthUser,
     reason?: string,
     acknowledgePaid = false,
   ) {
     const { data: order, error } = await this.db
       .from('orders')
-      .select('id, status, payment_status, notes')
+      .select('id, status, payment_status, notes, branch_id')
       .eq('id', orderId)
       .maybeSingle();
     if (error) {
@@ -443,6 +449,9 @@ export class CancellationService {
       throw new InternalServerErrorException('Could not load that order.');
     }
     if (!order) throw new NotFoundException('Order not found.');
+    if (user.branchId && (order as { branch_id: string | null }).branch_id !== user.branchId) {
+      throw new NotFoundException('Order not found.');
+    }
     if (order.status === 'cancelled') {
       throw new ConflictException('This order has already been cancelled.');
     }

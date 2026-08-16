@@ -217,8 +217,20 @@ export class AppointmentsService {
 
   // ─── Admin ──────────────────────────────────────────────────────────────────
 
-  /** Lists appointments for the admin panel, with optional filters. */
-  async listForAdmin(query: AdminAppointmentQueryDto): Promise<AdminAppointmentDto[]> {
+  /**
+   * Lists appointments for the admin panel, with optional filters.
+   *
+   * R1 1b (branch scoping): a branch-scoped caller (Branch Manager/Staff,
+   * `user.branchId` set) always sees only their own branch — `query.branchId`
+   * is IGNORED for them rather than merged with it, so a branch-scoped caller
+   * cannot widen their own view by passing a different branch in the query
+   * string. Non-branch-scoped callers (Super Admin) keep today's behaviour:
+   * the client's filter, or every branch when omitted.
+   */
+  async listForAdmin(
+    query: AdminAppointmentQueryDto,
+    user: AuthUser,
+  ): Promise<AdminAppointmentDto[]> {
     let q = this.supabase.client
       .from('appointments')
       .select(ADMIN_APPOINTMENT_COLUMNS)
@@ -227,7 +239,8 @@ export class AppointmentsService {
       // an unfiltered call pulled every booking in the system's history.
       .limit(500);
 
-    if (query.branchId) q = q.eq('branch_id', query.branchId);
+    const branchFilter = user.branchId ?? query.branchId;
+    if (branchFilter) q = q.eq('branch_id', branchFilter);
     if (query.status) q = q.eq('status', query.status);
     if (query.date) {
       // Half-open [startOfDay, startOfNextDay) range in UTC for the local date.

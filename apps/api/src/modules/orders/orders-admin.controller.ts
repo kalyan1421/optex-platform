@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermission, CurrentUser } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { AdminListOrdersQueryDto } from './dto/admin-list-orders-query.dto';
 import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
 import { AdminOrderSummaryView, OrderDetailView, PaginatedOrders } from './dto/order-views';
@@ -15,9 +16,18 @@ import {
 /**
  * Super-admin order management. Mounted at `/api/admin`. Gated by `orders.*`
  * and `cancellations.decide` (`@RequirePermission`) on top of the global JWT
- * guard. Branch-scoping `listOrders`/`getOrder` to a Branch Manager/Staff's
- * own branch is R1 sub-phase 1b, not yet done here — `orders.branch_id` is
- * nullable and currently unfiltered.
+ * guard. `listOrders`/`getOrder`/`updateStatus`/`directCancel` are
+ * branch-scoped server-side for Branch Manager/Staff (R1 1b) — see
+ * `orders.service.ts` and `cancellation.service.ts`.
+ *
+ * KNOWN GAP: the cancellation-REQUEST workflow below (`listCancellations`,
+ * `pendingCancellations`, `approveCancellation`, `declineCancellation`) is
+ * NOT branch-scoped — a Branch Manager holding `cancellations.decide` can
+ * currently see and decide any branch's pending requests. Left for a
+ * follow-up rather than folded into this pass: `order_cancellation_requests`
+ * isn't a resource `orders.service.ts` or `cancellation.service.ts`'s
+ * `adminCancel` already had a branch-scoping precedent for, and warrants its
+ * own change rather than being rushed alongside this one.
  */
 @ApiTags('orders')
 @Controller('admin')
@@ -35,16 +45,20 @@ export class OrdersAdminController {
   @ApiOkResponse({ description: 'Paginated order summaries with customer info' })
   listOrders(
     @Query() query: AdminListOrdersQueryDto,
+    @CurrentUser() user: AuthUser,
   ): Promise<PaginatedOrders<AdminOrderSummaryView>> {
-    return this.orders.adminListOrders(query);
+    return this.orders.adminListOrders(query, user);
   }
 
   @RequirePermission('orders.read')
   @Get('orders/:id')
   @ApiOperation({ summary: 'Full detail for any order (items, shipping, totals)' })
   @ApiOkResponse({ description: 'The order detail' })
-  getOrder(@Param('id', new ParseUUIDPipe()) id: string): Promise<OrderDetailView> {
-    return this.orders.adminOrderDetail(id);
+  getOrder(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<OrderDetailView> {
+    return this.orders.adminOrderDetail(id, user);
   }
 
   @RequirePermission('orders.write')
@@ -56,8 +70,9 @@ export class OrdersAdminController {
   updateStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: AdminOrderStatusDto,
+    @CurrentUser() user: AuthUser,
   ): Promise<OrderDetailView> {
-    return this.orders.adminUpdateStatus(id, dto);
+    return this.orders.adminUpdateStatus(id, dto, user);
   }
 
   @RequirePermission('orders.cancel')
@@ -68,10 +83,17 @@ export class OrdersAdminController {
   @ApiOkResponse({ description: 'The cancelled order' })
   directCancel(
     @CurrentUser('id') adminUserId: string,
+    @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: AdminDirectCancelDto,
   ) {
-    return this.cancellation.adminCancel(adminUserId, id, dto.reason, dto.acknowledgePaid ?? false);
+    return this.cancellation.adminCancel(
+      adminUserId,
+      id,
+      user,
+      dto.reason,
+      dto.acknowledgePaid ?? false,
+    );
   }
 
   // ─── Cancellation requests (SPEC-06 R3) ─────────────────────────────────
