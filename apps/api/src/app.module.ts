@@ -33,6 +33,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { StaffModule } from './modules/staff/staff.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { SupabaseModule } from './supabase/supabase.module';
 
@@ -104,6 +105,8 @@ import { SupabaseModule } from './supabase/supabase.module';
     // Admin surfaces that replaced direct browser-to-Supabase access
     CustomersModule,
     InventoryModule,
+    // CR-01 Phase 1B, R1 (RBAC)
+    StaffModule,
     // Pending-features sprint plan (Sprint 2, Sprint 3)
     AddressesModule,
     WishlistModule,
