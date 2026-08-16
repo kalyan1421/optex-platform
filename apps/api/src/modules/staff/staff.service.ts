@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
 import type { AdminStaffDto, RoleDto } from './dto/staff.dto';
 import type { CreateStaffDto } from './dto/create-staff.dto';
@@ -51,7 +52,10 @@ type RawStaffRow = {
 export class StaffService {
   private readonly logger = new Logger(StaffService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   async listForAdmin(): Promise<AdminStaffDto[]> {
     const { data, error } = await this.supabase.client
@@ -89,7 +93,7 @@ export class StaffService {
    * leaving a staff account with no directory entry — logged, not thrown,
    * since the original failure is the one the caller needs to see.
    */
-  async create(dto: CreateStaffDto, actorUserId: string): Promise<AdminStaffDto> {
+  async create(dto: CreateStaffDto, actorUser: AuthUser): Promise<AdminStaffDto> {
     const role = await this.loadRole(dto.roleId);
     this.assertBranchRequirement(role, dto.branchId);
 
@@ -119,7 +123,7 @@ export class StaffService {
         branch_id: dto.branchId ?? null,
         full_name: dto.fullName,
         email: dto.email,
-        created_by: actorUserId,
+        created_by: actorUser.id,
       })
       .select('id')
       .single<{ id: string }>();
@@ -140,7 +144,15 @@ export class StaffService {
       throw new InternalServerErrorException('Failed to create staff account');
     }
 
-    return this.fetchOneForAdmin(staffRow.id);
+    const created_staff = await this.fetchOneForAdmin(staffRow.id);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'staff.create',
+      resourceType: 'staff_users',
+      resourceId: staffRow.id,
+      after: created_staff,
+    });
+    return created_staff;
   }
 
   /**
@@ -151,6 +163,7 @@ export class StaffService {
   async update(id: string, dto: UpdateStaffDto, actorUser: AuthUser): Promise<AdminStaffDto> {
     const existing = await this.loadExisting(id);
     this.assertNotSelf(existing.auth_user_id, actorUser);
+    const before = await this.fetchOneForAdmin(id);
 
     const nextRoleId = dto.roleId ?? existing.role_id;
     const branchProvided = 'branchId' in dto;
@@ -189,7 +202,16 @@ export class StaffService {
       throw new InternalServerErrorException('Failed to update staff account');
     }
 
-    return this.fetchOneForAdmin(id);
+    const after = await this.fetchOneForAdmin(id);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'staff.update',
+      resourceType: 'staff_users',
+      resourceId: id,
+      before,
+      after,
+    });
+    return after;
   }
 
   /** Same ban-first-then-flag-second ordering as `CustomersService#setStatusAsAdmin`. */
@@ -223,7 +245,16 @@ export class StaffService {
       throw new InternalServerErrorException('Failed to update staff status');
     }
 
-    return this.fetchOneForAdmin(id);
+    const after = await this.fetchOneForAdmin(id);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'staff.status_change',
+      resourceType: 'staff_users',
+      resourceId: id,
+      metadata: { status },
+      after,
+    });
+    return after;
   }
 
   // ─── Internals ───────────────────────────────────────────────────────────

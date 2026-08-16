@@ -1338,3 +1338,46 @@ export interface UpdateStaffInput {
 export interface SetStaffStatusInput {
   status: 'active' | 'deactivated';
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin audit log (CR-01 R1 1d)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** An `audit_log` row (`AuditLogEntryDto`). */
+export interface AuditLogEntry {
+  id: string;
+  actor_user_id: string;
+  /** The actor's role AT THE TIME of the action — may differ from their role now. */
+  actor_role: string;
+  /** `resource.verb`, e.g. `'staff.create'`, `'orders.status_change'`. */
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  branch_id: string | null;
+  before: unknown;
+  after: unknown;
+  metadata: unknown;
+  created_at: string;
+}
+
+/** Query for `GET /admin/audit-log` (`AdminAuditLogQueryDto`). */
+export interface AdminAuditLogQuery {
+  resourceType?: string;
+  actorUserId?: string;
+  branchId?: string;
+  /** ISO 8601 */
+  from?: string;
+  /** ISO 8601 */
+  to?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+/** Paginated envelope for `GET /admin/audit-log`. */
+export interface PaginatedAuditLog {
+  data: AuditLogEntry[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}

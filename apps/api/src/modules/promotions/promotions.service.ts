@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import type { AuthUser } from '../../auth/auth-user';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
 import { CreatePromoCodeDto } from './dto/create-promo-code.dto';
 import { PromoValidationResultDto } from './dto/promo-validation-result.dto';
@@ -46,7 +48,10 @@ interface PromoBannerRow {
  */
 @Injectable()
 export class PromotionsService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   // ─── Customer-facing ────────────────────────────────────────────────────
 
@@ -158,7 +163,7 @@ export class PromotionsService {
   }
 
   /** Create a promo code. Code is uppercased; duplicates are rejected (409-ish). */
-  async createCode(dto: CreatePromoCodeDto): Promise<PromoCodeRow> {
+  async createCode(dto: CreatePromoCodeDto, actorUser: AuthUser): Promise<PromoCodeRow> {
     const payload = { ...dto, code: dto.code.trim().toUpperCase() };
     const { data, error } = await this.supabase.client
       .from('promo_codes')
@@ -171,11 +176,23 @@ export class PromotionsService {
       }
       throw new InternalServerErrorException('Failed to create promo code');
     }
-    return data as PromoCodeRow;
+    const created = data as PromoCodeRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'promo_codes.create',
+      resourceType: 'promo_codes',
+      resourceId: created.id,
+      after: created,
+    });
+    return created;
   }
 
   /** Patch a promo code by id. Re-uppercases `code` when present. */
-  async updateCode(id: string, dto: UpdatePromoCodeDto): Promise<PromoCodeRow> {
+  async updateCode(
+    id: string,
+    dto: UpdatePromoCodeDto,
+    actorUser: AuthUser,
+  ): Promise<PromoCodeRow> {
     const payload: Record<string, unknown> = { ...dto };
     if (typeof payload.code === 'string') {
       payload.code = payload.code.trim().toUpperCase();
@@ -195,11 +212,19 @@ export class PromotionsService {
     if (!data) {
       throw new NotFoundException(`Promo code ${id} not found`);
     }
-    return data as PromoCodeRow;
+    const updated = data as PromoCodeRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'promo_codes.update',
+      resourceType: 'promo_codes',
+      resourceId: id,
+      after: updated,
+    });
+    return updated;
   }
 
   /** Delete a promo code by id. */
-  async deleteCode(id: string): Promise<{ id: string; deleted: true }> {
+  async deleteCode(id: string, actorUser: AuthUser): Promise<{ id: string; deleted: true }> {
     const { data, error } = await this.supabase.client
       .from('promo_codes')
       .delete()
@@ -212,6 +237,12 @@ export class PromotionsService {
     if (!data) {
       throw new NotFoundException(`Promo code ${id} not found`);
     }
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'promo_codes.delete',
+      resourceType: 'promo_codes',
+      resourceId: id,
+    });
     return { id, deleted: true };
   }
 
@@ -232,7 +263,7 @@ export class PromotionsService {
   }
 
   /** Create a promo banner. */
-  async createBanner(dto: CreatePromoBannerDto): Promise<PromoBannerRow> {
+  async createBanner(dto: CreatePromoBannerDto, actorUser: AuthUser): Promise<PromoBannerRow> {
     const { data, error } = await this.supabase.client
       .from('promo_banners')
       .insert({ ...dto })
@@ -241,11 +272,23 @@ export class PromotionsService {
     if (error) {
       throw new InternalServerErrorException('Failed to create promo banner');
     }
-    return data as PromoBannerRow;
+    const created = data as PromoBannerRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'promo_banners.create',
+      resourceType: 'promo_banners',
+      resourceId: created.id,
+      after: created,
+    });
+    return created;
   }
 
   /** Patch a promo banner by id. */
-  async updateBanner(id: string, dto: UpdatePromoBannerDto): Promise<PromoBannerRow> {
+  async updateBanner(
+    id: string,
+    dto: UpdatePromoBannerDto,
+    actorUser: AuthUser,
+  ): Promise<PromoBannerRow> {
     const { data, error } = await this.supabase.client
       .from('promo_banners')
       .update({ ...dto })
@@ -258,11 +301,19 @@ export class PromotionsService {
     if (!data) {
       throw new NotFoundException(`Promo banner ${id} not found`);
     }
-    return data as PromoBannerRow;
+    const updated = data as PromoBannerRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'promo_banners.update',
+      resourceType: 'promo_banners',
+      resourceId: id,
+      after: updated,
+    });
+    return updated;
   }
 
   /** Delete a promo banner by id. */
-  async deleteBanner(id: string): Promise<{ id: string; deleted: true }> {
+  async deleteBanner(id: string, actorUser: AuthUser): Promise<{ id: string; deleted: true }> {
     const { data, error } = await this.supabase.client
       .from('promo_banners')
       .delete()
@@ -275,6 +326,12 @@ export class PromotionsService {
     if (!data) {
       throw new NotFoundException(`Promo banner ${id} not found`);
     }
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'promo_banners.delete',
+      resourceType: 'promo_banners',
+      resourceId: id,
+    });
     return { id, deleted: true };
   }
 }

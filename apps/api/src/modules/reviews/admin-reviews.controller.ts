@@ -7,7 +7,8 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { RequirePermission } from '../../auth/decorators';
+import { CurrentUser, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { ReviewsService } from './reviews.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { AdminReviewDto, REVIEW_STATUSES, ReviewDto, type ReviewStatus } from './dto/review.dto';
@@ -47,7 +48,8 @@ export class AdminReviewsController {
   moderate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateReviewDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<ReviewDto> {
-    return this.reviews.moderate(id, dto);
+    return this.reviews.moderate(id, dto, actorUser);
   }
 }

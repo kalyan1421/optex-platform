@@ -34,10 +34,12 @@ const MAX_AGE_MS = 60 * 60_000; // 60 minutes
  * Daraja, and reconciles the transaction + its order.
  *
  * REUSE: it does NOT duplicate any credit/reconcile logic. It calls
- * {@link PaymentsService.adminReconcile} — the exact same path the admin
- * "reconcile" button uses — which re-queries Daraja via the stored
- * `raw.CheckoutRequestID`, idempotently marks the tx `matched`/`failed`, and
- * (on success) credits the order via the guarded `payment_status != 'paid'`
+ * {@link PaymentsService.adminReconcileImpl} — the same reconcile logic the
+ * admin "reconcile" button uses via `adminReconcile()`, minus that method's
+ * audit-log wrapper (this is a system/cron action, not a human admin one) —
+ * which re-queries Daraja via the stored `raw.CheckoutRequestID`, idempotently
+ * marks the tx `matched`/`failed`, and (on success) credits the order via the
+ * guarded `payment_status != 'paid'`
  * update. Double-crediting is therefore impossible even if a callback lands at
  * the same time.
  *
@@ -124,7 +126,9 @@ export class MpesaPollingJob {
       }
 
       try {
-        const result = await this.payments.adminReconcile(tx.id, ReconcileProvider.MPESA);
+        // adminReconcileImpl, not adminReconcile — this is a system/cron
+        // action with no human admin to attribute an audit_log entry to.
+        const result = await this.payments.adminReconcileImpl(tx.id, ReconcileProvider.MPESA);
         if (result.changed) {
           reconciled += 1;
           if (result.status === TX_STATUS.MATCHED) matched += 1;

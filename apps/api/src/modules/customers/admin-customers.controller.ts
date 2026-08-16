@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { RequirePermission } from '../../auth/decorators';
+import { CurrentUser, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { CustomersService } from './customers.service';
 import { AdminCustomerDto } from './dto/customer.dto';
 import { SetCustomerStatusDto } from './dto/set-customer-status.dto';
@@ -43,7 +44,8 @@ export class AdminCustomersController {
   setStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: SetCustomerStatusDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<AdminCustomerDto> {
-    return this.customers.setStatusAsAdmin(id, dto.status);
+    return this.customers.setStatusAsAdmin(id, dto.status, actorUser);
   }
 }

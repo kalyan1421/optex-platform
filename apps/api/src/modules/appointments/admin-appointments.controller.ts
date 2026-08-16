@@ -51,7 +51,8 @@ export class AdminAppointmentsController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAppointmentDto,
+    @CurrentUser() user: AuthUser,
   ): Promise<AppointmentDto> {
-    return this.appointments.updateForAdmin(id, dto);
+    return this.appointments.updateForAdmin(id, dto, user);
   }
 }

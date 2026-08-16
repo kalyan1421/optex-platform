@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import type { AuthUser } from '../../auth/auth-user';
 import type { CreateBranchDto } from './dto/create-branch.dto';
 import type { UpdateBranchDto } from './dto/update-branch.dto';
 
@@ -40,7 +42,10 @@ const BRANCH_COLUMNS =
 export class BranchesService {
   private readonly logger = new Logger(BranchesService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   /**
    * Lists active branches ordered by name. When `q` is provided, filters by a
@@ -115,7 +120,7 @@ export class BranchesService {
   /**
    * Creates a branch. Maps a duplicate `slug` (unique constraint) to 400.
    */
-  async create(dto: CreateBranchDto): Promise<BranchRow> {
+  async create(dto: CreateBranchDto, actorUser: AuthUser): Promise<BranchRow> {
     const { data, error } = await this.supabase.client
       .from('branches')
       .insert(dto)
@@ -129,20 +134,28 @@ export class BranchesService {
       this.logger.error(`Failed to create branch: ${error.message}`);
       throw new InternalServerErrorException('Failed to create branch');
     }
-    return data as BranchRow;
+    const created = data as BranchRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'branches.create',
+      resourceType: 'branches',
+      resourceId: created.id,
+      after: created,
+    });
+    return created;
   }
 
   /**
    * Patches an existing branch. Throws 404 when the branch is missing and 400
    * on a duplicate slug.
    */
-  async update(id: string, dto: UpdateBranchDto): Promise<BranchRow> {
+  async update(id: string, dto: UpdateBranchDto, actorUser: AuthUser): Promise<BranchRow> {
     if (Object.keys(dto).length === 0) {
       throw new BadRequestException('No updatable fields provided');
     }
 
     // Ensure the branch exists first so we return a 404 rather than a silent no-op.
-    await this.findById(id);
+    const before = await this.findById(id);
 
     const { data, error } = await this.supabase.client
       .from('branches')
@@ -158,15 +171,24 @@ export class BranchesService {
       this.logger.error(`Failed to update branch ${id}: ${error.message}`);
       throw new InternalServerErrorException('Failed to update branch');
     }
-    return data as BranchRow;
+    const after = data as BranchRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'branches.update',
+      resourceType: 'branches',
+      resourceId: id,
+      before,
+      after,
+    });
+    return after;
   }
 
   /**
    * Deletes a branch by id. Throws 404 when the branch does not exist.
    */
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actorUser: AuthUser): Promise<void> {
     // Confirm existence so the caller gets a 404 instead of a no-op delete.
-    await this.findById(id);
+    const before = await this.findById(id);
 
     const { error } = await this.supabase.client.from('branches').delete().eq('id', id);
 
@@ -174,6 +196,14 @@ export class BranchesService {
       this.logger.error(`Failed to delete branch ${id}: ${error.message}`);
       throw new InternalServerErrorException('Failed to delete branch');
     }
+
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'branches.delete',
+      resourceType: 'branches',
+      resourceId: id,
+      before,
+    });
   }
 
   /**

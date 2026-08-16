@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
 import type { CreateReviewDto } from './dto/create-review.dto';
 import type { UpdateReviewDto } from './dto/update-review.dto';
@@ -47,7 +48,10 @@ const PG_UNIQUE_VIOLATION = '23505';
  */
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   /**
    * Lists approved reviews for a product plus an aggregate
@@ -201,7 +205,7 @@ export class ReviewsService {
    * `admin_reply`. Only the fields present on the DTO are written. Throws
    * `ConflictException` if the review id does not exist.
    */
-  async moderate(id: string, dto: UpdateReviewDto): Promise<ReviewDto> {
+  async moderate(id: string, dto: UpdateReviewDto, actorUser: AuthUser): Promise<ReviewDto> {
     const patch: { status?: ReviewStatus; admin_reply?: string | null } = {};
     if (dto.status !== undefined) patch.status = dto.status;
     if (dto.admin_reply !== undefined) {
@@ -223,6 +227,13 @@ export class ReviewsService {
       throw new ConflictException('Review not found');
     }
 
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'reviews.moderate',
+      resourceType: 'product_reviews',
+      resourceId: id,
+      after: data,
+    });
     return data;
   }
 

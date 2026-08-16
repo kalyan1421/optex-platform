@@ -26,6 +26,7 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   branches: 'branches.read',
   payments: 'payments.read',
   staff: 'staff.manage',
+  'audit-log': 'audit_log.read',
 };
 
 /** The route segment a pathname like `/inventory/foo` starts with, or `null` for `/`. */

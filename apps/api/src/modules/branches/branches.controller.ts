@@ -22,7 +22,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public, RequirePermission } from '../../auth/decorators';
+import { CurrentUser, Public, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { BranchesService, type BranchRow } from './branches.service';
 import { BranchDto } from './dto/branch.dto';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -97,8 +98,8 @@ export class BranchesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a branch (super_admin)' })
   @ApiCreatedResponse({ description: 'The created branch', type: BranchDto })
-  create(@Body() dto: CreateBranchDto): Promise<BranchRow> {
-    return this.branches.create(dto);
+  create(@Body() dto: CreateBranchDto, @CurrentUser() actorUser: AuthUser): Promise<BranchRow> {
+    return this.branches.create(dto, actorUser);
   }
 
   /** Patches an existing branch. Admin only. 404 when missing. */
@@ -108,8 +109,12 @@ export class BranchesController {
   @ApiOperation({ summary: 'Update a branch (super_admin)' })
   @ApiOkResponse({ description: 'The updated branch', type: BranchDto })
   @ApiNotFoundResponse({ description: 'Branch not found' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBranchDto): Promise<BranchRow> {
-    return this.branches.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateBranchDto,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<BranchRow> {
+    return this.branches.update(id, dto, actorUser);
   }
 
   /** Deletes a branch. Admin only. 404 when missing. */
@@ -120,7 +125,10 @@ export class BranchesController {
   @ApiOperation({ summary: 'Delete a branch (super_admin)' })
   @ApiNoContentResponse({ description: 'Branch deleted' })
   @ApiNotFoundResponse({ description: 'Branch not found' })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.branches.remove(id);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<void> {
+    return this.branches.remove(id, actorUser);
   }
 }

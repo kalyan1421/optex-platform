@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { SmsService } from '../notifications/sms.service';
 import type { AuthUser } from '../../auth/auth-user';
 import type { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -83,6 +84,7 @@ export class AppointmentsService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly sms: SmsService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   // ─── Public: availability ──────────────────────────────────────────────────
@@ -284,7 +286,11 @@ export class AppointmentsService {
    * (via `date` + `time`). A date+time without an explicit status is treated as
    * a reschedule (`rescheduled`). The moved slot is re-validated for conflicts.
    */
-  async updateForAdmin(id: string, dto: UpdateAppointmentDto): Promise<AppointmentDto> {
+  async updateForAdmin(
+    id: string,
+    dto: UpdateAppointmentDto,
+    actorUser: AuthUser,
+  ): Promise<AppointmentDto> {
     if (dto.status === undefined && dto.date === undefined && dto.time === undefined) {
       throw new BadRequestException('No updatable fields provided');
     }
@@ -305,7 +311,15 @@ export class AppointmentsService {
       patch.status = dto.status;
     }
 
-    return this.applyUpdate(id, patch);
+    const updated = await this.applyUpdate(id, patch);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'appointments.update',
+      resourceType: 'appointments',
+      resourceId: id,
+      after: updated,
+    });
+    return updated;
   }
 
   // ─── Internal helpers ────────────────────────────────────────────────────────

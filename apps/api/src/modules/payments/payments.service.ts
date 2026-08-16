@@ -8,6 +8,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import type { AuthUser } from '../../auth/auth-user';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 import { MpesaService } from './mpesa.service';
@@ -115,6 +117,7 @@ export class PaymentsService {
     private readonly pesapal: PesapalService,
     private readonly email: EmailService,
     private readonly sms: SmsService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   private get db() {
@@ -652,6 +655,29 @@ export class PaymentsService {
   async adminReconcile(
     transactionId: string,
     provider: ReconcileProvider,
+    actorUser: AuthUser,
+  ): Promise<ReconcileResult> {
+    const result = await this.adminReconcileImpl(transactionId, provider);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'payments.reconcile',
+      resourceType:
+        provider === ReconcileProvider.MPESA ? 'mpesa_transactions' : 'pesapal_transactions',
+      resourceId: transactionId,
+      after: result,
+    });
+    return result;
+  }
+
+  /**
+   * The reconcile logic itself, without the audit-log wrapper — called by
+   * `adminReconcile()` (a human admin action, audited) AND directly by
+   * {@link MpesaPollingJob} (a system/cron action with no human actor to
+   * attribute an audit entry to; not `private` for exactly this reason).
+   */
+  async adminReconcileImpl(
+    transactionId: string,
+    provider: ReconcileProvider,
   ): Promise<ReconcileResult> {
     if (provider === ReconcileProvider.MPESA) {
       const { data, error } = await this.db
@@ -751,6 +777,25 @@ export class PaymentsService {
    * automatic reconcile couldn't tie to an order. Idempotent on the credit.
    */
   async adminLinkPayment(
+    transactionId: string,
+    provider: ReconcileProvider,
+    orderNumber: string,
+    actorUser: AuthUser,
+  ): Promise<ReconcileResult> {
+    const result = await this.adminLinkPaymentImpl(transactionId, provider, orderNumber);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'payments.link',
+      resourceType:
+        provider === ReconcileProvider.MPESA ? 'mpesa_transactions' : 'pesapal_transactions',
+      resourceId: transactionId,
+      after: result,
+      metadata: { orderNumber },
+    });
+    return result;
+  }
+
+  private async adminLinkPaymentImpl(
     transactionId: string,
     provider: ReconcileProvider,
     orderNumber: string,

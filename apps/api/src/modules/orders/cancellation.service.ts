@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 
@@ -81,6 +82,7 @@ export class CancellationService {
     private readonly supabase: SupabaseService,
     private readonly email: EmailService,
     private readonly sms: SmsService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   private get db() {
@@ -371,7 +373,8 @@ export class CancellationService {
    * with a financial consequence that someone has to own; the API refuses to
    * infer consent for it. Nothing here ever calls a payment provider.
    */
-  async approve(adminUserId: string, requestId: string, acknowledgePaid = false) {
+  async approve(actorUser: AuthUser, requestId: string, acknowledgePaid = false) {
+    const adminUserId = actorUser.id;
     const req = await this.loadPendingRequest(requestId);
 
     const { data: order } = await this.db
@@ -409,6 +412,14 @@ export class CancellationService {
         'The order was cancelled but the request could not be updated. Please check the request list.',
       );
     }
+
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'cancellations.approve',
+      resourceType: 'order_cancellation_requests',
+      resourceId: req.id,
+      metadata: { orderId: order.id, acknowledgePaid },
+    });
 
     // After the write, never before — see notifyDecision.
     void this.notifyDecision(order.id, 'approved');
@@ -492,13 +503,22 @@ export class CancellationService {
       throw new InternalServerErrorException('Could not cancel that order.');
     }
 
+    await this.auditLog.record({
+      actor: user,
+      action: 'orders.cancel',
+      resourceType: 'orders',
+      resourceId: order.id,
+      metadata: { reason: trimmedReason, acknowledgePaid },
+    });
+
     void this.notifyDecision(order.id, 'direct', trimmedReason);
 
     return { id: order.id, status: 'cancelled' };
   }
 
   /** Decline a request: the order keeps the status it already had — R3. */
-  async decline(adminUserId: string, requestId: string, reason?: string) {
+  async decline(actorUser: AuthUser, requestId: string, reason?: string) {
+    const adminUserId = actorUser.id;
     const req = await this.loadPendingRequest(requestId);
 
     const { error } = await this.db
@@ -514,6 +534,14 @@ export class CancellationService {
       this.logger.error(`Could not decline request ${req.id}: ${error.message}`);
       throw new InternalServerErrorException('Could not decline that request.');
     }
+
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'cancellations.decline',
+      resourceType: 'order_cancellation_requests',
+      resourceId: req.id,
+      metadata: { reason: reason?.trim() || null },
+    });
 
     void this.notifyDecision(req.order_id, 'declined', reason?.trim() || null);
 

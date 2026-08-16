@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import type {
   InventoryBranchDto,
   InventoryItemDto,
@@ -38,7 +39,10 @@ type RawInventoryRow = {
  */
 @Injectable()
 export class InventoryService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   /**
    * Returns active branches plus every product/branch stock row. The admin grid
@@ -136,6 +140,14 @@ export class InventoryService {
       throw new NotFoundException('No inventory row for that product and branch');
     }
 
-    return data as { product_id: string; branch_id: string; stock: number };
+    const updated = data as { product_id: string; branch_id: string; stock: number };
+    await this.auditLog.record({
+      actor: user,
+      action: 'inventory.set_stock',
+      resourceType: 'inventory',
+      resourceId: `${dto.product_id}:${dto.branch_id}`,
+      after: updated,
+    });
+    return updated;
   }
 }

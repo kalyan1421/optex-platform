@@ -23,6 +23,9 @@ import type {
   AdminCustomer,
   AdminReview,
   AdminStaff,
+  AdminAuditLogQuery,
+  AuditLogEntry,
+  PaginatedAuditLog,
   InventoryResponse,
   InventoryStock,
   SetCustomerStatusInput,
@@ -721,6 +724,10 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           body: input,
         }),
     },
+    auditLog: {
+      list: (query) =>
+        request<PaginatedAuditLog>('/admin/audit-log', { query: query as QueryParams }),
+    },
     inventory: {
       list: () => request<InventoryResponse>('/admin/inventory'),
       setStock: (input) =>
@@ -1060,6 +1067,11 @@ export interface AdminApi {
     update: (id: string, input: UpdateStaffInput) => Promise<AdminStaff>;
     /** `PATCH /admin/staff/:id/status` */
     setStatus: (id: string, input: SetStaffStatusInput) => Promise<AdminStaff>;
+  };
+  /** Read-only audit trail — CR-01 R1. `audit_log.read`, Super Admin only. */
+  auditLog: {
+    /** `GET /admin/audit-log` — optional filters + pagination */
+    list: (query?: AdminAuditLogQuery) => Promise<PaginatedAuditLog>;
   };
   inventory: {
     /** `GET /admin/inventory` */

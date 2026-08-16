@@ -21,7 +21,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public, RequirePermission } from '../../auth/decorators';
+import { CurrentUser, Public, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
@@ -123,8 +124,8 @@ export class ProductsController {
   @Post()
   @ApiOperation({ summary: 'Create a product (admin)' })
   @ApiCreatedResponse({ description: 'The created product' })
-  create(@Body() dto: CreateProductDto): Promise<ProductRow> {
-    return this.products.create(dto);
+  create(@Body() dto: CreateProductDto, @CurrentUser() actorUser: AuthUser): Promise<ProductRow> {
+    return this.products.create(dto, actorUser);
   }
 
   @RequirePermission('products.write')
@@ -134,8 +135,9 @@ export class ProductsController {
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateProductDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<ProductRow> {
-    return this.products.update(id, dto);
+    return this.products.update(id, dto, actorUser);
   }
 
   @RequirePermission('products.write')
@@ -144,8 +146,9 @@ export class ProductsController {
   @ApiOkResponse({ description: 'The deactivated product id/state' })
   remove(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<{ id: string; is_active: boolean }> {
-    return this.products.remove(id);
+    return this.products.remove(id, actorUser);
   }
 
   @RequirePermission('products.write')
@@ -157,7 +160,8 @@ export class ProductsController {
   addImage(
     @Param('id', new ParseUUIDPipe()) id: string,
     @UploadedFile() file: UploadedImage,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<{ url: string; product: ProductRow }> {
-    return this.products.addImage(id, file);
+    return this.products.addImage(id, file, actorUser);
   }
 }

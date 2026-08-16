@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Ban,
   UserCog,
+  ScrollText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -73,6 +74,7 @@ const navGroups = [
       { id: 'branches', label: 'Branches', icon: MapPin },
       { id: 'payments', label: 'Payments', icon: CreditCard },
       { id: 'staff', label: 'Staff', icon: UserCog },
+      { id: 'audit-log', label: 'Audit Log', icon: ScrollText },
     ],
   },
 ];

@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import type { AuthUser } from '../../auth/auth-user';
 import type { AdminCustomerDto } from './dto/customer.dto';
 import type { CustomerStatus } from './dto/set-customer-status.dto';
 
@@ -32,7 +34,10 @@ const BAN_LIFT = 'none';
 export class CustomersService {
   private readonly logger = new Logger(CustomersService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   /**
    * Lists every customer, newest signup first, with their orders embedded.
@@ -77,7 +82,11 @@ export class CustomersService {
    * that still returns the current row, mirroring
    * `PrescriptionsService#updateStatusAsAdmin`.
    */
-  async setStatusAsAdmin(id: string, status: CustomerStatus): Promise<AdminCustomerDto> {
+  async setStatusAsAdmin(
+    id: string,
+    status: CustomerStatus,
+    actorUser: AuthUser,
+  ): Promise<AdminCustomerDto> {
     const { data: existing, error: fetchError } = await this.supabase.client
       .from('customers')
       .select('id, auth_user_id, deactivated_at')
@@ -122,7 +131,16 @@ export class CustomersService {
       throw new InternalServerErrorException('Failed to update customer');
     }
 
-    return this.fetchOneForAdmin(id);
+    const after = await this.fetchOneForAdmin(id);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'customers.status_change',
+      resourceType: 'customers',
+      resourceId: id,
+      metadata: { status },
+      after,
+    });
+    return after;
   }
 
   private async fetchOneForAdmin(id: string): Promise<AdminCustomerDto> {

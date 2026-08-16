@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 import { CheckoutDeliveryOption, CheckoutDto, CheckoutPaymentMethod } from './dto/checkout.dto';
@@ -97,6 +98,7 @@ export class OrdersService {
     private readonly supabase: SupabaseService,
     private readonly email: EmailService,
     private readonly sms: SmsService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   // ─── Checkout ──────────────────────────────────────────────────────────────
@@ -459,6 +461,14 @@ export class OrdersService {
     // H-2 FIX: use the variant that returns contact details explicitly rather
     // than stashing them as a hidden property on the view object.
     const { detail, contact } = await this.adminGetOrderDetailWithContact(orderId, user);
+
+    await this.auditLog.record({
+      actor: user,
+      action: 'orders.status_change',
+      resourceType: 'orders',
+      resourceId: orderId,
+      metadata: { from: currentStatus, to: nextStatus },
+    });
 
     if (nextStatus === OrderStatus.DISPATCHED || nextStatus === OrderStatus.DELIVERED) {
       void this.sendStatusUpdate(detail, contact);

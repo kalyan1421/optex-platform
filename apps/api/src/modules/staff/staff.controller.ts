@@ -40,11 +40,8 @@ export class StaffController {
   @Post()
   @ApiOperation({ summary: 'Create a staff account and its role/branch assignment' })
   @ApiOkResponse({ type: AdminStaffDto, description: 'The created staff row' })
-  create(
-    @Body() dto: CreateStaffDto,
-    @CurrentUser('id') actorUserId: string,
-  ): Promise<AdminStaffDto> {
-    return this.staff.create(dto, actorUserId);
+  create(@Body() dto: CreateStaffDto, @CurrentUser() actorUser: AuthUser): Promise<AdminStaffDto> {
+    return this.staff.create(dto, actorUser);
   }
 
   @Patch(':id')

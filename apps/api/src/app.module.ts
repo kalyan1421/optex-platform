@@ -18,6 +18,7 @@ import { HealthModule } from './health/health.module';
 import { AccountModule } from './modules/account/account.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { AdminMetricsModule } from './modules/admin-metrics/admin-metrics.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { AuthFlowModule } from './modules/auth/auth-flow.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { BranchesModule } from './modules/branches/branches.module';
@@ -82,6 +83,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     ScheduleModule.forRoot(),
     SupabaseModule,
     PermissionsModule,
+    AuditLogModule,
     AuthModule,
     CommonModule,
     HealthModule,

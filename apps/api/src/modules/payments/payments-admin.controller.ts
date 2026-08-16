@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RequirePermission } from '../../auth/decorators';
+import { CurrentUser, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { AdminListPaymentsQueryDto } from './dto/admin-list-payments-query.dto';
 import { ReconcilePaymentDto } from './dto/reconcile-payment.dto';
 import { LinkPaymentDto } from './dto/link-payment.dto';
@@ -38,8 +39,9 @@ export class PaymentsAdminController {
   reconcile(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ReconcilePaymentDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<ReconcileResult> {
-    return this.payments.adminReconcile(id, dto.provider);
+    return this.payments.adminReconcile(id, dto.provider, actorUser);
   }
 
   @RequirePermission('payments.reconcile')
@@ -51,8 +53,9 @@ export class PaymentsAdminController {
   link(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: LinkPaymentDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<ReconcileResult> {
-    return this.payments.adminLinkPayment(id, dto.provider, dto.orderNumber);
+    return this.payments.adminLinkPayment(id, dto.provider, dto.orderNumber, actorUser);
   }
 
   @RequirePermission('payments.read')

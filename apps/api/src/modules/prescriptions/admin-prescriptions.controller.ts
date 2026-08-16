@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RequirePermission } from '../../auth/decorators';
+import { CurrentUser, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { PrescriptionQueryDto } from './dto/prescription-query.dto';
 import { UpdatePrescriptionStatusDto } from './dto/update-prescription-status.dto';
 import { PrescriptionRow, PrescriptionsService } from './prescriptions.service';
@@ -42,8 +43,9 @@ export class AdminPrescriptionsController {
   updateStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdatePrescriptionStatusDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<PrescriptionRow> {
-    return this.prescriptions.updateStatusAsAdmin(id, dto.status);
+    return this.prescriptions.updateStatusAsAdmin(id, dto.status, actorUser);
   }
 
   @RequirePermission('prescriptions.read')
@@ -54,7 +56,8 @@ export class AdminPrescriptionsController {
   @ApiOkResponse({ description: 'Signed URL valid for 60 seconds' })
   download(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<{ url: string; expiresIn: number }> {
-    return this.prescriptions.downloadAsAdmin(id);
+    return this.prescriptions.downloadAsAdmin(id, actorUser);
   }
 }

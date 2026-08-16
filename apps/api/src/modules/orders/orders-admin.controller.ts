@@ -119,11 +119,11 @@ export class OrdersAdminController {
   @ApiOperation({ summary: 'Approve a request — cancels the order' })
   @ApiOkResponse({ description: 'The decided request' })
   approveCancellation(
-    @CurrentUser('id') adminUserId: string,
+    @CurrentUser() actorUser: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ApproveCancellationDto,
   ) {
-    return this.cancellation.approve(adminUserId, id, dto.acknowledgePaid ?? false);
+    return this.cancellation.approve(actorUser, id, dto.acknowledgePaid ?? false);
   }
 
   @RequirePermission('cancellations.decide')
@@ -131,10 +131,10 @@ export class OrdersAdminController {
   @ApiOperation({ summary: 'Decline a request — the order keeps its status' })
   @ApiOkResponse({ description: 'The decided request' })
   declineCancellation(
-    @CurrentUser('id') adminUserId: string,
+    @CurrentUser() actorUser: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: DeclineCancellationDto,
   ) {
-    return this.cancellation.decline(adminUserId, id, dto.reason);
+    return this.cancellation.decline(actorUser, id, dto.reason);
   }
 }

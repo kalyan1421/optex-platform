@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import type { AuthUser } from '../../auth/auth-user';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductQueryDto, ProductSort } from './dto/product-query.dto';
 import { SearchQueryDto } from './dto/search-query.dto';
@@ -45,7 +47,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
  */
 @Injectable()
 export class ProductsService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   /**
    * Paginated, filtered list of active products.
@@ -237,7 +242,7 @@ export class ProductsService {
   }
 
   /** Create a product (admin). */
-  async create(dto: CreateProductDto): Promise<ProductRow> {
+  async create(dto: CreateProductDto, actorUser: AuthUser): Promise<ProductRow> {
     const { data, error } = await this.supabase.client
       .from('products')
       .insert(dto)
@@ -245,11 +250,19 @@ export class ProductsService {
       .single();
 
     if (error) throw new BadRequestException(error.message);
-    return data as ProductRow;
+    const created = data as ProductRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'products.create',
+      resourceType: 'products',
+      resourceId: created.id,
+      after: created,
+    });
+    return created;
   }
 
   /** Patch a product (admin). Throws if the product does not exist. */
-  async update(id: string, dto: UpdateProductDto): Promise<ProductRow> {
+  async update(id: string, dto: UpdateProductDto, actorUser: AuthUser): Promise<ProductRow> {
     const { data, error } = await this.supabase.client
       .from('products')
       .update(dto)
@@ -259,14 +272,22 @@ export class ProductsService {
 
     if (error) throw new BadRequestException(error.message);
     if (!data) throw new NotFoundException(`Product "${id}" not found`);
-    return data as ProductRow;
+    const updated = data as ProductRow;
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'products.update',
+      resourceType: 'products',
+      resourceId: id,
+      after: updated,
+    });
+    return updated;
   }
 
   /**
    * Soft-delete a product by flipping `is_active` to false (the table has an
    * `is_active` column, so we never hard-delete and lose order-item history).
    */
-  async remove(id: string): Promise<{ id: string; is_active: boolean }> {
+  async remove(id: string, actorUser: AuthUser): Promise<{ id: string; is_active: boolean }> {
     const { data, error } = await this.supabase.client
       .from('products')
       .update({ is_active: false })
@@ -276,6 +297,12 @@ export class ProductsService {
 
     if (error) throw new BadRequestException(error.message);
     if (!data) throw new NotFoundException(`Product "${id}" not found`);
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'products.deactivate',
+      resourceType: 'products',
+      resourceId: id,
+    });
     return data as { id: string; is_active: boolean };
   }
 
@@ -283,7 +310,11 @@ export class ProductsService {
    * Upload an image to the `product-images` bucket, append its public URL to
    * the product's `images` array, and return the persisted product plus URL.
    */
-  async addImage(id: string, file: UploadedImage): Promise<{ url: string; product: ProductRow }> {
+  async addImage(
+    id: string,
+    file: UploadedImage,
+    actorUser: AuthUser,
+  ): Promise<{ url: string; product: ProductRow }> {
     if (!file?.buffer) {
       throw new BadRequestException('No image file provided');
     }
@@ -326,6 +357,13 @@ export class ProductsService {
 
     if (updateError) throw new BadRequestException(updateError.message);
 
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'products.image_upload',
+      resourceType: 'products',
+      resourceId: id,
+      metadata: { url: publicUrl },
+    });
     return { url: publicUrl, product: updated as ProductRow };
   }
 

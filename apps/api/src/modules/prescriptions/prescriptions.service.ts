@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { PrescriptionQueryDto } from './dto/prescription-query.dto';
 import { UploadPrescriptionDto } from './dto/upload-prescription.dto';
 import type { PrescriptionStatus } from './dto/update-prescription-status.dto';
@@ -104,7 +105,10 @@ export interface PrescriptionRow {
 export class PrescriptionsService {
   private readonly logger = new Logger(PrescriptionsService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   // ── Customer-facing ───────────────────────────────────────────────────────
 
@@ -248,11 +252,25 @@ export class PrescriptionsService {
   }
 
   /** Short-lived signed download URL for any prescription (admin viewer). */
-  async downloadAsAdmin(id: string): Promise<{ url: string; expiresIn: number }> {
+  /**
+   * Audited on ACCESS, not just mutation — prescriptions are health data, and
+   * who looked at a customer's prescription is itself the compliance-relevant
+   * fact here (DPA 2019), not only whether one was changed.
+   */
+  async downloadAsAdmin(
+    id: string,
+    actorUser: AuthUser,
+  ): Promise<{ url: string; expiresIn: number }> {
     const row = await this.fetchById(id);
     if (!row) {
       throw new NotFoundException('Prescription not found');
     }
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'prescriptions.download',
+      resourceType: 'prescriptions',
+      resourceId: id,
+    });
     return this.signFor(row);
   }
 
@@ -264,7 +282,11 @@ export class PrescriptionsService {
    * it, moving back to `pending` clears it. Re-applying the same status is a
    * no-op that returns the current row rather than re-stamping the time.
    */
-  async updateStatusAsAdmin(id: string, status: PrescriptionStatus): Promise<PrescriptionRow> {
+  async updateStatusAsAdmin(
+    id: string,
+    status: PrescriptionStatus,
+    actorUser: AuthUser,
+  ): Promise<PrescriptionRow> {
     const existing = await this.fetchById(id);
     if (!existing) {
       throw new NotFoundException('Prescription not found');
@@ -290,6 +312,13 @@ export class PrescriptionsService {
     if (!data) {
       throw new NotFoundException('Prescription not found');
     }
+    await this.auditLog.record({
+      actor: actorUser,
+      action: 'prescriptions.status_change',
+      resourceType: 'prescriptions',
+      resourceId: id,
+      metadata: { status },
+    });
     return data;
   }
 

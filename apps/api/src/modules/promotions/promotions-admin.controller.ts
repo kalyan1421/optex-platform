@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RequirePermission } from '../../auth/decorators';
+import { CurrentUser, RequirePermission } from '../../auth/decorators';
+import type { AuthUser } from '../../auth/auth-user';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
 import { CreatePromoCodeDto } from './dto/create-promo-code.dto';
 import { UpdatePromoBannerDto } from './dto/update-promo-banner.dto';
@@ -33,8 +34,11 @@ export class PromotionsAdminController {
   @Post('promo-codes')
   @ApiOperation({ summary: 'Create a promo code' })
   @ApiOkResponse({ description: 'The created promo code' })
-  createCode(@Body() dto: CreatePromoCodeDto): Promise<unknown> {
-    return this.promotions.createCode(dto);
+  createCode(
+    @Body() dto: CreatePromoCodeDto,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<unknown> {
+    return this.promotions.createCode(dto, actorUser);
   }
 
   /** Update an existing promo code. */
@@ -45,8 +49,9 @@ export class PromotionsAdminController {
   updateCode(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePromoCodeDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<unknown> {
-    return this.promotions.updateCode(id, dto);
+    return this.promotions.updateCode(id, dto, actorUser);
   }
 
   /** Delete a promo code. */
@@ -54,8 +59,11 @@ export class PromotionsAdminController {
   @Delete('promo-codes/:id')
   @ApiOperation({ summary: 'Delete a promo code' })
   @ApiOkResponse({ description: 'Deletion confirmation' })
-  deleteCode(@Param('id', ParseUUIDPipe) id: string): Promise<{ id: string; deleted: true }> {
-    return this.promotions.deleteCode(id);
+  deleteCode(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<{ id: string; deleted: true }> {
+    return this.promotions.deleteCode(id, actorUser);
   }
 
   // ─── Promo banners ──────────────────────────────────────────────────────
@@ -74,8 +82,11 @@ export class PromotionsAdminController {
   @Post('promo-banners')
   @ApiOperation({ summary: 'Create a promo banner' })
   @ApiOkResponse({ description: 'The created promo banner' })
-  createBanner(@Body() dto: CreatePromoBannerDto): Promise<unknown> {
-    return this.promotions.createBanner(dto);
+  createBanner(
+    @Body() dto: CreatePromoBannerDto,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<unknown> {
+    return this.promotions.createBanner(dto, actorUser);
   }
 
   /** Update an existing promo banner. */
@@ -86,8 +97,9 @@ export class PromotionsAdminController {
   updateBanner(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePromoBannerDto,
+    @CurrentUser() actorUser: AuthUser,
   ): Promise<unknown> {
-    return this.promotions.updateBanner(id, dto);
+    return this.promotions.updateBanner(id, dto, actorUser);
   }
 
   /** Delete a promo banner. */
@@ -95,7 +107,10 @@ export class PromotionsAdminController {
   @Delete('promo-banners/:id')
   @ApiOperation({ summary: 'Delete a promo banner' })
   @ApiOkResponse({ description: 'Deletion confirmation' })
-  deleteBanner(@Param('id', ParseUUIDPipe) id: string): Promise<{ id: string; deleted: true }> {
-    return this.promotions.deleteBanner(id);
+  deleteBanner(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<{ id: string; deleted: true }> {
+    return this.promotions.deleteBanner(id, actorUser);
   }
 }
