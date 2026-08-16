@@ -149,6 +149,15 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+      # CR-01 R1 1e — Super Admin 2FA (SPEC-08). Var names confirmed against
+      # this image's pinned tag (supabase/auth @ v2.143.0,
+      # internal/conf/configuration.go's MFAConfiguration struct), not
+      # guessed. TOTP is the only factor type this GoTrue version supports —
+      # enabling MFA here is what turns on the /factors enrollment/challenge
+      # endpoints the `auth.mfa.*` client SDK calls. Everything else
+      # (challenge expiry, rate limits, max factors) keeps GoTrue's own
+      # defaults, which are sane for one admin panel's worth of TOTP factors.
+      GOTRUE_MFA_ENABLED: 'true'
 
   # ─── POSTGREST ────────────────────────────────────────────────────────────
   supabase-rest:

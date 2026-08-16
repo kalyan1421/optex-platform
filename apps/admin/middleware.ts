@@ -2,6 +2,10 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { isStaffRole } from './lib/roles';
+import { decodeAal } from './lib/aal';
+
+/** Reachable by a signed-in super_admin regardless of AAL — see the redirect below. */
+const MFA_ROUTES = ['/mfa-setup', '/mfa-challenge'];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
@@ -52,6 +56,23 @@ export async function middleware(request: NextRequest) {
     const role = (user?.app_metadata as Record<string, unknown> | null)?.role;
     if (!isStaffRole(role)) {
       return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // R1 1e: super_admin must complete an aal2 step-up before reaching
+    // anything but the MFA pages themselves — mirrors PermissionsGuard's
+    // server-side enforcement (apps/api/src/auth/permissions.guard.ts), which
+    // is the check that actually matters; this one exists so a super_admin
+    // hits a purpose-built setup/challenge screen instead of a wall of 403s
+    // from every page they land on.
+    const isMfaRoute = MFA_ROUTES.some((r) => request.nextUrl.pathname.startsWith(r));
+    if (role === 'super_admin' && !isMfaRoute) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const aal = session ? decodeAal(session.access_token) : undefined;
+      if (aal !== 'aal2') {
+        return NextResponse.redirect(new URL('/mfa-challenge', request.url));
+      }
     }
   }
 

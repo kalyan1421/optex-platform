@@ -15,6 +15,19 @@
 process.env.AUTH_RATE_LIMIT = process.env.AUTH_RATE_LIMIT ?? '10000';
 
 /**
+ * R1 1e: `PermissionsGuard` step-up-authenticates `super_admin` (requires
+ * `aal2`) once `MFA_ENFORCEMENT_ENABLED` isn't explicitly `'false'`. The vast
+ * majority of this suite signs a super_admin fixture straight in with
+ * password auth (aal1) — there is no interactive authenticator app here to
+ * complete a real TOTP challenge with. Disabled suite-wide so those fixtures
+ * keep working; `mfa-enforcement.e2e-spec.ts` sets this back to `'true'` at
+ * the top of its OWN file (Jest isolates each spec file's module registry,
+ * even under `--runInBand`) specifically to prove the enforcement path
+ * itself, using a real computed TOTP code end-to-end.
+ */
+process.env.MFA_ENFORCEMENT_ENABLED = process.env.MFA_ENFORCEMENT_ENABLED ?? 'false';
+
+/**
  * Reuse TCP connections across supertest requests.
  *
  * Superagent opens a fresh socket per request and closes it, and macOS parks
