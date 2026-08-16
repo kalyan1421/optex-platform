@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -10,20 +10,23 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
+  // F-22 FIX: was the last customer-facing auth flow still calling Supabase
+  // directly from the browser (`db.auth.resetPasswordForEmail`). Routes through
+  // the API now, like login/signup/refresh already do — which also means the
+  // redirect the email link points at is decided server-side (WEB_APP_URL),
+  // not by whatever `window.location.origin` happened to be for this request.
   async function handleSubmit(e) {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setError('');
-    const db = createBrowserSupabase();
-    const { error: authError } = await db.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (authError) {
-      setError(authError.message);
-    } else {
+    try {
+      await api.auth.forgotPassword({ email });
       setSent(true);
+    } catch (err) {
+      setError(err?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -65,7 +68,10 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600"
+                >
                   {error}
                 </div>
               )}

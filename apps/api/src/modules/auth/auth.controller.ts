@@ -15,6 +15,8 @@ import { AuthFlowService } from './auth-flow.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { AuthResult, AuthUserView } from './dto/auth-views';
 
 /**
@@ -85,6 +87,43 @@ export class AuthController {
   async logout(@Headers('authorization') authorization?: string): Promise<void> {
     const token = this.bearer(authorization);
     await this.auth.logout(token);
+  }
+
+  // F-22 FIX: both password-reset endpoints go through the API rather than the
+  // browser talking to Supabase directly — the last customer-facing auth flow
+  // that still bypassed it. Same 10/min ceiling as login/signup/refresh: this
+  // is the credential surface, and email-bombing a victim's inbox is the abuse
+  // case here rather than password guessing.
+  @Throttle({ default: { ttl: 60_000, limit: authRateLimit } })
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Request a password-reset email' })
+  @ApiOkResponse({
+    description: 'Always succeeds — never reveals whether the email is registered',
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    await this.auth.requestPasswordReset(dto.email);
+    // Deliberately the same message regardless of whether GoTrue actually found
+    // an account — matching its own behaviour, not layering a leak on top of it.
+    return { message: 'If an account exists for that email, a reset link has been sent.' };
+  }
+
+  // NOT @Public(): the bearer token here is the short-lived recovery session
+  // Supabase attaches to the reset-link redirect, and SupabaseAuthGuard
+  // validating it before the handler runs is the same "throttle -> authenticate"
+  // pipeline every other route gets, not a special case.
+  @Throttle({ default: { ttl: 60_000, limit: authRateLimit } })
+  @Post('reset-password')
+  @HttpCode(204)
+  @ApiBearerAuth('supabase')
+  @ApiOperation({ summary: 'Set a new password using a reset-link recovery session' })
+  async resetPassword(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() dto: ResetPasswordDto,
+  ): Promise<void> {
+    const token = this.bearer(authorization);
+    await this.auth.resetPassword(token, dto.password);
   }
 
   @Get('me')

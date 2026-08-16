@@ -26,6 +26,13 @@ export const envSchema = z.object({
   // Comma-separated list of allowed origins. Falls back to web+admin dev hosts.
   CORS_ORIGINS: z.string().optional(),
 
+  // Storefront origin the API builds redirect URLs against — currently just the
+  // password-reset email's link (audit F-22). Deliberately never taken from the
+  // request: accepting a client-supplied redirect would let anyone who knows a
+  // victim's email address send them a genuine recovery email pointing at an
+  // attacker's origin. Falls back to the same local dev default main.ts uses.
+  WEB_APP_URL: z.string().url().optional(),
+
   // --- M-Pesa (Daraja) — optional until payments module ships ---
   // L-1 FIX: use .optional() without .default('') so callers can distinguish
   // "credential not set" (undefined) from "credential intentionally empty" ('').

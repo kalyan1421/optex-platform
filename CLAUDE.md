@@ -56,7 +56,7 @@ Payment webhooks (M-Pesa Daraja, Pesapal IPN) use the service-role key to bypass
 ## Cross-cutting
 
 - **CI** is wired up in `.github/workflows/ci.yml` — three jobs: `static` (typecheck, lint, build, Prettier check), `e2e` (API suite against a real Supabase stack) and `smoke` (storefront Playwright against a production build).
-- **Tests**: 150 API e2e tests across 14 suites (`apps/api/test/`), 13 storefront and 5 admin Playwright specs. There are still **no unit tests and no contract tests** — audit F-08. The API suite boots the full `AppModule` against a real database, so pure logic (status transitions, Nairobi formatting, MSISDN normalisation, money rounding) is currently exercised through HTTP, which is slow and makes edge cases expensive to cover.
+- **Tests**: 157 API e2e tests across 15 suites (`apps/api/test/`), 16 storefront and 5 admin Playwright specs, plus 28 unit tests (`apps/api/test/unit/`, `packages/ui/src/lib/format.spec.ts` — audit F-08) covering the pure logic the e2e suite used to be the only way to reach. There are still **no contract tests** for `packages/api-client`, the typed boundary three apps depend on.
 - **Load tests** live in `load/` (k6, audit F-07) and are not part of CI — they need a running stack. `load/README.md` explains why they target the storefront on :1112 rather than the API directly.
 - `pnpm -r lint` works and is enforced in CI (ESLint + `jsx-a11y`; configs in `apps/web/.eslintrc.js` and `apps/admin/.eslintrc.js`).
 - `pnpm -r typecheck` passes clean across all nine workspace projects, `apps/web` included.

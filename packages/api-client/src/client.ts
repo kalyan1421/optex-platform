@@ -28,8 +28,10 @@ import type {
   SetStockInput,
   AuthResult,
   AuthUser,
+  ForgotPasswordInput,
   LoginInput,
   RefreshInput,
+  ResetPasswordInput,
   SignupInput,
   AdminListOrdersQuery,
   AdminListPaymentsQuery,
@@ -344,6 +346,15 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     refresh: (input) => request<AuthResult>('/auth/refresh', { method: 'POST', body: input }),
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
     me: () => request<AuthUser>('/auth/me'),
+    forgotPassword: (input) =>
+      request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: input }),
+    // Bearer token comes from the client's normal getAccessToken() flow, same
+    // as logout()/me() — no special-casing needed. The caller reached this page
+    // via a reset-link redirect, which the browser Supabase client's own
+    // detectSessionInUrl already turned into the ambient session by the time
+    // this runs, so getAccessToken() returns the recovery token automatically.
+    resetPassword: (input) =>
+      request<void>('/auth/reset-password', { method: 'POST', body: input }),
   };
 
   // ── catalog ────────────────────────────────────────────────────────────────
@@ -743,6 +754,18 @@ export interface AuthApi {
   logout: () => Promise<void>;
   /** `GET /auth/me` (requires a bearer token) */
   me: () => Promise<AuthUser>;
+  /**
+   * `POST /auth/forgot-password` (audit F-22). Always resolves — the response
+   * never reveals whether the email is registered, matching GoTrue's own
+   * behaviour, which this proxies without changing.
+   */
+  forgotPassword: (input: ForgotPasswordInput) => Promise<{ message: string }>;
+  /**
+   * `POST /auth/reset-password` (audit F-22). Requires the caller to hold the
+   * recovery session a reset-link redirect establishes — see the client's
+   * `getAccessToken` wiring for how that token reaches this call.
+   */
+  resetPassword: (input: ResetPasswordInput) => Promise<void>;
 }
 
 /** Public catalog reads (`/products`, `/categories`). */

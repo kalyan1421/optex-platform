@@ -287,6 +287,20 @@ export interface RefreshInput {
   refreshToken: string;
 }
 
+/** Body for `POST /auth/forgot-password` (audit F-22). */
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+/**
+ * Body for `POST /auth/reset-password` (audit F-22). No email or user id here
+ * — the caller's identity comes from the bearer token, which is the recovery
+ * session Supabase attaches to the reset-link redirect.
+ */
+export interface ResetPasswordInput {
+  password: string;
+}
+
 /** Normalized authenticated user. */
 export interface AuthUser {
   id: string;

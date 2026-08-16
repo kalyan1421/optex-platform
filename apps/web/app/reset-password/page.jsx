@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
+import { api } from '@/lib/api';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -14,8 +15,14 @@ export default function ResetPasswordPage() {
   const [done, setDone] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
+  // F-22 FIX: still reads the recovery session via the Supabase browser client
+  // — that is how it RECEIVES the one-time token GoTrue attaches to the
+  // reset-link redirect's #access_token hash fragment, and re-implementing
+  // that parsing ourselves would just be reinventing what the SDK already does
+  // correctly. What changed is the WRITE below: setting the new password now
+  // goes through the API rather than calling `db.auth.updateUser()` directly,
+  // which is the API-proxy pattern every other auth mutation already follows.
   useEffect(() => {
-    // Supabase processes the #access_token hash fragment automatically on mount
     const db = createBrowserSupabase();
     db.auth.getSession().then(({ data }) => {
       if (data.session) {
@@ -38,14 +45,17 @@ export default function ResetPasswordPage() {
     }
     setLoading(true);
     setError('');
-    const db = createBrowserSupabase();
-    const { error: updateError } = await db.auth.updateUser({ password });
-    setLoading(false);
-    if (updateError) {
-      setError(updateError.message);
-    } else {
+    try {
+      // Carries the recovery session's access token automatically — the API
+      // client's getAccessToken() reads the same Supabase browser client the
+      // useEffect above already populated from the reset link.
+      await api.auth.resetPassword({ password });
       setDone(true);
       setTimeout(() => router.push('/login'), 3000);
+    } catch (err) {
+      setError(err?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -83,7 +93,10 @@ export default function ResetPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600"
+                >
                   {error}
                   {error.includes('expired') && (
                     <span>

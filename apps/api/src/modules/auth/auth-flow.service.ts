@@ -69,13 +69,72 @@ export class AuthFlowService {
     await this.post('logout', {}, accessToken);
   }
 
+  /**
+   * Requests a password-reset email (audit F-22).
+   *
+   * `redirectTo` is NEVER taken from the caller — it is built server-side from
+   * `WEB_APP_URL` (see `resolveResetRedirectUrl`). A client-supplied redirect
+   * would let anyone who knows a victim's email address send them a genuine
+   * Supabase recovery email whose link points at an attacker-controlled origin;
+   * building it here closes that off entirely rather than relying on Supabase's
+   * own redirect allowlist as the only defence.
+   *
+   * GoTrue's `/recover` endpoint always resolves 200, whether or not the email
+   * is registered — that's what stops this from being an account-enumeration
+   * oracle, and this method preserves it by not special-casing the response.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    await this.post('recover', { email }, undefined, { redirect_to: this.resetRedirectUrl() });
+  }
+
+  /**
+   * Sets a new password for the caller identified by `accessToken` — the
+   * short-lived recovery session Supabase attaches to the reset-link redirect,
+   * not an ordinary login session. GoTrue's `PUT /user` operates on whichever
+   * token is presented, recovery or otherwise, so this doubles as "change my
+   * password while signed in" if a future page wants that.
+   */
+  async resetPassword(accessToken: string, password: string): Promise<void> {
+    await this.put('user', { password }, accessToken);
+  }
+
   // ── internals ──────────────────────────────────────────────────────────────
 
-  private async post<T>(path: string, body: unknown, bearer?: string): Promise<T> {
+  /**
+   * Where the reset email's link points. Built from `WEB_APP_URL` — configured
+   * server-side, never accepted from the request — falling back to the same
+   * local dev default `main.ts` uses for CORS.
+   */
+  private resetRedirectUrl(): string {
+    const base = this.config.get('WEB_APP_URL', { infer: true }) || 'http://localhost:1112';
+    return `${base.replace(/\/$/, '')}/reset-password`;
+  }
+
+  private post<T>(
+    path: string,
+    body: unknown,
+    bearer?: string,
+    query?: Record<string, string>,
+  ): Promise<T> {
+    return this.send<T>('POST', path, body, bearer, query);
+  }
+
+  private put<T>(path: string, body: unknown, bearer: string): Promise<T> {
+    return this.send<T>('PUT', path, body, bearer);
+  }
+
+  private async send<T>(
+    method: 'POST' | 'PUT',
+    path: string,
+    body: unknown,
+    bearer?: string,
+    query?: Record<string, string>,
+  ): Promise<T> {
+    const qs = query ? `?${new URLSearchParams(query).toString()}` : '';
     let res: Response;
     try {
-      res = await fetch(`${this.baseUrl}/auth/v1/${path}`, {
-        method: 'POST',
+      res = await fetch(`${this.baseUrl}/auth/v1/${path}${qs}`, {
+        method,
         headers: {
           apikey: this.anonKey,
           'Content-Type': 'application/json',
