@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -465,11 +466,13 @@ export default function OrderTrackingPage() {
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
                             {item.product?.images?.[0] && (
-                              <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-[#f8f9fa]">
-                                <img
+                              <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-[#f8f9fa]">
+                                <Image
                                   src={getProductImageUrl(item.product)}
                                   alt={item.product?.name ?? 'Product'}
-                                  className="h-full w-full object-cover"
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
                                 />
                               </div>
                             )}

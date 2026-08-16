@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const FaceShape = () => {
   const shapes = [
@@ -90,7 +91,13 @@ const FaceShape = () => {
                 style={{ borderRadius: '31px 31px 0 0' }}
               >
                 {shape.image ? (
-                  <img src={shape.image} alt={shape.title} className="h-full w-full object-cover" />
+                  <Image
+                    src={shape.image}
+                    alt={shape.title}
+                    fill
+                    sizes="266px"
+                    className="object-cover"
+                  />
                 ) : (
                   <div className="flex flex-col items-center justify-center opacity-50">
                     <svg

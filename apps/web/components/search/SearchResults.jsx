@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatKes } from '@optex/ui';
@@ -43,11 +44,13 @@ function ProductCard({ product }) {
           </div>
         </div>
         <WishlistToggle productId={product.id} className="absolute left-3 top-3 z-10 h-8 w-8" />
-        <Link href={`/product/${product.slug}`}>
-          <img
+        <Link href={`/product/${product.slug}`} className="relative block h-full w-full">
+          <Image
             src={getProductImageUrl(product)}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            fill
+            sizes="(min-width: 1024px) 22vw, 45vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
         </Link>
       </div>

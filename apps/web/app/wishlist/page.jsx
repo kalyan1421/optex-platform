@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -171,11 +172,15 @@ export default function WishlistPage() {
                       Unavailable
                     </span>
                   )}
-                  <img
-                    src={resolveImage(item.product)}
-                    alt={item.product.name}
-                    className={`mx-auto h-40 w-full object-contain ${unavailable ? 'opacity-50' : ''}`}
-                  />
+                  <div className="relative mx-auto h-40 w-full">
+                    <Image
+                      src={resolveImage(item.product)}
+                      alt={item.product.name}
+                      fill
+                      sizes="(min-width: 1024px) 22vw, 45vw"
+                      className={`object-contain ${unavailable ? 'opacity-50' : ''}`}
+                    />
+                  </div>
                 </Link>
 
                 <div className="flex flex-1 flex-col p-5">

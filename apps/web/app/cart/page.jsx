@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { createBrowserSupabase } from '@optex/db/browser';
@@ -228,11 +229,13 @@ const Cart = () => {
                   style={{ boxShadow: '0px 1.13px 2.25px 0px rgba(0, 0, 0, 0.05)' }}
                 >
                   {/* Product Image */}
-                  <div className="flex h-[180px] w-[180px] shrink-0 items-center justify-center overflow-hidden rounded-[26px] bg-[#EEEEF0]">
-                    <img
+                  <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-[26px] bg-[#EEEEF0]">
+                    <Image
                       src={item.image || '/images/executive_pro.png'}
                       alt={item.title}
-                      className="max-h-full max-w-full object-contain"
+                      fill
+                      sizes="180px"
+                      className="object-contain"
                     />
                   </div>
 

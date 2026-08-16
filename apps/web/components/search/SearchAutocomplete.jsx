@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { formatKes } from '@optex/ui';
 import { api } from '@/lib/api';
@@ -204,9 +205,11 @@ export default function SearchAutocomplete({
                       i === highlight ? 'bg-[#f4f6f8]' : 'bg-white hover:bg-[#f4f6f8]'
                     }`}
                   >
-                    <img
+                    <Image
                       src={getProductImageUrl(product)}
                       alt=""
+                      width={44}
+                      height={44}
                       className="h-11 w-11 flex-shrink-0 rounded-lg bg-[#F5F5F5] object-cover"
                     />
                     <span className="min-w-0 flex-1">

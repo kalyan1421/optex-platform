@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCompare } from '@/context/CompareContext';
@@ -28,9 +29,15 @@ export default function CompareTray() {
                 type="button"
                 onClick={() => remove(item.id)}
                 title={`Remove ${item.name} from comparison`}
-                className="h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-[#F5F5F5] transition-opacity hover:opacity-70"
+                className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-[#F5F5F5] transition-opacity hover:opacity-70"
               >
-                <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                />
               </button>
             ))}
           </div>

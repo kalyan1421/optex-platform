@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatKesNumber } from '@optex/ui';
@@ -25,10 +26,12 @@ export default function SimilarProducts({ products }) {
         >
           <Link href={`/product/${p.slug}`}>
             <div className="relative mx-[0.8px] mt-[0.8px] h-[288.4px] w-[288.4px] overflow-hidden rounded-t-[32px] bg-[#F5F5F5]">
-              <img
+              <Image
                 src={getProductImageUrl(p)}
                 alt={p.name}
-                className="h-full w-full object-cover mix-blend-multiply"
+                fill
+                sizes="288px"
+                className="object-cover mix-blend-multiply"
               />
               <div className="absolute right-[16px] top-[16px] flex h-[26px] items-center justify-center rounded-[26843500px] bg-[#FFFFFFE5] px-[12px]">
                 <span

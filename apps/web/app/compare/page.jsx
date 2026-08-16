@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCompare } from '@/context/CompareContext';
 import { useCart } from '@/context/CartContext';
@@ -81,11 +82,13 @@ export default function ComparePage() {
                       >
                         &times;
                       </button>
-                      <div className="mb-3 flex h-[160px] w-full items-center justify-center overflow-hidden rounded-[20px] bg-[#F5F5F5]">
-                        <img
+                      <div className="relative mb-3 h-[160px] w-full overflow-hidden rounded-[20px] bg-[#F5F5F5]">
+                        <Image
                           src={item.image}
                           alt={item.name}
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="220px"
+                          className="object-cover"
                         />
                       </div>
                       <Link

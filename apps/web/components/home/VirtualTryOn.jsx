@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export default function VirtualTryOn() {
   return (
@@ -67,10 +68,13 @@ export default function VirtualTryOn() {
           data-aos="fade-left"
           className="relative z-10 flex w-full items-center justify-center p-6 lg:absolute lg:right-0 lg:top-[18.5px] lg:w-auto lg:p-0"
         >
-          <img
+          <Image
             src="/images/virtual-try-on.png"
             alt="Virtual Try On Interface"
-            className="w-full object-cover lg:h-[467px] lg:w-[697px]"
+            width={697}
+            height={467}
+            sizes="(min-width: 1024px) 697px, 100vw"
+            className="h-auto w-full object-cover lg:h-[467px] lg:w-[697px]"
             style={{ borderRadius: '24px' }}
           />
         </div>

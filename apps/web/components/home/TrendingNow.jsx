@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { publicApi } from '@/lib/api-server';
 import { getProductImageUrl } from '@/lib/product-image';
@@ -109,11 +110,13 @@ export default async function TrendingNow() {
                     productId={product.id}
                     className="absolute right-[12px] top-[12px] z-10"
                   />
-                  <Link href={`/product/${product.slug}`} className="block h-full w-full">
-                    <img
+                  <Link href={`/product/${product.slug}`} className="relative block h-full w-full">
+                    <Image
                       src={getProductImageUrl(product)}
                       alt={product.name}
-                      className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="262px"
+                      className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                       style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                     />
                   </Link>

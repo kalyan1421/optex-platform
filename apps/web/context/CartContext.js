@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { resolveImageUrl } from '@/lib/product-image';
 
 const CartContext = createContext();
 
@@ -21,7 +22,12 @@ function apiItemToCartItem(item) {
     productId: item.productId,
     title: item.product.name,
     price: String(item.product.priceKes),
-    image: item.product.image ?? '',
+    // The cart API returns the RAW stored path (product.images[0] server-side),
+    // not a displayable URL — seed products are `/seed/<name>.png`, which is
+    // meaningless outside the resolution table `resolveImageUrl` applies. Every
+    // other listing already goes through it via `getProductImageUrl`; this is
+    // the one place with a single path rather than a `product.images` array.
+    image: resolveImageUrl(item.product.image),
     quantity: item.quantity,
     brand: item.product.brand ?? '',
     variant: item.lensOption ? JSON.stringify(item.lensOption) : '',

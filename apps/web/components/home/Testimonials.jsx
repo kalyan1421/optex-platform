@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 /**
  * Not rendered on the homepage (see app/page.jsx) until real testimonials
@@ -100,9 +101,11 @@ const Testimonials = ({ testimonials = [] }) => {
                 className="mt-auto flex flex-shrink-0 flex-row items-center pt-[20px] lg:h-[69px] lg:w-[331.33px]"
                 style={{ gap: '16px', borderTop: '1px solid #D4D4D4' }}
               >
-                <img
+                <Image
                   src={item.image}
                   alt={item.name}
+                  width={48}
+                  height={48}
                   className="h-[48px] w-[48px] flex-shrink-0 object-cover"
                   style={{ borderRadius: '33554400px', backgroundColor: '#F5F5F5' }}
                 />

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { publicApi } from '@/lib/api-server';
 import { formatKes } from '@optex/ui';
@@ -217,10 +218,12 @@ function ProductCard({ product }) {
               </span>
             </div>
           </div>
-          <img
+          <Image
             src={image}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            fill
+            sizes="(min-width: 1024px) 22vw, 45vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
         </div>
       </Link>

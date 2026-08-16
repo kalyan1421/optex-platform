@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const WhyOptex = () => {
   const features = [
@@ -36,10 +37,12 @@ const WhyOptex = () => {
           data-aos="fade-right"
           className="relative w-full flex-shrink-0 lg:h-[664.375px] lg:w-[531.5px]"
         >
-          <img
+          <Image
             src="/images/why-aptox.png"
             alt="Professional Optometrist"
-            className="h-full w-full object-cover"
+            fill
+            sizes="(min-width: 1024px) 532px, 100vw"
+            className="object-cover"
             style={{
               borderRadius: '40px',
               boxShadow: '0px 25px 50px -12px rgba(0,0,0,0.25)',

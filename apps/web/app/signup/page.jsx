@@ -180,7 +180,14 @@ const Signup = () => {
     <div className="flex min-h-screen flex-col items-center bg-[#F9F9FC] px-[54px] pb-[162px] pt-[95px]">
       <div className="mb-[36px] flex w-full max-w-[504px] flex-col items-center gap-[7.88px] text-center">
         <Link href="/">
-          <img src="/images/Logo.png" alt="Optex" className="h-[93px] w-[112px] object-contain" />
+          <Image
+            src="/images/Logo.png"
+            alt="Optex"
+            width={112}
+            height={93}
+            priority
+            className="h-[93px] w-[112px] object-contain"
+          />
         </Link>
         <p
           className="text-[#464652]"

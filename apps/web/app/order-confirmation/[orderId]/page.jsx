@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { formatKes, formatKesNumber } from '@optex/ui';
+import { getProductImageUrl } from '@/lib/product-image';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -354,15 +356,17 @@ export default function Page() {
               <div className="flex flex-col gap-4">
                 {(order.order_items ?? []).map((item) => {
                   const product = item.product ?? {};
-                  const imgSrc = Array.isArray(product.images) ? product.images[0] : null;
+                  const hasImage = Array.isArray(product.images) && product.images.length > 0;
                   return (
                     <div key={item.id} className="flex items-center gap-4">
-                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
-                        {imgSrc ? (
-                          <img
-                            src={imgSrc}
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                        {hasImage ? (
+                          <Image
+                            src={getProductImageUrl(product)}
                             alt={product.name}
-                            className="h-full w-full object-contain p-2"
+                            fill
+                            sizes="64px"
+                            className="object-contain p-2"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-2xl text-gray-300">

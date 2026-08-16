@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { formatKes } from '@optex/ui';
@@ -135,10 +136,12 @@ export default function ShopBrowser({ products, categories }) {
                     href={`/product/${product.slug}`}
                     className="relative block h-full w-full overflow-hidden"
                   >
-                    <img
+                    <Image
                       src={getProductImageUrl(product)}
                       alt={product.name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(min-width: 1024px) 22vw, 45vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </Link>
                 </div>

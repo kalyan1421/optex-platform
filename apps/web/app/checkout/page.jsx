@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -911,10 +912,12 @@ export default function Page() {
                   items.map((item, index) => (
                     <div key={`${item.id}-${index}`} className="flex items-start gap-[18px]">
                       <div className="relative h-[90px] w-[90px] flex-shrink-0 rounded-[18px] border-[0.8px] border-[#D4D4D4] bg-[#F5F5F5] p-[0.8px]">
-                        <img
+                        <Image
                           src={item.image}
                           alt={item.title}
-                          className="h-full w-full rounded-[18px] object-cover mix-blend-multiply"
+                          fill
+                          sizes="90px"
+                          className="rounded-[18px] object-cover mix-blend-multiply"
                         />
                         <span
                           className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-[26843500px] bg-[#E53935] text-[12px] font-bold text-white shadow-sm"

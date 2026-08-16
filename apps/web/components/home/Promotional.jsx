@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const Promotional = () => {
   return (
@@ -10,10 +11,12 @@ const Promotional = () => {
           className="group relative flex w-full cursor-pointer flex-col overflow-hidden lg:h-[500px] lg:w-[604px]"
           style={{ borderRadius: '40px', backgroundColor: '#1A1A1A' }}
         >
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=1000&auto=format&fit=crop"
             alt="Winter Shades"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
+            fill
+            sizes="(min-width: 1024px) 604px, 100vw"
+            className="object-cover transition-transform duration-1000 group-hover:scale-105"
           />
           {/* Horizontal dark gradient overlay */}
           <div
@@ -91,10 +94,12 @@ const Promotional = () => {
           className="group relative flex w-full cursor-pointer flex-col overflow-hidden lg:h-[500px] lg:w-[604px]"
           style={{ borderRadius: '40px', backgroundColor: '#2E3192' }}
         >
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=1000&auto=format&fit=crop"
             alt="Designer Frames"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
+            fill
+            sizes="(min-width: 1024px) 604px, 100vw"
+            className="object-cover transition-transform duration-1000 group-hover:scale-105"
           />
           {/* Horizontal blueish gradient overlay */}
           <div

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { getProductImageUrl } from '@/lib/product-image';
@@ -35,13 +36,15 @@ export default function FeaturedProductsGrid({ products }) {
             />
             <Link
               href={`/product/${product.slug}`}
-              className="block h-full w-full overflow-hidden bg-[#F5F5F5]"
+              className="relative block h-full w-full overflow-hidden bg-[#F5F5F5]"
               style={{ borderRadius: '31px 31px 0 0' }}
             >
-              <img
+              <Image
                 src={getProductImageUrl(product)}
                 alt={product.name}
-                className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                fill
+                sizes="(min-width: 1024px) 289px, 45vw"
+                className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                 style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
               />
             </Link>

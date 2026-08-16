@@ -142,9 +142,12 @@ export default function Navbar() {
       <div className="mx-auto flex h-full w-full max-w-[1440px] items-center gap-4 px-4 sm:px-10 lg:justify-between lg:gap-0 lg:px-[100px]">
         <div className="flex h-full flex-shrink-0 items-center">
           <Link href="/" className="flex h-full items-center">
-            <img
+            <Image
               src="/images/Logo.png"
               alt="Optex"
+              width={448}
+              height={372}
+              priority
               className="h-full w-auto object-contain transition-all duration-500 ease-in-out"
               style={{ maxHeight: isCompactNav ? '39px' : '99px' }}
             />

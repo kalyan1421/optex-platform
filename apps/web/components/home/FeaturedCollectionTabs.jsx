@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { getProductImageUrl } from '@/lib/product-image';
 import WishlistToggle from '@/components/wishlist/WishlistToggle';
@@ -68,10 +69,12 @@ export default function FeaturedCollectionTabs({ products, categories }) {
             >
               {/* Inner image area — fills full card */}
               <div className="relative flex-1 overflow-hidden rounded-[28px]">
-                <img
+                <Image
                   src={cat.image}
                   alt={cat.name}
-                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                  fill
+                  sizes="(min-width: 1024px) 370px, 100vw"
+                  className="object-cover transition-transform duration-500 hover:scale-105"
                 />
               </div>
               {/* Label below image */}
@@ -148,12 +151,14 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                 {/* Image */}
                 <Link
                   href={`/product/${product.slug}`}
-                  className="block h-full w-full cursor-pointer"
+                  className="relative block h-full w-full cursor-pointer"
                 >
-                  <img
+                  <Image
                     src={getProductImageUrl(product)}
                     alt={product.name}
-                    className={`h-full w-full mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
+                    fill
+                    sizes="242px"
+                    className={`mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
                       activeCategory === 'lens' ? 'object-contain' : 'object-cover'
                     }`}
                     style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
