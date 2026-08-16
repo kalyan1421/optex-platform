@@ -139,8 +139,18 @@ jobs:
       # API at build and revalidation time, so the API has to be up before the
       # build runs. Before Wave 4 the page read Supabase from the browser and
       # this job never needed it.
+      #
+      # AUTH_RATE_LIMIT raised from the 10/min production default (F-01): this
+      # suite signs up a real throwaway account per test across several spec
+      # files (appointments-booking, promo-redemption, wishlist,
+      # checkout-authenticated, cart-merge) and runs them sequentially, which
+      # adds up to more than 10 signups inside one run — enough to trip the
+      # same ceiling that stops credential stuffing and turn a passing suite
+      # into a stray, unrelated-looking 429 on whichever test signs up 11th.
       - name: Start the API
         run: docker compose up -d --build api
+        env:
+          AUTH_RATE_LIMIT: '200'
 
       - name: Wait for the API
         run: |

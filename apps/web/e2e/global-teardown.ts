@@ -17,6 +17,11 @@ import { getTestDb } from './lib/test-db';
  * `customers.auth_user_id`, which does) — an order left behind would make
  * the auth-user delete 409 on the cascade to `customers`, so any orders for
  * a stale customer must be deleted first.
+ *
+ * `appointments-booking.spec.ts` adds the same problem for a different table:
+ * a real `POST /appointments` commits a row referencing `customer_id` via
+ * `appointments_customer_id_fkey`, which is equally not `ON DELETE CASCADE`.
+ * Same fix, same reason.
  */
 export default async function globalTeardown(): Promise<void> {
   const db = getTestDb();
@@ -45,6 +50,12 @@ export default async function globalTeardown(): Promise<void> {
         .delete()
         .in('customer_id', customerIds);
       if (ordersError) throw ordersError;
+
+      const { error: appointmentsError } = await db
+        .from('appointments')
+        .delete()
+        .in('customer_id', customerIds);
+      if (appointmentsError) throw appointmentsError;
     }
   }
 

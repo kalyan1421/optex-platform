@@ -27,7 +27,7 @@
 x-supabase-common: &supabase-common
   POSTGRES_PASSWORD: your-super-secret-and-long-postgres-password
   POSTGRES_HOST: supabase-db
-  POSTGRES_PORT: "5432"
+  POSTGRES_PORT: '5432'
   POSTGRES_DB: postgres
   JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
   ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM
@@ -45,16 +45,16 @@ services:
       retries: 10
       start_period: 30s
     ports:
-      - "54322:5432"
+      - '54322:5432'
     environment:
       POSTGRES_HOST: /var/run/postgresql
-      PGPORT: "5432"
-      POSTGRES_PORT: "5432"
+      PGPORT: '5432'
+      POSTGRES_PORT: '5432'
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: your-super-secret-and-long-postgres-password
       PGPASSWORD: your-super-secret-and-long-postgres-password
       JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-      JWT_EXP: "3600"
+      JWT_EXP: '3600'
     volumes:
       - supabase-db-data:/var/lib/postgresql/data
     command:
@@ -77,12 +77,12 @@ services:
         condition: service_healthy
     environment:
       PGHOST: supabase-db
-      PGPORT: "5432"
+      PGPORT: '5432'
       PGDATABASE: postgres
       PGPASSWORD: your-super-secret-and-long-postgres-password
     volumes:
       - ./docker/set-role-passwords.sh:/set-role-passwords.sh:ro
-    command: ["sh", "/set-role-passwords.sh"]
+    command: ['sh', '/set-role-passwords.sh']
 
   # ─── MIGRATIONS (one-shot, idempotent) ────────────────────────────────────
   supabase-migrate:
@@ -102,7 +102,7 @@ services:
         condition: service_healthy
     environment:
       PGHOST: supabase-db
-      PGPORT: "5432"
+      PGPORT: '5432'
       PGUSER: postgres
       PGDATABASE: postgres
       PGPASSWORD: your-super-secret-and-long-postgres-password
@@ -110,7 +110,7 @@ services:
       - ./Backend/supabase/migrations:/migrations:ro
       - ./Backend/supabase/seed.sql:/seed.sql:ro
       - ./docker/migrate.sh:/migrate.sh:ro
-    command: ["sh", "/migrate.sh"]
+    command: ['sh', '/migrate.sh']
 
   # ─── GOTRUE AUTH ────────────────────────────────────────────────────────────
   supabase-auth:
@@ -122,28 +122,28 @@ services:
       supabase-roles:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:9999/health']
       interval: 5s
       timeout: 5s
       retries: 3
       start_period: 60s
     environment:
       GOTRUE_API_HOST: 0.0.0.0
-      GOTRUE_API_PORT: "9999"
+      GOTRUE_API_PORT: '9999'
       API_EXTERNAL_URL: http://localhost:54321
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
       GOTRUE_SITE_URL: http://localhost:1112
-      GOTRUE_URI_ALLOW_LIST: "http://localhost:1112,http://localhost:1113,https://optex-staging.vercel.app"
-      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_URI_ALLOW_LIST: 'http://localhost:1112,http://localhost:1113,https://optex-staging.vercel.app'
+      GOTRUE_DISABLE_SIGNUP: 'false'
       GOTRUE_JWT_ADMIN_ROLES: service_role
       GOTRUE_JWT_AUD: authenticated
       GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
-      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_EXP: '3600'
       GOTRUE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
-      GOTRUE_MAILER_AUTOCONFIRM: "true"
-      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true'
+      GOTRUE_MAILER_AUTOCONFIRM: 'true'
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: 'false'
       GOTRUE_LOG_LEVEL: ERROR
       GOTRUE_MAILER_URLPATHS_INVITE: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
@@ -164,9 +164,9 @@ services:
       PGRST_DB_SCHEMAS: public,storage
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_DB_USE_LEGACY_GUCS: 'false'
       PGRST_APP_SETTINGS_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-      PGRST_APP_SETTINGS_JWT_EXP: "3600"
+      PGRST_APP_SETTINGS_JWT_EXP: '3600'
     command: postgrest
 
   # ─── STORAGE ──────────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ services:
     healthcheck:
       # 127.0.0.1, not localhost — this image resolves localhost to ::1 first,
       # but the server only binds IPv4 0.0.0.0, so ::1 gets connection refused.
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/status"]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:5000/status']
       interval: 5s
       timeout: 5s
       retries: 3
@@ -194,13 +194,13 @@ services:
       POSTGREST_URL: http://supabase-rest:3000
       PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
       DATABASE_URL: postgres://supabase_storage_admin:your-super-secret-and-long-postgres-password@supabase-db:5432/postgres
-      FILE_SIZE_LIMIT: "52428800"
+      FILE_SIZE_LIMIT: '52428800'
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
       REGION: local
       GLOBAL_S3_BUCKET: local
-      ENABLE_IMAGE_TRANSFORMATION: "false"
+      ENABLE_IMAGE_TRANSFORMATION: 'false'
     volumes:
       - supabase-storage-data:/var/lib/storage
 
@@ -212,9 +212,9 @@ services:
       supabase-db:
         condition: service_healthy
     environment:
-      PG_META_PORT: "8080"
+      PG_META_PORT: '8080'
       PG_META_DB_HOST: supabase-db
-      PG_META_DB_PORT: "5432"
+      PG_META_DB_PORT: '5432'
       PG_META_DB_NAME: postgres
       PG_META_DB_USER: supabase_admin
       PG_META_DB_PASSWORD: your-super-secret-and-long-postgres-password
@@ -229,9 +229,9 @@ services:
       supabase-rest:
         condition: service_started
     ports:
-      - "54321:8000/tcp"
+      - '54321:8000/tcp'
     environment:
-      KONG_DATABASE: "off"
+      KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
       KONG_DEFAULT_ERROR_MESSAGE_FORMAT: json
       KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
@@ -240,7 +240,7 @@ services:
     volumes:
       - ./docker/kong.yml:/var/lib/kong/kong.yml:ro
     healthcheck:
-      test: ["CMD", "kong", "health"]
+      test: ['CMD', 'kong', 'health']
       interval: 10s
       timeout: 10s
       retries: 3
@@ -254,7 +254,7 @@ services:
       supabase-kong:
         condition: service_healthy
     ports:
-      - "54323:3000"
+      - '54323:3000'
     environment:
       HOSTNAME: 0.0.0.0
       STUDIO_PG_META_URL: http://supabase-meta:8080
@@ -266,7 +266,7 @@ services:
       SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM
       SUPABASE_SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE
       AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
-      LOGFLARE_LOGGER_BACKEND_API_KEY: ""
+      LOGFLARE_LOGGER_BACKEND_API_KEY: ''
       LOGFLARE_API_URL: http://localhost
 
   # ─── OPTEX NESTJS API ─────────────────────────────────────────────────────
@@ -291,16 +291,26 @@ services:
       # 1111, matching `pnpm dev:api` and CLAUDE.md. This service was still on
       # 4000 — one of the stale ports c068fa9 set out to remove — which meant
       # the containerised API answered somewhere nothing was configured to look.
-      PORT: "1111"
+      PORT: '1111'
       SUPABASE_URL: http://supabase-kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      # Production-safe 10/min by default (F-01) — see AuthController. The
+      # storefront's own Playwright suite (`smoke` CI job) signs up a real
+      # throwaway account per test across several spec files and runs them
+      # sequentially, which adds up to more than 10 signups inside one run and
+      # trips the same ceiling that stops credential stuffing. CI overrides
+      # this via the workflow's own `AUTH_RATE_LIMIT` env var; local runs of
+      # `pnpm --filter @optex/web test:e2e` inherit the container default and
+      # should export the same override first if the full suite is flaking on
+      # a stray 429 during signup.
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-10}
     ports:
-      - "1111:1111"
+      - '1111:1111'
     init: true
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:1111/api/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:1111/api/health']
       interval: 30s
       timeout: 5s
       start_period: 20s
