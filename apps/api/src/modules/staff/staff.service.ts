@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import type { AuthUser } from '../../auth/auth-user';
-import type { AdminStaffDto } from './dto/staff.dto';
+import type { AdminStaffDto, RoleDto } from './dto/staff.dto';
 import type { CreateStaffDto } from './dto/create-staff.dto';
 import type { UpdateStaffDto } from './dto/update-staff.dto';
 import type { StaffStatus } from './dto/set-staff-status.dto';
@@ -65,6 +65,20 @@ export class StaffService {
     }
 
     return (data ?? []).map((row) => this.toDto(row as unknown as RawStaffRow));
+  }
+
+  /** The 7 roles, for the Staff page's role picker. */
+  async listRoles(): Promise<RoleDto[]> {
+    const { data, error } = await this.supabase.client
+      .from('roles')
+      .select('id, name, description, is_branch_scoped')
+      .order('name', { ascending: true });
+
+    if (error) {
+      this.logger.error(`Failed to list roles: ${error.message}`);
+      throw new InternalServerErrorException('Failed to load roles');
+    }
+    return (data ?? []) as RoleDto[];
   }
 
   /**

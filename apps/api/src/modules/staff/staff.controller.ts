@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swa
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { StaffService } from './staff.service';
-import { AdminStaffDto } from './dto/staff.dto';
+import { AdminStaffDto, RoleDto } from './dto/staff.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { SetStaffStatusDto } from './dto/set-staff-status.dto';
@@ -28,6 +28,13 @@ export class StaffController {
   @ApiOkResponse({ type: [AdminStaffDto], description: 'Staff, newest first' })
   list(): Promise<AdminStaffDto[]> {
     return this.staff.listForAdmin();
+  }
+
+  @Get('roles')
+  @ApiOperation({ summary: 'List the 7 roles, for the role picker' })
+  @ApiOkResponse({ type: [RoleDto], description: 'Roles, alphabetical' })
+  listRoles(): Promise<RoleDto[]> {
+    return this.staff.listRoles();
   }
 
   @Post()

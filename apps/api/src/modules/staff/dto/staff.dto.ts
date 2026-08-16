@@ -41,3 +41,23 @@ export class AdminStaffDto {
   @ApiProperty({ description: 'When this staff account was created (ISO 8601).' })
   created_at!: string;
 }
+
+/**
+ * A `roles` row, for populating the role picker in the Staff admin page.
+ * Exposed via the API rather than hardcoded in the frontend — SPEC-08's
+ * "adding a role must not require a deploy" only holds end-to-end if the UI
+ * reads the role list from the database too.
+ */
+export class RoleDto {
+  @ApiProperty({ description: 'Role id, e.g. "branch_manager".' })
+  id!: string;
+
+  @ApiProperty({ description: 'Human-readable name, e.g. "Branch Manager".' })
+  name!: string;
+
+  @ApiProperty({ description: 'What this role is for.' })
+  description!: string;
+
+  @ApiProperty({ description: 'Whether this role requires a branch assignment.' })
+  is_branch_scoped!: boolean;
+}

@@ -90,6 +90,18 @@ describe('Admin staff directory (e2e)', () => {
       .expect(403);
   });
 
+  it('lists the 7 seeded roles for the role picker', async () => {
+    const token = await newSuperAdmin();
+    const res = await request(app.getHttpServer())
+      .get('/api/admin/staff/roles')
+      .set(auth(token))
+      .expect(200);
+
+    expect(res.body).toHaveLength(7);
+    const branchManager = res.body.find((r: { id: string }) => r.id === 'branch_manager');
+    expect(branchManager.is_branch_scoped).toBe(true);
+  });
+
   it('rejects creating a branch-scoped role with no branch', async () => {
     const token = await newSuperAdmin();
     await request(app.getHttpServer())
