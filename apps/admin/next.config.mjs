@@ -41,6 +41,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'picsum.photos' },
       { protocol: 'https', hostname: 'via.placeholder.com' },
       { protocol: 'https', hostname: 'placehold.co' },
+      // Reference product photos from the client's catalogue spreadsheet —
+      // see migration 0030_client_catalog_import.sql.
+      { protocol: 'https', hostname: 'lens2cart.com' },
     ],
   },
   async rewrites() {
