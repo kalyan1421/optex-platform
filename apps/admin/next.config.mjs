@@ -2,8 +2,13 @@
 // (1111); override with API_PROXY_ORIGIN when the API is elsewhere, e.g.
 // http://127.0.0.1:4000 for the Docker container or an internal service URL.
 // 127.0.0.1 rather than localhost to avoid Node IPv6 resolution quirks.
-const API_PROXY_ORIGIN =
-  process.env.API_PROXY_ORIGIN || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:1111';
+// Trailing slash stripped: a value like "https://api.example.com/" turns the
+// rewrite destination below into "https://api.example.com//api/:path*" — a
+// double slash Nest's router treats as a different, nonexistent path, so
+// every proxied request silently 404s with no build-time or runtime warning.
+const API_PROXY_ORIGIN = (
+  process.env.API_PROXY_ORIGIN || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:1111'
+).replace(/\/+$/, '');
 
 /**
  * Origin of the Supabase instance the BROWSER talks to, for the CSP below.
