@@ -16,18 +16,29 @@ export default function ProductPurchasePanel({ product, mainImage }) {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState('black');
+  const [addingToCart, setAddingToCart] = useState(false);
 
-  function handleAddToCart() {
-    addToCart({
-      id: product.id,
-      title: product.name,
-      price: String(product.price_kes),
-      image: mainImage,
-      quantity,
-      variant: `Frame: ${selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1)} | Lens: Standard`,
-      brand: product.brand,
-    });
-    router.push('/cart');
+  // Awaited and guarded by `addingToCart` — a bare fire-and-forget call here
+  // let a fast double-click/tap queue two adds before the first landed, and
+  // navigating to /cart before the request settled raced the cart's own
+  // server read against it.
+  async function handleAddToCart() {
+    if (addingToCart) return;
+    setAddingToCart(true);
+    try {
+      await addToCart({
+        id: product.id,
+        title: product.name,
+        price: String(product.price_kes),
+        image: mainImage,
+        quantity,
+        variant: `Frame: ${selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1)} | Lens: Standard`,
+        brand: product.brand,
+      });
+      router.push('/cart');
+    } finally {
+      setAddingToCart(false);
+    }
   }
 
   return (
@@ -90,7 +101,8 @@ export default function ProductPurchasePanel({ product, mainImage }) {
         </div>
         <button
           onClick={handleAddToCart}
-          className="flex h-[63px] w-[300.4px] items-center justify-center gap-[10px] rounded-[26843500px] bg-[#2E3192] text-[#FFFFFF] transition-all hover:bg-[#1e2361]"
+          disabled={addingToCart}
+          className="flex h-[63px] w-[300.4px] items-center justify-center gap-[10px] rounded-[26843500px] bg-[#2E3192] text-[#FFFFFF] transition-all hover:bg-[#1e2361] disabled:cursor-not-allowed disabled:opacity-60"
           style={{
             fontFamily: 'Poppins, sans-serif',
             fontWeight: 700,

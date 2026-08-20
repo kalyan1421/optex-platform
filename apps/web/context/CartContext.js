@@ -95,12 +95,6 @@ export const CartProvider = ({ children }) => {
   // sees `user == null` in both cases, but only the second should empty a cart.
   const wasAuthedRef = useRef(false);
 
-  // Mirrors `items` so the sign-in effect can read the guest cart without
-  // listing `items` as a dependency — which would re-run the whole merge every
-  // time the cart changed.
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
-
   // Restore the guest cart after mount rather than in the initial state, so
   // the server-rendered HTML and the first client render agree. Reading
   // localStorage during render would hydrate a different tree than the server
@@ -161,12 +155,14 @@ export const CartProvider = ({ children }) => {
      * either way, so what the customer sees is always what the server holds.
      */
     async function loadAndMerge() {
-      // Prefer storage over React state: on a fresh page load the sign-in
-      // effect can run before the hydration effect has copied the stored cart
-      // into state, and the stored copy is the one that survived the reload.
+      // Storage, not React state: `items` can already reflect the SERVER's
+      // cart by the time this runs (a concurrent `applyCart` call can win the
+      // race), and that is not an unmerged guest cart — re-adding it here
+      // silently doubled every line's quantity on a plain page reload/nav.
+      // `writeGuestCart` never writes while signed in, so storage is the one
+      // reliable signal that these lines genuinely predate this sign-in.
       const stored = readGuestCart();
-      const guestLines = stored.length > 0 ? stored : itemsRef.current;
-      const shouldMerge = guestLines.length > 0 && !mergingRef.current;
+      const shouldMerge = stored.length > 0 && !mergingRef.current;
 
       if (shouldMerge) {
         mergingRef.current = true;
@@ -174,7 +170,7 @@ export const CartProvider = ({ children }) => {
         // must not leave lines that a later sign-in would add a second time —
         // losing a line is recoverable, silently doubling an order is not.
         writeGuestCart([]);
-        for (const line of guestLines) {
+        for (const line of stored) {
           if (cancelled) return;
           try {
             await api.cart.addItem({

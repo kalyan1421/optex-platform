@@ -107,8 +107,10 @@ const nextConfig = {
               // the whole site renders in Times New Roman.
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Product images come from Supabase Storage; data: covers inlined
-              // placeholders and blob: the client-side previews.
-              "img-src 'self' data: blob: https:",
+              // placeholders and blob: the client-side previews. `https:` alone
+              // misses local Docker Supabase, which serves storage over plain
+              // http on :54321 — the explicit origin covers that dev case too.
+              `img-src 'self' data: blob: https: ${supabaseOrigin()}`.trim(),
               // The face files themselves come from the gstatic host, which is
               // a different origin to the stylesheet above.
               "font-src 'self' data: https://fonts.gstatic.com",
