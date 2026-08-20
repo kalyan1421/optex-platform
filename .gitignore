@@ -20,6 +20,7 @@ build/
 # supabase
 Backend/supabase/.branches/
 Backend/supabase/.temp/
+supabase/.temp/
 
 # Frontend/ has its own .git — exclude from this repo
 Frontend/
