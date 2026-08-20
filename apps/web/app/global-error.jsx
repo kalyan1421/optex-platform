@@ -54,7 +54,7 @@ export default function GlobalError({ error, reset }) {
             Reload
           </button>
           <p style={{ fontSize: '13px', color: '#868CA1', margin: '28px 0 0' }}>
-            Need help now? Call <a href="tel:+254700000000">+254 700 000 000</a>.
+            Need help now? Call <a href="tel:+254700897007">+254 700 897 007</a>.
           </p>
           {error?.digest ? (
             <p style={{ fontSize: '12px', color: '#A0A6BC', margin: '14px 0 0' }}>

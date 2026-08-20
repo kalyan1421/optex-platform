@@ -53,7 +53,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
   const activeProducts = getProductsForTab(activeCategory);
 
   return (
-    <div className="flex flex-col lg:w-[1143px] lg:gap-[40px]">
+    <div className="flex flex-col gap-8 lg:w-[1143px] lg:gap-[40px]">
       {/* Categories Section */}
       <div className="flex w-full flex-row justify-center gap-3 lg:h-[144px] lg:w-[1143px] lg:gap-[16px]">
         {UI_CATEGORIES.map((cat, index) => {
@@ -158,9 +158,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                     alt={product.name}
                     fill
                     sizes="(min-width: 1024px) 242px, (min-width: 640px) 45vw, 90vw"
-                    className={`mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
-                      activeCategory === 'lens' ? 'object-contain' : 'object-cover'
-                    }`}
+                    className="mix-blend-multiply object-contain transition-transform duration-500 group-hover:scale-105"
                     style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                   />
                 </Link>

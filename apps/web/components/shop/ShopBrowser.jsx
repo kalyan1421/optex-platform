@@ -141,7 +141,7 @@ export default function ShopBrowser({ products, categories }) {
                       alt={product.name}
                       fill
                       sizes="(min-width: 1024px) 22vw, 45vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="object-contain transition-transform duration-500 group-hover:scale-105"
                     />
                   </Link>
                 </div>

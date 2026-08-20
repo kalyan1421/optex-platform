@@ -187,7 +187,7 @@ export default function DeliveryPage() {
             <Link href="/contact" className="font-bold text-[#2A3182] hover:underline">
               Contact our support team
             </Link>{' '}
-            or call us at <span className="font-semibold text-[#2A3182]">+254 700 000 000</span>.
+            or call us at <span className="font-semibold text-[#2A3182]">+254 700 897 007</span>.
           </p>
         </section>
       </div>

@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import { api } from '../../lib/api';
 import { buildMapUrl } from '../../lib/maps';
 
-// Nairobi CBD branch — see Backend/supabase/seed.sql ('nairobi-cbd') for the
-// source record. Single copy so the visible address and the embedded map
-// can't drift apart.
+// Optex Opticians headquarters, per the client (2026-08-20). Single copy so
+// the visible address and the embedded map can't drift apart. No lat/lng on
+// file for this address — buildMapUrl() falls back to geocoding the address
+// text itself, which is more accurate than a guessed coordinate pair.
 const MAIN_BRANCH = {
-  address: 'Tom Mboya Street, Nairobi, Kenya',
-  lat: -1.286389,
-  lng: 36.817223,
+  address: "Krishna Park, next to Doctor's Park, 3rd Parklands, Nairobi, Kenya",
 };
 
 // SVG Icons for Contact Details
@@ -449,7 +448,7 @@ const Contact = () => {
                       lineHeight: '21px',
                     }}
                   >
-                    +254 700 000 000
+                    +254 700 897 007 / +254 704 520 201
                   </p>
                 </div>
               </div>
@@ -483,7 +482,7 @@ const Contact = () => {
                       lineHeight: '21px',
                     }}
                   >
-                    optexopticians@gmail.com
+                    optexopticals@gmail.com
                   </p>
                 </div>
               </div>

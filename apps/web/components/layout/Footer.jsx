@@ -72,7 +72,7 @@ const Footer = () => {
                     lineHeight: '21px',
                   }}
                 >
-                  +254 700 000 000
+                  +254 700 897 007 / +254 704 520 201
                 </span>
               </div>
 
@@ -111,7 +111,7 @@ const Footer = () => {
                     lineHeight: '21px',
                   }}
                 >
-                  optexopticians@gmail.com
+                  optexopticals@gmail.com
                 </span>
               </div>
 
@@ -163,7 +163,7 @@ const Footer = () => {
                     maxWidth: '211px',
                   }}
                 >
-                  Optical Plaza, Nairobi, Kenya
+                  Krishna Park, next to Doctor's Park, 3rd Parklands, Nairobi, Kenya
                 </span>
               </div>
             </div>

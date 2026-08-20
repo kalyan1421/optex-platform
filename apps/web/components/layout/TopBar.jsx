@@ -24,7 +24,7 @@ export default function TopBar() {
         <div className="hidden flex-shrink-0 flex-row items-center gap-2 lg:flex lg:w-[197px]">
           <MailIcon />
           <a
-            href="mailto:optexopticians@gmail.com"
+            href="mailto:optexopticals@gmail.com"
             style={{
               fontFamily: 'Montserrat, sans-serif',
               fontWeight: 400,
@@ -35,7 +35,7 @@ export default function TopBar() {
               textDecoration: 'none',
             }}
           >
-            optexopticians@gmail.com
+            optexopticals@gmail.com
           </a>
         </div>
 
@@ -61,7 +61,7 @@ export default function TopBar() {
         >
           <PhoneIcon />
           <a
-            href="tel:+254700000000"
+            href="tel:+254700897007"
             style={{
               fontFamily: 'Montserrat, sans-serif',
               fontWeight: 400,
@@ -72,7 +72,7 @@ export default function TopBar() {
               textDecoration: 'none',
             }}
           >
-            +254 700 000 000
+            +254 700 897 007
           </a>
         </div>
       </div>

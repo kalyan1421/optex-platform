@@ -550,11 +550,14 @@ export default function EyeCarePage() {
                 <p className="font-poppins text-[13px] font-normal leading-[22.1px] text-[#FFE0DE]">
                   Call our care line and an optometrist will walk you through the form.
                 </p>
-                <button className="mt-auto flex h-[54.5px] w-full items-center justify-center rounded-[40px] border border-[#FFFFFFB2] transition-colors hover:bg-white/10">
+                <a
+                  href="tel:+254700897007"
+                  className="mt-auto flex h-[54.5px] w-full items-center justify-center rounded-[40px] border border-[#FFFFFFB2] transition-colors hover:bg-white/10"
+                >
                   <span className="font-poppins text-center text-[14.5px] font-semibold leading-[100%] text-white">
-                    Call +254 700 000 000
+                    Call +254 700 897 007
                   </span>
-                </button>
+                </a>
               </div>
             </div>
           </div>

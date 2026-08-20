@@ -44,7 +44,7 @@ export default function FeaturedProductsGrid({ products }) {
                 alt={product.name}
                 fill
                 sizes="(min-width: 1024px) 289px, 45vw"
-                className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                className="object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                 style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
               />
             </Link>

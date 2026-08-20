@@ -31,7 +31,7 @@ export default function SimilarProducts({ products }) {
                 alt={p.name}
                 fill
                 sizes="288px"
-                className="object-cover mix-blend-multiply"
+                className="object-contain mix-blend-multiply"
               />
               <div className="absolute right-[16px] top-[16px] flex h-[26px] items-center justify-center rounded-[26843500px] bg-[#FFFFFFE5] px-[12px]">
                 <span

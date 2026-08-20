@@ -38,18 +38,14 @@ export default function RootLayout({ children }) {
               description:
                 "Kenya's premium eyewear retailer. Prescription glasses, sunglasses, contact lenses & eye care services.",
               url: 'https://optexopticians.co.ke',
-              telephone: '+254 700 000 000',
-              email: 'hello@optexopticians.co.ke',
+              telephone: '+254 700 897 007',
+              email: 'optexopticals@gmail.com',
               address: {
                 '@type': 'PostalAddress',
+                streetAddress: "Krishna Park, next to Doctor's Park, 3rd Parklands",
                 addressCountry: 'KE',
                 addressLocality: 'Nairobi',
                 addressRegion: 'Nairobi County',
-              },
-              geo: {
-                '@type': 'GeoCoordinates',
-                latitude: -1.2921,
-                longitude: 36.8219,
               },
               openingHoursSpecification: [
                 {

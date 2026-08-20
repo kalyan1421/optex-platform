@@ -51,8 +51,8 @@ export default function Error({ error, reset }) {
 
       <p className="mt-8 text-[13px] text-gray-500">
         Still stuck? Call us on{' '}
-        <a className="underline" href="tel:+254700000000">
-          +254 700 000 000
+        <a className="underline" href="tel:+254700897007">
+          +254 700 897 007
         </a>{' '}
         or{' '}
         <Link className="underline" href="/contact">

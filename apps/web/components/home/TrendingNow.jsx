@@ -76,13 +76,13 @@ export default async function TrendingNow() {
 
         {/* Product Grid */}
         {products.length > 0 ? (
-          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:flex-wrap lg:h-[381.75px] lg:w-[1240px] lg:flex-nowrap lg:gap-0">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:flex lg:h-[381.75px] lg:w-[1240px] lg:grid-cols-none lg:flex-nowrap lg:gap-0">
             {products.map((product, index) => (
               <div
                 key={product.id}
                 data-aos="fade-up"
                 data-aos-delay={index * 100}
-                className="group flex flex-col lg:h-[381.75px] lg:w-[261.75px] lg:gap-[24px]"
+                className="group flex flex-col gap-3 lg:h-[381.75px] lg:w-[261.75px] lg:gap-[24px]"
               >
                 {/* Image Block */}
                 <div
@@ -116,7 +116,7 @@ export default async function TrendingNow() {
                       alt={product.name}
                       fill
                       sizes="262px"
-                      className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                      className="object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                       style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                     />
                   </Link>

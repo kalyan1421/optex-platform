@@ -234,7 +234,7 @@ export default async function Page({ params }) {
                 fill
                 priority
                 sizes="(min-width: 1024px) 590px, 100vw"
-                className="rounded-[40px] object-cover transition-transform duration-500 hover:scale-105"
+                className="rounded-[40px] object-contain transition-transform duration-500 hover:scale-105"
               />
             </div>
             <div className="flex w-full snap-x snap-mandatory gap-[16px] overflow-x-auto">
@@ -248,7 +248,7 @@ export default async function Page({ params }) {
                     alt={`Thumbnail ${idx + 1}`}
                     fill
                     sizes="103px"
-                    className="rounded-[16px] object-cover"
+                    className="rounded-[16px] object-contain"
                   />
                 </div>
               ))}
