@@ -115,6 +115,15 @@ const nextConfig = {
               // Same-origin for the API (the /api rewrite proxies onward), plus
               // the Supabase origin the browser client authenticates against.
               `connect-src 'self' ${supabaseOrigin()}`.trim(),
+              // The branch locator and the contact page both embed a Google
+              // Maps iframe (maps.google.com/maps?...&output=embed). With no
+              // frame-src, that fell back to default-src 'self' and silently
+              // blocked both maps. maps.google.com redirects to
+              // www.google.com/maps/embed?..., and CSP re-checks frame-src
+              // against the post-redirect URL, so that origin is needed too —
+              // scoped to /maps/ rather than the bare origin so this doesn't
+              // also allow framing unrelated www.google.com surfaces.
+              "frame-src https://www.google.com/maps/ https://maps.google.com",
               // The counterpart to X-Frame-Options, for browsers that prefer it.
               "frame-ancestors 'none'",
               // Nothing on this site posts to another origin.

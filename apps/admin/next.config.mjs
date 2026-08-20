@@ -88,6 +88,13 @@ const nextConfig = {
               // Same-origin for the API, plus the Supabase origin the admin
               // middleware and browser client authenticate against.
               `connect-src 'self' ${supabaseOrigin()}`.trim(),
+              // Branches.tsx embeds a Google Maps iframe per branch
+              // (maps.google.com/maps?...&output=embed). With no frame-src,
+              // that fell back to default-src 'self' and silently blocked it
+              // — same bug as apps/web/next.config.js. maps.google.com
+              // redirects to www.google.com/maps/embed?..., scoped to /maps/
+              // rather than the bare origin.
+              "frame-src https://www.google.com/maps/ https://maps.google.com",
               "frame-ancestors 'none'",
               "form-action 'self'",
               "base-uri 'self'",

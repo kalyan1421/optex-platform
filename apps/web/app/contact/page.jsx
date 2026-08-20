@@ -1,6 +1,16 @@
 'use client';
 import React, { useState } from 'react';
 import { api } from '../../lib/api';
+import { buildMapUrl } from '../../lib/maps';
+
+// Nairobi CBD branch — see Backend/supabase/seed.sql ('nairobi-cbd') for the
+// source record. Single copy so the visible address and the embedded map
+// can't drift apart.
+const MAIN_BRANCH = {
+  address: 'Tom Mboya Street, Nairobi, Kenya',
+  lat: -1.286389,
+  lng: 36.817223,
+};
 
 // SVG Icons for Contact Details
 const LocationIcon = () => (
@@ -405,7 +415,7 @@ const Contact = () => {
                       lineHeight: '21px',
                     }}
                   >
-                    Optical Plaza, Nairobi, Kenya
+                    {MAIN_BRANCH.address}
                   </p>
                 </div>
               </div>
@@ -525,7 +535,7 @@ const Contact = () => {
           }}
         >
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3502.562060877995!2d77.22732101508216!3d28.61291208242544!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ce2dba1242965%3A0x6c0245089e90059c!2sIndia%20Gate!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+            src={buildMapUrl(MAIN_BRANCH)}
             className="h-full w-full border-none"
             allowFullScreen=""
             loading="lazy"
