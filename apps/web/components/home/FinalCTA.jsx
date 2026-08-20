@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const FinalCTA = () => {
   return (
@@ -57,7 +58,8 @@ const FinalCTA = () => {
           data-aos-delay="200"
         >
           {/* Primary Button */}
-          <button
+          <Link
+            href="/shop"
             className="flex items-center justify-center bg-[#FFFFFF] transition-transform duration-300 hover:scale-105 active:scale-95"
             style={{
               width: '240.7px',
@@ -78,10 +80,11 @@ const FinalCTA = () => {
             >
               Shop Collection
             </span>
-          </button>
+          </Link>
 
           {/* Secondary Button */}
-          <button
+          <Link
+            href="/appointments"
             className="flex items-center justify-center bg-transparent transition-all duration-300 hover:bg-white/10 active:scale-95"
             style={{
               width: '273.25px',
@@ -102,7 +105,7 @@ const FinalCTA = () => {
             >
               Book Appointment
             </span>
-          </button>
+          </Link>
         </div>
       </div>
     </section>

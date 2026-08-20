@@ -240,7 +240,7 @@ export default function Navbar() {
           >
             <UserIcon />
           </Link>
-          <Link href="/login" className="btn-appointment hidden sm:block">
+          <Link href="/appointments" className="btn-appointment hidden sm:block">
             Book Appointment
           </Link>
           <button
@@ -287,7 +287,7 @@ export default function Navbar() {
           </div>
 
           <Link
-            href="/login"
+            href="/appointments"
             className="btn-appointment mt-2 w-full text-center"
             onClick={() => setIsMobileMenuOpen(false)}
           >
