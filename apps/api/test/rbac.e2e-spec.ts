@@ -113,8 +113,21 @@ describe('RBAC — permission matrix enforcement (e2e)', () => {
 
     expect(res.body.role).toBe('inventory_manager');
     expect(res.body.branchId).toBeNull();
+    // R2 (migration 0026) retired inventory.write — a stock write with no
+    // reason and no ledger trail — in favour of five granular permissions,
+    // one per ledger-writing surface (GRN, transfers, adjustments, counts,
+    // supplier master data).
     expect(res.body.permissions.sort()).toEqual(
-      ['products.read', 'inventory.read', 'inventory.write', 'branches.read'].sort(),
+      [
+        'products.read',
+        'inventory.read',
+        'branches.read',
+        'inventory.receive',
+        'inventory.transfer',
+        'inventory.adjust',
+        'inventory.count',
+        'suppliers.manage',
+      ].sort(),
     );
   });
 

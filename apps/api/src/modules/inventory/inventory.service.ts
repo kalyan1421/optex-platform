@@ -1,17 +1,12 @@
-import {
-  ForbiddenException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { AuditLogService } from '../audit-log/audit-log.service';
 import type {
   InventoryBranchDto,
   InventoryItemDto,
+  InventoryReconciliationItemDto,
+  InventoryReconciliationResponseDto,
   InventoryResponseDto,
-  UpdateStockDto,
 } from './dto/inventory.dto';
 
 /** Columns selected from `inventory`, with the product and its category joined. */
@@ -32,17 +27,22 @@ type RawInventoryRow = {
 };
 
 /**
- * INVENTORY domain logic (admin-facing).
+ * INVENTORY domain logic (admin-facing) — the read side of the R2 ledger.
  *
  * Uses the service-role client, so RLS is bypassed; access is gated at the
- * controller by `@RequirePermission('inventory.read'|'inventory.write')`.
+ * controller by `@RequirePermission('inventory.read')`. `stock` is a
+ * denormalized cache maintained by every ledger-writing path (GRN, transfer,
+ * adjustment, count, checkout, cancellation) — see migration 0026. There is
+ * no longer a write method here: every stock correction goes through a GRN,
+ * transfer, adjustment, or count (`GrnService`, `TransfersService`,
+ * `AdjustmentsService`, `StockCountsService`), each of which requires a
+ * reason and writes to `stock_ledger`. The old `PATCH /admin/inventory`
+ * (`setStock`) is removed for exactly that reason — it let stock change with
+ * no reason and no ledger trail.
  */
 @Injectable()
 export class InventoryService {
-  constructor(
-    private readonly supabase: SupabaseService,
-    private readonly auditLog: AuditLogService,
-  ) {}
+  constructor(private readonly supabase: SupabaseService) {}
 
   /**
    * Returns active branches plus every product/branch stock row. The admin grid
@@ -104,50 +104,20 @@ export class InventoryService {
   }
 
   /**
-   * Sets the stock level for one product at one branch.
-   *
-   * Returns the updated row so the caller can reconcile optimistic UI state. A
-   * missing (product_id, branch_id) pair is a 404 rather than a silent no-op —
-   * the browser-direct version this replaced updated zero rows without any
-   * indication that the write had not landed.
-   *
-   * R1 1b (branch scoping): `dto.branch_id` is entirely client-supplied — a
-   * Branch Manager holding `inventory.write` could otherwise set stock at any
-   * branch, not just their own. Checked here rather than at the controller so
-   * the same guarantee holds regardless of caller.
+   * Compares the `inventory.stock` cache to the serial-backed projection.
+   * Branch-scoped users can only reconcile their own branch; cross-branch
+   * roles receive the full report. This is deliberately a database RPC so the
+   * aggregate never needs to pull every serial into NestJS memory.
    */
-  async setStock(
-    dto: UpdateStockDto,
-    user: AuthUser,
-  ): Promise<{ product_id: string; branch_id: string; stock: number }> {
-    if (user.branchId && dto.branch_id !== user.branchId) {
-      throw new ForbiddenException('Cannot set stock for a branch other than your own');
-    }
-
-    const { data, error } = await this.supabase.client
-      .from('inventory')
-      .update({ stock: dto.stock })
-      .eq('product_id', dto.product_id)
-      .eq('branch_id', dto.branch_id)
-      .select('product_id, branch_id, stock')
-      .maybeSingle();
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to update stock');
-    }
-
-    if (!data) {
-      throw new NotFoundException('No inventory row for that product and branch');
-    }
-
-    const updated = data as { product_id: string; branch_id: string; stock: number };
-    await this.auditLog.record({
-      actor: user,
-      action: 'inventory.set_stock',
-      resourceType: 'inventory',
-      resourceId: `${dto.product_id}:${dto.branch_id}`,
-      after: updated,
+  async reconciliation(user: AuthUser): Promise<InventoryReconciliationResponseDto> {
+    const { data, error } = await this.supabase.client.rpc('inventory_reconciliation_report', {
+      p_branch_id: user.branchId ?? null,
     });
-    return updated;
+    if (error) {
+      throw new InternalServerErrorException('Failed to reconcile inventory');
+    }
+
+    const items = (data ?? []) as InventoryReconciliationItemDto[];
+    return { items, reconciled: items.every((item) => item.difference === 0) };
   }
 }

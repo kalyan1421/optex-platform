@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
@@ -7,6 +8,7 @@ import { CreatePromoCodeDto } from './dto/create-promo-code.dto';
 import { UpdatePromoBannerDto } from './dto/update-promo-banner.dto';
 import { UpdatePromoCodeDto } from './dto/update-promo-code.dto';
 import { PromotionsService } from './promotions.service';
+import type { UploadedImage } from '../catalog/products.service';
 
 /**
  * Super-admin management of promo codes and promo banners. Mounted at
@@ -75,6 +77,19 @@ export class PromotionsAdminController {
   @ApiOkResponse({ description: 'Array of promo banners' })
   listBanners(): Promise<unknown[]> {
     return this.promotions.listBanners();
+  }
+
+  /** Upload a banner image. */
+  @RequirePermission('promotions.write')
+  @Post('promo-banners/upload')
+  @ApiOperation({ summary: 'Upload a promo banner image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiCreatedResponse({ description: 'Public URL of the uploaded image' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadBannerImage(
+    @UploadedFile() file: UploadedImage,
+  ): Promise<{ url: string }> {
+    return this.promotions.uploadBannerImage(file);
   }
 
   /** Create a new promo banner. */

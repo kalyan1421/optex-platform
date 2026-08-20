@@ -302,6 +302,11 @@ services:
       # the containerised API answered somewhere nothing was configured to look.
       PORT: '1111'
       SUPABASE_URL: http://supabase-kong:8000
+      # The public-facing Supabase URL used by browsers. The service-role client
+      # connects via the internal Docker hostname above, but getPublicUrl() would
+      # return that internal URL which browsers cannot reach. This env var lets
+      # the API rewrite storage URLs to the correct public address.
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:54321}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTM0MjUsImV4cCI6MjEwMDA3MzQyNX0.huyd4oVy5PuVy7Bkk2okDXh0zlAx9KgEbNdwMactLuM}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDcxMzQyNSwiZXhwIjoyMTAwMDczNDI1fQ.5h1scd1HcpX3H5EZv6OfrbG5af-_eNoCyqNsRwm8ozE}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}

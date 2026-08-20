@@ -43,6 +43,67 @@ describe('Checkout stock enforcement (e2e)', () => {
     return data.session!.access_token;
   }
 
+  /**
+   * `cancellations.decide` + `orders.cancel` (`branch_manager`) — no `aal2`
+   * step-up needed, unlike `super_admin`. Deliberately no `branch_id` in
+   * `app_metadata`: `orders.branch_id` is never set by `place_order` (a known
+   * gap — see `adminCancel`'s own comment), so a branch-scoped caller 404s on
+   * every order. `approve()` has no branch check at all either way
+   * (documented gap, CLAUDE.md) — this account exists to exercise the restock
+   * fix, not branch-scoping, so it's minted without a branch on purpose.
+   */
+  async function newBranchManager(): Promise<string> {
+    const anon = createClient(
+      process.env.SUPABASE_URL as string,
+      process.env.SUPABASE_ANON_KEY as string,
+      { auth: { persistSession: false } },
+    );
+    const email = `stock-e2e-admin-${Date.now()}-${Math.floor(Math.random() * 100000)}@optex-test.local`;
+    const { data, error } = await anon.auth.signUp({ email, password: PASSWORD });
+    if (error) throw error;
+    userIds.push(data.user!.id);
+
+    await db.auth.admin.updateUserById(data.user!.id, {
+      app_metadata: { role: 'branch_manager' },
+    });
+
+    const { data: session, error: signInError } = await anon.auth.signInWithPassword({
+      email,
+      password: PASSWORD,
+    });
+    if (signInError) throw signInError;
+    return session.session!.access_token;
+  }
+
+  let serialCounter = 0;
+
+  /**
+   * Sets stock for one product at one branch by creating `stock`
+   * `product_serials` rows (status `in_stock`) and syncing the `inventory`
+   * cache to match — `deduct_stock_fifo` consumes serials, not the cache
+   * directly (R2, migration 0026), so a raw `inventory.update` no longer
+   * simulates "this product has stock" the way it used to. Assumes the
+   * target branch starts at zero stock/no serials for this product, which
+   * every caller below satisfies.
+   */
+  async function seedStock(productId: string, targetBranchId: string, stock: number): Promise<void> {
+    if (stock > 0) {
+      const serials = Array.from({ length: stock }, () => ({
+        product_id: productId,
+        serial_number: `E2E-STK-SERIAL-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}-${serialCounter++}`,
+        status: 'in_stock',
+        current_branch_id: targetBranchId,
+      }));
+      const { error } = await db.from('product_serials').insert(serials);
+      if (error) throw error;
+    }
+    await db
+      .from('inventory')
+      .update({ stock })
+      .eq('product_id', productId)
+      .eq('branch_id', targetBranchId);
+  }
+
   /** Creates a product and sets its stock at the test branch to `stock`. */
   async function newProduct(name: string, stock: number, priceKes = 5000): Promise<string> {
     const { data, error } = await db
@@ -61,14 +122,11 @@ describe('Checkout stock enforcement (e2e)', () => {
     productIds.push(data.id);
 
     // 0020's insert trigger has already created zero-stock rows at every active
-    // branch. Set the one we control and zero the rest, so `stock` is the total
-    // availability regardless of how many branches the seed left behind.
+    // branch. Zero them all, then seed real stock (with matching serials) only
+    // at the branch under test, so `stock` is the total availability
+    // regardless of how many branches the seed left behind.
     await db.from('inventory').update({ stock: 0 }).eq('product_id', data.id);
-    await db
-      .from('inventory')
-      .update({ stock })
-      .eq('product_id', data.id)
-      .eq('branch_id', branchId);
+    await seedStock(data.id, branchId, stock);
 
     return data.id;
   }
@@ -179,6 +237,31 @@ describe('Checkout stock enforcement (e2e)', () => {
     expect((data ?? []).length).toBeGreaterThan(0);
   });
 
+  it('reports cache/serial divergence instead of hiding it behind the stock grid', async () => {
+    const productId = await newProduct('reconciliation', 0);
+    const token = await newBranchManager();
+
+    const { error } = await db.from('product_serials').insert({
+      product_id: productId,
+      serial_number: `E2E-RECON-${Date.now()}`,
+      status: 'in_stock',
+      current_branch_id: branchId,
+    });
+    if (error) throw error;
+
+    const res = await request(app.getHttpServer())
+      .get('/api/admin/inventory/reconciliation')
+      .set(auth(token))
+      .expect(200);
+
+    expect(res.body.reconciled).toBe(false);
+    expect(res.body.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ product_id: productId, branch_id: branchId, cached_stock: 0, serial_stock: 1, difference: -1 }),
+      ]),
+    );
+  });
+
   it('refuses checkout for a product with no stock, and says so', async () => {
     const token = await newAccount();
     const productId = await newProduct('out-of-stock', 0);
@@ -223,6 +306,46 @@ describe('Checkout stock enforcement (e2e)', () => {
     expect(await stockOf(productId)).toBe(7);
   });
 
+  it('consumes the oldest received serial first (FIFO), not an arbitrary cache row', async () => {
+    const token = await newAccount();
+    const productId = await newProduct('fifo-receipt-order', 0);
+    const stamp = Date.now();
+    const olderSerial = `E2E-FIFO-OLD-${stamp}`;
+    const newerSerial = `E2E-FIFO-NEW-${stamp}`;
+
+    const { error: serialError } = await db.from('product_serials').insert([
+      {
+        product_id: productId,
+        serial_number: olderSerial,
+        status: 'in_stock',
+        current_branch_id: branchId,
+        received_at: '2025-01-01T00:00:00.000Z',
+      },
+      {
+        product_id: productId,
+        serial_number: newerSerial,
+        status: 'in_stock',
+        current_branch_id: branchId,
+        received_at: '2025-02-01T00:00:00.000Z',
+      },
+    ]);
+    if (serialError) throw serialError;
+    await db.from('inventory').update({ stock: 2 }).eq('product_id', productId).eq('branch_id', branchId);
+
+    await addToCart(token, productId, 1);
+    await checkout(token).expect(201);
+
+    const { data: serials, error } = await db
+      .from('product_serials')
+      .select('serial_number, status')
+      .eq('product_id', productId)
+      .order('received_at');
+    if (error) throw error;
+
+    expect(serials?.find((serial) => serial.serial_number === olderSerial)?.status).toBe('sold');
+    expect(serials?.find((serial) => serial.serial_number === newerSerial)?.status).toBe('in_stock');
+  });
+
   it('draws a single line across several branches when no one branch can cover it', async () => {
     // Availability is the sum across active branches (orders carry no
     // fulfilment branch), so a line larger than any single branch's holding
@@ -237,11 +360,7 @@ describe('Checkout stock enforcement (e2e)', () => {
     const token = await newAccount();
     const productId = await newProduct('multi-branch', 0);
     for (const b of branches) {
-      await db
-        .from('inventory')
-        .update({ stock: 2 })
-        .eq('product_id', productId)
-        .eq('branch_id', (b as { id: string }).id);
+      await seedStock(productId, (b as { id: string }).id, 2);
     }
 
     await addToCart(token, productId, 3);
@@ -264,5 +383,104 @@ describe('Checkout stock enforcement (e2e)', () => {
 
     expect(statuses).toEqual([201, 409]);
     expect(await stockOf(productId)).toBe(0);
+  });
+
+  describe('cancellation restocking (R2)', () => {
+    it('approving a cancellation releases the specific serials that were sold, back to in_stock', async () => {
+      const token = await newAccount();
+      const productId = await newProduct('restock', 5);
+      await addToCart(token, productId, 2);
+
+      const checkoutRes = await checkout(token).expect(201);
+      const orderId: string = checkoutRes.body.order.id;
+      expect(await stockOf(productId)).toBe(3);
+
+      const { data: soldSerials } = await db
+        .from('product_serials')
+        .select('id, status, current_branch_id')
+        .eq('product_id', productId)
+        .eq('status', 'sold');
+      expect(soldSerials).toHaveLength(2);
+      const soldIds = (soldSerials ?? []).map((s) => (s as { id: string }).id);
+
+      const requestRes = await request(app.getHttpServer())
+        .post(`/api/orders/${orderId}/cancellation`)
+        .set(auth(token))
+        .send({})
+        .expect(201);
+      const requestId: string = requestRes.body.id;
+
+      const adminToken = await newBranchManager();
+      await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${requestId}/approve`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(200);
+
+      expect(await stockOf(productId)).toBe(5);
+
+      const { data: releasedSerials } = await db
+        .from('product_serials')
+        .select('id, status, current_branch_id')
+        .in('id', soldIds);
+      for (const serial of releasedSerials ?? []) {
+        expect((serial as { status: string }).status).toBe('in_stock');
+        expect((serial as { current_branch_id: string }).current_branch_id).toBe(branchId);
+      }
+
+      const { data: orderItems, error: orderItemsError } = await db
+        .from('order_items')
+        .select('id')
+        .eq('order_id', orderId);
+      if (orderItemsError) throw orderItemsError;
+
+      const orderItemIds = (orderItems ?? []).map((item) => item.id);
+      const { data: soldLedger } = await db
+        .from('stock_ledger')
+        .select('serial_id')
+        .eq('movement_type', 'sold')
+        .eq('reference_type', 'order_item')
+        .in('reference_id', orderItemIds);
+      expect(soldLedger).toHaveLength(2);
+
+      const { data: reversedLedger } = await db
+        .from('stock_ledger')
+        .select('serial_id, movement_type, reference_type, reference_id, actor_user_id, actor_role')
+        .eq('movement_type', 'sale_reversed')
+        .eq('reference_type', 'order_item')
+        .in('reference_id', orderItemIds);
+      expect(reversedLedger).toHaveLength(2);
+      for (const row of reversedLedger ?? []) {
+        expect((row as { actor_user_id: string | null }).actor_user_id).not.toBeNull();
+        expect((row as { actor_role: string | null }).actor_role).toBe('branch_manager');
+      }
+    });
+
+    it('approving twice does not double-credit stock (idempotent restock)', async () => {
+      const token = await newAccount();
+      const productId = await newProduct('restock-idempotent', 3);
+      await addToCart(token, productId, 1);
+      const checkoutRes = await checkout(token).expect(201);
+      const orderId: string = checkoutRes.body.order.id;
+
+      const adminToken = await newBranchManager();
+      // Direct-cancel path (adminCancel), no pending request needed — exercises
+      // the transactional cancellation-and-restock RPC.
+      await request(app.getHttpServer())
+        .patch(`/api/admin/orders/${orderId}/cancel`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(200);
+      expect(await stockOf(productId)).toBe(3);
+
+      // Calling the RPC again directly (simulating a retried/duplicate restock)
+      // must not credit stock a second time.
+      await db.rpc('restock_cancelled_order', {
+        p_order_id: orderId,
+        p_actor_id: userIds.at(-1)!,
+        p_actor_role: 'branch_manager',
+      });
+      expect(await stockOf(productId)).toBe(3);
+    });
   });
 });

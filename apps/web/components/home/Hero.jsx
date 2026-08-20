@@ -1,7 +1,32 @@
 import React from 'react';
 import Link from 'next/link';
+import { publicApi } from '@/lib/api-server';
+import BannerCarousel from './BannerCarousel';
 
-export default function Hero() {
+/**
+ * Server Component — fetches active promo banners at request time (ISR, 60s
+ * revalidation) and passes them to the client-side BannerCarousel.
+ *
+ * Falls back to the original static hero when there are no active banners so
+ * the homepage is never empty.
+ */
+export default async function Hero() {
+  let banners = [];
+
+  try {
+    const api = publicApi({ revalidate: 60, tags: ['promo-banners'] });
+    banners = await api.promotions.listActiveBanners();
+  } catch (err) {
+    // If the API is unreachable (e.g. during a cold build), fall back silently.
+    console.error('[Hero] Failed to fetch banners:', err?.message ?? err);
+  }
+
+  // ── Dynamic carousel ──────────────────────────────────────────────────────
+  if (banners.length > 0) {
+    return <BannerCarousel banners={banners} />;
+  }
+
+  // ── Static fallback hero (shown when no banners are configured) ───────────
   return (
     <section className="relative w-full overflow-hidden bg-[#FFFFFF] lg:h-[773px]">
       {/* Background Image Container */}
@@ -21,12 +46,8 @@ export default function Hero() {
         }}
       />
 
-      {/* Mobile content — centered flow, unchanged */}
-      <div
-        data-aos="fade-up"
-        data-aos-delay="200"
-        className="relative z-20 mx-auto flex w-full max-w-[580px] flex-col items-center gap-[32px] px-4 pb-16 pt-32 text-center lg:hidden"
-      >
+      {/* Mobile content */}
+      <div className="relative z-20 mx-auto flex w-full max-w-[580px] flex-col items-center gap-[32px] px-4 pb-16 pt-32 text-center lg:hidden">
         <div className="flex flex-col gap-6">
           <h1
             className="w-full text-[36px] font-bold uppercase text-white drop-shadow-md"
@@ -72,13 +93,9 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Desktop content — positioned inside same max-w container as navbar */}
+      {/* Desktop content */}
       <div className="pointer-events-none absolute inset-0 mx-auto hidden max-w-[1440px] lg:block">
-        <div
-          data-aos="fade-up"
-          data-aos-delay="200"
-          className="pointer-events-auto absolute left-[100px] top-[207px] z-20 flex w-[523px] flex-col items-start gap-[32px] text-left"
-        >
+        <div className="pointer-events-auto absolute left-[100px] top-[207px] z-20 flex w-[523px] flex-col items-start gap-[32px] text-left">
           <div className="flex w-[523px] flex-col gap-[20px]">
             <h1
               className="w-full text-left text-[76.67px] font-bold uppercase leading-[0.97] tracking-[-0.01em]"

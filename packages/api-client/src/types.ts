@@ -1214,19 +1214,77 @@ export interface InventoryResponse {
   items: InventoryItem[];
 }
 
-/** The stock row returned by `PATCH /admin/inventory`. */
-export interface InventoryStock {
+/** One cache-vs-serial comparison returned by `GET /admin/inventory/reconciliation`. */
+export interface InventoryReconciliationItem {
   product_id: string;
+  product_name: string;
+  product_sku: string;
   branch_id: string;
-  stock: number;
+  branch_name: string;
+  cached_stock: number;
+  serial_stock: number;
+  difference: number;
 }
 
-/** Body for `PATCH /admin/inventory` (`UpdateStockDto`). */
-export interface SetStockInput {
-  product_id: string;
-  branch_id: string;
-  stock: number;
+export interface InventoryReconciliationResponse {
+  items: InventoryReconciliationItem[];
+  reconciled: boolean;
 }
+
+export interface SerialLedgerEntry {
+  id: string;
+  serial_id: string;
+  movement_type: string;
+  from_branch_id: string | null;
+  to_branch_id: string | null;
+  reference_type: string;
+  reference_id: string | null;
+  actor_user_id: string | null;
+  actor_role: string | null;
+  created_at: string;
+}
+
+export interface SerialHistory {
+  serial_id: string;
+  serial_number: string;
+  product_id: string;
+  product_name: string;
+  current_status: string | null;
+  current_branch_id: string | null;
+  movements: SerialLedgerEntry[];
+}
+
+export interface AgingSerial {
+  serial_id: string;
+  serial_number: string;
+  product_id: string;
+  product_name: string;
+  branch_id: string;
+  received_at: string;
+  days_on_shelf: number;
+  cost_price_kes: number | null;
+}
+
+// ── R2 inventory workflows ─────────────────────────────────────────────────
+export interface Supplier { id: string; name: string; contact_name: string | null; phone: string | null; email: string | null; address: string | null; is_active: boolean; created_at: string; }
+export type CreateSupplierInput = Omit<Supplier, 'id' | 'created_at' | 'is_active'> & { contact_name?: string; phone?: string; email?: string; address?: string };
+export type UpdateSupplierInput = Partial<Omit<CreateSupplierInput, 'name'>> & { name?: string; is_active?: boolean };
+export interface GrnItem { id: string; product_id: string; product_name: string | null; product_sku: string | null; unit_cost_kes: number; quantity_ordered: number; }
+export interface Grn { id: string; grn_number: string; supplier_id: string; branch_id: string; status: 'draft' | 'posted'; notes: string | null; created_at: string; posted_at: string | null; items: GrnItem[]; }
+export interface CreateGrnItemInput { product_id: string; unit_cost_kes: number; quantity_ordered: number; }
+export interface CreateGrnInput { supplier_id: string; branch_id: string; notes?: string; items: CreateGrnItemInput[]; }
+export interface PostGrnInput { serials: { grn_item_id: string; serial_number: string }[]; }
+export interface TransferItem { serial_id: string; serial_number: string; product_name: string | null; status: 'in_transit' | 'received' | 'lost'; }
+export interface Transfer { id: string; transfer_number: string; from_branch_id: string; to_branch_id: string; status: 'pending' | 'in_transit' | 'received' | 'cancelled'; notes: string | null; dispatched_at: string | null; received_at: string | null; items: TransferItem[]; }
+export interface DispatchTransferInput { from_branch_id: string; to_branch_id: string; serial_ids: string[]; notes?: string; }
+export interface ReceiveTransferInput { received?: string[]; lost?: { serial_id: string; reason_code: string }[]; }
+export interface AdjustmentLine { serial_id: string | null; product_id: string | null; product_name: string | null; reason_code: string; direction: 'add' | 'remove'; }
+export interface Adjustment { id: string; branch_id: string; notes: string | null; created_at: string; items: AdjustmentLine[]; }
+export interface CreateAdjustmentInput { branch_id: string; notes?: string; items: { direction: 'add' | 'remove'; serial_id?: string; product_id?: string; reason_code: string }[]; }
+export interface AdjustmentReason { id: string; description: string; }
+export interface StockCountItem { serial_id: string | null; scanned_serial_number: string | null; product_id: string | null; product_name: string | null; expected: boolean; found: boolean; }
+export interface StockCount { id: string; branch_id: string; status: 'in_progress' | 'completed' | 'cancelled'; started_at: string; completed_at: string | null; items: StockCountItem[]; }
+export interface ScanStockCountInput { scans: { serial_number: string; product_id?: string }[]; }
 
 // ── Order cancellation (SPEC-06) ────────────────────────────────────────────
 

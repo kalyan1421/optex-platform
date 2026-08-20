@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
@@ -13,6 +14,8 @@ import { PromoValidationResultDto } from './dto/promo-validation-result.dto';
 import { UpdatePromoBannerDto } from './dto/update-promo-banner.dto';
 import { UpdatePromoCodeDto } from './dto/update-promo-code.dto';
 import { ValidatePromoDto } from './dto/validate-promo.dto';
+import { UploadedImage } from '../catalog/products.service';
+import type { Env } from '../../config/env';
 
 /** Shape of a `promo_codes` row (mirrors the Supabase schema). */
 interface PromoCodeRow {
@@ -41,6 +44,15 @@ interface PromoBannerRow {
   sort_order: number;
 }
 
+const PROMO_BANNERS_BUCKET = 'promo-banners';
+const MAX_BANNER_IMAGE_BYTES = 10 * 1024 * 1024;
+const BANNER_IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
 /**
  * Business logic for promo-code validation and admin management of promo codes
  * and promo banners. All reads/writes go through the privileged service-role
@@ -51,7 +63,58 @@ export class PromotionsService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly auditLog: AuditLogService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
+
+  /**
+   * Rewrite a Supabase storage public URL that uses the internal `SUPABASE_URL`
+   * hostname (e.g. `http://supabase-kong:8000` inside Docker) to the
+   * publicly accessible `SUPABASE_PUBLIC_URL` so browsers can actually fetch
+   * uploaded files. No-op when `SUPABASE_PUBLIC_URL` is not configured.
+   */
+  private rewritePublicUrl(url: string): string {
+    const publicBase = this.config.get('SUPABASE_PUBLIC_URL', { infer: true });
+    const internalBase = this.config.get('SUPABASE_URL', { infer: true });
+    if (publicBase && url.startsWith(internalBase)) {
+      return publicBase.replace(/\/$/, '') + url.slice(internalBase.replace(/\/$/, '').length);
+    }
+    return url;
+  }
+
+  /**
+   * The local Supabase Kong gateway requires the public anon key even for a
+   * public storage object. An image tag/background cannot send request headers,
+   * so include the public (non-secret) anon key in storage URLs returned to
+   * browsers. Hosted Supabase accepts this query parameter too.
+   */
+  private makeStorageUrlBrowserReadable(url: string): string {
+    const publicBase = this.config.get('SUPABASE_PUBLIC_URL', { infer: true });
+    const anonKey = this.config.get('SUPABASE_ANON_KEY', { infer: true });
+    if (!publicBase || !anonKey) return url;
+
+    try {
+      const parsed = new URL(url);
+      const publicOrigin = new URL(publicBase).origin;
+      if (
+        parsed.origin === publicOrigin &&
+        parsed.pathname.includes('/storage/v1/object/public/')
+      ) {
+        parsed.searchParams.set('apikey', anonKey);
+        return parsed.toString();
+      }
+    } catch {
+      // Leave manually-entered/non-URL image values unchanged.
+    }
+    return url;
+  }
+
+  /** Keep storage URLs browser-safe even for banners uploaded before this fix. */
+  private toPublicBanner(row: PromoBannerRow): PromoBannerRow {
+    return {
+      ...row,
+      image_url: this.makeStorageUrlBrowserReadable(this.rewritePublicUrl(row.image_url)),
+    };
+  }
 
   // ─── Customer-facing ────────────────────────────────────────────────────
 
@@ -259,7 +322,58 @@ export class PromotionsService {
     if (error) {
       throw new InternalServerErrorException('Failed to list promo banners');
     }
-    return (data ?? []) as PromoBannerRow[];
+    return ((data ?? []) as PromoBannerRow[]).map((row) => this.toPublicBanner(row));
+  }
+
+  /**
+   * List banners that are active right now — used by the public storefront
+   * `GET /api/banners` endpoint. Filters on `is_active`, `starts_at`, and
+   * `ends_at` so the carousel only shows what is live at this moment.
+   */
+  async listActiveBanners(): Promise<PromoBannerRow[]> {
+    const now = new Date().toISOString();
+    const { data, error } = await this.supabase.client
+      .from('promo_banners')
+      .select('*')
+      .eq('is_active', true)
+      .or(`starts_at.is.null,starts_at.lte.${now}`)
+      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .order('sort_order', { ascending: true })
+      .limit(20);
+    if (error) {
+      throw new InternalServerErrorException('Failed to fetch active banners');
+    }
+    return ((data ?? []) as PromoBannerRow[]).map((row) => this.toPublicBanner(row));
+  }
+
+  /** Upload a banner image to the promo-banners bucket and return its public URL. */
+  async uploadBannerImage(file: UploadedImage): Promise<{ url: string }> {
+    if (!file?.buffer?.length) throw new BadRequestException('No image file provided');
+    if (file.size > MAX_BANNER_IMAGE_BYTES || file.buffer.length > MAX_BANNER_IMAGE_BYTES) {
+      throw new BadRequestException('Banner image must be 10 MB or smaller');
+    }
+
+    const extension = BANNER_IMAGE_EXTENSIONS[file.mimetype?.toLowerCase()];
+    if (!extension) {
+      throw new BadRequestException('Banner image must be PNG, JPG, WebP, or GIF');
+    }
+
+    const objectPath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+
+    const { error: uploadError } = await this.supabase.client.storage
+      .from(PROMO_BANNERS_BUCKET)
+      .upload(objectPath, file.buffer, {
+        upsert: false,
+        contentType: file.mimetype,
+      });
+
+    if (uploadError) throw new BadRequestException(uploadError.message);
+
+    const { data } = this.supabase.client.storage
+      .from(PROMO_BANNERS_BUCKET)
+      .getPublicUrl(objectPath);
+
+    return { url: this.makeStorageUrlBrowserReadable(this.rewritePublicUrl(data.publicUrl)) };
   }
 
   /** Create a promo banner. */
@@ -280,7 +394,7 @@ export class PromotionsService {
       resourceId: created.id,
       after: created,
     });
-    return created;
+    return this.toPublicBanner(created);
   }
 
   /** Patch a promo banner by id. */
@@ -309,7 +423,7 @@ export class PromotionsService {
       resourceId: id,
       after: updated,
     });
-    return updated;
+    return this.toPublicBanner(updated);
   }
 
   /** Delete a promo banner by id. */

@@ -5,8 +5,8 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUrl,
   Length,
+  Matches,
   Min,
 } from 'class-validator';
 
@@ -28,7 +28,14 @@ export class CreatePromoBannerDto {
     example: 'https://optex.co.ke/shop?promo=WELCOME10',
   })
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsString()
+  @Length(1, 2048)
+  // Banners may link to an internal storefront path (`/shop`) or to an
+  // external HTTPS endpoint. Reject javascript/data URLs before they reach
+  // the client-side Link renderer.
+  @Matches(/^(?:https?:\/\/\S+|\/(?!\/)(?:\S*))$/i, {
+    message: 'target_url must be a relative path or an http(s) URL',
+  })
   target_url?: string;
 
   @ApiPropertyOptional({

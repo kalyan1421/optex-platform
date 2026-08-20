@@ -26,10 +26,24 @@ import type {
   AdminAuditLogQuery,
   AuditLogEntry,
   PaginatedAuditLog,
+  AgingSerial,
+  Adjustment,
+  AdjustmentReason,
+  CreateAdjustmentInput,
+  CreateGrnInput,
+  CreateSupplierInput,
+  DispatchTransferInput,
+  Grn,
+  InventoryReconciliationResponse,
   InventoryResponse,
-  InventoryStock,
+  SerialHistory,
+  ScanStockCountInput,
   SetCustomerStatusInput,
-  SetStockInput,
+  StockCount,
+  Supplier,
+  Transfer,
+  ReceiveTransferInput,
+  UpdateSupplierInput,
   AuthResult,
   AuthUser,
   CurrentUser,
@@ -517,6 +531,8 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
 
   // ── promotions ─────────────────────────────────────────────────────────────
   const promotions: PromotionsApi = {
+    /** `GET /banners` — public, no auth required. */
+    listActiveBanners: () => request<PromoBanner[]>('/banners'),
     validate: (input) =>
       request<PromoValidationResult>('/promo/validate', {
         method: 'POST',
@@ -649,6 +665,14 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         request<DeletionResult>(`/admin/promo-banners/${encodeURIComponent(id)}`, {
           method: 'DELETE',
         }),
+      uploadImage: (file: Blob) => {
+        const form = new FormData();
+        form.append('file', file);
+        return request<{ url: string }>('/admin/promo-banners/upload', {
+          method: 'POST',
+          form,
+        });
+      },
     },
     branches: {
       listAll: (q) => request<Branch[]>('/branches/admin/all', { query: q ? { q } : undefined }),
@@ -730,11 +754,44 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     },
     inventory: {
       list: () => request<InventoryResponse>('/admin/inventory'),
-      setStock: (input) =>
-        request<InventoryStock>('/admin/inventory', {
-          method: 'PATCH',
-          body: input,
+      reconciliation: () => request<InventoryReconciliationResponse>('/admin/inventory/reconciliation'),
+      serialHistory: (id) => request<SerialHistory>(`/admin/inventory/serials/${encodeURIComponent(id)}/history`),
+      aging: (minimumDays) =>
+        request<AgingSerial[]>('/admin/inventory/aging', {
+          query: minimumDays === undefined ? undefined : { minimumDays },
         }),
+    },
+    suppliers: {
+      list: (activeOnly) => request<Supplier[]>('/admin/suppliers', { query: activeOnly === undefined ? undefined : { activeOnly } }),
+      get: (id) => request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`),
+      create: (input) => request<Supplier>('/admin/suppliers', { method: 'POST', body: input }),
+      update: (id, input) => request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`, { method: 'PATCH', body: input }),
+    },
+    grn: {
+      list: (query) => request<Grn[]>('/admin/grn', { query: query as QueryParams }),
+      get: (id) => request<Grn>(`/admin/grn/${encodeURIComponent(id)}`),
+      create: (input) => request<Grn>('/admin/grn', { method: 'POST', body: input }),
+      replaceItems: (id, items) => request<Grn>(`/admin/grn/${encodeURIComponent(id)}/items`, { method: 'PATCH', body: { items } }),
+      post: (id, input) => request<Grn>(`/admin/grn/${encodeURIComponent(id)}/post`, { method: 'POST', body: input }),
+    },
+    transfers: {
+      list: (query) => request<Transfer[]>('/admin/transfers', { query: query as QueryParams }),
+      get: (id) => request<Transfer>(`/admin/transfers/${encodeURIComponent(id)}`),
+      dispatch: (input) => request<Transfer>('/admin/transfers', { method: 'POST', body: input }),
+      receive: (id, input) => request<Transfer>(`/admin/transfers/${encodeURIComponent(id)}/receive`, { method: 'PATCH', body: input }),
+    },
+    adjustments: {
+      listReasons: () => request<AdjustmentReason[]>('/admin/adjustments/reasons'),
+      list: (branchId) => request<Adjustment[]>('/admin/adjustments', { query: branchId ? { branchId } : undefined }),
+      get: (id) => request<Adjustment>(`/admin/adjustments/${encodeURIComponent(id)}`),
+      create: (input) => request<Adjustment>('/admin/adjustments', { method: 'POST', body: input }),
+    },
+    stockCounts: {
+      list: (query) => request<StockCount[]>('/admin/stock-counts', { query: query as QueryParams }),
+      get: (id) => request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}`),
+      start: (branch_id) => request<StockCount>('/admin/stock-counts', { method: 'POST', body: { branch_id } }),
+      scan: (id, input) => request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}/scan`, { method: 'PATCH', body: input }),
+      accept: (id) => request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}/accept`, { method: 'POST' }),
     },
     dashboard: (query) =>
       request<DashboardResponse>('/admin/dashboard', {
@@ -920,6 +977,8 @@ export interface ReviewsApi {
 
 /** Customer promo validation (`/promo/validate`). */
 export interface PromotionsApi {
+  /** `GET /banners` — returns active banners for the storefront carousel (public). */
+  listActiveBanners: () => Promise<PromoBanner[]>;
   /** `POST /promo/validate` */
   validate: (input: ValidatePromoInput) => Promise<PromoValidationResult>;
 }
@@ -1018,6 +1077,8 @@ export interface AdminApi {
     update: (id: string, input: UpdatePromoBannerInput) => Promise<PromoBanner>;
     /** `DELETE /admin/promo-banners/:id` */
     remove: (id: string) => Promise<DeletionResult>;
+    /** `POST /admin/promo-banners/upload` */
+    uploadImage: (file: Blob) => Promise<{ url: string }>;
   };
   branches: {
     /** `GET /branches/admin/all` — includes inactive branches (gap G-3) */
@@ -1076,8 +1137,44 @@ export interface AdminApi {
   inventory: {
     /** `GET /admin/inventory` */
     list: () => Promise<InventoryResponse>;
-    /** `PATCH /admin/inventory` */
-    setStock: (input: SetStockInput) => Promise<InventoryStock>;
+    /** `GET /admin/inventory/reconciliation` */
+    reconciliation: () => Promise<InventoryReconciliationResponse>;
+    /** `GET /admin/inventory/serials/:id/history` */
+    serialHistory: (id: string) => Promise<SerialHistory>;
+    /** `GET /admin/inventory/aging?minimumDays=` */
+    aging: (minimumDays?: number) => Promise<AgingSerial[]>;
+  };
+  suppliers: {
+    list: (activeOnly?: boolean) => Promise<Supplier[]>;
+    get: (id: string) => Promise<Supplier>;
+    create: (input: CreateSupplierInput) => Promise<Supplier>;
+    update: (id: string, input: UpdateSupplierInput) => Promise<Supplier>;
+  };
+  grn: {
+    list: (query?: { status?: 'draft' | 'posted'; supplierId?: string; branchId?: string }) => Promise<Grn[]>;
+    get: (id: string) => Promise<Grn>;
+    create: (input: CreateGrnInput) => Promise<Grn>;
+    replaceItems: (id: string, items: CreateGrnInput['items']) => Promise<Grn>;
+    post: (id: string, input: { serials: { grn_item_id: string; serial_number: string }[] }) => Promise<Grn>;
+  };
+  transfers: {
+    list: (query?: { status?: Transfer['status']; fromBranchId?: string; toBranchId?: string }) => Promise<Transfer[]>;
+    get: (id: string) => Promise<Transfer>;
+    dispatch: (input: DispatchTransferInput) => Promise<Transfer>;
+    receive: (id: string, input: ReceiveTransferInput) => Promise<Transfer>;
+  };
+  adjustments: {
+    listReasons: () => Promise<AdjustmentReason[]>;
+    list: (branchId?: string) => Promise<Adjustment[]>;
+    get: (id: string) => Promise<Adjustment>;
+    create: (input: CreateAdjustmentInput) => Promise<Adjustment>;
+  };
+  stockCounts: {
+    list: (query?: { branchId?: string; status?: StockCount['status'] }) => Promise<StockCount[]>;
+    get: (id: string) => Promise<StockCount>;
+    start: (branchId: string) => Promise<StockCount>;
+    scan: (id: string, input: ScanStockCountInput) => Promise<StockCount>;
+    accept: (id: string) => Promise<StockCount>;
   };
   /** `GET /admin/dashboard` */
   dashboard: (query?: DashboardQuery) => Promise<DashboardResponse>;

@@ -52,21 +52,56 @@ on conflict (sku) do nothing;
 
 -- Per-branch starting stock.
 --
--- Deliberately large, and it did not used to matter. Before migration 0020
--- checkout never touched `inventory`, so this number was decorative — the admin
--- grid displayed it and nothing consumed it. Now every successful checkout
--- deducts, which makes the e2e suites STATEFUL: each storefront run places real
--- orders, and at 10 units per branch a few local runs drained the catalogue and
--- the checkout specs started failing with a legitimate 409. CI reseeds from
--- scratch every run so it never noticed; a developer running the suite twice
--- did.
+-- R2 (migration 0026) made `deduct_stock_fifo` consume `product_serials`, not
+-- the `inventory.stock` cache directly — a product with stock in the cache
+-- but no serial rows is unsellable, 409 on every checkout. The old version of
+-- this seed set `inventory.stock = 10000` directly and stopped there, which
+-- is exactly that broken state. This backfills one `product_serials` row (and
+-- one `stock_ledger` 'found' row — visibly distinct from a real GRN
+-- 'received', per migration 0026's own convention for stock the system has no
+-- receiving record for) per unit, then sets the cache to match.
 --
--- 10,000 is not a realistic shop-floor figure and is not meant to be — this is
--- the dev seed. Real stock is set per branch in the admin inventory grid.
-insert into inventory (product_id, branch_id, stock)
-select p.id, b.id, 10000
-  from products p cross join branches b
-on conflict do nothing;
+-- Still deliberately generous, not deliberately huge: 10,000 synthetic
+-- serials per product per branch was harmless as a bare integer but would be
+-- ~90,000 fabricated physical-frame records here, which pollutes exactly the
+-- serial-trace/aging views R2 exists to make trustworthy. 500 comfortably
+-- outlasts repeated local/storefront e2e runs (CI reseeds from scratch every
+-- run either way) without pretending this many frames physically exist.
+do $$
+declare
+  v_qty constant int := 500;
+  v_product record;
+  v_branch record;
+  v_serial_id uuid;
+  v_n int;
+begin
+  for v_product in select id from products loop
+    for v_branch in select id from branches loop
+      if exists (
+        select 1 from inventory where product_id = v_product.id and branch_id = v_branch.id
+      ) then
+        continue;
+      end if;
+
+      for v_n in 1..v_qty loop
+        insert into product_serials (product_id, serial_number, status, current_branch_id, cost_price_kes, received_at)
+        values (
+          v_product.id,
+          'SEED-' || v_product.id || '-' || v_branch.id || '-' || v_n,
+          'in_stock', v_branch.id, null, now()
+        )
+        returning id into v_serial_id;
+
+        insert into stock_ledger (serial_id, product_id, movement_type, to_branch_id, reference_type, reference_id)
+        values (v_serial_id, v_product.id, 'found', v_branch.id, 'seed', null);
+      end loop;
+
+      insert into inventory (product_id, branch_id, stock) values (v_product.id, v_branch.id, v_qty)
+      on conflict do nothing;
+    end loop;
+  end loop;
+end
+$$;
 
 -- Super admin user.
 --

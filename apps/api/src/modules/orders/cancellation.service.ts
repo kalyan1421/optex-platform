@@ -348,6 +348,28 @@ export class CancellationService {
     return count ?? 0;
   }
 
+  /**
+   * R2 — cancellation and serial restocking are one database transaction.
+   * A separate best-effort restock after `orders.status = cancelled` can lose
+   * stock permanently if its RPC fails, so `cancel_order_and_restock` owns
+   * both writes and rolls both back together.
+   */
+  private async cancelAndRestock(orderId: string, actor: AuthUser, notes: string | null = null): Promise<void> {
+    const { error } = await this.db.rpc('cancel_order_and_restock', {
+      p_order_id: orderId,
+      p_notes: notes,
+      p_actor_id: actor.id,
+      p_actor_role: actor.role ?? 'unknown',
+    });
+    if (error) {
+      this.logger.error(`Could not cancel and restock order ${orderId}: ${error.message}`);
+      if (error.message?.includes('order_already_cancelled')) {
+        throw new ConflictException('This order has already been cancelled.');
+      }
+      throw new InternalServerErrorException('Could not cancel that order.');
+    }
+  }
+
   private async loadPendingRequest(requestId: string) {
     const { data, error } = await this.db
       .from('order_cancellation_requests')
@@ -390,14 +412,7 @@ export class CancellationService {
       );
     }
 
-    const { error: orderError } = await this.db
-      .from('orders')
-      .update({ status: 'cancelled' })
-      .eq('id', order.id);
-    if (orderError) {
-      this.logger.error(`Could not cancel order ${order.id}: ${orderError.message}`);
-      throw new InternalServerErrorException('Could not cancel that order.');
-    }
+    await this.cancelAndRestock(order.id, actorUser);
 
     const { error } = await this.db
       .from('order_cancellation_requests')
@@ -494,14 +509,7 @@ export class CancellationService {
       : 'Cancelled by admin (no reason given).';
     const mergedNotes = [order.notes as string | null, note].filter(Boolean).join('\n');
 
-    const { error: updateError } = await this.db
-      .from('orders')
-      .update({ status: 'cancelled', notes: mergedNotes })
-      .eq('id', order.id);
-    if (updateError) {
-      this.logger.error(`Could not cancel order ${order.id}: ${updateError.message}`);
-      throw new InternalServerErrorException('Could not cancel that order.');
-    }
+    await this.cancelAndRestock(order.id, user, mergedNotes);
 
     await this.auditLog.record({
       actor: user,

@@ -146,30 +146,25 @@ describe('Branch scoping — inventory / appointments / orders (e2e)', () => {
       expect(rows[0].stock).toBe(10);
     });
 
-    it('PATCH /admin/inventory rejects a stock write to a branch other than their own', async () => {
+    // R2 removed PATCH /admin/inventory entirely — stock is now derived from
+    // the ledger (GRN/transfers/adjustments/counts), never set directly, and
+    // `inventory.write` (the permission these two tests used to exercise) was
+    // dropped from the matrix in migration 0026. Branch Manager holds none of
+    // R2's new inventory.* permissions either (SPEC-08's own stories give
+    // Branch Manager zero R2 write surface) — the previous branch-scoping
+    // assertion for a stock write has no route left to make it against. That
+    // coverage is superseded by rbac.e2e-spec.ts's permission-matrix checks.
+    it('POST /admin/grn is refused to a Branch Manager — R2 gave them no inventory write surface', async () => {
       const token = await newBranchManager(branchA);
       await request(app.getHttpServer())
-        .patch('/api/admin/inventory')
+        .post('/api/admin/grn')
         .set(auth(token))
-        .send({ product_id: productId, branch_id: branchB, stock: 99 })
+        .send({
+          supplier_id: '00000000-0000-0000-0000-000000000000',
+          branch_id: branchA,
+          items: [{ product_id: productId, unit_cost_kes: 1000, quantity_ordered: 1 }],
+        })
         .expect(403);
-
-      const { data } = await db
-        .from('inventory')
-        .select('stock')
-        .eq('product_id', productId)
-        .eq('branch_id', branchB)
-        .single();
-      expect(data!.stock).toBe(20); // unchanged
-    });
-
-    it('PATCH /admin/inventory allows a stock write to their own branch', async () => {
-      const token = await newBranchManager(branchA);
-      await request(app.getHttpServer())
-        .patch('/api/admin/inventory')
-        .set(auth(token))
-        .send({ product_id: productId, branch_id: branchA, stock: 15 })
-        .expect(200);
     });
   });
 

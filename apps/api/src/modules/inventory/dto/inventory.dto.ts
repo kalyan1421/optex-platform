@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsUUID, Max, Min } from 'class-validator';
 
 /** A branch the inventory grid has columns for. */
 export class InventoryBranchDto {
@@ -49,23 +48,37 @@ export class InventoryResponseDto {
   items!: InventoryItemDto[];
 }
 
-/**
- * Body for `PATCH /admin/inventory`. `inventory` is keyed on the composite
- * (product_id, branch_id) rather than a surrogate id, so both are required to
- * identify the row.
- */
-export class UpdateStockDto {
-  @ApiProperty({ description: 'Product to adjust.', format: 'uuid' })
-  @IsUUID()
+/** One product/branch comparison of the stock cache to the serial projection. */
+export class InventoryReconciliationItemDto {
+  @ApiProperty({ format: 'uuid' })
   product_id!: string;
 
-  @ApiProperty({ description: 'Branch to adjust it at.', format: 'uuid' })
-  @IsUUID()
+  @ApiProperty()
+  product_name!: string;
+
+  @ApiProperty()
+  product_sku!: string;
+
+  @ApiProperty({ format: 'uuid' })
   branch_id!: string;
 
-  @ApiProperty({ description: 'New stock level. Non-negative.', minimum: 0, maximum: 1_000_000 })
-  @IsInt()
-  @Min(0)
-  @Max(1_000_000)
-  stock!: number;
+  @ApiProperty()
+  branch_name!: string;
+
+  @ApiProperty()
+  cached_stock!: number;
+
+  @ApiProperty()
+  serial_stock!: number;
+
+  @ApiProperty({ description: 'cached_stock minus serial_stock; zero is reconciled.' })
+  difference!: number;
+}
+
+export class InventoryReconciliationResponseDto {
+  @ApiProperty({ type: [InventoryReconciliationItemDto] })
+  items!: InventoryReconciliationItemDto[];
+
+  @ApiProperty({ description: 'True only when every product/branch cache matches its in-stock serial count.' })
+  reconciled!: boolean;
 }

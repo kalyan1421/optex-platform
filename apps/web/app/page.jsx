@@ -9,7 +9,7 @@ import FaceShape from '@/components/home/FaceShape';
 import VirtualTryOn from '@/components/home/VirtualTryOn';
 import FinalCTA from '@/components/home/FinalCTA';
 
-const Home = () => {
+const Home = async () => {
   return (
     <>
       <Hero />

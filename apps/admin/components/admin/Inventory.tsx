@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Download, Edit2, Check, X, AlertTriangle } from 'lucide-react';
+import { Download, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -27,50 +27,17 @@ function stockColor(n: number): string {
   return 'bg-green-500';
 }
 
-function StockCell({ value, onSave }: { value: number; onSave: (v: number) => void }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(value));
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1">
-        <input
-          className="w-16 rounded border border-gray-300 px-2 py-0.5 text-sm"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          // An inline edit-in-place cell: this input only exists because the
-          // user just clicked to edit it, so focus belongs here. Without it they
-          // would have to click the cell and then click the field.
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
-        />
-        <button
-          onClick={() => {
-            onSave(parseInt(draft) || 0);
-            setEditing(false);
-          }}
-          className="text-green-600 hover:text-green-700"
-        >
-          <Check className="h-3.5 w-3.5" />
-        </button>
-        <button onClick={() => setEditing(false)} className="text-gray-400 hover:text-gray-600">
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    );
-  }
-
+/**
+ * R2 (CR-01) retired direct stock edits: `PATCH /admin/inventory` is gone —
+ * stock is now derived from the ledger (GRN, transfers, adjustments, counts),
+ * never set directly, so a number here can no longer be typed over. Read-only
+ * until the GRN/transfer/adjustment/count admin UI lands (sub-phase 2e).
+ */
+function StockCell({ value }: { value: number }) {
   return (
-    <div
-      className="group flex cursor-pointer items-center gap-2"
-      onClick={() => {
-        setDraft(String(value));
-        setEditing(true);
-      }}
-    >
+    <div className="flex items-center gap-2">
       <div className={`h-2.5 w-2.5 rounded-full ${stockColor(value)}`} />
       <span className="text-sm">{value}</span>
-      <Edit2 className="h-3 w-3 text-gray-300 transition-colors group-hover:text-gray-500" />
     </div>
   );
 }
@@ -116,13 +83,17 @@ export function Inventory() {
       try {
         const inventory = await api.admin.inventory.list();
 
-        const fetchedBranches: BranchMeta[] = inventory.branches.slice(0, 3).map((b) => ({
+        // R2 keeps the stock grid read-only until the ledger workflow tabs
+        // land, but it must still show every branch. Hiding branches after the
+        // third makes a valid cross-branch total look incomplete.
+        const fetchedBranches: BranchMeta[] = inventory.branches.map((b) => ({
           id: b.id,
           name: b.name,
         }));
         setBranches(fetchedBranches);
 
-        // Build a set of branch IDs we care about (first 3)
+        // Build a set of every branch returned by the server. A branch-scoped
+        // user receives only their own branch from the API.
         const branchIdSet = new Set(fetchedBranches.map((b) => b.id));
         const branchNameMap: Record<string, string> = {};
         fetchedBranches.forEach((b) => {
@@ -171,39 +142,6 @@ export function Inventory() {
     })();
   }, []);
 
-  function updateStock(productId: string, branchId: string, value: number) {
-    // Optimistically update local state
-    setItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId
-          ? {
-              ...item,
-              stocks: {
-                ...item.stocks,
-                [branchId]: { ...item.stocks[branchId], stock: value },
-              },
-            }
-          : item,
-      ),
-    );
-
-    // Persist to DB. The API 404s when no (product_id, branch_id) row exists,
-    // which the previous browser-direct UPDATE reported as success while
-    // matching zero rows — so surface it instead of leaving the optimistic
-    // value on screen unbacked.
-    void (async () => {
-      try {
-        await api.admin.inventory.setStock({
-          product_id: productId,
-          branch_id: branchId,
-          stock: value,
-        });
-      } catch (e) {
-        console.error('Failed to update stock:', e);
-      }
-    })();
-  }
-
   const lowStockItems = items.filter((item) =>
     branches.some((b) => (item.stocks[b.id]?.stock ?? 0) <= LOW),
   );
@@ -218,7 +156,8 @@ export function Inventory() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Inventory</h2>
           <p className="mt-1 text-gray-500">
-            Stock levels per branch — click any cell to edit inline
+            Stock levels per branch. Stock is now tracked through goods-received notes, transfers,
+            adjustments, and counts — each requires a reason and is logged.
           </p>
         </div>
         <Button variant="outline" onClick={() => exportCSV(items, branches)} disabled={loading}>
@@ -301,10 +240,7 @@ export function Inventory() {
                           <td className="px-3 py-3 text-sm">{item.category}</td>
                           {branches.map((b) => (
                             <td key={b.id} className="px-3 py-3">
-                              <StockCell
-                                value={item.stocks[b.id]?.stock ?? 0}
-                                onSave={(v: number) => updateStock(item.productId, b.id, v)}
-                              />
+                              <StockCell value={item.stocks[b.id]?.stock ?? 0} />
                             </td>
                           ))}
                           <td className="px-3 py-3 text-sm font-semibold">{total}</td>
