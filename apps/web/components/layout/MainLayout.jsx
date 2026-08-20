@@ -32,7 +32,7 @@ export default function MainLayout({ children }) {
         // -1 so the skip link can move focus here without adding the whole
         // region to the tab order.
         tabIndex={-1}
-        className={`flex w-full flex-1 flex-col transition-all duration-500 ease-in-out ${hideNavFooter ? '' : isHomePage ? 'overflow-x-hidden' : isCompactNav ? 'pt-[87px]' : 'pt-[135px]'}`}
+        className={`flex w-full flex-1 flex-col transition-all duration-500 ease-in-out ${hideNavFooter ? '' : isHomePage ? 'overflow-x-hidden' : isCompactNav ? 'pt-[103px] sm:pt-[107px] lg:pt-[87px]' : 'pt-[124px] sm:pt-[128px] lg:pt-[108px]'}`}
       >
         {children}
       </main>

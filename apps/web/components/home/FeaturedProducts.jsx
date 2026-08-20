@@ -29,15 +29,15 @@ export default async function FeaturedProducts() {
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 600,
-                fontSize: '40px',
-                lineHeight: '60px',
+                fontSize: 'clamp(26px, 5vw, 40px)',
+                lineHeight: 1.5,
                 letterSpacing: '-0.4px',
               }}
             >
               Featured Products
             </h2>
             <p
-              className="whitespace-nowrap text-[#717182]"
+              className="text-[#717182] lg:whitespace-nowrap"
               style={{
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,

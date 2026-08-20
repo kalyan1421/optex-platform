@@ -68,7 +68,7 @@ export default async function Page() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Banner Section — static, so it stays on the server. */}
-      <section className="relative flex w-full flex-col items-center overflow-hidden lg:h-[314px] lg:px-[139.6px] lg:pt-[80px]">
+      <section className="relative flex w-full flex-col items-center overflow-hidden px-6 py-12 sm:px-10 sm:py-16 lg:h-[314px] lg:px-[139.6px] lg:py-0 lg:pt-[80px]">
         <div
           className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ backgroundImage: 'url(/images/shop-banner-cropped.jpg)' }}
@@ -76,25 +76,25 @@ export default async function Page() {
         {/* Overlay (#F9F9F9 at 50% opacity) */}
         <div className="absolute inset-0 z-0 bg-[#F9F9F980]" />
 
-        <div className="relative z-10 flex flex-col items-center lg:h-[154px] lg:w-[1160.8px]">
+        <div className="relative z-10 flex w-full min-w-0 flex-col items-center lg:h-[154px] lg:w-[1160.8px]">
           <h1
-            className="flex items-center justify-center whitespace-nowrap text-center text-[#000000] lg:mt-[2.4px] lg:h-[84px] lg:w-[410px]"
+            className="flex items-center justify-center text-center text-[#000000] lg:mt-[2.4px] lg:h-[84px] lg:w-[410px] lg:whitespace-nowrap"
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
-              fontSize: '56px',
-              lineHeight: '84px',
+              fontSize: 'clamp(32px, 8vw, 56px)',
+              lineHeight: 1.3,
             }}
           >
             Our Collection
           </h1>
           <p
-            className="flex items-center justify-center text-center text-[#000000] lg:mt-[14px] lg:h-[54px] lg:w-[700px]"
+            className="mt-3 flex items-center justify-center text-center text-[#000000] lg:mt-[14px] lg:h-[54px] lg:w-[700px]"
             style={{
               fontFamily: 'Inter, sans-serif',
               fontWeight: 400,
-              fontSize: '18px',
-              lineHeight: '27px',
+              fontSize: 'clamp(14px, 3.2vw, 18px)',
+              lineHeight: 1.5,
             }}
           >
             Browse through our extensive range of premium eyewear, from classic frames to modern

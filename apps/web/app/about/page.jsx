@@ -196,8 +196,11 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Right Circles */}
-          <div className="relative flex h-[340px] w-[643px] shrink-0 origin-center scale-75 items-center justify-center sm:scale-90 lg:scale-100 xl:origin-right">
+          {/* Right Circles — outer box is sized to the POST-scale footprint so it
+              reserves the right amount of layout space; the inner box keeps its
+              original Figma dimensions and gets visually scaled down to fit. */}
+          <div className="flex h-[170px] w-[322px] shrink-0 items-center justify-center overflow-hidden sm:h-[255px] sm:w-[482px] md:h-[306px] md:w-[579px] lg:h-[340px] lg:w-[643px] lg:overflow-visible">
+          <div className="relative flex h-[340px] w-[643px] shrink-0 origin-center scale-50 items-center justify-center sm:scale-75 md:scale-90 lg:scale-100 xl:origin-right">
             {/* Mission Circle */}
             <div className="peer/mission group/mission absolute left-0 z-10 flex h-[340px] w-[340px] items-center justify-center rounded-[400px] bg-white shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] transition-all delay-[100ms] duration-[800ms] ease-in-out hover:z-30 hover:bg-[#2E3192] hover:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)]">
               <div className="flex h-[203px] w-[256px] flex-col items-center gap-[8px]">
@@ -268,6 +271,7 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </section>

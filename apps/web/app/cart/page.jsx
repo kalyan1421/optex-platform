@@ -191,10 +191,10 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-[1440px] px-[100px] pb-[100px] pt-[20px]">
-        <div className="flex items-start gap-[54px]">
+      <div className="mx-auto w-full max-w-[1440px] px-6 pb-[100px] pt-[20px] lg:px-[100px]">
+        <div className="flex flex-col items-start gap-9 lg:flex-row lg:gap-[54px]">
           {/* Left Column - Cart Items */}
-          <div className="flex w-[736px] shrink-0 flex-col">
+          <div className="flex w-full min-w-0 shrink-0 flex-col lg:w-[736px]">
             {/* Header */}
             <div className="mb-[27px] flex flex-col gap-[9px]">
               <h1
@@ -225,22 +225,22 @@ const Cart = () => {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="box-border flex w-full gap-[27px] rounded-[36px] border-[1.13px] border-[rgba(199,197,212,0.3)] bg-white p-[27px]"
+                  className="box-border flex w-full flex-col gap-[18px] rounded-[36px] border-[1.13px] border-[rgba(199,197,212,0.3)] bg-white p-[18px] sm:flex-row sm:gap-[27px] sm:p-[27px]"
                   style={{ boxShadow: '0px 1.13px 2.25px 0px rgba(0, 0, 0, 0.05)' }}
                 >
                   {/* Product Image */}
-                  <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-[26px] bg-[#EEEEF0]">
+                  <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-[26px] bg-[#EEEEF0] sm:h-[180px] sm:w-[180px]">
                     <Image
                       src={item.image || '/images/executive_pro.png'}
                       alt={item.title}
                       fill
-                      sizes="180px"
+                      sizes="(min-width: 640px) 180px, 90vw"
                       className="object-contain"
                     />
                   </div>
 
                   {/* Product Info */}
-                  <div className="box-border flex h-[180px] w-[498px] flex-col justify-between">
+                  <div className="box-border flex min-w-0 flex-1 flex-col justify-between gap-3 sm:h-[180px]">
                     <div className="flex flex-col">
                       <div className="flex items-start justify-between">
                         <div className="flex flex-col">
@@ -398,9 +398,9 @@ const Cart = () => {
               >
                 HAVE A PROMO CODE?
               </span>
-              <div className="flex gap-[18px]">
+              <div className="flex flex-col gap-[18px] sm:flex-row">
                 {promoApplied ? (
-                  <div className="box-border flex h-[56.5px] w-[539.19px] items-center justify-between rounded-[11248px] border border-green-200 bg-green-50 px-4">
+                  <div className="box-border flex h-[56.5px] w-full items-center justify-between rounded-[11248px] border border-green-200 bg-green-50 px-4 sm:w-[539.19px]">
                     <span className="text-[15px] font-bold text-green-700">
                       ✓ {promoApplied} applied
                     </span>
@@ -416,7 +416,7 @@ const Cart = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="box-border flex h-[56.5px] w-[539.19px] shrink-0 items-center rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F3F3F6] px-[27px]">
+                    <div className="box-border flex h-[56.5px] w-full shrink-0 items-center rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F3F3F6] px-[27px] sm:w-[539.19px]">
                       <input
                         type="text"
                         value={promoInput}
@@ -435,7 +435,7 @@ const Cart = () => {
                     <button
                       onClick={applyPromo}
                       disabled={promoLoading}
-                      className="box-border flex h-[56.25px] w-[122.56px] shrink-0 items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors hover:bg-[#2A3182] disabled:opacity-60"
+                      className="box-border flex h-[56.25px] w-full shrink-0 items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors hover:bg-[#2A3182] disabled:opacity-60 sm:w-[122.56px]"
                       style={{
                         fontFamily: 'Manrope, sans-serif',
                         fontSize: '18px',
@@ -455,7 +455,7 @@ const Cart = () => {
           </div>
 
           {/* Right Column - Order Summary */}
-          <div className="w-[450px] shrink-0">
+          <div className="w-full shrink-0 lg:w-[450px]">
             <div className="box-border flex flex-col gap-[36px] rounded-[36px] border-[1.13px] border-[rgba(199,197,212,0.3)] bg-white p-[36px]">
               <h2
                 className="m-0 text-[#141776]"

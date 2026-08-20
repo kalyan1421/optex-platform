@@ -52,8 +52,8 @@ const FaceShape = () => {
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
-              fontSize: '48px',
-              lineHeight: '72px',
+              fontSize: 'clamp(28px, 6vw, 48px)',
+              lineHeight: 1.5,
             }}
           >
             Shop by Face Shape
@@ -119,11 +119,10 @@ const FaceShape = () => {
                 )}
               </div>
 
-              <div className="relative flex w-full flex-col items-center lg:h-[208.25px] lg:w-[265.75px]">
+              <div className="flex w-full flex-col items-center gap-2 pb-6 pt-6 lg:w-[265.75px]">
                 <h3
-                  className="absolute text-center text-[#000000]"
+                  className="text-center text-[#000000]"
                   style={{
-                    top: '24px',
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '22px',
@@ -133,9 +132,8 @@ const FaceShape = () => {
                   {shape.title}
                 </h3>
                 <p
-                  className="absolute w-full px-[24px] text-center text-[#717182]"
+                  className="w-full px-[24px] text-center text-[#717182]"
                   style={{
-                    top: '65px',
                     fontFamily: 'Inter, sans-serif',
                     fontWeight: 400,
                     fontSize: '14px',
@@ -146,9 +144,8 @@ const FaceShape = () => {
                 </p>
                 <a
                   href={`#shop-${shape.id}`}
-                  className="absolute text-center text-[#2E3192] transition-colors hover:border-[#E53935] hover:text-[#E53935]"
+                  className="mt-2 text-center text-[#2E3192] transition-colors hover:border-[#E53935] hover:text-[#E53935]"
                   style={{
-                    top: '158.25px',
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 700,
                     fontSize: '16px',

@@ -73,8 +73,8 @@ const WhyOptex = () => {
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
-              fontSize: '48px',
-              lineHeight: '60px',
+              fontSize: 'clamp(28px, 6vw, 48px)',
+              lineHeight: 1.25,
             }}
           >
             Your vision is our priority. Experience the difference.

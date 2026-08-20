@@ -26,7 +26,7 @@ const Promotional = () => {
             }}
           ></div>
 
-          <div className="relative z-20 flex h-full w-full flex-col items-start pl-8 pt-10 lg:pl-[60px] lg:pt-[68.5px]">
+          <div className="relative z-20 flex h-full w-full flex-col items-start pl-8 pr-8 pt-10 lg:pl-[60px] lg:pr-0 lg:pt-[68.5px]">
             <span
               className="flex items-center justify-center uppercase text-[#FFFFFF]"
               style={{
@@ -49,8 +49,8 @@ const Promotional = () => {
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 700,
-                fontSize: '48px',
-                lineHeight: '60px',
+                fontSize: 'clamp(24px, 6vw, 48px)',
+                lineHeight: 1.25,
               }}
             >
               Buy 1 Get 1 Free <br /> on Winter Shades
@@ -62,8 +62,8 @@ const Promotional = () => {
                 color: 'rgba(255, 255, 255, 0.7)',
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,
-                fontSize: '18px',
-                lineHeight: '27px',
+                fontSize: 'clamp(14px, 3.5vw, 18px)',
+                lineHeight: 1.5,
               }}
             >
               Protect your eyes in style with our latest polarized sunglasses. Offer ends this
@@ -110,7 +110,7 @@ const Promotional = () => {
             }}
           ></div>
 
-          <div className="relative z-20 flex h-full w-full flex-col items-start pl-8 pt-10 lg:pl-[60px] lg:pt-[68.5px]">
+          <div className="relative z-20 flex h-full w-full flex-col items-start pl-8 pr-8 pt-10 lg:pl-[60px] lg:pr-0 lg:pt-[68.5px]">
             <span
               className="flex items-center justify-center uppercase text-[#2E3192]"
               style={{
@@ -133,8 +133,8 @@ const Promotional = () => {
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 700,
-                fontSize: '48px',
-                lineHeight: '60px',
+                fontSize: 'clamp(24px, 6vw, 48px)',
+                lineHeight: 1.25,
               }}
             >
               Up to 30% Off <br /> Designer Frames
@@ -146,8 +146,8 @@ const Promotional = () => {
                 color: 'rgba(255, 255, 255, 0.7)',
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,
-                fontSize: '18px',
-                lineHeight: '27px',
+                fontSize: 'clamp(14px, 3.5vw, 18px)',
+                lineHeight: 1.5,
               }}
             >
               Elevate your look with premium frames from Rayban, Oakley, and more at unbeatable

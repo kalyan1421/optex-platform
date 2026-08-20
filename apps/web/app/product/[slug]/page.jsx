@@ -273,8 +273,8 @@ export default async function Page({ params }) {
               className="-mt-[29px] mb-[16px] pt-[29px] text-[#000000]"
               style={{
                 fontFamily: 'Poppins, sans-serif',
-                fontSize: '48px',
-                lineHeight: '60px',
+                fontSize: 'clamp(28px, 6vw, 48px)',
+                lineHeight: 1.25,
                 fontWeight: 700,
               }}
             >
@@ -587,8 +587,8 @@ export default async function Page({ params }) {
 
         {/* Similar Products */}
         <div className="mx-auto mt-[60px] w-full max-w-[1240px]">
-          <div className="mb-[24px] flex h-[89px] w-full items-end justify-between">
-            <div className="flex w-[339.56px] flex-col gap-[8px]">
+          <div className="mb-[24px] flex w-full flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-0 lg:h-[89px]">
+            <div className="flex w-full min-w-0 flex-col gap-[8px] sm:w-[339.56px]">
               <p
                 className="uppercase text-[#E53935]"
                 style={{
@@ -602,11 +602,11 @@ export default async function Page({ params }) {
                 RECOMMENDATION
               </p>
               <h2
-                className="h-[60px] text-[#000000]"
+                className="text-[#000000]"
                 style={{
                   fontFamily: 'Poppins, sans-serif',
-                  fontSize: '40px',
-                  lineHeight: '60px',
+                  fontSize: 'clamp(26px, 5vw, 40px)',
+                  lineHeight: 1.5,
                   fontWeight: 700,
                 }}
               >

@@ -18,16 +18,10 @@ const PhoneIcon = () => (
 
 export default function TopBar() {
   return (
-    <div
-      className="flex w-full items-center justify-center bg-[#2E3192]"
-      style={{ height: '36px' }}
-    >
-      <div
-        className="flex w-full flex-row items-center justify-between"
-        style={{ maxWidth: '1240px', height: '24px', paddingLeft: '100px', paddingRight: '100px' }}
-      >
-        {/* Left: Email */}
-        <div className="flex flex-row items-center" style={{ gap: '8px', width: '197px' }}>
+    <div className="flex h-9 w-full items-center justify-center bg-[#2E3192] px-4 sm:px-6 lg:px-[100px]">
+      <div className="flex h-6 w-full max-w-[1240px] flex-row items-center justify-center gap-3 lg:justify-between">
+        {/* Left: Email — desktop/laptop only, no room for it below lg */}
+        <div className="hidden flex-shrink-0 flex-row items-center gap-2 lg:flex lg:w-[197px]">
           <MailIcon />
           <a
             href="mailto:optexopticians@gmail.com"
@@ -47,6 +41,7 @@ export default function TopBar() {
 
         {/* Center: Offer Text */}
         <span
+          className="min-w-0 flex-1 truncate text-center"
           style={{
             fontFamily: 'Montserrat, sans-serif',
             fontWeight: 600,
@@ -59,10 +54,10 @@ export default function TopBar() {
           offer on 25th december for christmas collection
         </span>
 
-        {/* Right: Phone */}
+        {/* Right: Phone — hidden on mobile, room's too tight alongside the offer text */}
         <div
-          className="flex flex-row items-center"
-          style={{ gap: '8px', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}
+          className="hidden flex-shrink-0 flex-row items-center gap-2 whitespace-nowrap sm:flex"
+          style={{ justifyContent: 'flex-end' }}
         >
           <PhoneIcon />
           <a

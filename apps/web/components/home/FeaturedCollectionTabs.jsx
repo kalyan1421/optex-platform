@@ -68,24 +68,24 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               className={`relative flex max-w-[370px] flex-1 cursor-pointer flex-col overflow-hidden rounded-[32px] bg-white transition-all duration-300 lg:h-[144px] ${isActive ? 'border-2 border-[#2E3192]' : 'border border-[#D4D4D4]'} `}
             >
               {/* Inner image area — fills full card */}
-              <div className="relative flex-1 overflow-hidden rounded-[28px]">
+              <div className="relative aspect-square w-full overflow-hidden rounded-[28px] lg:aspect-auto lg:w-auto lg:flex-1">
                 <Image
                   src={cat.image}
                   alt={cat.name}
                   fill
-                  sizes="(min-width: 1024px) 370px, 100vw"
+                  sizes="(min-width: 1024px) 370px, 33vw"
                   className="object-cover transition-transform duration-500 hover:scale-105"
                 />
               </div>
               {/* Label below image */}
-              <div className="flex shrink-0 items-center justify-center py-[6px]">
+              <div className="flex items-center justify-center px-1 py-2 lg:shrink-0 lg:py-[6px]">
                 <span
-                  className="capitalize text-[#000000]"
+                  className="text-center capitalize text-[#000000]"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
-                    fontSize: '14px',
-                    lineHeight: '100%',
+                    fontSize: 'clamp(11px, 2.8vw, 14px)',
+                    lineHeight: '1.2',
                   }}
                 >
                   {cat.name}
@@ -98,13 +98,13 @@ export default function FeaturedCollectionTabs({ products, categories }) {
 
       {/* Product Grid */}
       {activeProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[1143px] lg:grid-cols-4 lg:gap-[24px]">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:w-[1143px] lg:grid-cols-4 lg:gap-[24px]">
           {activeProducts.map((product, index) => (
             <div
               key={product.id}
               data-aos="fade-up"
               data-aos-delay={index * 100}
-              className="group flex flex-col bg-[#FFFFFF] transition-colors transition-transform duration-500 hover:-translate-y-1 hover:border-[#2E3192]/50 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
+              className="group flex flex-col gap-3 bg-[#FFFFFF] p-3 transition-colors transition-transform duration-500 hover:-translate-y-1 hover:border-[#2E3192]/50 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
               style={{
                 borderRadius: '32px',
                 border: '1px solid #D4D4D4',
@@ -113,12 +113,12 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               }}
             >
               <div
-                className="relative overflow-hidden bg-[#F9F9F9] lg:h-[280px] lg:w-[241.75px]"
+                className="relative aspect-[241.75/280] w-full overflow-hidden bg-[#F9F9F9] lg:h-[280px] lg:w-[241.75px]"
                 style={{ borderRadius: '24px' }}
               >
                 {/* Price Tag */}
                 <div
-                  className="absolute z-10 flex items-center justify-center bg-[#FFFFFFE5] lg:left-[156.98px] lg:top-[16px] lg:h-[40px] lg:w-[81px]"
+                  className="absolute right-3 top-3 z-10 flex h-[40px] w-[81px] items-center justify-center bg-[#FFFFFFE5] lg:left-[156.98px] lg:top-[16px] lg:right-auto"
                   style={{ borderRadius: '33554400px' }}
                 >
                   <div className="flex items-baseline gap-[2px]">
@@ -157,7 +157,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                     src={getProductImageUrl(product)}
                     alt={product.name}
                     fill
-                    sizes="242px"
+                    sizes="(min-width: 1024px) 242px, (min-width: 640px) 45vw, 90vw"
                     className={`mix-blend-multiply transition-transform duration-500 group-hover:scale-105 ${
                       activeCategory === 'lens' ? 'object-contain' : 'object-cover'
                     }`}
@@ -167,7 +167,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               </div>
               <Link
                 href={`/product/${product.slug}`}
-                className="flex flex-col lg:h-[55px] lg:w-[241.75px] lg:gap-[4px] lg:px-[12px]"
+                className="flex flex-col gap-1 lg:h-[55px] lg:w-[241.75px] lg:gap-[4px] lg:px-[12px]"
               >
                 <p
                   className="uppercase text-[#717182]"

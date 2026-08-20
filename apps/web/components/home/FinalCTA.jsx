@@ -19,8 +19,8 @@ const FinalCTA = () => {
           style={{
             fontFamily: 'Poppins, sans-serif',
             fontWeight: 700,
-            fontSize: '64px',
-            lineHeight: '80px',
+            fontSize: 'clamp(32px, 7vw, 64px)',
+            lineHeight: 1.25,
             letterSpacing: '0px',
             margin: 0,
           }}
@@ -35,8 +35,8 @@ const FinalCTA = () => {
           style={{
             fontFamily: 'Inter, sans-serif',
             fontWeight: 400,
-            fontSize: '22px',
-            lineHeight: '33px',
+            fontSize: 'clamp(16px, 3.5vw, 22px)',
+            lineHeight: 1.5,
             letterSpacing: '0px',
             color: 'rgba(255, 255, 255, 0.8)',
             marginTop: '24px',

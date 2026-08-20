@@ -34,8 +34,8 @@ export default async function TrendingNow() {
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 700,
-                fontSize: '48px',
-                lineHeight: '72px',
+                fontSize: 'clamp(28px, 6vw, 48px)',
+                lineHeight: 1.5,
               }}
             >
               Trending Now

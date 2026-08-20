@@ -22,20 +22,20 @@ export default async function FeaturedCollection() {
   ]);
 
   return (
-    <section className="flex w-full flex-col items-center bg-[#FFFFFF] lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
-      <div className="flex flex-col items-center lg:w-[1240px] lg:gap-[40px]">
+    <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 py-12 sm:px-10 lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
+      <div className="flex w-full flex-col items-center lg:w-[1240px] lg:gap-[40px]">
         {/* Header Section */}
         <div
           data-aos="fade-up"
-          className="flex w-full flex-row items-center justify-between lg:h-[60px] lg:w-[1240px]"
+          className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between lg:h-[60px] lg:w-[1240px]"
         >
           <h2
             className="capitalize text-[#000000]"
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 600,
-              fontSize: '40px',
-              lineHeight: '60px',
+              fontSize: 'clamp(26px, 5vw, 40px)',
+              lineHeight: 1.5,
               letterSpacing: '-0.4px',
             }}
           >

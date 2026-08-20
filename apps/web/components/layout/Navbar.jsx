@@ -135,7 +135,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="relative z-30 py-2 transition-all duration-500 ease-in-out sm:py-3 lg:py-[3px] lg:h-[99px]"
+      className="relative z-30 py-2 transition-all duration-500 ease-in-out sm:py-2.5 lg:h-[72px] lg:py-2"
       style={{ backgroundColor: navbarBackground }}
     >
       <div className="mx-auto flex h-full w-full max-w-[1440px] items-center gap-4 px-4 sm:px-10 lg:justify-between lg:gap-0 lg:px-[100px]">
@@ -148,7 +148,7 @@ export default function Navbar() {
               height={372}
               priority
               className="h-full w-auto object-contain transition-all duration-500 ease-in-out"
-              style={{ maxHeight: '99px' }}
+              style={{ maxHeight: '72px' }}
             />
           </Link>
         </div>

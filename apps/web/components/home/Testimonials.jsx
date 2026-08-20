@@ -37,8 +37,8 @@ const Testimonials = ({ testimonials = [] }) => {
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
-              fontSize: '48px',
-              lineHeight: '57.6px',
+              fontSize: 'clamp(28px, 6vw, 48px)',
+              lineHeight: 1.2,
               letterSpacing: '-0.48px',
               margin: 0,
             }}

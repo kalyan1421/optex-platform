@@ -217,7 +217,7 @@ export default function EyeCarePage() {
                 {/* 02 Header Group (Frame 2610720) */}
                 <div className="flex h-[93px] w-full flex-col gap-[20px] xl:w-[381px]">
                   {/* Circle & Title */}
-                  <div className="flex h-[52px] w-[342px] items-center gap-[12px]">
+                  <div className="flex h-[52px] w-auto items-center gap-[12px] lg:w-[342px]">
                     {/* 02 Circle */}
                     <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-[26px] border-[2px] border-[#2E3192] bg-[#2E3192]">
                       <span className="font-outfit text-center text-[18px] font-extrabold leading-[100%] text-white">
@@ -225,7 +225,7 @@ export default function EyeCarePage() {
                       </span>
                     </div>
                     {/* Title & Subtitle */}
-                    <div className="flex w-[273px] flex-col justify-center gap-[2px]">
+                    <div className="flex w-auto flex-col justify-center gap-[2px] lg:w-[273px]">
                       <span className="font-poppins text-[16px] font-semibold leading-[21px] text-[#0F0F0F]">
                         Eye & health history
                       </span>
@@ -366,10 +366,10 @@ export default function EyeCarePage() {
                   </div>
                   {/* Title & Subtitle (Frame 2610707) */}
                   <div className="flex h-[44px] w-auto flex-col justify-center gap-[2px] lg:w-[222px]">
-                    <span className="font-poppins whitespace-nowrap text-[16px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <span className="font-poppins lg:whitespace-nowrap text-[16px] font-semibold leading-[21px] text-[#0F0F0F]">
                       Preferred appointment
                     </span>
-                    <span className="font-poppins whitespace-nowrap text-[12px] font-normal leading-[21px] text-[#898989]">
+                    <span className="font-poppins lg:whitespace-nowrap text-[12px] font-normal leading-[21px] text-[#898989]">
                       We’ll confirm by SMS within the hours
                     </span>
                   </div>

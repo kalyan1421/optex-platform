@@ -19,8 +19,8 @@ export default function VirtualTryOn() {
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 700,
-                fontSize: '60px',
-                lineHeight: '72px',
+                fontSize: 'clamp(34px, 7vw, 60px)',
+                lineHeight: 1.2,
                 letterSpacing: '-0.6px',
               }}
             >
@@ -33,8 +33,8 @@ export default function VirtualTryOn() {
               style={{
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 400,
-                fontSize: '20px',
-                lineHeight: '30px',
+                fontSize: 'clamp(15px, 3.5vw, 20px)',
+                lineHeight: 1.5,
                 color: 'rgba(255, 255, 255, 0.8)',
               }}
             >

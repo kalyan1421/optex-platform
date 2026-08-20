@@ -97,7 +97,7 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Banner Section */}
-      <section className="relative flex w-full flex-col items-end justify-center overflow-hidden bg-[#E53935] lg:h-[354px] lg:pr-[100px]">
+      <section className="relative flex w-full flex-col items-end justify-center overflow-hidden bg-[#E53935] px-6 py-12 sm:px-10 sm:py-16 lg:h-[354px] lg:px-0 lg:pr-[100px] lg:py-0">
         {/* Background Image */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center"
@@ -105,14 +105,14 @@ const Contact = () => {
         />
 
         {/* Content Box */}
-        <div className="relative z-10 flex flex-col items-end lg:h-[152px] lg:w-[511px] lg:gap-[14px]">
+        <div className="relative z-10 flex w-full min-w-0 flex-col items-end gap-3 lg:h-[152px] lg:w-[511px] lg:gap-[14px]">
           <h1
             className="flex items-center justify-end text-right text-[#FFFFFF] lg:h-[84px] lg:w-[357px]"
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
-              fontSize: '56px',
-              lineHeight: '84px',
+              fontSize: 'clamp(32px, 8vw, 56px)',
+              lineHeight: 1.3,
             }}
           >
             Get in Touch
@@ -122,8 +122,8 @@ const Contact = () => {
             style={{
               fontFamily: 'Inter, sans-serif',
               fontWeight: 400,
-              fontSize: '18px',
-              lineHeight: '27px',
+              fontSize: 'clamp(14px, 3.2vw, 18px)',
+              lineHeight: 1.5,
             }}
           >
             Have questions or need assistance? Our dedicated team is here to help you find the

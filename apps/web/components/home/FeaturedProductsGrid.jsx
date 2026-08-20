@@ -15,13 +15,13 @@ export default function FeaturedProductsGrid({ products }) {
   const { addToCart } = useCart();
 
   return (
-    <div className="flex flex-wrap justify-between gap-6 lg:grid lg:w-[1240px] lg:grid-cols-4 lg:gap-[24px]">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid lg:w-[1240px] lg:grid-cols-4 lg:gap-[24px]">
       {products.map((product, index) => (
         <div
           key={product.id}
           data-aos="fade-up"
           data-aos-delay={index * 50}
-          className="group flex cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:h-[378.2px] lg:w-[291px] lg:gap-[10px]"
+          className="group flex w-full cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:h-[378.2px] lg:w-[291px] lg:gap-[10px]"
           style={{
             borderRadius: '32px',
             border: '0.8px solid #D4D4D4',
@@ -29,7 +29,7 @@ export default function FeaturedProductsGrid({ products }) {
           }}
         >
           {/* Product Image */}
-          <div className="relative w-full lg:h-[225.2px] lg:w-[289px]">
+          <div className="relative aspect-[289/225.2] w-full lg:h-[225.2px] lg:w-[289px]">
             <WishlistToggle
               productId={product.id}
               className="absolute left-[12px] top-[12px] z-10"
@@ -51,8 +51,8 @@ export default function FeaturedProductsGrid({ products }) {
           </div>
 
           {/* Product Info */}
-          <div className="flex flex-col lg:h-[141px] lg:w-[289px] lg:gap-[10px] lg:px-[12px] lg:pb-[12px]">
-            <div className="flex flex-col lg:h-[72px] lg:w-[265px]">
+          <div className="flex w-full flex-col gap-2 px-3 pb-3 lg:h-[141px] lg:w-[289px] lg:gap-[10px] lg:px-[12px] lg:pb-[12px]">
+            <div className="flex w-full flex-col lg:h-[72px] lg:w-[265px]">
               <Link href={`/product/${product.slug}`}>
                 <h3
                   className="truncate text-[#000000] transition-colors group-hover:text-[#2E3192] lg:h-[30px] lg:w-[265px]"
@@ -81,7 +81,7 @@ export default function FeaturedProductsGrid({ products }) {
               </p>
             </div>
 
-            <div className="flex items-center justify-between lg:h-[37px] lg:w-[265px]">
+            <div className="flex w-full items-center justify-between lg:h-[37px] lg:w-[265px]">
               <span
                 className="whitespace-nowrap text-[#2E3192]"
                 style={{
