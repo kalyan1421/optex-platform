@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { escapeForPostgrestFilter } from '../../common/postgrest';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
@@ -74,7 +75,7 @@ export class ProductsService {
     if (error) throw new BadRequestException(error.message);
 
     return {
-      items: (data ?? []) as ProductRow[],
+      items: await this.withAvailability((data ?? []) as ProductRow[]),
       total: count ?? 0,
       page,
       limit,
@@ -118,7 +119,7 @@ export class ProductsService {
     if (error) throw new BadRequestException(error.message);
 
     return {
-      items: (data ?? []) as ProductRow[],
+      items: await this.withAvailability((data ?? []) as ProductRow[]),
       total: count ?? 0,
       page,
       limit,
@@ -157,20 +158,18 @@ export class ProductsService {
 
     if ((tsCount ?? 0) > 0) {
       return {
-        items: (tsData ?? []) as ProductRow[],
+        items: await this.withAvailability((tsData ?? []) as ProductRow[]),
         total: tsCount ?? 0,
         page,
         limit,
       };
     }
 
-    // Fallback: ilike on name/brand for partial or no-tsv matches.
-    //
-    // `,` `.` `(` `)` are PostgREST's own filter delimiters — left unescaped a
-    // search term can inject an extra OR condition and change which rows come
-    // back (same class as CODE-REVIEW C-2). Strip those, then escape the
-    // `ilike` wildcards so they match literally.
-    const safe = q.replace(/[(),.]/g, ' ').replace(/[%_]/g, (m) => `\\${m}`);
+    // Fallback: ilike on name/brand for partial or no-tsv matches. The search
+    // term is escaped because it lands inside a PostgREST `or(...)` filter —
+    // see `escapeForPostgrestFilter` for what that has to defend against
+    // (same class as CODE-REVIEW C-2).
+    const safe = escapeForPostgrestFilter(q);
     const pattern = `%${safe}%`;
     const {
       data: ilData,
@@ -187,7 +186,7 @@ export class ProductsService {
     if (ilError) throw new BadRequestException(ilError.message);
 
     return {
-      items: (ilData ?? []) as ProductRow[],
+      items: await this.withAvailability((ilData ?? []) as ProductRow[]),
       total: ilCount ?? 0,
       page,
       limit,
@@ -208,7 +207,35 @@ export class ProductsService {
 
     if (error) throw new BadRequestException(error.message);
     if (!data) throw new NotFoundException(`Product "${slug}" not found`);
-    return data as ProductRow;
+    const [product] = await this.withAvailability([data as ProductRow]);
+    return product;
+  }
+
+  /** Add a non-authoritative stock hint for storefront availability messaging. */
+  private async withAvailability(products: ProductRow[]): Promise<ProductRow[]> {
+    if (products.length === 0) return products;
+    const ids = products.map((product) => product.id);
+    const { data, error } = await this.supabase.client
+      .from('inventory')
+      .select('product_id, stock')
+      .in('product_id', ids);
+    if (error) throw new BadRequestException(error.message);
+
+    const totals = new Map<string, number>();
+    for (const row of data ?? []) {
+      const productId = String((row as { product_id: string }).product_id);
+      totals.set(
+        productId,
+        (totals.get(productId) ?? 0) + Number((row as { stock: number }).stock),
+      );
+    }
+
+    return products.map((product) => ({
+      ...product,
+      // null means the catalogue has no inventory rows yet; do not falsely
+      // label a product out of stock while the inventory import is pending.
+      available_stock: totals.has(product.id) ? totals.get(product.id) : null,
+    }));
   }
 
   /**

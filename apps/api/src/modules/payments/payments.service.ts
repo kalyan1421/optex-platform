@@ -14,7 +14,12 @@ import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 import { MpesaService } from './mpesa.service';
 import { PesapalService } from './pesapal.service';
-import { FINAL_TX_STATUSES, TX_STATUS, normalizeKenyanMsisdn } from './payments.constants';
+import {
+  FINAL_TX_STATUSES,
+  MAX_STK_DESTINATIONS_PER_ORDER,
+  TX_STATUS,
+  normalizeKenyanMsisdn,
+} from './payments.constants';
 import {
   AdminListPaymentsQueryDto,
   PaymentProviderFilter,
@@ -149,8 +154,9 @@ export class PaymentsService {
       );
     }
 
-    const { order } = await this.resolveOwnedOrder(authUserId, orderId);
+    const { order, customer } = await this.resolveOwnedOrder(authUserId, orderId);
     this.assertPayable(order);
+    await this.assertDestinationAllowed(order, customer, phone);
 
     const push = await this.mpesa.stkPush({
       amount: order.total_kes,
@@ -202,10 +208,16 @@ export class PaymentsService {
     if (!tx) {
       throw new NotFoundException('No M-Pesa transaction for that request id.');
     }
-    if (tx.order_id) {
-      // Confirm the caller owns the order behind this transaction.
-      await this.resolveOwnedOrder(authUserId, tx.order_id);
+    // Audit C-04: this used to read `if (tx.order_id)`, so a transaction with
+    // no order skipped the ownership check entirely — any authenticated caller
+    // knowing a CheckoutRequestID would get its status and trigger a live
+    // Daraja query against it. Every insert sets `order_id`, so the null case
+    // should not arise; treat it as unresolvable rather than as unowned.
+    if (!tx.order_id) {
+      throw new NotFoundException('No M-Pesa transaction for that request id.');
     }
+    // Confirm the caller owns the order behind this transaction.
+    await this.resolveOwnedOrder(authUserId, tx.order_id);
 
     const result = await this.mpesa.stkQuery(checkoutRequestId);
     const resultCode = result.ResultCode !== undefined ? Number(result.ResultCode) : null;
@@ -217,6 +229,7 @@ export class PaymentsService {
           ResultCode: 0,
           ResultDesc: result.ResultDesc,
           source: 'query',
+          providerConfirmed: true,
         });
       } else {
         await this.markMpesaFailed(tx, resultCode, result.ResultDesc ?? null, {
@@ -261,23 +274,69 @@ export class PaymentsService {
       return;
     }
 
-    const resultCode = Number(stk.ResultCode);
-    if (resultCode === 0) {
-      const meta = this.extractCallbackMetadata(stk.CallbackMetadata);
+    // Daraja STK callbacks are unauthenticated and their ResultCode and
+    // CallbackMetadata can be forged. Treat this request only as a trigger;
+    // the provider's authenticated STK query is the source of truth.
+    let query: Awaited<ReturnType<MpesaService['stkQuery']>>;
+    try {
+      query = await this.mpesa.stkQuery(stk.CheckoutRequestID);
+    } catch (error) {
+      this.logger.error(
+        `M-Pesa callback re-query failed for ${stk.CheckoutRequestID}: ${(error as Error).message}`,
+      );
+      await this.db
+        .from('mpesa_transactions')
+        .update({
+          raw: {
+            ...(tx.raw ?? {}),
+            stage: 'provider_query_error',
+            callback: stk,
+            query_error: (error as Error).message,
+          },
+        })
+        .eq('id', tx.id);
+      return;
+    }
+
+    const providerResultCode =
+      query.ResultCode !== undefined && query.ResultCode !== null ? Number(query.ResultCode) : null;
+
+    if (providerResultCode === 0) {
+      // The query response does not repeat the amount. The amount is therefore
+      // the amount bound to this CheckoutRequestID at STK initiation; any
+      // callback amount is retained for audit but is never trusted for credit.
       await this.applyMpesaSuccess(tx, {
         ResultCode: 0,
-        ResultDesc: stk.ResultDesc,
-        receiptNumber: meta.MpesaReceiptNumber,
-        phoneNumber: meta.PhoneNumber,
-        amount: meta.Amount,
-        source: 'callback',
-        raw: stk,
+        ResultDesc: query.ResultDesc ?? stk.ResultDesc,
+        receiptNumber: this.extractCallbackMetadata(stk.CallbackMetadata).MpesaReceiptNumber,
+        phoneNumber: this.extractCallbackMetadata(stk.CallbackMetadata).PhoneNumber,
+        amount: this.extractCallbackMetadata(stk.CallbackMetadata).Amount,
+        source: 'callback_query',
+        providerConfirmed: true,
+        raw: { callback: stk, providerQuery: query },
       });
+    } else if (providerResultCode !== null) {
+      await this.markMpesaFailed(
+        tx,
+        providerResultCode,
+        query.ResultDesc ?? stk.ResultDesc ?? null,
+        {
+          source: 'callback_query',
+          raw: { callback: stk, providerQuery: query },
+        },
+      );
     } else {
-      await this.markMpesaFailed(tx, resultCode, stk.ResultDesc ?? null, {
-        source: 'callback',
-        raw: stk,
-      });
+      await this.db
+        .from('mpesa_transactions')
+        .update({
+          raw: {
+            ...(tx.raw ?? {}),
+            stage: 'provider_query_pending',
+            callback: stk,
+            providerQuery: query,
+          },
+        })
+        .eq('id', tx.id);
     }
   }
 
@@ -291,31 +350,29 @@ export class PaymentsService {
       phoneNumber?: string;
       amount?: number;
       source: string;
+      providerConfirmed?: boolean;
       raw?: unknown;
     },
   ): Promise<void> {
     if (FINAL_TX_STATUSES.includes(tx.status)) return;
 
-    // AMOUNT VERIFICATION: Daraja STK callbacks are not signed and the endpoint
-    // is public, so the paid amount is the only thing standing between a forged
-    // callback and a credited order. We confirm it matches what we pushed
-    // (tx.amount_kes, itself derived from order.total_kes at push time).
-    //
-    // A MISSING amount is treated exactly like a mismatched one. It used to be
-    // treated as "nothing to check" and fell through to crediting the order —
-    // which meant a forged callback carrying ResultCode 0 and no
-    // CallbackMetadata, replayed against a real CheckoutRequestID from the
-    // attacker's own unpaid STK push, marked that order paid. A success
-    // callback that cannot prove its amount is not a success.
+    // PROVIDER + AMOUNT VERIFICATION: the provider query confirms the
+    // CheckoutRequestID actually succeeded. When Daraja includes an amount in
+    // callback metadata, it must still agree with the amount bound to the STK
+    // request; missing callback metadata is allowed only after the provider
+    // query has independently confirmed success. A callback alone can never
+    // satisfy this check.
     const paidAmount = info.amount === undefined ? null : Number(info.amount);
-    const amountUnverified = paidAmount === null || !Number.isFinite(paidAmount);
+    const providerUnverified = info.providerConfirmed !== true;
     const amountMismatched =
-      !amountUnverified && Math.abs(paidAmount - Number(tx.amount_kes)) > 0.01;
+      paidAmount !== null &&
+      Number.isFinite(paidAmount) &&
+      Math.abs(paidAmount - Number(tx.amount_kes)) > 0.01;
 
-    if (amountUnverified || amountMismatched) {
+    if (providerUnverified || amountMismatched) {
       this.logger.error(
-        amountUnverified
-          ? `M-Pesa success callback for tx ${tx.id} carried no usable amount — refusing to credit, holding for manual reconcile`
+        providerUnverified
+          ? `M-Pesa success for tx ${tx.id} was not independently provider-confirmed — holding for manual reconcile`
           : `M-Pesa amount mismatch on tx ${tx.id}: expected ${tx.amount_kes}, paid ${paidAmount} — holding for manual reconcile`,
       );
       await this.db
@@ -323,7 +380,7 @@ export class PaymentsService {
         .update({
           raw: {
             ...(tx.raw ?? {}),
-            stage: amountUnverified ? 'amount_missing' : 'amount_mismatch',
+            stage: providerUnverified ? 'provider_unverified' : 'amount_mismatch',
             source: info.source,
             expected_amount: tx.amount_kes,
             paid_amount: info.amount ?? null,
@@ -727,6 +784,7 @@ export class PaymentsService {
           ResultCode: 0,
           ResultDesc: result.ResultDesc,
           source: 'reconcile',
+          providerConfirmed: true,
         });
       } else if (!FINAL_TX_STATUSES.includes(tx.status)) {
         await this.markMpesaFailed(tx, resultCode, result.ResultDesc ?? null, {
@@ -802,25 +860,65 @@ export class PaymentsService {
   ): Promise<ReconcileResult> {
     const { data: orderRow, error: orderErr } = await this.db
       .from('orders')
-      .select('id')
+      .select('id, order_number, total_kes, status, payment_status, payment_method')
       .eq('order_number', orderNumber.trim())
       .maybeSingle();
     if (orderErr) throw new BadRequestException(orderErr.message);
     if (!orderRow) {
       throw new NotFoundException(`Order "${orderNumber}" not found.`);
     }
-    const orderId = (orderRow as { id: string }).id;
+    const order = orderRow as Pick<
+      OrderRow,
+      'id' | 'order_number' | 'total_kes' | 'status' | 'payment_status' | 'payment_method'
+    >;
+    const orderId = order.id;
+
+    if (order.payment_status === 'paid') {
+      throw new ConflictException(`Order ${order.order_number} has already been paid.`);
+    }
+    if (order.status !== 'pending_payment') {
+      throw new ConflictException(
+        `Order ${order.order_number} is not awaiting payment (status: ${order.status}).`,
+      );
+    }
+    if (order.payment_method && order.payment_method !== provider) {
+      throw new ConflictException(
+        `Order ${order.order_number} expects ${order.payment_method}, not ${provider}.`,
+      );
+    }
 
     if (provider === ReconcileProvider.MPESA) {
       const tx = await this.db
         .from('mpesa_transactions')
-        .select('id, mpesa_ref, status')
+        .select('id, mpesa_ref, amount_kes, order_id, status')
         .eq('id', transactionId)
         .maybeSingle();
       if (tx.error) throw new BadRequestException(tx.error.message);
       if (!tx.data) throw new NotFoundException('M-Pesa transaction not found.');
-      const row = tx.data as { id: string; mpesa_ref: string; status: string };
+      const row = tx.data as {
+        id: string;
+        mpesa_ref: string;
+        amount_kes: number | null;
+        order_id: string | null;
+        status: string;
+      };
       const previousStatus = row.status;
+
+      if (FINAL_TX_STATUSES.includes(row.status)) {
+        throw new ConflictException(`M-Pesa transaction is already ${row.status}.`);
+      }
+      if (row.order_id && row.order_id !== orderId) {
+        throw new ConflictException('M-Pesa transaction is already linked to another order.');
+      }
+      if (
+        row.amount_kes === null ||
+        !Number.isFinite(Number(row.amount_kes)) ||
+        Math.abs(Number(row.amount_kes) - Number(order.total_kes)) > 0.01
+      ) {
+        throw new ConflictException(
+          `Payment amount ${row.amount_kes ?? 'unknown'} does not match order total ${order.total_kes}.`,
+        );
+      }
 
       const { error: upErr } = await this.db
         .from('mpesa_transactions')
@@ -845,7 +943,7 @@ export class PaymentsService {
     // Pesapal
     const tx = await this.db
       .from('pesapal_transactions')
-      .select('id, pesapal_order_id, status')
+      .select('id, pesapal_order_id, amount_kes, order_id, status')
       .eq('id', transactionId)
       .maybeSingle();
     if (tx.error) throw new BadRequestException(tx.error.message);
@@ -853,9 +951,27 @@ export class PaymentsService {
     const row = tx.data as {
       id: string;
       pesapal_order_id: string;
+      amount_kes: number | null;
+      order_id: string | null;
       status: string | null;
     };
     const previousStatus = row.status ?? TX_STATUS.PENDING;
+
+    if (FINAL_TX_STATUSES.includes(previousStatus)) {
+      throw new ConflictException(`Pesapal transaction is already ${previousStatus}.`);
+    }
+    if (row.order_id && row.order_id !== orderId) {
+      throw new ConflictException('Pesapal transaction is already linked to another order.');
+    }
+    if (
+      row.amount_kes === null ||
+      !Number.isFinite(Number(row.amount_kes)) ||
+      Math.abs(Number(row.amount_kes) - Number(order.total_kes)) > 0.01
+    ) {
+      throw new ConflictException(
+        `Payment amount ${row.amount_kes ?? 'unknown'} does not match order total ${order.total_kes}.`,
+      );
+    }
 
     const { error: upErr } = await this.db
       .from('pesapal_transactions')
@@ -878,6 +994,70 @@ export class PaymentsService {
   }
 
   // ───────────────────────── Shared helpers ──────────────────────────────
+
+  /**
+   * Limits how many DISTINCT phone numbers one order may push to.
+   *
+   * Audit A-03. `phone` is supplied by the client and validated only for shape:
+   * `normalizeKenyanMsisdn` confirms it is a well-formed Kenyan MSISDN, never
+   * that it belongs to the caller. Combined with the service's own idempotency
+   * note — "a second STK attempt for the same order simply inserts a new
+   * pending row" — one unpaid order could drive an unlimited number of PIN
+   * prompts at an arbitrary handset.
+   *
+   * The number is NOT forced to the customer's own: paying from another line
+   * (a spouse's, an employer's) is ordinary here, and rejecting it would break
+   * real checkouts. What is bounded is the SPREAD — an order may reach a small
+   * number of destinations, retried as often as the throttle allows, which
+   * covers every honest case and none of the abusive one.
+   *
+   * A push to a number other than the customer's own is recorded either way,
+   * so a pattern of them is visible in the audit log rather than only in
+   * Daraja's billing.
+   */
+  private async assertDestinationAllowed(
+    order: OrderRow,
+    customer: CustomerContact | null,
+    phone: string,
+  ): Promise<void> {
+    const ownPhone = customer?.phone ? normalizeKenyanMsisdn(customer.phone) : null;
+
+    const { data, error } = await this.db
+      .from('mpesa_transactions')
+      .select('customer_phone')
+      .eq('order_id', order.id);
+
+    if (error) {
+      // Don't fail a legitimate payment because the audit read failed; the
+      // throttle is still in force.
+      this.logger.error(`Could not read prior STK destinations for order ${order.id}: ${error.message}`);
+      return;
+    }
+
+    const used = new Set(
+      (data ?? [])
+        .map((row) => (row as { customer_phone: string | null }).customer_phone)
+        .filter((p): p is string => !!p),
+    );
+
+    if (!used.has(phone) && used.size >= MAX_STK_DESTINATIONS_PER_ORDER) {
+      throw new BadRequestException(
+        `This order has already been sent to ${MAX_STK_DESTINATIONS_PER_ORDER} different phone numbers. ` +
+          'Please complete the payment on one of them, or place a new order.',
+      );
+    }
+
+    if (ownPhone && phone !== ownPhone) {
+      // Deliberately a log line, not an `audit_log` row: that table records
+      // privileged STAFF mutations and its `record()` takes an `AuthUser`.
+      // This is a customer action worth being able to correlate, not a
+      // privileged one.
+      this.logger.warn(
+        `STK push for order ${order.id} targets a number other than the customer's own ` +
+          `(${used.size + (used.has(phone) ? 0 : 1)}/${MAX_STK_DESTINATIONS_PER_ORDER} destinations used)`,
+      );
+    }
+  }
 
   /**
    * Resolve an order and verify it belongs to the JWT caller. Returns the order

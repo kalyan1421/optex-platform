@@ -272,16 +272,27 @@ export class CancellationService {
    * current status because they can differ — an order dispatched while the
    * request sat pending is the case R3 wants flagged.
    */
-  async listForAdmin(status?: string) {
+  async listForAdmin(status?: string, branchId?: string) {
+    // Audit A-02. `order_cancellation_requests` has no `branch_id` of its own,
+    // so the scope comes from the order it points at, via an inner join —
+    // `!inner` drops requests whose order is outside the caller's branch
+    // instead of returning them with an empty embed. `branch_id` is selected
+    // only so the filter has something to reference; the mapper below picks
+    // its output fields explicitly, so it never reaches the response.
+    const orderEmbed = branchId
+      ? 'order:orders!inner(order_number, status, payment_status, total_kes, branch_id)'
+      : 'order:orders(order_number, status, payment_status, total_kes)';
+
     let q = this.db
       .from('order_cancellation_requests')
       .select(
         'id, order_id, reason, status, status_at_request, decline_reason, decided_at, created_at, ' +
-          'order:orders(order_number, status, payment_status, total_kes), ' +
+          `${orderEmbed}, ` +
           'customer:customers(full_name, email, phone)',
       )
       .order('created_at', { ascending: false });
 
+    if (branchId) q = q.eq('order.branch_id', branchId);
     if (status) q = q.eq('status', status);
 
     const { data, error } = await q;
@@ -298,6 +309,8 @@ export class CancellationService {
       status: string;
       payment_status: string;
       total_kes: number;
+      /** Present only on the branch-scoped select above; never returned. */
+      branch_id?: string | null;
     }
     interface EmbeddedCustomer {
       full_name: string | null;
@@ -336,11 +349,20 @@ export class CancellationService {
   }
 
   /** Count of requests still awaiting a decision — for the admin nav badge. */
-  async pendingCount(): Promise<number> {
-    const { count, error } = await this.db
+  async pendingCount(branchId?: string): Promise<number> {
+    // Audit A-02: the nav badge has to agree with the list it links to,
+    // otherwise a branch manager sees a count they can never work off.
+    let q = this.db
       .from('order_cancellation_requests')
-      .select('id', { count: 'exact', head: true })
+      .select(branchId ? 'id, order:orders!inner(branch_id)' : 'id', {
+        count: 'exact',
+        head: true,
+      })
       .eq('status', 'pending');
+
+    if (branchId) q = q.eq('order.branch_id', branchId);
+
+    const { count, error } = await q;
     if (error) {
       this.logger.error(`Could not count pending cancellations: ${error.message}`);
       return 0;
@@ -370,7 +392,22 @@ export class CancellationService {
     }
   }
 
-  private async loadPendingRequest(requestId: string) {
+  /**
+   * Loads a request that is still awaiting a decision, and asserts the caller
+   * is allowed to decide it.
+   *
+   * Audit A-02: both `approve` and `decline` go through here, so the branch
+   * check lives here rather than being duplicated (and eventually forgotten)
+   * in each. A branch-scoped caller deciding another branch's request gets a
+   * 404 — not a 403 — matching `adminCancel` and every other scoped surface,
+   * so the response doesn't confirm the request exists.
+   *
+   * `orders.branch_id` is nullable and no storefront order sets it yet, so a
+   * branch-scoped caller currently sees no requests to decide. That is the
+   * same deliberate consequence `adminCancel` and `adminListOrders` already
+   * carry, not a new one introduced here — see `orders.service.ts:342`.
+   */
+  private async loadPendingRequest(requestId: string, user: AuthUser) {
     const { data, error } = await this.db
       .from('order_cancellation_requests')
       .select('id, order_id, status')
@@ -381,6 +418,24 @@ export class CancellationService {
       throw new InternalServerErrorException('Could not load that request.');
     }
     if (!data) throw new NotFoundException('Cancellation request not found.');
+
+    if (user.branchId) {
+      const { data: order, error: orderError } = await this.db
+        .from('orders')
+        .select('branch_id')
+        .eq('id', data.order_id)
+        .maybeSingle<{ branch_id: string | null }>();
+      if (orderError) {
+        this.logger.error(`Order lookup failed for request ${requestId}: ${orderError.message}`);
+        throw new InternalServerErrorException('Could not load that request.');
+      }
+      if (!order || order.branch_id !== user.branchId) {
+        throw new NotFoundException('Cancellation request not found.');
+      }
+    }
+
+    // Checked after ownership so an out-of-branch caller can't distinguish
+    // "already decided" from "does not exist".
     if (data.status !== 'pending') {
       throw new ConflictException(`This request has already been ${data.status}.`);
     }
@@ -397,7 +452,7 @@ export class CancellationService {
    */
   async approve(actorUser: AuthUser, requestId: string, acknowledgePaid = false) {
     const adminUserId = actorUser.id;
-    const req = await this.loadPendingRequest(requestId);
+    const req = await this.loadPendingRequest(requestId, actorUser);
 
     const { data: order } = await this.db
       .from('orders')
@@ -527,7 +582,7 @@ export class CancellationService {
   /** Decline a request: the order keeps the status it already had — R3. */
   async decline(actorUser: AuthUser, requestId: string, reason?: string) {
     const adminUserId = actorUser.id;
-    const req = await this.loadPendingRequest(requestId);
+    const req = await this.loadPendingRequest(requestId, actorUser);
 
     const { error } = await this.db
       .from('order_cancellation_requests')

@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppModule } from '../src/app.module';
+import { MpesaService } from '../src/modules/payments/mpesa.service';
 
 /**
  * Regression tests for the three payment defects found in the code review
@@ -20,6 +21,10 @@ describe('Payments — forged callback regressions (e2e)', () => {
   let db: SupabaseClient;
   let orderId: string;
   let customerId: string;
+  let providerResult: { ResultCode?: string; ResultDesc?: string } = {
+    ResultCode: '1032',
+    ResultDesc: 'The request was cancelled by the user.',
+  };
 
   const CHECKOUT_ID = 'ws_CO_E2E_FORGERY_TEST';
   const ORDER_NUMBER = 'E2E-FORGE-1';
@@ -28,7 +33,10 @@ describe('Payments — forged callback regressions (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(MpesaService)
+      .useValue({ stkQuery: async () => providerResult })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');
@@ -46,6 +54,10 @@ describe('Payments — forged callback regressions (e2e)', () => {
   });
 
   beforeEach(async () => {
+    providerResult = {
+      ResultCode: '1032',
+      ResultDesc: 'The request was cancelled by the user.',
+    };
     // A pending order with a pending STK transaction — the state an attacker
     // reaches by starting a real payment and simply not paying.
     //
@@ -113,7 +125,13 @@ describe('Payments — forged callback regressions (e2e)', () => {
   }
 
   // ── C-1 ──────────────────────────────────────────────────────────────────
-  it('does not credit an order when a success callback carries no amount', async () => {
+  // A callback claiming success with no amount is exactly the shape an
+  // attacker can forge without ever paying. The callback is no longer trusted
+  // on its own — the handler re-queries Daraja for ground truth, and here the
+  // provider (still the default `providerResult` from beforeEach) reports the
+  // STK push was actually cancelled, so the transaction must be marked failed,
+  // not left credited or ambiguously pending.
+  it('does not credit an order when a success callback carries no amount and the provider disagrees', async () => {
     await postCallback({
       CheckoutRequestID: CHECKOUT_ID,
       ResultCode: 0,
@@ -129,8 +147,8 @@ describe('Payments — forged callback regressions (e2e)', () => {
       .select('status, raw')
       .eq('mpesa_ref', CHECKOUT_ID)
       .single();
-    expect(tx!.status).toBe('pending');
-    expect((tx!.raw as Record<string, unknown>).stage).toBe('amount_missing');
+    expect(tx!.status).toBe('failed');
+    expect((tx!.raw as Record<string, unknown>).stage).toBe('callback_failed');
   });
 
   it('does not credit an order when the paid amount is short', async () => {
@@ -145,7 +163,24 @@ describe('Payments — forged callback regressions (e2e)', () => {
     expect(order.payment_status).toBe('pending');
   });
 
+  it('does not credit an exact-amount forged callback when Daraja reports failure', async () => {
+    await postCallback({
+      CheckoutRequestID: CHECKOUT_ID,
+      ResultCode: 0,
+      ResultDesc: 'Forged success',
+      CallbackMetadata: { Item: [{ Name: 'Amount', Value: TOTAL_KES }] },
+    });
+
+    const order = await orderState();
+    expect(order.payment_status).toBe('pending');
+    expect(order.status).toBe('pending_payment');
+  });
+
   it('credits the order when the callback is genuine and the amount matches', async () => {
+    providerResult = {
+      ResultCode: '0',
+      ResultDesc: 'The service request is processed successfully.',
+    };
     await postCallback({
       CheckoutRequestID: CHECKOUT_ID,
       ResultCode: 0,

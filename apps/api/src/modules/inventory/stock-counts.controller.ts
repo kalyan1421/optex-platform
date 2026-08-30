@@ -23,8 +23,12 @@ export class StockCountsController {
   @ApiQuery({ name: 'branchId', required: false })
   @ApiQuery({ name: 'status', required: false, enum: ['in_progress', 'completed', 'cancelled'] })
   @ApiOkResponse({ type: [StockCountDto] })
-  list(@Query('branchId') branchId?: string, @Query('status') status?: string): Promise<StockCountDto[]> {
-    return this.stockCounts.findAllForAdmin({ branchId, status });
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query('branchId') branchId?: string,
+    @Query('status') status?: string,
+  ): Promise<StockCountDto[]> {
+    return this.stockCounts.findAllForAdmin({ branchId, status }, user);
   }
 
   @RequirePermission('inventory.count')
@@ -32,8 +36,8 @@ export class StockCountsController {
   @ApiOperation({ summary: 'Get a stock count with its lines' })
   @ApiOkResponse({ type: StockCountDto })
   @ApiNotFoundResponse({ description: 'Stock count not found' })
-  get(@Param('id', ParseUUIDPipe) id: string): Promise<StockCountDto> {
-    return this.stockCounts.findById(id);
+  get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser): Promise<StockCountDto> {
+    return this.stockCounts.findById(id, user);
   }
 
   @RequirePermission('inventory.count')

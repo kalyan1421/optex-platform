@@ -37,6 +37,7 @@ export class StockCountsService {
 
   /** Snapshots every serial the system currently believes is in stock at this branch as an "expected" line. */
   async start(dto: StartStockCountDto, actorUser: AuthUser): Promise<StockCountDto> {
+    this.assertInScope(actorUser, dto.branch_id);
     const { data: header, error: headerError } = await this.db
       .from('stock_counts')
       .insert({ branch_id: dto.branch_id, started_by: actorUser.id })
@@ -76,7 +77,7 @@ export class StockCountsService {
       }
     }
 
-    const created = await this.findById(count.id);
+    const created = await this.findById(count.id, actorUser);
     await this.auditLog.record({
       actor: actorUser,
       action: 'stock_counts.start',
@@ -171,7 +172,7 @@ export class StockCountsService {
       }
     }
 
-    return this.findById(id);
+    return this.findById(id, actorUser);
   }
 
   async accept(id: string, actorUser: AuthUser): Promise<StockCountDto> {
@@ -190,7 +191,7 @@ export class StockCountsService {
       );
     }
 
-    const before = await this.findById(id);
+    const before = await this.findById(id, actorUser);
     const { error } = await this.db.rpc('accept_stock_count', {
       p_count_id: id,
       p_actor_id: actorUser.id,
@@ -201,7 +202,7 @@ export class StockCountsService {
       throw new InternalServerErrorException('Failed to accept stock count');
     }
 
-    const after = await this.findById(id);
+    const after = await this.findById(id, actorUser);
     const missing = before.items.filter((i) => i.expected && !i.found).length;
     const unexpected = before.items.filter((i) => !i.expected && i.found).length;
     await this.auditLog.record({
@@ -216,12 +217,41 @@ export class StockCountsService {
     return after;
   }
 
-  async findAllForAdmin(filters: { branchId?: string; status?: string }): Promise<StockCountDto[]> {
+  /**
+   * Resolves the branch a request may act on.
+   *
+   * Audit B-03. These R2 surfaces took `branchId` straight off the query string
+   * or request body with no reference to the caller, unlike `inventory.service`
+   * and `ledger.service` in this same module, which both derive it from
+   * `user.branchId`. Nothing is exposed by that today — `inventory.count`,
+   * `inventory.adjust` and `inventory.transfer` are granted only to
+   * `inventory_manager` and `super_admin` (migration 0026), neither of which is
+   * branch-scoped — but the RBAC matrix is DATA, editable from the admin panel
+   * without a deploy or a review. Granting one of these to a branch role would
+   * silently open cross-branch access with no code change. Enforcing it here
+   * while it is still a no-op is what keeps that from being true later.
+   */
+  private scopedBranch(user: AuthUser, requested?: string): string | undefined {
+    return user.branchId ?? requested;
+  }
+
+  /** 404s a row outside a branch-scoped caller's branch (existence stays hidden). */
+  private assertInScope(user: AuthUser, branchId: string | null): void {
+    if (user.branchId && branchId !== user.branchId) {
+      throw new NotFoundException('Stock count not found');
+    }
+  }
+
+  async findAllForAdmin(
+    filters: { branchId?: string; status?: string },
+    user: AuthUser,
+  ): Promise<StockCountDto[]> {
+    const branchId = this.scopedBranch(user, filters.branchId);
     let query = this.db
       .from('stock_counts')
       .select('id, branch_id, status, started_at, completed_at')
       .order('started_at', { ascending: false });
-    if (filters.branchId) query = query.eq('branch_id', filters.branchId);
+    if (branchId) query = query.eq('branch_id', branchId);
     if (filters.status) query = query.eq('status', filters.status);
 
     const { data, error } = await query;
@@ -233,7 +263,7 @@ export class StockCountsService {
     return Promise.all(headers.map((h) => this.attachItems(h)));
   }
 
-  async findById(id: string): Promise<StockCountDto> {
+  async findById(id: string, user: AuthUser): Promise<StockCountDto> {
     const { data, error } = await this.db
       .from('stock_counts')
       .select('id, branch_id, status, started_at, completed_at')
@@ -244,6 +274,7 @@ export class StockCountsService {
       throw new InternalServerErrorException('Failed to fetch stock count');
     }
     if (!data) throw new NotFoundException(`Stock count ${id} not found`);
+    this.assertInScope(user, (data as StockCountHeaderRow).branch_id);
     return this.attachItems(data as StockCountHeaderRow);
   }
 

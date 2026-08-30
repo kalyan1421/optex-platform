@@ -30,8 +30,11 @@ export class AdjustmentsController {
   @ApiOperation({ summary: 'List adjustments' })
   @ApiQuery({ name: 'branchId', required: false })
   @ApiOkResponse({ type: [AdjustmentDto] })
-  list(@Query('branchId') branchId?: string): Promise<AdjustmentDto[]> {
-    return this.adjustments.findAllForAdmin({ branchId });
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query('branchId') branchId?: string,
+  ): Promise<AdjustmentDto[]> {
+    return this.adjustments.findAllForAdmin({ branchId }, user);
   }
 
   @RequirePermission('inventory.adjust')
@@ -39,8 +42,8 @@ export class AdjustmentsController {
   @ApiOperation({ summary: 'Get an adjustment with its lines' })
   @ApiOkResponse({ type: AdjustmentDto })
   @ApiNotFoundResponse({ description: 'Adjustment not found' })
-  get(@Param('id', ParseUUIDPipe) id: string): Promise<AdjustmentDto> {
-    return this.adjustments.findById(id);
+  get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser): Promise<AdjustmentDto> {
+    return this.adjustments.findById(id, user);
   }
 
   @RequirePermission('inventory.adjust')

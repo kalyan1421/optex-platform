@@ -20,14 +20,12 @@ import {
  * branch-scoped server-side for Branch Manager/Staff (R1 1b) — see
  * `orders.service.ts` and `cancellation.service.ts`.
  *
- * KNOWN GAP: the cancellation-REQUEST workflow below (`listCancellations`,
+ * The cancellation-REQUEST workflow (`listCancellations`,
  * `pendingCancellations`, `approveCancellation`, `declineCancellation`) is
- * NOT branch-scoped — a Branch Manager holding `cancellations.decide` can
- * currently see and decide any branch's pending requests. Left for a
- * follow-up rather than folded into this pass: `order_cancellation_requests`
- * isn't a resource `orders.service.ts` or `cancellation.service.ts`'s
- * `adminCancel` already had a branch-scoping precedent for, and warrants its
- * own change rather than being rushed alongside this one.
+ * branch-scoped too, as of audit A-02. `order_cancellation_requests` carries
+ * no `branch_id` of its own, so the scope is derived from the order each
+ * request points at — see `cancellation.service.ts`'s `listForAdmin` and
+ * `loadPendingRequest`.
  */
 @ApiTags('orders')
 @Controller('admin')
@@ -102,16 +100,16 @@ export class OrdersAdminController {
   @Get('cancellations')
   @ApiOperation({ summary: 'Cancellation requests, newest first, optionally by status' })
   @ApiOkResponse({ description: 'Requests with order, customer and payment context' })
-  listCancellations(@Query('status') status?: string) {
-    return this.cancellation.listForAdmin(status);
+  listCancellations(@CurrentUser() user: AuthUser, @Query('status') status?: string) {
+    return this.cancellation.listForAdmin(status, user.branchId ?? undefined);
   }
 
   @RequirePermission('cancellations.decide')
   @Get('cancellations/pending-count')
   @ApiOperation({ summary: 'How many requests are awaiting a decision' })
   @ApiOkResponse({ description: 'The count, for the admin nav badge' })
-  async pendingCancellations(): Promise<{ count: number }> {
-    return { count: await this.cancellation.pendingCount() };
+  async pendingCancellations(@CurrentUser() user: AuthUser): Promise<{ count: number }> {
+    return { count: await this.cancellation.pendingCount(user.branchId ?? undefined) };
   }
 
   @RequirePermission('cancellations.decide')

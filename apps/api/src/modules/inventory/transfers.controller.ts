@@ -25,11 +25,12 @@ export class TransfersController {
   @ApiQuery({ name: 'toBranchId', required: false })
   @ApiOkResponse({ type: [TransferDto] })
   list(
+    @CurrentUser() user: AuthUser,
     @Query('status') status?: string,
     @Query('fromBranchId') fromBranchId?: string,
     @Query('toBranchId') toBranchId?: string,
   ): Promise<TransferDto[]> {
-    return this.transfers.findAllForAdmin({ status, fromBranchId, toBranchId });
+    return this.transfers.findAllForAdmin({ status, fromBranchId, toBranchId }, user);
   }
 
   @RequirePermission('inventory.transfer')
@@ -37,8 +38,8 @@ export class TransfersController {
   @ApiOperation({ summary: 'Get a transfer with its lines' })
   @ApiOkResponse({ type: TransferDto })
   @ApiNotFoundResponse({ description: 'Transfer not found' })
-  get(@Param('id', ParseUUIDPipe) id: string): Promise<TransferDto> {
-    return this.transfers.findById(id);
+  get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser): Promise<TransferDto> {
+    return this.transfers.findById(id, user);
   }
 
   @RequirePermission('inventory.transfer')

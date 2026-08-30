@@ -115,10 +115,15 @@ export class AddressesService {
     if (dto.postal !== undefined) patch.postal = dto.postal;
     if (dto.isDefault !== undefined) patch.is_default = dto.isDefault;
 
+    // Audit C-02: `findOwned` above already proved ownership, but the write
+    // repeats the predicate so the check and the write are one statement
+    // rather than two. Addresses never change hands, so this closes no live
+    // window — it just removes the need to know that to read the method.
     const { data, error } = await this.supabase.client
       .from('customer_addresses')
       .update(patch)
       .eq('id', id)
+      .eq('customer_id', customerId)
       .select(ADDRESS_COLUMNS)
       .maybeSingle<AddressRow>();
 
@@ -139,7 +144,11 @@ export class AddressesService {
     const customerId = await this.resolveCustomerId(user);
     await this.findOwned(id, customerId);
 
-    const { error } = await this.supabase.client.from('customer_addresses').delete().eq('id', id);
+    const { error } = await this.supabase.client
+      .from('customer_addresses')
+      .delete()
+      .eq('id', id)
+      .eq('customer_id', customerId);
     if (error) {
       throw new InternalServerErrorException('Failed to delete address');
     }
@@ -157,6 +166,7 @@ export class AddressesService {
       .from('customer_addresses')
       .update({ is_default: true })
       .eq('id', id)
+      .eq('customer_id', customerId)
       .select(ADDRESS_COLUMNS)
       .maybeSingle<AddressRow>();
 

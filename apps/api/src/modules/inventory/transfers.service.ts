@@ -39,6 +39,9 @@ export class TransfersService {
   }
 
   async dispatch(dto: DispatchTransferDto, actorUser: AuthUser): Promise<TransferDto> {
+    // Dispatching releases stock FROM a branch, so the origin is the one that
+    // has to be the caller's.
+    this.assertInScope(actorUser, dto.from_branch_id, dto.from_branch_id);
     const { data, error } = await this.db.rpc('dispatch_transfer', {
       p_from_branch_id: dto.from_branch_id,
       p_to_branch_id: dto.to_branch_id,
@@ -62,7 +65,7 @@ export class TransfersService {
     }
 
     const transferId = data as string;
-    const dispatched = await this.findById(transferId);
+    const dispatched = await this.findById(transferId, actorUser);
     await this.auditLog.record({
       actor: actorUser,
       action: 'transfers.dispatch',
@@ -75,7 +78,7 @@ export class TransfersService {
   }
 
   async receive(id: string, dto: ReceiveTransferDto, actorUser: AuthUser): Promise<TransferDto> {
-    const before = await this.findById(id);
+    const before = await this.findById(id, actorUser);
     if (before.status !== 'in_transit') {
       throw new BadRequestException('This transfer has already been fully resolved');
     }
@@ -98,7 +101,7 @@ export class TransfersService {
       throw new InternalServerErrorException('Failed to receive transfer');
     }
 
-    const after = await this.findById(id);
+    const after = await this.findById(id, actorUser);
     await this.auditLog.record({
       actor: actorUser,
       action: 'transfers.receive',
@@ -115,11 +118,33 @@ export class TransfersService {
     return after;
   }
 
-  async findAllForAdmin(filters: { status?: string; fromBranchId?: string; toBranchId?: string }): Promise<TransferDto[]> {
+  /**
+   * Audit B-03 — see the same note on `adjustments.service.ts`. A transfer
+   * touches TWO branches, so a branch-scoped caller sees one where their branch
+   * is either the origin or the destination: they need to see stock leaving
+   * them and stock arriving. Same `or(...)` shape `ledger.service.ts` already
+   * uses for the equivalent question.
+   */
+  private assertInScope(user: AuthUser, fromBranchId: string | null, toBranchId: string | null): void {
+    if (user.branchId && fromBranchId !== user.branchId && toBranchId !== user.branchId) {
+      throw new NotFoundException('Transfer not found');
+    }
+  }
+
+  async findAllForAdmin(
+    filters: { status?: string; fromBranchId?: string; toBranchId?: string },
+    user: AuthUser,
+  ): Promise<TransferDto[]> {
     let query = this.db
       .from('stock_transfers')
       .select('id, transfer_number, from_branch_id, to_branch_id, status, notes, dispatched_at, received_at')
       .order('dispatched_at', { ascending: false });
+
+    if (user.branchId) {
+      // Interpolated, but `branchId` is a uuid the API sets in `app_metadata`
+      // server-side — never client input. Same construction as `ledger.service`.
+      query = query.or(`from_branch_id.eq.${user.branchId},to_branch_id.eq.${user.branchId}`);
+    }
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.fromBranchId) query = query.eq('from_branch_id', filters.fromBranchId);
     if (filters.toBranchId) query = query.eq('to_branch_id', filters.toBranchId);
@@ -133,7 +158,7 @@ export class TransfersService {
     return Promise.all(headers.map((h) => this.attachItems(h)));
   }
 
-  async findById(id: string): Promise<TransferDto> {
+  async findById(id: string, user: AuthUser): Promise<TransferDto> {
     const { data, error } = await this.db
       .from('stock_transfers')
       .select('id, transfer_number, from_branch_id, to_branch_id, status, notes, dispatched_at, received_at')
@@ -144,7 +169,9 @@ export class TransfersService {
       throw new InternalServerErrorException('Failed to fetch transfer');
     }
     if (!data) throw new NotFoundException(`Transfer ${id} not found`);
-    return this.attachItems(data as TransferHeaderRow);
+    const header = data as TransferHeaderRow;
+    this.assertInScope(user, header.from_branch_id, header.to_branch_id);
+    return this.attachItems(header);
   }
 
   private async attachItems(header: TransferHeaderRow): Promise<TransferDto> {

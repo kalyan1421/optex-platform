@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { escapeForPostgrestFilter } from '../../common/postgrest';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
@@ -40,22 +41,50 @@ export class CustomersService {
   ) {}
 
   /**
-   * Lists every customer, newest signup first, with their orders embedded.
+   * Lists customers, newest signup first, with their orders embedded.
    * `search` filters case-insensitively across name, email and phone.
+   *
+   * BRANCH SCOPING (audit A-01). `customers.read` is granted to `branch_staff`
+   * and `branch_manager` — the two branch-scoped roles — but this method used
+   * to take no actor at all and returned every customer in the country, with
+   * name, email, phone and order history. Orders, appointments and inventory
+   * all scope to the caller's branch; the table carrying the most personal
+   * data did not.
+   *
+   * A customer has no `branch_id` of their own, so "this branch's customers"
+   * has to be derived from a relationship. Appointments are the only one that
+   * exists today: `appointments.branch_id` is NOT NULL (0001), while
+   * `orders.branch_id` is nullable and `place_order` never sets it, so no
+   * storefront order carries a branch at all — see the same note on
+   * `orders.service.ts`'s `adminListOrders`. Scoping through orders would
+   * therefore return nothing rather than something. When orders start
+   * recording a fulfilment branch, add them here as a second `!inner` embed.
+   *
+   * Unscoped roles (`super_admin`) pass `undefined` and keep the full list.
    */
-  async listForAdmin(search?: string): Promise<AdminCustomerDto[]> {
+  async listForAdmin(search?: string, branchId?: string): Promise<AdminCustomerDto[]> {
+    // `!inner` turns the embed into an inner join: only customers with at
+    // least one appointment matching the filter below come back. The embedded
+    // rows themselves are stripped before returning — they exist to filter,
+    // not to be part of the response.
+    const columns = branchId
+      ? `${CUSTOMER_COLUMNS}, appointments!inner(branch_id)`
+      : CUSTOMER_COLUMNS;
+
     let query = this.supabase.client
       .from('customers')
-      .select(CUSTOMER_COLUMNS)
+      .select(columns)
       .order('created_at', { ascending: false })
       // F-14: was unbounded — the admin table pulled every customer ever
       // registered on each visit. Search narrows it; this bounds the rest.
       .limit(500);
 
+    if (branchId) {
+      query = query.eq('appointments.branch_id', branchId);
+    }
+
     if (search) {
-      // Escape PostgREST's `or` filter delimiters so a comma or paren in the
-      // search term can't break out of the filter expression.
-      const safe = search.replace(/[(),]/g, ' ').trim();
+      const safe = escapeForPostgrestFilter(search).trim();
       if (safe) {
         query = query.or(`full_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`);
       }
@@ -64,10 +93,13 @@ export class CustomersService {
     const { data, error } = await query;
 
     if (error) {
+      this.logger.error(`Failed to load customers: ${error.message}`);
       throw new InternalServerErrorException('Failed to load customers');
     }
 
-    return (data ?? []) as unknown as AdminCustomerDto[];
+    return ((data ?? []) as unknown as (AdminCustomerDto & { appointments?: unknown })[]).map(
+      ({ appointments: _appointments, ...customer }) => customer as AdminCustomerDto,
+    );
   }
 
   /**

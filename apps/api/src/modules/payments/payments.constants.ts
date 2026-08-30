@@ -90,3 +90,11 @@ export function normalizeKenyanMsisdn(raw: string): string | null {
   }
   return null;
 }
+
+/**
+ * How many distinct phone numbers a single order may send an STK push to
+ * (audit A-03). Three covers paying from your own line, then a relative's when
+ * the first has no float — and stops an unpaid order being used as a way to
+ * ring arbitrary handsets.
+ */
+export const MAX_STK_DESTINATIONS_PER_ORDER = 3;
