@@ -1,9 +1,9 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { loadEnvLocal } from './lib/test-db';
+import { computeTotp } from './lib/totp';
 
 /**
  * Runs once before the whole suite. Creates a throwaway `super_admin`
@@ -29,35 +29,46 @@ import { loadEnvLocal } from './lib/test-db';
 const PASSWORD = 'TestPassword123!';
 const STORAGE_STATE_PATH = path.join(__dirname, '.auth/admin.json');
 
-function base32Decode(base32: string): Buffer {
-  const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const clean = base32.replace(/=+$/, '').toUpperCase();
-  let bits = '';
-  for (const char of clean) {
-    const val = ALPHABET.indexOf(char);
-    if (val === -1) throw new Error(`Invalid base32 character: ${char}`);
-    bits += val.toString(2).padStart(5, '0');
+/**
+ * Fails fast when this suite and the API are pointed at different Supabase
+ * projects.
+ *
+ * This suite creates its fixtures with the ADMIN app's Supabase credentials,
+ * then signs in through the browser — and that sign-in goes to the API, which
+ * verifies the password against whatever Supabase IT is configured with. If
+ * the two differ, the fixture user exists in one database and is authenticated
+ * against another, so login fails with "Invalid login credentials" and every
+ * spec dies at `waitForURL('**\/mfa-challenge')` twenty seconds later.
+ *
+ * That is exactly how this suite rotted: `apps/admin/.env.local` pointed at a
+ * hosted project while `apps/api/.env` pointed at local Docker, and because
+ * the suite has never run in CI, nothing said so. The timeout gives no hint of
+ * the cause; this does.
+ *
+ * Only checked when the API is local — a deployed API's Supabase URL is not
+ * something this process can read.
+ */
+function assertSupabaseMatchesApi(adminSupabaseUrl: string): void {
+  const apiEnvPath = path.join(__dirname, '../../api/.env');
+  let apiEnv: string;
+  try {
+    apiEnv = fs.readFileSync(apiEnvPath, 'utf-8');
+  } catch {
+    return; // No local API checkout to compare against — nothing to assert.
   }
-  const bytes: number[] = [];
-  for (let i = 0; i + 8 <= bits.length; i += 8) {
-    bytes.push(parseInt(bits.slice(i, i + 8), 2));
-  }
-  return Buffer.from(bytes);
-}
 
-function computeTotp(base32Secret: string, timeStepSeconds = 30, digits = 6): string {
-  const key = base32Decode(base32Secret);
-  const counter = Math.floor(Date.now() / 1000 / timeStepSeconds);
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeBigUInt64BE(BigInt(counter));
-  const hmac = crypto.createHmac('sha1', key).update(counterBuffer).digest();
-  const offset = hmac[hmac.length - 1] & 0xf;
-  const binCode =
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff);
-  return String(binCode % 10 ** digits).padStart(digits, '0');
+  const match = apiEnv.match(/^SUPABASE_URL=(.*)$/m);
+  const apiSupabaseUrl = match?.[1]?.trim();
+  if (!apiSupabaseUrl || apiSupabaseUrl === adminSupabaseUrl) return;
+
+  throw new Error(
+    'Supabase mismatch between the admin app and the API.\n' +
+      `  apps/admin/.env.local NEXT_PUBLIC_SUPABASE_URL = ${adminSupabaseUrl}\n` +
+      `  apps/api/.env         SUPABASE_URL             = ${apiSupabaseUrl}\n\n` +
+      'This suite creates its fixture user with the first and signs in through the API, ' +
+      'which authenticates against the second — so login always fails. Point both at the ' +
+      'same Supabase (apps/*/.env.example use the local Docker stack) and re-run.',
+  );
 }
 
 export default async function globalSetup(): Promise<void> {
@@ -66,6 +77,8 @@ export default async function globalSetup(): Promise<void> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  assertSupabaseMatchesApi(supabaseUrl);
 
   const anon = createClient(supabaseUrl, anonKey, { auth: { persistSession: true } });
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });

@@ -174,3 +174,70 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  admin-e2e:
+    name: Admin panel e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @optex/admin exec playwright install --with-deps chromium
+
+      - name: Start Supabase
+        run: docker compose up -d supabase-kong
+
+      - name: Apply migrations and seed
+        run: docker compose run --rm supabase-migrate
+
+      # Every admin page reads through the API — the panel has no direct
+      # Supabase access — so the API must be up before Playwright's webServer
+      # builds and starts the panel.
+      #
+      # AUTH_RATE_LIMIT is raised for the same reason the storefront job
+      # raises it: this suite signs up a throwaway super_admin in global-setup
+      # and more per spec, which adds up past the 10/min production ceiling
+      # and would surface as an unrelated-looking 429.
+      #
+      # MFA_ENFORCEMENT_ENABLED is deliberately NOT disabled here, unlike the
+      # API e2e job. R1 1e's step-up is a load-bearing part of what this suite
+      # covers: global-setup completes a real RFC 6238 enrollment and
+      # challenge through the actual /login and /mfa-challenge screens, and
+      # products.spec mints its own aal2 session for the upload endpoint.
+      # Turning enforcement off would make those paths pass without proving
+      # anything.
+      - name: Start the API
+        run: docker compose up -d --build api
+        env:
+          AUTH_RATE_LIMIT: '200'
+
+      - name: Wait for the API
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:1111/api/health >/dev/null 2>&1; then
+              echo "API healthy after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not become healthy"; docker compose logs api --tail 80; exit 1
+
+      # Playwright's webServer runs `pnpm build && pnpm start`, so this covers
+      # the admin panel as a production build — including middleware.ts, which
+      # is the whole auth gate and behaves differently in dev.
+      - name: Run admin e2e suite
+        run: pnpm --filter @optex/admin test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: admin-playwright-report
+          path: apps/admin/playwright-report
