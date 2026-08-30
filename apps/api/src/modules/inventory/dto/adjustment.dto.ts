@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMinSize, IsArray, IsIn, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AdjustmentItemDto {
@@ -7,12 +15,20 @@ export class AdjustmentItemDto {
   @IsIn(['add', 'remove'])
   direction!: 'add' | 'remove';
 
-  @ApiProperty({ description: "Required when direction is 'remove' — the specific unit being written off.", required: false, format: 'uuid' })
+  @ApiProperty({
+    description: "Required when direction is 'remove' — the specific unit being written off.",
+    required: false,
+    format: 'uuid',
+  })
   @IsOptional()
   @IsUUID()
   serial_id?: string;
 
-  @ApiProperty({ description: "Required when direction is 'add' — the product a newly-found unit belongs to.", required: false, format: 'uuid' })
+  @ApiProperty({
+    description: "Required when direction is 'add' — the product a newly-found unit belongs to.",
+    required: false,
+    format: 'uuid',
+  })
   @IsOptional()
   @IsUUID()
   product_id?: string;

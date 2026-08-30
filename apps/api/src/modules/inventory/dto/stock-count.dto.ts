@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMinSize, IsArray, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class StartStockCountDto {
@@ -14,7 +21,8 @@ export class ScanItemDto {
   serial_number!: string;
 
   @ApiProperty({
-    description: 'Required only when this serial matches no existing product_serials row — the counter must say what product it is.',
+    description:
+      'Required only when this serial matches no existing product_serials row — the counter must say what product it is.',
     required: false,
     format: 'uuid',
   })

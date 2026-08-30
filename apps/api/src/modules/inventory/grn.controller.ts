@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { GrnService } from './grn.service';
@@ -65,7 +73,8 @@ export class GrnController {
   @RequirePermission('inventory.receive')
   @Post(':id/post')
   @ApiOperation({
-    summary: 'Post a draft GRN — creates one product_serials row per submitted serial and stocks them in',
+    summary:
+      'Post a draft GRN — creates one product_serials row per submitted serial and stocks them in',
   })
   @ApiOkResponse({ type: GrnDto })
   @ApiNotFoundResponse({ description: 'GRN not found' })

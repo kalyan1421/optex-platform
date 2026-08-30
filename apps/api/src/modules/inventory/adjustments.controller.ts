@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { AdjustmentsService } from './adjustments.service';
@@ -48,9 +56,14 @@ export class AdjustmentsController {
 
   @RequirePermission('inventory.adjust')
   @Post()
-  @ApiOperation({ summary: 'Post an adjustment — write off existing serials and/or log newly-found stock' })
+  @ApiOperation({
+    summary: 'Post an adjustment — write off existing serials and/or log newly-found stock',
+  })
   @ApiCreatedResponse({ type: AdjustmentDto })
-  create(@Body() dto: CreateAdjustmentDto, @CurrentUser() actorUser: AuthUser): Promise<AdjustmentDto> {
+  create(
+    @Body() dto: CreateAdjustmentDto,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<AdjustmentDto> {
     return this.adjustments.create(dto, actorUser);
   }
 }

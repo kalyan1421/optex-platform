@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -12,7 +18,8 @@ interface AdjustmentHeaderRow {
 }
 
 type EmbeddedProduct = { name: string } | { name: string }[] | null;
-const unwrapProduct = (embed: EmbeddedProduct) => (Array.isArray(embed) ? (embed[0] ?? null) : embed);
+const unwrapProduct = (embed: EmbeddedProduct) =>
+  Array.isArray(embed) ? (embed[0] ?? null) : embed;
 
 /**
  * Stock adjustments — R2 sub-phase 2c. One `SECURITY DEFINER` RPC
@@ -65,13 +72,17 @@ export class AdjustmentsService {
     if (error) {
       this.logger.error(`Failed to post adjustment: ${error.message}`);
       if (error.message?.includes('serial_not_in_stock_at_branch')) {
-        throw new BadRequestException('One or more serials are not currently in stock at that branch');
+        throw new BadRequestException(
+          'One or more serials are not currently in stock at that branch',
+        );
       }
       if (error.message?.includes('serial_not_found')) {
         throw new BadRequestException('One or more serial ids do not exist');
       }
       if (error.message?.includes('invalid_reason_direction')) {
-        throw new BadRequestException('That reason code is not valid for this adjustment direction');
+        throw new BadRequestException(
+          'That reason code is not valid for this adjustment direction',
+        );
       }
       throw new InternalServerErrorException('Failed to post adjustment');
     }
@@ -181,7 +192,10 @@ export class AdjustmentsService {
 
     const items = ((data ?? []) as unknown as RawItem[]).map((row) => {
       const serialEmbed = Array.isArray(row.serial) ? (row.serial[0] ?? null) : row.serial;
-      const productName = row.direction === 'remove' ? unwrapProduct(serialEmbed?.product ?? null)?.name : unwrapProduct(row.product)?.name;
+      const productName =
+        row.direction === 'remove'
+          ? unwrapProduct(serialEmbed?.product ?? null)?.name
+          : unwrapProduct(row.product)?.name;
       return {
         serial_id: row.serial_id,
         product_id: row.product_id,

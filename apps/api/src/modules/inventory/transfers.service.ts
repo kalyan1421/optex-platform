@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -16,7 +22,8 @@ interface TransferHeaderRow {
 }
 
 type EmbeddedProduct = { name: string } | { name: string }[] | null;
-const unwrapProduct = (embed: EmbeddedProduct) => (Array.isArray(embed) ? (embed[0] ?? null) : embed);
+const unwrapProduct = (embed: EmbeddedProduct) =>
+  Array.isArray(embed) ? (embed[0] ?? null) : embed;
 
 /**
  * Inter-branch transfers — R2 sub-phase 2b. Dispatch and receive are each a
@@ -53,7 +60,9 @@ export class TransfersService {
     if (error) {
       this.logger.error(`Failed to dispatch transfer: ${error.message}`);
       if (error.message?.includes('serial_not_in_stock_at_origin')) {
-        throw new BadRequestException('One or more serials are not currently in stock at the origin branch');
+        throw new BadRequestException(
+          'One or more serials are not currently in stock at the origin branch',
+        );
       }
       if (error.message?.includes('serial_count_mismatch')) {
         throw new BadRequestException('One or more serial ids could not be dispatched');
@@ -72,7 +81,11 @@ export class TransfersService {
       resourceType: 'stock_transfers',
       resourceId: transferId,
       after: dispatched,
-      metadata: { fromBranchId: dto.from_branch_id, toBranchId: dto.to_branch_id, serialCount: dto.serial_ids.length },
+      metadata: {
+        fromBranchId: dto.from_branch_id,
+        toBranchId: dto.to_branch_id,
+        serialCount: dto.serial_ids.length,
+      },
     });
     return dispatched;
   }
@@ -96,7 +109,9 @@ export class TransfersService {
         throw new NotFoundException(`Transfer ${id} not found`);
       }
       if (error.message?.includes('transfer_receive_conflict')) {
-        throw new BadRequestException('A serial cannot be both received and lost in the same receipt');
+        throw new BadRequestException(
+          'A serial cannot be both received and lost in the same receipt',
+        );
       }
       throw new InternalServerErrorException('Failed to receive transfer');
     }
@@ -125,7 +140,11 @@ export class TransfersService {
    * them and stock arriving. Same `or(...)` shape `ledger.service.ts` already
    * uses for the equivalent question.
    */
-  private assertInScope(user: AuthUser, fromBranchId: string | null, toBranchId: string | null): void {
+  private assertInScope(
+    user: AuthUser,
+    fromBranchId: string | null,
+    toBranchId: string | null,
+  ): void {
     if (user.branchId && fromBranchId !== user.branchId && toBranchId !== user.branchId) {
       throw new NotFoundException('Transfer not found');
     }
@@ -137,7 +156,9 @@ export class TransfersService {
   ): Promise<TransferDto[]> {
     let query = this.db
       .from('stock_transfers')
-      .select('id, transfer_number, from_branch_id, to_branch_id, status, notes, dispatched_at, received_at')
+      .select(
+        'id, transfer_number, from_branch_id, to_branch_id, status, notes, dispatched_at, received_at',
+      )
       .order('dispatched_at', { ascending: false });
 
     if (user.branchId) {
@@ -161,7 +182,9 @@ export class TransfersService {
   async findById(id: string, user: AuthUser): Promise<TransferDto> {
     const { data, error } = await this.db
       .from('stock_transfers')
-      .select('id, transfer_number, from_branch_id, to_branch_id, status, notes, dispatched_at, received_at')
+      .select(
+        'id, transfer_number, from_branch_id, to_branch_id, status, notes, dispatched_at, received_at',
+      )
       .eq('id', id)
       .maybeSingle();
     if (error) {
@@ -186,7 +209,10 @@ export class TransfersService {
 
     type RawItem = {
       status: 'in_transit' | 'received' | 'lost';
-      serial: { id: string; serial_number: string; product: EmbeddedProduct } | { id: string; serial_number: string; product: EmbeddedProduct }[] | null;
+      serial:
+        | { id: string; serial_number: string; product: EmbeddedProduct }
+        | { id: string; serial_number: string; product: EmbeddedProduct }[]
+        | null;
     };
 
     const items = ((data ?? []) as unknown as RawItem[])

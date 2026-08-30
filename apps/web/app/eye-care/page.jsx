@@ -366,10 +366,10 @@ export default function EyeCarePage() {
                   </div>
                   {/* Title & Subtitle (Frame 2610707) */}
                   <div className="flex h-[44px] w-auto flex-col justify-center gap-[2px] lg:w-[222px]">
-                    <span className="font-poppins lg:whitespace-nowrap text-[16px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <span className="font-poppins text-[16px] font-semibold leading-[21px] text-[#0F0F0F] lg:whitespace-nowrap">
                       Preferred appointment
                     </span>
-                    <span className="font-poppins lg:whitespace-nowrap text-[12px] font-normal leading-[21px] text-[#898989]">
+                    <span className="font-poppins text-[12px] font-normal leading-[21px] text-[#898989] lg:whitespace-nowrap">
                       We’ll confirm by SMS within the hours
                     </span>
                   </div>

@@ -754,44 +754,72 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     },
     inventory: {
       list: () => request<InventoryResponse>('/admin/inventory'),
-      reconciliation: () => request<InventoryReconciliationResponse>('/admin/inventory/reconciliation'),
-      serialHistory: (id) => request<SerialHistory>(`/admin/inventory/serials/${encodeURIComponent(id)}/history`),
+      reconciliation: () =>
+        request<InventoryReconciliationResponse>('/admin/inventory/reconciliation'),
+      serialHistory: (id) =>
+        request<SerialHistory>(`/admin/inventory/serials/${encodeURIComponent(id)}/history`),
       aging: (minimumDays) =>
         request<AgingSerial[]>('/admin/inventory/aging', {
           query: minimumDays === undefined ? undefined : { minimumDays },
         }),
     },
     suppliers: {
-      list: (activeOnly) => request<Supplier[]>('/admin/suppliers', { query: activeOnly === undefined ? undefined : { activeOnly } }),
+      list: (activeOnly) =>
+        request<Supplier[]>('/admin/suppliers', {
+          query: activeOnly === undefined ? undefined : { activeOnly },
+        }),
       get: (id) => request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`),
       create: (input) => request<Supplier>('/admin/suppliers', { method: 'POST', body: input }),
-      update: (id, input) => request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`, { method: 'PATCH', body: input }),
+      update: (id, input) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: input,
+        }),
     },
     grn: {
       list: (query) => request<Grn[]>('/admin/grn', { query: query as QueryParams }),
       get: (id) => request<Grn>(`/admin/grn/${encodeURIComponent(id)}`),
       create: (input) => request<Grn>('/admin/grn', { method: 'POST', body: input }),
-      replaceItems: (id, items) => request<Grn>(`/admin/grn/${encodeURIComponent(id)}/items`, { method: 'PATCH', body: { items } }),
-      post: (id, input) => request<Grn>(`/admin/grn/${encodeURIComponent(id)}/post`, { method: 'POST', body: input }),
+      replaceItems: (id, items) =>
+        request<Grn>(`/admin/grn/${encodeURIComponent(id)}/items`, {
+          method: 'PATCH',
+          body: { items },
+        }),
+      post: (id, input) =>
+        request<Grn>(`/admin/grn/${encodeURIComponent(id)}/post`, { method: 'POST', body: input }),
     },
     transfers: {
       list: (query) => request<Transfer[]>('/admin/transfers', { query: query as QueryParams }),
       get: (id) => request<Transfer>(`/admin/transfers/${encodeURIComponent(id)}`),
       dispatch: (input) => request<Transfer>('/admin/transfers', { method: 'POST', body: input }),
-      receive: (id, input) => request<Transfer>(`/admin/transfers/${encodeURIComponent(id)}/receive`, { method: 'PATCH', body: input }),
+      receive: (id, input) =>
+        request<Transfer>(`/admin/transfers/${encodeURIComponent(id)}/receive`, {
+          method: 'PATCH',
+          body: input,
+        }),
     },
     adjustments: {
       listReasons: () => request<AdjustmentReason[]>('/admin/adjustments/reasons'),
-      list: (branchId) => request<Adjustment[]>('/admin/adjustments', { query: branchId ? { branchId } : undefined }),
+      list: (branchId) =>
+        request<Adjustment[]>('/admin/adjustments', { query: branchId ? { branchId } : undefined }),
       get: (id) => request<Adjustment>(`/admin/adjustments/${encodeURIComponent(id)}`),
       create: (input) => request<Adjustment>('/admin/adjustments', { method: 'POST', body: input }),
     },
     stockCounts: {
-      list: (query) => request<StockCount[]>('/admin/stock-counts', { query: query as QueryParams }),
+      list: (query) =>
+        request<StockCount[]>('/admin/stock-counts', { query: query as QueryParams }),
       get: (id) => request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}`),
-      start: (branch_id) => request<StockCount>('/admin/stock-counts', { method: 'POST', body: { branch_id } }),
-      scan: (id, input) => request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}/scan`, { method: 'PATCH', body: input }),
-      accept: (id) => request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}/accept`, { method: 'POST' }),
+      start: (branch_id) =>
+        request<StockCount>('/admin/stock-counts', { method: 'POST', body: { branch_id } }),
+      scan: (id, input) =>
+        request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}/scan`, {
+          method: 'PATCH',
+          body: input,
+        }),
+      accept: (id) =>
+        request<StockCount>(`/admin/stock-counts/${encodeURIComponent(id)}/accept`, {
+          method: 'POST',
+        }),
     },
     dashboard: (query) =>
       request<DashboardResponse>('/admin/dashboard', {
@@ -1151,14 +1179,25 @@ export interface AdminApi {
     update: (id: string, input: UpdateSupplierInput) => Promise<Supplier>;
   };
   grn: {
-    list: (query?: { status?: 'draft' | 'posted'; supplierId?: string; branchId?: string }) => Promise<Grn[]>;
+    list: (query?: {
+      status?: 'draft' | 'posted';
+      supplierId?: string;
+      branchId?: string;
+    }) => Promise<Grn[]>;
     get: (id: string) => Promise<Grn>;
     create: (input: CreateGrnInput) => Promise<Grn>;
     replaceItems: (id: string, items: CreateGrnInput['items']) => Promise<Grn>;
-    post: (id: string, input: { serials: { grn_item_id: string; serial_number: string }[] }) => Promise<Grn>;
+    post: (
+      id: string,
+      input: { serials: { grn_item_id: string; serial_number: string }[] },
+    ) => Promise<Grn>;
   };
   transfers: {
-    list: (query?: { status?: Transfer['status']; fromBranchId?: string; toBranchId?: string }) => Promise<Transfer[]>;
+    list: (query?: {
+      status?: Transfer['status'];
+      fromBranchId?: string;
+      toBranchId?: string;
+    }) => Promise<Transfer[]>;
     get: (id: string) => Promise<Transfer>;
     dispatch: (input: DispatchTransferInput) => Promise<Transfer>;
     receive: (id: string, input: ReceiveTransferInput) => Promise<Transfer>;

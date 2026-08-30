@@ -1,6 +1,23 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
@@ -86,9 +103,7 @@ export class PromotionsAdminController {
   @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({ description: 'Public URL of the uploaded image' })
   @UseInterceptors(FileInterceptor('file'))
-  uploadBannerImage(
-    @UploadedFile() file: UploadedImage,
-  ): Promise<{ url: string }> {
+  uploadBannerImage(@UploadedFile() file: UploadedImage): Promise<{ url: string }> {
     return this.promotions.uploadBannerImage(file);
   }
 

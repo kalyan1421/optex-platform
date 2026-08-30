@@ -89,7 +89,8 @@ export class UpdateSupplierDto {
   address?: string;
 
   @ApiProperty({
-    description: 'Deactivate rather than delete — GRNs already received against this supplier keep referencing it.',
+    description:
+      'Deactivate rather than delete — GRNs already received against this supplier keep referencing it.',
     required: false,
   })
   @IsOptional()

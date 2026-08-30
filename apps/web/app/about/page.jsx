@@ -200,78 +200,78 @@ export default function AboutPage() {
               reserves the right amount of layout space; the inner box keeps its
               original Figma dimensions and gets visually scaled down to fit. */}
           <div className="flex h-[170px] w-[322px] shrink-0 items-center justify-center overflow-hidden sm:h-[255px] sm:w-[482px] md:h-[306px] md:w-[579px] lg:h-[340px] lg:w-[643px] lg:overflow-visible">
-          <div className="relative flex h-[340px] w-[643px] shrink-0 origin-center scale-50 items-center justify-center sm:scale-75 md:scale-90 lg:scale-100 xl:origin-right">
-            {/* Mission Circle */}
-            <div className="peer/mission group/mission absolute left-0 z-10 flex h-[340px] w-[340px] items-center justify-center rounded-[400px] bg-white shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] transition-all delay-[100ms] duration-[800ms] ease-in-out hover:z-30 hover:bg-[#2E3192] hover:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)]">
-              <div className="flex h-[203px] w-[256px] flex-col items-center gap-[8px]">
-                <div className="flex h-[28px] w-[24px] flex-col items-center gap-[4px]">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      className="stroke-[#212360] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:stroke-white"
-                      d="M8.03339 3.65784C8.37932 2.78072 9.62068 2.78072 9.96661 3.65785L11.0386 6.37599C11.1442 6.64378 11.3562 6.85576 11.624 6.96137L14.3422 8.03339C15.2193 8.37932 15.2193 9.62068 14.3422 9.96661L11.624 11.0386C11.3562 11.1442 11.1442 11.3562 11.0386 11.624L9.96661 14.3422C9.62067 15.2193 8.37932 15.2193 8.03339 14.3422L6.96137 11.624C6.85575 11.3562 6.64378 11.1442 6.37599 11.0386L3.65784 9.96661C2.78072 9.62067 2.78072 8.37932 3.65785 8.03339L6.37599 6.96137C6.64378 6.85575 6.85576 6.64378 6.96137 6.37599L8.03339 3.65784Z"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      className="stroke-[#212360] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:stroke-white"
-                      d="M16.4885 13.3481C16.6715 12.884 17.3285 12.884 17.5115 13.3481L18.3121 15.3781C18.368 15.5198 18.4802 15.632 18.6219 15.6879L20.6519 16.4885C21.116 16.6715 21.116 17.3285 20.6519 17.5115L18.6219 18.3121C18.4802 18.368 18.368 18.4802 18.3121 18.6219L17.5115 20.6519C17.3285 21.116 16.6715 21.116 16.4885 20.6519L15.6879 18.6219C15.632 18.4802 15.5198 18.368 15.3781 18.3121L13.3481 17.5115C12.884 17.3285 12.884 16.6715 13.3481 16.4885L15.3781 15.6879C15.5198 15.632 15.632 15.5198 15.6879 15.3781L16.4885 13.3481Z"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                  <div className="h-[0px] w-[24px] border-t-[2px] border-[#212360] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:border-white"></div>
+            <div className="relative flex h-[340px] w-[643px] shrink-0 origin-center scale-50 items-center justify-center sm:scale-75 md:scale-90 lg:scale-100 xl:origin-right">
+              {/* Mission Circle */}
+              <div className="peer/mission group/mission absolute left-0 z-10 flex h-[340px] w-[340px] items-center justify-center rounded-[400px] bg-white shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] transition-all delay-[100ms] duration-[800ms] ease-in-out hover:z-30 hover:bg-[#2E3192] hover:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)]">
+                <div className="flex h-[203px] w-[256px] flex-col items-center gap-[8px]">
+                  <div className="flex h-[28px] w-[24px] flex-col items-center gap-[4px]">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        className="stroke-[#212360] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:stroke-white"
+                        d="M8.03339 3.65784C8.37932 2.78072 9.62068 2.78072 9.96661 3.65785L11.0386 6.37599C11.1442 6.64378 11.3562 6.85576 11.624 6.96137L14.3422 8.03339C15.2193 8.37932 15.2193 9.62068 14.3422 9.96661L11.624 11.0386C11.3562 11.1442 11.1442 11.3562 11.0386 11.624L9.96661 14.3422C9.62067 15.2193 8.37932 15.2193 8.03339 14.3422L6.96137 11.624C6.85575 11.3562 6.64378 11.1442 6.37599 11.0386L3.65784 9.96661C2.78072 9.62067 2.78072 8.37932 3.65785 8.03339L6.37599 6.96137C6.64378 6.85575 6.85576 6.64378 6.96137 6.37599L8.03339 3.65784Z"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        className="stroke-[#212360] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:stroke-white"
+                        d="M16.4885 13.3481C16.6715 12.884 17.3285 12.884 17.5115 13.3481L18.3121 15.3781C18.368 15.5198 18.4802 15.632 18.6219 15.6879L20.6519 16.4885C21.116 16.6715 21.116 17.3285 20.6519 17.5115L18.6219 18.3121C18.4802 18.368 18.368 18.4802 18.3121 18.6219L17.5115 20.6519C17.3285 21.116 16.6715 21.116 16.4885 20.6519L15.6879 18.6219C15.632 18.4802 15.5198 18.368 15.3781 18.3121L13.3481 17.5115C12.884 17.3285 12.884 16.6715 13.3481 16.4885L15.3781 15.6879C15.5198 15.632 15.632 15.5198 15.6879 15.3781L16.4885 13.3481Z"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                    <div className="h-[0px] w-[24px] border-t-[2px] border-[#212360] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:border-white"></div>
+                  </div>
+                  <span className="font-poppins w-full text-center text-[14px] font-semibold uppercase leading-[26.25px] text-[#000000] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:text-[#F9F9F9]">
+                    OUR MISSION
+                  </span>
+                  <p className="font-poppins w-full text-center text-[14px] font-normal leading-[26.25px] text-[#5B5C72] transition-all delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:font-light group-hover/mission:text-[#F9F9F9]">
+                    To make premium eyewear and vision care accessible through trusted products,
+                    transparent pricing, and an effortless shopping experience.
+                  </p>
                 </div>
-                <span className="font-poppins w-full text-center text-[14px] font-semibold uppercase leading-[26.25px] text-[#000000] transition-colors delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:text-[#F9F9F9]">
-                  OUR MISSION
-                </span>
-                <p className="font-poppins w-full text-center text-[14px] font-normal leading-[26.25px] text-[#5B5C72] transition-all delay-[100ms] duration-[800ms] ease-in-out group-hover/mission:font-light group-hover/mission:text-[#F9F9F9]">
-                  To make premium eyewear and vision care accessible through trusted products,
-                  transparent pricing, and an effortless shopping experience.
-                </p>
+              </div>
+
+              {/* Connecting Red Line */}
+              <div className="absolute left-[282px] top-[156px] z-40 hidden h-[10px] w-[56px] rounded-[6px] bg-[#E53935] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:left-[305px] sm:block"></div>
+
+              {/* Vision Circle */}
+              <div className="absolute right-0 z-30 flex h-[340px] w-[340px] flex-col items-center rounded-[400px] bg-[#2E3192] px-[34px] pb-[76px] pt-[79px] shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:z-10 peer-hover/mission:bg-white peer-hover/mission:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] peer-hover/mission:[&_.v-line]:border-[#212360] peer-hover/mission:[&_p]:font-normal peer-hover/mission:[&_p]:text-[#5B5C72] peer-hover/mission:[&_path]:stroke-[#212360] peer-hover/mission:[&_span]:text-[#000000]">
+                <div className="flex h-[176px] w-[272px] flex-col items-center gap-[8px]">
+                  <div className="flex flex-col items-center gap-[4px]">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        className="stroke-white transition-colors delay-[100ms] duration-[800ms] ease-in-out"
+                        d="M3.27489 15.2957C2.42496 14.1915 2 13.6394 2 12C2 10.3606 2.42496 9.80853 3.27489 8.70433C4.97196 6.49956 7.81811 4 12 4C16.1819 4 19.028 6.49956 20.7251 8.70433C21.575 9.80853 22 10.3606 22 12C22 13.6394 21.575 14.1915 20.7251 15.2957C19.028 17.5004 16.1819 20 12 20C7.81811 20 4.97196 17.5004 3.27489 15.2957Z"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        className="stroke-white transition-colors delay-[100ms] duration-[800ms] ease-in-out"
+                        d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                    <div className="v-line h-[0px] w-[24px] border-t-[2px] border-white transition-colors delay-[100ms] duration-[800ms] ease-in-out"></div>
+                  </div>
+                  <span className="font-poppins w-full text-center text-[14px] font-normal uppercase leading-[26.25px] text-[#F9F9F9] transition-colors delay-[100ms] duration-[800ms] ease-in-out">
+                    OUR VISION
+                  </span>
+                  <p className="font-poppins w-full text-center text-[14px] font-light leading-[26.25px] text-[#F9F9F9] transition-all delay-[100ms] duration-[800ms] ease-in-out">
+                    To become the most trusted destination for eyewear by combining innovation,
+                    quality, and exceptional customer care.
+                  </p>
+                </div>
               </div>
             </div>
-
-            {/* Connecting Red Line */}
-            <div className="absolute left-[282px] top-[156px] z-40 hidden h-[10px] w-[56px] rounded-[6px] bg-[#E53935] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:left-[305px] sm:block"></div>
-
-            {/* Vision Circle */}
-            <div className="absolute right-0 z-30 flex h-[340px] w-[340px] flex-col items-center rounded-[400px] bg-[#2E3192] px-[34px] pb-[76px] pt-[79px] shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:z-10 peer-hover/mission:bg-white peer-hover/mission:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] peer-hover/mission:[&_.v-line]:border-[#212360] peer-hover/mission:[&_p]:font-normal peer-hover/mission:[&_p]:text-[#5B5C72] peer-hover/mission:[&_path]:stroke-[#212360] peer-hover/mission:[&_span]:text-[#000000]">
-              <div className="flex h-[176px] w-[272px] flex-col items-center gap-[8px]">
-                <div className="flex flex-col items-center gap-[4px]">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      className="stroke-white transition-colors delay-[100ms] duration-[800ms] ease-in-out"
-                      d="M3.27489 15.2957C2.42496 14.1915 2 13.6394 2 12C2 10.3606 2.42496 9.80853 3.27489 8.70433C4.97196 6.49956 7.81811 4 12 4C16.1819 4 19.028 6.49956 20.7251 8.70433C21.575 9.80853 22 10.3606 22 12C22 13.6394 21.575 14.1915 20.7251 15.2957C19.028 17.5004 16.1819 20 12 20C7.81811 20 4.97196 17.5004 3.27489 15.2957Z"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      className="stroke-white transition-colors delay-[100ms] duration-[800ms] ease-in-out"
-                      d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                  <div className="v-line h-[0px] w-[24px] border-t-[2px] border-white transition-colors delay-[100ms] duration-[800ms] ease-in-out"></div>
-                </div>
-                <span className="font-poppins w-full text-center text-[14px] font-normal uppercase leading-[26.25px] text-[#F9F9F9] transition-colors delay-[100ms] duration-[800ms] ease-in-out">
-                  OUR VISION
-                </span>
-                <p className="font-poppins w-full text-center text-[14px] font-light leading-[26.25px] text-[#F9F9F9] transition-all delay-[100ms] duration-[800ms] ease-in-out">
-                  To become the most trusted destination for eyewear by combining innovation,
-                  quality, and exceptional customer care.
-                </p>
-              </div>
-            </div>
-          </div>
           </div>
         </div>
       </section>

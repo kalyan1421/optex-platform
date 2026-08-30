@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -16,7 +23,8 @@ interface GrnHeaderRow {
 }
 
 type EmbeddedProduct = { name: string; sku: string } | { name: string; sku: string }[] | null;
-const unwrapProduct = (embed: EmbeddedProduct) => (Array.isArray(embed) ? (embed[0] ?? null) : embed);
+const unwrapProduct = (embed: EmbeddedProduct) =>
+  Array.isArray(embed) ? (embed[0] ?? null) : embed;
 
 /**
  * Goods-received-notes — the R2 receiving flow. Standalone against a
@@ -83,7 +91,11 @@ export class GrnService {
     return created;
   }
 
-  async findAllForAdmin(filters: { status?: string; supplierId?: string; branchId?: string }): Promise<GrnDto[]> {
+  async findAllForAdmin(filters: {
+    status?: string;
+    supplierId?: string;
+    branchId?: string;
+  }): Promise<GrnDto[]> {
     let query = this.db
       .from('goods_received_notes')
       .select('id, grn_number, supplier_id, branch_id, status, notes, created_at, posted_at')
@@ -136,7 +148,10 @@ export class GrnService {
   async replaceItems(id: string, items: CreateGrnItemDto[], actorUser: AuthUser): Promise<GrnDto> {
     const grn = await this.loadDraft(id);
 
-    const { error: deleteError } = await this.db.from('goods_received_items').delete().eq('grn_id', grn.id);
+    const { error: deleteError } = await this.db
+      .from('goods_received_items')
+      .delete()
+      .eq('grn_id', grn.id);
     if (deleteError) {
       this.logger.error(`Failed to clear GRN ${id} items: ${deleteError.message}`);
       throw new InternalServerErrorException('Failed to update GRN items');
@@ -182,7 +197,9 @@ export class GrnService {
       this.logger.error(`Failed to load GRN ${id} items: ${itemsError.message}`);
       throw new InternalServerErrorException('Failed to load GRN items');
     }
-    const expectedByItem = new Map((items ?? []).map((i) => [i.id as string, i.quantity_ordered as number]));
+    const expectedByItem = new Map(
+      (items ?? []).map((i) => [i.id as string, i.quantity_ordered as number]),
+    );
 
     const submittedByItem = new Map<string, number>();
     for (const serial of dto.serials) {
@@ -221,7 +238,11 @@ export class GrnService {
       resourceType: 'goods_received_notes',
       resourceId: id,
       after: posted,
-      metadata: { branchId: grn.branch_id, supplierId: grn.supplier_id, serialCount: dto.serials.length },
+      metadata: {
+        branchId: grn.branch_id,
+        supplierId: grn.supplier_id,
+        serialCount: dto.serials.length,
+      },
     });
     return posted;
   }

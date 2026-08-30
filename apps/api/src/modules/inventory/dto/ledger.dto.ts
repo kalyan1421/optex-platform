@@ -7,7 +7,18 @@ export class SerialLedgerEntryDto {
   @ApiProperty({ format: 'uuid' })
   serial_id!: string;
 
-  @ApiProperty({ enum: ['received', 'transfer_out', 'transfer_in', 'sold', 'sale_reversed', 'adjusted_out', 'found', 'count_variance'] })
+  @ApiProperty({
+    enum: [
+      'received',
+      'transfer_out',
+      'transfer_in',
+      'sold',
+      'sale_reversed',
+      'adjusted_out',
+      'found',
+      'count_variance',
+    ],
+  })
   movement_type!: string;
 
   @ApiProperty({ nullable: true, format: 'uuid' })

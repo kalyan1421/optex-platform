@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { TransfersService } from './transfers.service';
@@ -20,7 +28,11 @@ export class TransfersController {
   @RequirePermission('inventory.transfer')
   @Get()
   @ApiOperation({ summary: 'List transfers' })
-  @ApiQuery({ name: 'status', required: false, enum: ['pending', 'in_transit', 'received', 'cancelled'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['pending', 'in_transit', 'received', 'cancelled'],
+  })
   @ApiQuery({ name: 'fromBranchId', required: false })
   @ApiQuery({ name: 'toBranchId', required: false })
   @ApiOkResponse({ type: [TransferDto] })
@@ -44,16 +56,22 @@ export class TransfersController {
 
   @RequirePermission('inventory.transfer')
   @Post()
-  @ApiOperation({ summary: 'Dispatch a transfer — releases the given serials from the origin branch into transit' })
+  @ApiOperation({
+    summary: 'Dispatch a transfer — releases the given serials from the origin branch into transit',
+  })
   @ApiCreatedResponse({ type: TransferDto })
-  dispatch(@Body() dto: DispatchTransferDto, @CurrentUser() actorUser: AuthUser): Promise<TransferDto> {
+  dispatch(
+    @Body() dto: DispatchTransferDto,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<TransferDto> {
     return this.transfers.dispatch(dto, actorUser);
   }
 
   @RequirePermission('inventory.transfer')
   @Patch(':id/receive')
   @ApiOperation({
-    summary: 'Resolve a transfer\'s in-transit lines as arrived or lost — callable more than once for a partial receipt',
+    summary:
+      "Resolve a transfer's in-transit lines as arrived or lost — callable more than once for a partial receipt",
   })
   @ApiOkResponse({ type: TransferDto })
   @ApiNotFoundResponse({ description: 'Transfer not found' })

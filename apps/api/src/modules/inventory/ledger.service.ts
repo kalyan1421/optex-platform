@@ -14,7 +14,8 @@ type SerialRow = {
   product: { name: string } | { name: string }[] | null;
 };
 
-const unwrap = <T>(value: T | T[] | null): T | null => (Array.isArray(value) ? (value[0] ?? null) : value);
+const unwrap = <T>(value: T | T[] | null): T | null =>
+  Array.isArray(value) ? (value[0] ?? null) : value;
 
 /** Read-only serial trace and dead-stock/aging views for R2 sub-phase 2e. */
 @Injectable()
@@ -33,15 +34,20 @@ export class LedgerService {
 
     let movementsQuery = this.supabase.client
       .from('stock_ledger')
-      .select('id, serial_id, movement_type, from_branch_id, to_branch_id, reference_type, reference_id, actor_user_id, actor_role, created_at')
+      .select(
+        'id, serial_id, movement_type, from_branch_id, to_branch_id, reference_type, reference_id, actor_user_id, actor_role, created_at',
+      )
       .eq('serial_id', id)
       .order('created_at', { ascending: true });
     if (user.branchId) {
-      movementsQuery = movementsQuery.or(`from_branch_id.eq.${user.branchId},to_branch_id.eq.${user.branchId}`);
+      movementsQuery = movementsQuery.or(
+        `from_branch_id.eq.${user.branchId},to_branch_id.eq.${user.branchId}`,
+      );
     }
     const { data: movements, error: movementError } = await movementsQuery;
     if (movementError) throw new InternalServerErrorException('Failed to load serial history');
-    if (user.branchId && (movements ?? []).length === 0) throw new NotFoundException('Serial not found');
+    if (user.branchId && (movements ?? []).length === 0)
+      throw new NotFoundException('Serial not found');
 
     return {
       serial_id: serial.id,
@@ -57,7 +63,9 @@ export class LedgerService {
   async aging(user: AuthUser, minimumDays = 0): Promise<AgingSerialDto[]> {
     let query = this.supabase.client
       .from('product_serials')
-      .select('id, serial_number, product_id, status, current_branch_id, cost_price_kes, received_at, product:products(name)')
+      .select(
+        'id, serial_number, product_id, status, current_branch_id, cost_price_kes, received_at, product:products(name)',
+      )
       .eq('status', 'in_stock')
       .order('received_at', { ascending: true });
     if (user.branchId) query = query.eq('current_branch_id', user.branchId);
@@ -74,7 +82,10 @@ export class LedgerService {
         product_name: unwrap(serial.product)?.name ?? 'Unknown product',
         branch_id: serial.current_branch_id!,
         received_at: serial.received_at,
-        days_on_shelf: Math.max(0, Math.floor((now - new Date(serial.received_at).getTime()) / 86_400_000)),
+        days_on_shelf: Math.max(
+          0,
+          Math.floor((now - new Date(serial.received_at).getTime()) / 86_400_000),
+        ),
         cost_price_kes: serial.cost_price_kes,
       }))
       .filter((serial) => serial.days_on_shelf >= minimumDays);
