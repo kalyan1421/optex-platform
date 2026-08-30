@@ -214,6 +214,51 @@ describe('Physical stock counts (e2e)', () => {
     expect((adjItem as { direction: string }).direction).toBe('remove');
   });
 
+  it('reconciles a stale inventory cache instead of failing on it (0033)', async () => {
+    // The count snapshot is BRANCH-WIDE: it picks up every serial the system
+    // believes is in stock at that branch, including ones other suites left
+    // behind. So a count routinely writes off serials whose `inventory` row
+    // was never in step with `product_serials` — and while `accept` moved the
+    // cache by -1 per write-off, any row already below its true serial count
+    // went negative and `inventory_stock_check` aborted the whole accept with
+    // a 500, leaving the count `in_progress` with its ledger rows written.
+    //
+    // The state below is exactly that: one serial in stock, a cache that says
+    // zero. Accepting must reconcile rather than refuse.
+    const productId = await newProduct('stale-cache');
+    await db
+      .from('inventory')
+      .update({ stock: 0 })
+      .eq('product_id', productId)
+      .eq('branch_id', branchA);
+    await newSerial(productId, branchA);
+
+    const token = await newStaffAccount('inventory_manager');
+    const startRes = await request(app.getHttpServer())
+      .post('/api/admin/stock-counts')
+      .set(auth(token))
+      .send({ branch_id: branchA })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/admin/stock-counts/${startRes.body.id}/accept`)
+      .set(auth(token))
+      .expect(201);
+
+    // Written off, so the true count is zero — and the cache now says so
+    // because it is derived from the serials, not stepped down from a number
+    // that was already wrong.
+    expect(await stockAt(productId, branchA)).toBe(0);
+
+    const { data: serials } = await db
+      .from('product_serials')
+      .select('status')
+      .eq('product_id', productId);
+    expect((serials ?? []).every((r) => (r as { status: string }).status === 'written_off')).toBe(
+      true,
+    );
+  });
+
   it('scanning a serial the system thinks is at a different branch relocates it (count_variance)', async () => {
     const productId = await newProduct('relocated');
     await db
