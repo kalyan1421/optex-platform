@@ -49,7 +49,8 @@ const ArrowRightIcon = () => (
  * sort, add-to-cart) are the only parts that still need a browser.
  */
 
-export function generateMetadata({ searchParams }) {
+export async function generateMetadata(props) {
+  const searchParams = await props.searchParams;
   const q = searchParams?.q ?? '';
   return {
     title: q ? `Search: "${q}" | Optex Opticians` : 'Search Products | Optex Opticians',
@@ -68,7 +69,8 @@ async function loadResults(q) {
   }
 }
 
-export default async function SearchPage({ searchParams }) {
+export default async function SearchPage(props) {
+  const searchParams = await props.searchParams;
   const q = searchParams?.q ?? '';
   const hasQuery = q.trim().length > 0;
   const products = await loadResults(q);
