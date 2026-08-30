@@ -50,7 +50,10 @@ export class AdjustmentsController {
   @ApiOperation({ summary: 'Get an adjustment with its lines' })
   @ApiOkResponse({ type: AdjustmentDto })
   @ApiNotFoundResponse({ description: 'Adjustment not found' })
-  get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser): Promise<AdjustmentDto> {
+  get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<AdjustmentDto> {
     return this.adjustments.findById(id, user);
   }
 

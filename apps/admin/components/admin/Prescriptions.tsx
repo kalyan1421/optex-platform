@@ -263,8 +263,8 @@ export function Prescriptions() {
 
       {!loading && truncated && (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Showing the most recent {PRESCRIPTION_PAGE_LIMIT} prescriptions. There are more than
-          this, so the counts below and the search cover only what is listed.
+          Showing the most recent {PRESCRIPTION_PAGE_LIMIT} prescriptions. There are more than this,
+          so the counts below and the search cover only what is listed.
         </div>
       )}
 
