@@ -12,6 +12,23 @@
 -- Colour is folded into `name` so the three same-named SKUs stay distinguishable
 -- in listings; MRP and cost price are dropped -- there is nowhere to put them.
 
+-- `categories` is otherwise only populated by seed.sql, which migrate.sh runs
+-- AFTER every numbered migration -- so on a genuinely fresh database (a new
+-- environment, or CI's ephemeral runner) the category lookups below all
+-- resolved to null and this migration failed outright on products.category_id
+-- NOT NULL. Categories are reference/taxonomy data, not disposable dev
+-- fixtures, so this migration seeds the rows it depends on itself rather than
+-- relying on migration order it doesn't control. Matches seed.sql's values;
+-- ON CONFLICT DO NOTHING makes seed.sql's later insert of the same rows a
+-- no-op either way.
+insert into categories (slug, name, sort_order) values
+  ('eyeglasses',      'Eyeglasses',      1),
+  ('sunglasses',      'Sunglasses',      2),
+  ('kids',            'Kids',            3),
+  ('computer-glasses','Computer Glasses',4),
+  ('reading-glasses', 'Reading Glasses', 5)
+on conflict (slug) do nothing;
+
 with c as (select id, slug from categories)
 insert into products (sku, slug, name, category_id, brand, frame_material, frame_shape, gender, description, price_kes, images, is_active)
 values
