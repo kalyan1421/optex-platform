@@ -107,12 +107,48 @@ export function Orders() {
   const [cancelError, setCancelError] = useState('');
   const [cancelBusy, setCancelBusy] = useState(false);
 
+  // Frontend audit F-04. `count()` used to be `orders.filter(...).length` over
+  // whatever the single `pageSize: 100` fetch happened to return, rendered in
+  // the tab labels as if it were the total. Past 100 orders those numbers were
+  // simply wrong — and wrong counts on an operations screen get acted on.
+  //
+  // The list endpoint returns an exact `total` alongside the page, so each
+  // tab's count comes from its own status-filtered query with `pageSize: 1`:
+  // the row payload is discarded, only the count is used. Seven small requests
+  // once on mount, rather than one request and six wrong numbers.
+  const [statusCounts, setStatusCounts] = useState<Record<string, number> | null>(null);
+
   useEffect(() => {
     api.admin.orders
       .list({ pageSize: 100 })
       .then((res) => setOrders(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const entries = await Promise.all(
+          STATUS_TABS.map(async (tab) => {
+            const res = await api.admin.orders.list({
+              pageSize: 1,
+              ...(tab.key === 'all' ? {} : { status: tab.key as OrderStatus }),
+            });
+            return [tab.key, res.total] as const;
+          }),
+        );
+        if (!cancelled) setStatusCounts(Object.fromEntries(entries));
+      } catch (e) {
+        // Leave `statusCounts` null — `count()` falls back to the loaded page
+        // rather than the tabs losing their numbers entirely.
+        console.error('Could not load order status counts:', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function openOrder(order: AdminOrderSummary) {
@@ -187,8 +223,11 @@ export function Orders() {
     return matchSearch && matchTab;
   });
 
+  // Server totals when they resolved; otherwise the loaded page, which is at
+  // least never larger than the truth.
   const count = (key: string) =>
-    key === 'all' ? orders.length : orders.filter((o) => o.status === key).length;
+    statusCounts?.[key] ??
+    (key === 'all' ? orders.length : orders.filter((o) => o.status === key).length);
   const statusIndex = (s: string) => STATUS_TIMELINE.indexOf(s as OrderStatus);
 
   const detailShipping = (detail?.shipping as ShippingJSON | null) ?? null;

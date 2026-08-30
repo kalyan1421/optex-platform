@@ -6,6 +6,7 @@ import { WishlistProvider } from '@/context/WishlistContext';
 import AosInit from '@/components/AosInit';
 import MainLayout from '@/components/layout/MainLayout';
 import CompareTray from '@/components/compare/CompareTray';
+import { serializeJsonLd } from '@/lib/json-ld';
 
 export const metadata = {
   // Without metadataBase, per-page `alternates.canonical` and OpenGraph URLs
@@ -31,7 +32,7 @@ export default function RootLayout({ children }) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: serializeJsonLd({
               '@context': 'https://schema.org',
               '@type': ['LocalBusiness', 'MedicalOrganization'],
               name: 'Optex Opticians',

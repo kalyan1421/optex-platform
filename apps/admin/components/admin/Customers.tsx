@@ -66,11 +66,25 @@ export function Customers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Frontend audit F-04. The search box used to filter `customers` in the
+  // browser while the fetch below asked for an unfiltered list, which the API
+  // caps at 500 rows. Past 500 customers, searching for someone who exists
+  // returned nothing — the box looked like it worked and quietly did not.
+  // `GET /admin/customers` has taken a `search` parameter all along; this
+  // sends it. Debounced so a keystroke is not a request.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
+      setLoading(true);
       try {
-        const data = await api.admin.customers.list();
+        const data = await api.admin.customers.list(debouncedSearch || undefined);
 
         const mapped: Customer[] = data.map((row) => {
           const orders: DbOrder[] = Array.isArray(row.orders) ? row.orders : [];
@@ -88,14 +102,19 @@ export function Customers() {
           };
         });
 
-        setCustomers(mapped);
+        // A response that arrived after the user typed further is stale and
+        // must not overwrite the newer one.
+        if (!cancelled) setCustomers(mapped);
       } catch (e) {
         console.error('Unexpected error fetching customers:', e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch]);
 
   async function handleSetStatus(customer: Customer, deactivate: boolean) {
     const verb = deactivate ? 'Deactivate' : 'Reactivate';
@@ -125,6 +144,9 @@ export function Customers() {
     }
   }
 
+  // Narrows what the server already matched, so the table responds on the
+  // keystroke rather than waiting out the debounce. It can only ever be a
+  // subset of a correct result — the authoritative filter is the query above.
   const filtered = customers.filter(
     (c) =>
       c.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

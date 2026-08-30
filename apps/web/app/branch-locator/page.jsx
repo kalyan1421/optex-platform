@@ -1,5 +1,6 @@
 import BranchLocatorView from '@/components/branches/BranchLocatorView';
 import { publicApi } from '@/lib/api-server';
+import { serializeJsonLd } from '@/lib/json-ld';
 
 /**
  * Branch locator — Server Component (audit F-13 and F-18).
@@ -63,7 +64,7 @@ export default async function BranchLocatorPage() {
       {branches.length > 0 ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(branches)) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildJsonLd(branches)) }}
         />
       ) : null}
       <BranchLocatorView branches={branches} />
