@@ -51,7 +51,8 @@ async function loadExtras(productId) {
   return { related, reviewsData };
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const product = await loadProduct(params.slug);
 
   if (!product) {
@@ -104,7 +105,8 @@ function StarDisplay({ rating, max = 5 }) {
   );
 }
 
-export default async function Page({ params }) {
+export default async function Page(props) {
+  const params = await props.params;
   const product = await loadProduct(params.slug);
   if (!product) {
     notFound();

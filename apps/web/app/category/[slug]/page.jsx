@@ -34,7 +34,8 @@ async function loadCategory(slug) {
   }
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const category = await loadCategory(params.slug);
 
   if (!category) {
@@ -48,7 +49,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function CategoryPage({ params }) {
+export default async function CategoryPage(props) {
+  const params = await props.params;
   const category = await loadCategory(params.slug);
   if (!category) {
     notFound();

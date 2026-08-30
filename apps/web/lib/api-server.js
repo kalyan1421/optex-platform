@@ -76,7 +76,7 @@ export function sessionApi() {
   return createApiClient({
     baseUrl: serverBaseUrl(),
     getAccessToken: async () => {
-      const supabase = createServerSupabase(cookies());
+      const supabase = createServerSupabase(await cookies());
       const { data } = await supabase.auth.getSession();
       return data.session?.access_token ?? null;
     },
