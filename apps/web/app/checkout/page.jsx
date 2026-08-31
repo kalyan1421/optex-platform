@@ -150,7 +150,7 @@ const KENYA_COUNTIES = [
 
 export default function Page() {
   const router = useRouter();
-  const { items } = useCart();
+  const { items, cartView } = useCart();
   const { user, loading: authLoading } = useAuth();
 
   const [activeStep, setActiveStep] = useState(1);
@@ -235,10 +235,25 @@ export default function Page() {
     });
   }
 
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  // The promo the customer applied in the cart has to survive to here, and be
+  // charged. This page previously did not reference promos at all: it summed
+  // the lines, added VAT on the undiscounted subtotal, and submitted an order
+  // with no `promoCode` — so a customer who applied a code saw a saving in the
+  // cart, no mention of it here, and paid full price.
+  //
+  // `cartView` is the server's own computation and already has the discount in
+  // it, so the summary below now matches what `place_order` will charge. The
+  // code itself is sent with the order (see `handlePlaceOrder`); the server
+  // revalidates and recomputes it rather than trusting these numbers.
+  const localSubtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  const subtotal = cartView ? Number(cartView.subtotalKes) : localSubtotal;
+  const promoCode = cartView?.promo?.code ?? null;
+  const promoDiscount = cartView ? Number(cartView.discountKes) : 0;
   const shippingKes = DELIVERY_FEE_KES;
-  const vat = +(subtotal * 0.16).toFixed(2);
-  const total = +(subtotal + vat + shippingKes).toFixed(2);
+  const vat = cartView
+    ? Number(cartView.vatKes)
+    : +(Math.max(0, localSubtotal - promoDiscount) * 0.16).toFixed(2);
+  const total = +(Math.max(0, subtotal - promoDiscount) + vat + shippingKes).toFixed(2);
 
   async function handlePlaceOrder() {
     if (!user) {
@@ -271,6 +286,9 @@ export default function Page() {
       const { order, payment } = await api.orders.checkout({
         paymentMethod,
         deliveryOption: 'delivery',
+        // Without this the applied code never reached `place_order` and the
+        // customer was billed the undiscounted total.
+        ...(promoCode ? { promoCode } : {}),
         shippingAddress: {
           name: `${shipping.firstName} ${shipping.lastName}`.trim(),
           phone: shipping.phone,
@@ -1008,6 +1026,32 @@ export default function Page() {
                     KSH. {formatKesNumber(subtotal)}
                   </span>
                 </div>
+                {promoDiscount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="text-green-600"
+                      style={{
+                        fontFamily: 'Manrope, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '18px',
+                        lineHeight: '27px',
+                      }}
+                    >
+                      Promo{promoCode ? ` (${promoCode})` : ''}
+                    </span>
+                    <span
+                      className="text-green-600"
+                      style={{
+                        fontFamily: 'Manrope, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '18px',
+                        lineHeight: '27px',
+                      }}
+                    >
+                      - KSH. {formatKesNumber(promoDiscount)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span
                     className="text-[#464652]"

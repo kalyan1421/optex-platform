@@ -67,7 +67,6 @@ module.exports = {
       // each entry as its page lands, and delete this block when the list is
       // empty. Do not add to it.
       files: [
-        'app/cart/page.jsx',
         'app/profile/page.jsx',
         // Globs, not literal paths: ESLint matches with minimatch, where
         // `[orderId]` is a character class rather than a Next.js route segment.
