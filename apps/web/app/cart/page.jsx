@@ -57,9 +57,26 @@ const Cart = () => {
   const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
 
+  // Mirrors `place_order` exactly (migration 0008, carried through 0032):
+  //
+  //   taxable_base = subtotal - discount
+  //   vat          = taxable_base * 0.16
+  //   total        = taxable_base + vat + shipping
+  //
+  // This block previously taxed at 8% and subtracted the promo AFTER tax, so
+  // the cart quoted a total the order would never charge. On a single KES 5,000
+  // frame it showed 5,400 against the 5,800 checkout actually takes, and a KES
+  // 500 promo widened the gap instead of closing it — the customer was quoted
+  // one price and billed another, on every cart.
+  //
+  // 0.16 is Kenya VAT, and is the rate `place_order` and the API's own cart
+  // service (`VAT_RATE`) both already used. Shipping is deliberately absent
+  // here: it is chosen at checkout, so the cart's total is pre-delivery, which
+  // is what the "Estimated" labelling in this summary means.
   const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const estimatedTax = subtotal * 0.08;
-  const total = subtotal + estimatedTax - promoDiscount;
+  const taxableBase = Math.max(0, subtotal - promoDiscount);
+  const estimatedTax = taxableBase * 0.16;
+  const total = taxableBase + estimatedTax;
 
   const formatCurrency = (value) => formatKesNumber(Math.max(0, value));
 
