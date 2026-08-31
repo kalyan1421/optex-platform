@@ -18,6 +18,65 @@ module.exports = {
     'jsx-a11y/no-static-element-interactions': 'warn',
     '@next/next/no-img-element': 'warn',
     'react/no-unescaped-entities': 'off',
+    // Frontend audit F-03. `docs/API-MIGRATION-PLAN.md` and `docs/SPRINT-01.md`
+    // both describe this rule as already existing — "a PR reintroducing a
+    // browser query fails CI". It did not: the architectural boundary that all
+    // reads and writes go through `apps/api`, never browser-to-Postgres, was
+    // held by convention alone. The allowlist in `overrides` below is the
+    // complete set of legitimate exceptions, all of them auth: signing in,
+    // signing up, password reset, and reading the session to attach a bearer
+    // token. Everything else must go through `@optex/api-client`.
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['@optex/db', '@optex/db/*'],
+            message:
+              'Do not query Supabase from the app. Use `@optex/api-client` so the request goes through apps/api, where authorization and audit logging live. Auth flows are the only exception — see the allowlist in .eslintrc.js.',
+          },
+        ],
+      },
+    ],
+
   },
+  overrides: [
+    {
+      // The auth allowlist: these legitimately talk to Supabase Auth
+      // directly, because signing in is what produces the token every
+      // other request carries.
+      files: [
+        'context/AuthContext.js',
+        'app/login/page.jsx',
+        'app/signup/page.jsx',
+        'app/reset-password/page.jsx',
+        'lib/api.js',
+        'lib/api-server.js',
+      ],
+      rules: { 'no-restricted-imports': 'off' },
+    },
+    {
+      // KNOWN VIOLATIONS — not exceptions. These four pages query Postgres
+      // straight from the browser (`promo_codes` in the cart, `orders` in the
+      // other three), bypassing apps/api and resting entirely on RLS. That is
+      // the exact thing the boundary exists to prevent, and enabling this rule
+      // is what surfaced them.
+      //
+      // They are frozen rather than allowlisted so the rule stays `error`
+      // everywhere else and a NEW violation still fails the build. Migration to
+      // `@optex/api-client` is already in progress outside this change; delete
+      // each entry as its page lands, and delete this block when the list is
+      // empty. Do not add to it.
+      files: [
+        'app/cart/page.jsx',
+        'app/profile/page.jsx',
+        // Globs, not literal paths: ESLint matches with minimatch, where
+        // `[orderId]` is a character class rather than a Next.js route segment.
+        'app/order-confirmation/**/page.jsx',
+        'app/orders/**/tracking/page.jsx',
+      ],
+      rules: { 'no-restricted-imports': 'warn' },
+    },
+  ],
   ignorePatterns: ['.next/**', 'node_modules/**', 'e2e/**'],
 };

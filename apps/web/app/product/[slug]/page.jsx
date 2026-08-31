@@ -8,6 +8,7 @@ import ProductPurchasePanel from '@/components/product/ProductPurchasePanel';
 import ProductTabs from '@/components/product/ProductTabs';
 import ReviewForm from '@/components/product/ReviewForm';
 import SimilarProducts from '@/components/product/SimilarProducts';
+import { serializeJsonLd } from '@/lib/json-ld';
 
 /**
  * /product/[slug] — Server Component (SPEC-03 R2, Sprint 5).
@@ -161,7 +162,7 @@ export default async function Page(props) {
     <div className="min-h-screen bg-[#F8F9FA] pb-[100px] pt-[38px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 lg:px-[100px]">
         {/* Breadcrumb */}

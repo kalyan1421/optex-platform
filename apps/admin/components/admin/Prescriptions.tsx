@@ -118,6 +118,13 @@ function LensGrid({ row }: { row: PrescriptionRow }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+/**
+ * Mirrors the server-side cap in `prescriptions.service.ts` (`.limit(500)`).
+ * Kept as a named constant so the "showing a partial list" notice below stays
+ * tied to the number it is actually about.
+ */
+const PRESCRIPTION_PAGE_LIMIT = 500;
+
 export function Prescriptions() {
   const [prescriptions, setPrescriptions] = useState<PrescriptionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +136,8 @@ export function Prescriptions() {
   const [viewLoading, setViewLoading] = useState(false);
   /** Validation message from the API for status / download actions. */
   const [actionError, setActionError] = useState('');
+  /** True when the API returned a full page, i.e. there are probably more. */
+  const [truncated, setTruncated] = useState(false);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -138,6 +147,15 @@ export function Prescriptions() {
     try {
       const rows = await api.admin.prescriptions.list();
       setPrescriptions(rows as unknown as PrescriptionRow[]);
+      // Frontend audit F-04. `GET /admin/prescriptions` caps at
+      // PRESCRIPTION_PAGE_LIMIT rows server-side, and this screen filters and
+      // counts what it received — so past the cap the search silently missed
+      // records and the three summary tiles understated the real totals with
+      // no indication anything was missing. The endpoint currently filters
+      // only by `customerId`, so there is no search parameter to push down
+      // without widening the API; until there is, say plainly that the view
+      // is partial rather than letting the numbers read as totals.
+      setTruncated(rows.length >= PRESCRIPTION_PAGE_LIMIT);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load prescriptions');
     } finally {
@@ -240,6 +258,13 @@ export function Prescriptions() {
           <Button variant="ghost" size="sm" onClick={fetchAll} className="ml-auto">
             Retry
           </Button>
+        </div>
+      )}
+
+      {!loading && truncated && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Showing the most recent {PRESCRIPTION_PAGE_LIMIT} prescriptions. There are more than
+          this, so the counts below and the search cover only what is listed.
         </div>
       )}
 
