@@ -24,6 +24,19 @@ import { getTestDb } from './lib/test-db';
 const PROMO_CODE = `E2ETEST${Date.now()}`.toUpperCase();
 const DISCOUNT_KES = 500;
 
+/**
+ * Kenya VAT, and the rate `place_order` charges (migration 0008 onward):
+ * `taxable_base = subtotal - discount`, then `vat = taxable_base * 0.16`.
+ *
+ * A discount therefore moves the total by more than its face value — it
+ * removes the VAT that would have been charged on the discounted portion too.
+ * This test used to assert the total fell by exactly DISCOUNT_KES, which only
+ * held because the cart page taxed at 8% and subtracted the promo after tax:
+ * arithmetic that made the assertion pass while the quoted total disagreed
+ * with what checkout actually billed.
+ */
+const VAT_RATE = 0.16;
+
 function throwawayEmail(): string {
   return `promo-e2e-${Date.now()}-${Math.floor(Math.random() * 10000)}@optex-test.local`;
 }
@@ -78,7 +91,7 @@ test.describe('Promo code redemption', () => {
     await db.from('promo_codes').delete().eq('code', PROMO_CODE);
   });
 
-  test('a valid code discounts the total by exactly its value', async ({ page }) => {
+  test('a valid code reduces the total by its value plus the VAT on it', async ({ page }) => {
     await signUpFreshAccount(page);
     await addFirstProductToCart(page);
 
@@ -92,7 +105,7 @@ test.describe('Promo code redemption', () => {
     await expect(page.getByText(`Promo (${PROMO_CODE})`)).toBeVisible();
 
     const totalAfter = parseKes(await totalRow.innerText());
-    expect(totalBefore - totalAfter).toBeCloseTo(DISCOUNT_KES, 2);
+    expect(totalBefore - totalAfter).toBeCloseTo(DISCOUNT_KES * (1 + VAT_RATE), 2);
   });
 
   test('an unknown code is refused with a clear reason, not a silent no-op', async ({ page }) => {
