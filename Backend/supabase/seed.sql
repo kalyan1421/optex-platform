@@ -77,8 +77,23 @@ declare
 begin
   for v_product in select id from products loop
     for v_branch in select id from branches loop
+      -- Skip only if this product genuinely HAS stock here, not merely an
+      -- inventory ROW. Migration 0020 adds a trigger that gives every new
+      -- product a zero-stock row at every active branch, and seed.sql inserts
+      -- its branches before its products -- so by the time this loop runs, the
+      -- row always exists and the old `exists (select 1 from inventory ...)`
+      -- guard skipped every single product. The result was a seeded database
+      -- whose demo catalogue had no stock at all: `available_stock` 0 on the
+      -- storefront, "Add to cart" correctly disabled, and nothing to buy.
+      --
+      -- Serials are the check because 0026 made them the source of truth --
+      -- and a product that has real stock from a GRN must not have synthetic
+      -- seed serials piled on top of it either.
       if exists (
-        select 1 from inventory where product_id = v_product.id and branch_id = v_branch.id
+        select 1 from product_serials
+        where  product_id = v_product.id
+          and  current_branch_id = v_branch.id
+          and  status = 'in_stock'
       ) then
         continue;
       end if;
@@ -96,8 +111,12 @@ begin
         values (v_serial_id, v_product.id, 'found', v_branch.id, 'seed', null);
       end loop;
 
+      -- `do update`, not `do nothing`: 0020's trigger has already put a
+      -- zero-stock row here, so `do nothing` would discard the quantity this
+      -- block just fabricated serials for and leave the cache disagreeing with
+      -- them.
       insert into inventory (product_id, branch_id, stock) values (v_product.id, v_branch.id, v_qty)
-      on conflict do nothing;
+      on conflict (product_id, branch_id) do update set stock = excluded.stock;
     end loop;
   end loop;
 end
