@@ -89,18 +89,6 @@ function round2(n: number): number {
 export class CartService {
   constructor(private readonly supabase: SupabaseService) {}
 
-  /**
-   * Applied promo codes keyed by cart id.
-   *
-   * ASSUMPTION: the `carts` table has no column to persist an applied promo
-   * (only `id`, `customer_id`, `updated_at` across migrations 0001-0007). Per
-   * the contract's fallback ("else just recompute"), the applied code is held
-   * in process memory so apply/clear/get behave consistently within a running
-   * instance. This is not durable across restarts or multiple instances; when
-   * a `carts.promo_code` column is added, swap this Map for a column write.
-   */
-  private readonly appliedPromos = new Map<string, string>();
-
   // ─── Public API ────────────────────────────────────────────────────────────
 
   /** Get-or-create the caller's cart and return it fully computed. */
@@ -110,7 +98,12 @@ export class CartService {
   }
 
   /** Add a product to the caller's cart, or increment if already present. */
-  async addItem(authUserId: string, productId: string, quantity: number): Promise<CartView> {
+  async addItem(
+    authUserId: string,
+    productId: string,
+    quantity: number,
+    lensOption?: Record<string, unknown>,
+  ): Promise<CartView> {
     const cartId = await this.getOrCreateCartId(authUserId);
     const qty = Math.max(1, Math.trunc(quantity || 1));
 
@@ -126,25 +119,33 @@ export class CartService {
       throw new NotFoundException(`Product "${productId}" is not available`);
     }
 
-    // Match an existing line for the same product with a null lens_option (the
-    // storefront cart does not yet send per-line lens configuration).
+    const requestedLensOption = lensOption ?? null;
+
+    // Match the same product + configuration. JSON comparison happens in the
+    // API so two frame colors/lens configurations remain separate cart lines.
     const { data: existing, error: selectError } = await this.supabase.client
       .from('cart_items')
-      .select('id')
+      .select('id, lens_option')
       .eq('cart_id', cartId)
       .eq('product_id', productId)
-      .is('lens_option', null)
-      .maybeSingle();
+      .order('id', { ascending: true });
     if (selectError) throw new BadRequestException(selectError.message);
 
-    if (existing) {
-      await this.incrementItem((existing as { id: string }).id, qty);
+    const existingRow = ((existing ?? []) as { id: string; lens_option: unknown }[]).find(
+      (row) => JSON.stringify(row.lens_option ?? null) === JSON.stringify(requestedLensOption),
+    );
+
+    if (existingRow) {
+      await this.incrementItem(existingRow.id, qty);
       return this.buildCartView(cartId);
     }
 
-    const { error: insertError } = await this.supabase.client
-      .from('cart_items')
-      .insert({ cart_id: cartId, product_id: productId, quantity: qty });
+    const { error: insertError } = await this.supabase.client.from('cart_items').insert({
+      cart_id: cartId,
+      product_id: productId,
+      quantity: qty,
+      lens_option: requestedLensOption,
+    });
 
     if (insertError) {
       // 23505 = unique_violation on (cart_id, product_id, lens_option): a
@@ -153,14 +154,16 @@ export class CartService {
       if ((insertError as { code?: string }).code === '23505') {
         const { data: winner, error: raceError } = await this.supabase.client
           .from('cart_items')
-          .select('id')
+          .select('id, lens_option')
           .eq('cart_id', cartId)
           .eq('product_id', productId)
-          .is('lens_option', null)
-          .maybeSingle();
+          .order('id', { ascending: true });
         if (raceError) throw new BadRequestException(raceError.message);
-        if (winner) {
-          await this.incrementItem((winner as { id: string }).id, qty);
+        const winnerRow = ((winner ?? []) as { id: string; lens_option: unknown }[]).find(
+          (row) => JSON.stringify(row.lens_option ?? null) === JSON.stringify(requestedLensOption),
+        );
+        if (winnerRow) {
+          await this.incrementItem(winnerRow.id, qty);
           return this.buildCartView(cartId);
         }
       }
@@ -187,7 +190,7 @@ export class CartService {
 
     const { error } = await this.supabase.client
       .from('cart_items')
-      .update({ quantity: Math.trunc(quantity) })
+      .update({ quantity: Math.min(100, Math.trunc(quantity)) })
       .eq('id', itemId)
       .eq('cart_id', cartId);
     if (error) throw new BadRequestException(error.message);
@@ -248,14 +251,22 @@ export class CartService {
       throw new BadRequestException('This promo code has reached its usage limit.');
     }
 
-    this.appliedPromos.set(cartId, promo.code);
+    const { error: saveError } = await this.supabase.client
+      .from('carts')
+      .update({ promo_code: promo.code })
+      .eq('id', cartId);
+    if (saveError) throw new BadRequestException(saveError.message);
     return this.buildCartView(cartId);
   }
 
   /** Clear any applied promo from the caller's cart. */
   async clearPromo(authUserId: string): Promise<CartView> {
     const cartId = await this.getOrCreateCartId(authUserId);
-    this.appliedPromos.delete(cartId);
+    const { error } = await this.supabase.client
+      .from('carts')
+      .update({ promo_code: null })
+      .eq('id', cartId);
+    if (error) throw new BadRequestException(error.message);
     return this.buildCartView(cartId);
   }
 
@@ -327,11 +338,14 @@ export class CartService {
    * never lose an increment (H-6 fix mirrored from cart.ts).
    */
   private async incrementItem(itemId: string, delta: number): Promise<void> {
-    const { error } = await this.supabase.client.rpc('increment_cart_item_qty', {
+    const { data, error } = await this.supabase.client.rpc('increment_cart_item_qty', {
       item_id: itemId,
       delta,
     });
     if (error) throw new BadRequestException(error.message);
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      throw new BadRequestException('Cart quantity cannot exceed 100 items.');
+    }
   }
 
   /**
@@ -434,7 +448,13 @@ export class CartService {
     cartId: string,
     subtotalKes: number,
   ): Promise<{ promo: AppliedPromoView | null; discountKes: number }> {
-    const code = this.appliedPromos.get(cartId);
+    const { data: cart, error: cartError } = await this.supabase.client
+      .from('carts')
+      .select('promo_code')
+      .eq('id', cartId)
+      .maybeSingle();
+    if (cartError) throw new BadRequestException(cartError.message);
+    const code = (cart as { promo_code?: string | null } | null)?.promo_code ?? null;
     if (!code) return { promo: null, discountKes: 0 };
 
     const { data, error } = await this.supabase.client
@@ -445,7 +465,7 @@ export class CartService {
       .eq('code', code)
       .maybeSingle();
     if (error || !data) {
-      this.appliedPromos.delete(cartId);
+      await this.supabase.client.from('carts').update({ promo_code: null }).eq('id', cartId);
       return { promo: null, discountKes: 0 };
     }
 
@@ -458,7 +478,7 @@ export class CartService {
       !(promo.max_uses !== null && promo.uses >= promo.max_uses);
 
     if (!stillValid) {
-      this.appliedPromos.delete(cartId);
+      await this.supabase.client.from('carts').update({ promo_code: null }).eq('id', cartId);
       return { promo: null, discountKes: 0 };
     }
 

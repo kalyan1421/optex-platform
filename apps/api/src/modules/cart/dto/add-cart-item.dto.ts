@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsInt, IsObject, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 /**
  * Body for `POST /cart/items`. Adds a product to the caller's cart, or
@@ -22,4 +22,9 @@ export class AddCartItemDto {
   @Max(100)
   @IsOptional()
   quantity?: number = 1;
+
+  @ApiPropertyOptional({ description: 'Per-line lens/frame configuration.' })
+  @IsObject()
+  @IsOptional()
+  lensOption?: Record<string, unknown>;
 }

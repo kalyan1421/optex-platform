@@ -193,6 +193,7 @@ export interface Cart {
 export interface AddCartItemInput {
   productId: string;
   quantity?: number;
+  lensOption?: Record<string, unknown>;
 }
 
 /** Body for `PATCH /cart/items/:id` (`UpdateCartItemDto`). 0 removes the line. */
