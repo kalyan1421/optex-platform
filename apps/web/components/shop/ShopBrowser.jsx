@@ -55,7 +55,7 @@ export default function ShopBrowser({ products, categories }) {
   const pageItems = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <main className="mx-auto mb-12 w-full max-w-[1240px] px-6 lg:mb-[100px] lg:mt-[40px] lg:px-[16px]">
+    <div className="mx-auto mb-12 w-full max-w-[1240px] px-6 lg:mb-[100px] lg:mt-[40px] lg:px-[16px]">
       <div className="flex flex-col lg:flex-row lg:items-start lg:gap-[40px]">
         <ProductFilterSidebar {...sidebarProps} />
 
@@ -232,6 +232,6 @@ export default function ShopBrowser({ products, categories }) {
           <Pagination page={safePage} pageCount={pageCount} onChange={setPage} />
         </section>
       </div>
-    </main>
+    </div>
   );
 }

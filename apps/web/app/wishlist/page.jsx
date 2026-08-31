@@ -91,7 +91,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1240px] px-6 py-10 lg:py-[60px]">
+    <div className="mx-auto w-full max-w-[1240px] px-6 py-10 lg:py-[60px]">
       <h1 className="font-poppins text-[28px] font-bold text-[#0A0A0A] lg:text-[36px]">
         My Wishlist
       </h1>
@@ -223,6 +223,6 @@ export default function WishlistPage() {
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

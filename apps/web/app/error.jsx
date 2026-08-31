@@ -24,7 +24,7 @@ export default function Error({ error, reset }) {
   }, [error]);
 
   return (
-    <main className="mx-auto flex min-h-[60vh] max-w-[560px] flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="mx-auto flex min-h-[60vh] max-w-[560px] flex-col items-center justify-center px-6 py-20 text-center">
       <h1 className="mb-3 text-[28px] font-bold leading-tight text-[#1A1A2E]">
         Something went wrong at our end
       </h1>
@@ -66,6 +66,6 @@ export default function Error({ error, reset }) {
       {error?.digest ? (
         <p className="mt-4 font-mono text-[12px] text-gray-400">Reference: {error.digest}</p>
       ) : null}
-    </main>
+    </div>
   );
 }

@@ -203,7 +203,7 @@ export default function BranchLocatorView({ branches = [] }) {
       </section>
 
       {/* ── Main content ──────────────────────────────── */}
-      <main className="mx-auto max-w-screen-xl px-4 py-12 sm:px-8 sm:py-16">
+      <div className="mx-auto max-w-screen-xl px-4 py-12 sm:px-8 sm:py-16">
         {/* Info bar */}
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -376,7 +376,7 @@ export default function BranchLocatorView({ branches = [] }) {
             )}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

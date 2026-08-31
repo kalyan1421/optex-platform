@@ -132,7 +132,7 @@ const Contact = () => {
       </section>
 
       {/* Main Content Area */}
-      <main className="mx-auto flex w-full max-w-[1440px] flex-col px-6 lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
         <div className="flex flex-col gap-12 lg:w-[1240px] lg:flex-row lg:gap-[80px]">
           {/* Left Column: Contact Form */}
           <div
@@ -542,7 +542,7 @@ const Contact = () => {
             title="Google Map Location"
           ></iframe>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
