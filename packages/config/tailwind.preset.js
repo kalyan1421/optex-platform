@@ -2,7 +2,7 @@
  * OPTEX shared Tailwind preset.
  *
  * Brand tokens lifted from the storefront Figma:
- *   navy  #2A3182  (primary)
+ *   navy  #2E3192  (primary; matches the Figma swatch)
  *   red   #E53935  (accent / CTA highlight)
  *   dark  #1A1A2E  (text / footer)
  *
@@ -25,7 +25,7 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          blue: '#2A3182',
+          blue: '#2E3192',
           red: '#E53935',
           dark: '#1A1A2E',
         },

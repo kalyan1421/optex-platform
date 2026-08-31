@@ -16,7 +16,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 240 17% 14%;
 
-  --primary: 235 51% 34%; /* #2A3182 brand-blue */
+  --primary: 237 54% 38%; /* #2E3192 Figma brand-blue */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 240 5% 96%;
@@ -33,7 +33,7 @@
 
   --border: 240 6% 90%;
   --input: 240 6% 90%;
-  --ring: 235 51% 34%;
+  --ring: 237 54% 38%;
 
   --radius: 0.5rem;
 }
