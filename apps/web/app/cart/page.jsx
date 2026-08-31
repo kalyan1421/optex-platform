@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { formatKesNumber } from '@optex/ui';
 
 const TrashIcon = () => (
@@ -50,33 +49,35 @@ const ArrowRotateIcon = () => (
 );
 
 const Cart = () => {
-  const { items, updateQuantity, removeItem, loading } = useCart();
+  const {
+    items,
+    updateQuantity,
+    removeItem,
+    loading,
+    cartView,
+    applyPromo: applyPromoToCart,
+    clearPromo: clearPromoFromCart,
+  } = useCart();
   const [promoInput, setPromoInput] = useState('');
-  const [promoDiscount, setPromoDiscount] = useState(0);
-  const [promoApplied, setPromoApplied] = useState('');
   const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
 
-  // Mirrors `place_order` exactly (migration 0008, carried through 0032):
+  // Money comes from the server, which is the only thing that knows what the
+  // order will actually charge. The API returns subtotal, discount, VAT and
+  // total on every cart response; this page used to discard all of it and
+  // recompute — at 8% instead of Kenya's 16%, with the discount taken off
+  // AFTER tax instead of before. It quoted a total checkout would not honour.
   //
-  //   taxable_base = subtotal - discount
-  //   vat          = taxable_base * 0.16
-  //   total        = taxable_base + vat + shipping
-  //
-  // This block previously taxed at 8% and subtracted the promo AFTER tax, so
-  // the cart quoted a total the order would never charge. On a single KES 5,000
-  // frame it showed 5,400 against the 5,800 checkout actually takes, and a KES
-  // 500 promo widened the gap instead of closing it — the customer was quoted
-  // one price and billed another, on every cart.
-  //
-  // 0.16 is Kenya VAT, and is the rate `place_order` and the API's own cart
-  // service (`VAT_RATE`) both already used. Shipping is deliberately absent
-  // here: it is chosen at checkout, so the cart's total is pre-delivery, which
-  // is what the "Estimated" labelling in this summary means.
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const taxableBase = Math.max(0, subtotal - promoDiscount);
-  const estimatedTax = taxableBase * 0.16;
-  const total = taxableBase + estimatedTax;
+  // The local arithmetic survives only for a GUEST cart, which has no server
+  // counterpart yet. It now mirrors `place_order` (taxable base = subtotal −
+  // discount, VAT 16% on that) so the two agree, and a guest sees no promo
+  // because a promo cannot be applied without an account.
+  const localSubtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  const subtotal = cartView ? Number(cartView.subtotalKes) : localSubtotal;
+  const promoDiscount = cartView ? Number(cartView.discountKes) : 0;
+  const promoApplied = cartView?.promo?.code ?? '';
+  const estimatedTax = cartView ? Number(cartView.vatKes) : localSubtotal * 0.16;
+  const total = cartView ? Number(cartView.totalKes) : localSubtotal + localSubtotal * 0.16;
 
   const formatCurrency = (value) => formatKesNumber(Math.max(0, value));
 
@@ -90,39 +91,33 @@ const Cart = () => {
     setPromoLoading(true);
     setPromoError('');
     try {
-      const db = createBrowserSupabase();
-      const { data } = await db
-        .from('promo_codes')
-        .select('code, discount_type, value, max_uses, uses, starts_at, expires_at, is_active')
-        .eq('code', code)
-        .eq('is_active', true)
-        .maybeSingle();
-      if (!data) {
-        setPromoError('Invalid or expired promo code.');
-        return;
-      }
-      // M-3 FIX: compare timestamps as numbers (ms since epoch) so timezone
-      // differences between the DB (UTC) and the client locale don't cause
-      // valid codes to appear expired in UTC+N timezones.
-      if (data.expires_at && Date.parse(data.expires_at) < Date.now()) {
-        setPromoError('This promo code has expired.');
-        return;
-      }
-      if (data.max_uses && data.uses >= data.max_uses) {
-        setPromoError('This promo code has reached its usage limit.');
-        return;
-      }
-      const discount =
-        data.discount_type === 'percent'
-          ? subtotal * (Number(data.value) / 100)
-          : Number(data.value);
-      setPromoDiscount(Math.min(discount, subtotal));
-      setPromoApplied(data.code);
+      // Through the API, not the browser's Supabase client.
+      //
+      // This used to read `promo_codes` directly and compute the discount
+      // here, which meant the SERVER cart never learned a code had been
+      // applied — so `place_order` charged full price while this page showed a
+      // saving. Applying it server-side is what carries the code to checkout,
+      // and the API's validation (active / not-yet-valid / expired / usage
+      // limit) is the same set of rules the order will be judged by, so a code
+      // accepted here cannot be refused at checkout.
+      await applyPromoToCart(code);
       setPromoInput('');
-    } catch {
-      // M-3 FIX: catch DB / network errors and show a friendly message rather
-      // than letting the unhandled rejection surface as a blank error state.
-      setPromoError('Could not validate promo code. Please try again.');
+    } catch (err) {
+      // The API's own message is specific — expired, usage limit, not found —
+      // so prefer it over a catch-all.
+      setPromoError(err?.message || 'Could not apply that promo code. Please try again.');
+    } finally {
+      setPromoLoading(false);
+    }
+  }
+
+  async function removePromo() {
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      await clearPromoFromCart();
+    } catch (err) {
+      setPromoError(err?.message || 'Could not remove that promo code.');
     } finally {
       setPromoLoading(false);
     }
@@ -422,11 +417,9 @@ const Cart = () => {
                       ✓ {promoApplied} applied
                     </span>
                     <button
-                      onClick={() => {
-                        setPromoApplied('');
-                        setPromoDiscount(0);
-                      }}
-                      className="ml-2 text-[14px] font-medium text-gray-400 hover:text-red-500"
+                      onClick={removePromo}
+                      disabled={promoLoading}
+                      className="ml-2 text-[14px] font-medium text-gray-400 hover:text-red-500 disabled:opacity-60"
                     >
                       Remove
                     </button>

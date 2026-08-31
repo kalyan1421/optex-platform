@@ -70,6 +70,9 @@ function writeGuestCart(items) {
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([]);
   const [cartId, setCartId] = useState(null);
+  // The server's fully-computed cart: subtotal, discount, VAT, total, and any
+  // applied promo. `null` for a guest cart, which has no server counterpart.
+  const [cartView, setCartView] = useState(null);
   const [error, setError] = useState('');
   // Starts true. Both carts arrive asynchronously — the guest cart from
   // localStorage after mount, the account cart from the API — so `items` is
@@ -82,6 +85,9 @@ export const CartProvider = ({ children }) => {
   function applyCart(cart) {
     setCartId(cart?.cartId ?? null);
     setItems((cart?.items ?? []).map(apiItemToCartItem));
+    // Every cart endpoint returns the money alongside the lines. Dropping it
+    // here is what left each consumer re-deriving the total for itself.
+    setCartView(cart ?? null);
   }
 
   // Guards the merge below. A ref, not state, because it must be read and
@@ -127,6 +133,7 @@ export const CartProvider = ({ children }) => {
       if (wasAuthedRef.current) {
         wasAuthedRef.current = false;
         setItems([]);
+        setCartView(null);
         writeGuestCart([]);
       }
       setCartId(null);
@@ -271,11 +278,56 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Apply a promo code to the signed-in customer's cart.
+   *
+   * Goes through the API so the code lands on the SERVER cart, which is what
+   * makes it survive to checkout: `place_order` takes the code and recomputes
+   * the discount itself, and the cart view the API returns carries the
+   * resulting `discountKes`/`vatKes`/`totalKes`.
+   *
+   * The cart page used to validate the code in the browser instead — reading
+   * `promo_codes` straight from Supabase and subtracting the discount from a
+   * locally computed total. The server never heard about it, so the order was
+   * placed at full price while the cart showed a saving.
+   *
+   * Throws so the caller can surface the API's own message ("This promo code
+   * has expired", "…usage limit"), which is more use than a single catch-all.
+   */
+  const applyPromo = async (code) => {
+    if (!user) throw new Error('Sign in to use a promo code.');
+    const cart = await api.cart.applyPromo({ code });
+    applyCart(cart);
+    setError('');
+    return cart;
+  };
+
+  /** Remove the applied promo from the signed-in customer's cart. */
+  const clearPromo = async () => {
+    if (!user) return null;
+    const cart = await api.cart.clearPromo();
+    applyCart(cart);
+    setError('');
+    return cart;
+  };
+
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, updateQuantity, removeItem, cartCount, cartId, error, loading }}
+      value={{
+        items,
+        addToCart,
+        updateQuantity,
+        removeItem,
+        applyPromo,
+        clearPromo,
+        cartCount,
+        cartId,
+        cartView,
+        error,
+        loading,
+      }}
     >
       {children}
       {/*

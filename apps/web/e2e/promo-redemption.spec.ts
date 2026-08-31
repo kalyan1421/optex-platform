@@ -115,7 +115,12 @@ test.describe('Promo code redemption', () => {
     await page.getByPlaceholder('Enter code').fill('DOES-NOT-EXIST');
     await page.getByRole('button', { name: /^apply$/i }).click();
 
-    await expect(page.getByText(/invalid or expired promo code/i)).toBeVisible();
+    // The API's own message, surfaced verbatim. This used to assert on a
+    // blanket "Invalid or expired promo code." the PAGE produced after
+    // validating the code in the browser — now that validation happens
+    // server-side, the customer gets the specific reason instead: not found,
+    // expired, not yet valid, or usage limit reached.
+    await expect(page.getByText(/promo code not found/i)).toBeVisible();
   });
 
   test('a code can be removed and cleanly reapplied', async ({ page }) => {
