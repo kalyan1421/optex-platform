@@ -103,4 +103,16 @@ done
 echo "Running seed..."
 run_file /seed.sql
 
+# supabase-rest (PostgREST) caches the DB schema at its own startup and has no
+# built-in watch on this hand-rolled stack's migrations -- hosted Supabase and
+# the CLI both wire an event trigger that NOTIFYs PostgREST on DDL, but this
+# docker-compose stack doesn't. Without this, every table/function created or
+# changed by a migration that ran after supabase-rest booted is invisible to
+# PostgREST ("Could not find the function/table ... in the schema cache"),
+# even though it exists and psql can see it fine. Safe to send unconditionally
+# on every run, applied or not.
+echo "Reloading PostgREST schema cache..."
+psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 \
+  -c "NOTIFY pgrst, 'reload schema';"
+
 echo "All done."

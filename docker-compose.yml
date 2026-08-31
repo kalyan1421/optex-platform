@@ -149,6 +149,20 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+      # GoTrue's confirmation-mail dispatch still counts against its own
+      # internal signup rate limiter even with GOTRUE_MAILER_AUTOCONFIRM=true
+      # (no mail actually goes out, but the attempt increments
+      # gotrue_email_rate_limit_counter). The default is 30/hour — far below
+      # what one full local run of the API's ~200-test e2e suite needs, since
+      # most suites sign up a fresh throwaway account per test. Raised, not
+      # disabled, so a genuine runaway loop still trips something.
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: '10000'
+      # Signup under GOTRUE_MAILER_AUTOCONFIRM still runs through GoTrue's
+      # verify/token-issuance path internally; raising email-sent alone did
+      # not stop "Request rate limit reached" partway through a full local
+      # e2e run, so this is raised too rather than half-fixing the same class
+      # of failure.
+      GOTRUE_RATE_LIMIT_VERIFY: '10000'
       # CR-01 R1 1e — Super Admin 2FA (SPEC-08). Var names confirmed against
       # this image's pinned tag (supabase/auth @ v2.143.0,
       # internal/conf/configuration.go's MFAConfiguration struct), not
