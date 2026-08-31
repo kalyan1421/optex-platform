@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, Matches } from 'class-validator';
+import { IsString, IsUUID } from 'class-validator';
+import { IsCalendarDate } from './is-calendar-date';
 
 /** ISO calendar date `YYYY-MM-DD`. */
-const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-
 /**
  * Query params for `GET /appointments/slots`. A branch + a calendar date are
  * required; the service derives free 30-minute slots from the branch `hours`
@@ -19,6 +18,6 @@ export class SlotsQueryDto {
     example: '2026-06-20',
   })
   @IsString()
-  @Matches(DATE_PATTERN, { message: 'date must be a valid YYYY-MM-DD date' })
+  @IsCalendarDate()
   date!: string;
 }

@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { APPOINTMENT_TYPES, type AppointmentType } from './appointment.dto';
+import { IsCalendarDate } from './is-calendar-date';
 
 /** ISO calendar date `YYYY-MM-DD`. */
-const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 /** 24h clock time `HH:MM`. */
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -19,7 +19,7 @@ export class CreateAppointmentDto {
 
   @ApiProperty({ description: 'Calendar date (YYYY-MM-DD).', example: '2026-06-20' })
   @IsString()
-  @Matches(DATE_PATTERN, { message: 'date must be a valid YYYY-MM-DD date' })
+  @IsCalendarDate()
   date!: string;
 
   @ApiProperty({ description: 'Slot start time as 24h HH:MM.', example: '09:30' })

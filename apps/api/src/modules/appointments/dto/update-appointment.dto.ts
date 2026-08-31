@@ -1,9 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
 import { APPOINTMENT_STATUSES, type AppointmentStatus } from './appointment.dto';
+import { IsCalendarDate } from './is-calendar-date';
 
 /** ISO calendar date `YYYY-MM-DD`. */
-const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 /** 24h clock time `HH:MM`. */
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -25,7 +25,7 @@ export class UpdateAppointmentDto {
   @ApiPropertyOptional({ description: 'New calendar date (YYYY-MM-DD).', example: '2026-06-21' })
   @IsOptional()
   @IsString()
-  @Matches(DATE_PATTERN, { message: 'date must be a valid YYYY-MM-DD date' })
+  @IsCalendarDate()
   date?: string;
 
   @ApiPropertyOptional({ description: 'New slot start time as 24h HH:MM.', example: '11:00' })

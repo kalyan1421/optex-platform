@@ -1,10 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 import { APPOINTMENT_STATUSES, type AppointmentStatus } from './appointment.dto';
+import { IsCalendarDate } from './is-calendar-date';
 
 /** ISO calendar date `YYYY-MM-DD`. */
-const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-
 /**
  * Optional filters for `GET /admin/appointments`. Any combination may be
  * supplied; omitting all returns every appointment (newest first).
@@ -26,6 +25,6 @@ export class AdminAppointmentQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Matches(DATE_PATTERN, { message: 'date must be a valid YYYY-MM-DD date' })
+  @IsCalendarDate()
   date?: string;
 }
