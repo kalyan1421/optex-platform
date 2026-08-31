@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { getTestDb, loadEnvLocal } from './lib/test-db';
+import { stepUpToAal2 } from './lib/totp';
 
 /**
  * Admin Products — CRUD through the real UI, plus the image-upload endpoint.
@@ -158,6 +159,16 @@ test.describe('Admin Products', () => {
     });
     if (signInError) throw signInError;
 
+    // A password sign-in alone is `aal1`. R1 1e made `aal2` mandatory for
+    // `super_admin` on every permission-gated route, so the token above is
+    // refused by `PermissionsGuard` with a 403 step-up message rather than
+    // reaching the upload handler — which is what this assertion was actually
+    // catching. Complete a real enrollment + challenge, the same way
+    // `global-setup.ts` does for the browser session.
+    await stepUpToAal2(anon);
+    const { data: steppedUp } = await anon.auth.getSession();
+    const accessToken = steppedUp.session?.access_token ?? session.session!.access_token;
+
     // A minimal but structurally real PNG (1x1, transparent) — the service
     // has no content validation, but a real signature is more honest than
     // an arbitrary byte string claiming to be one.
@@ -172,7 +183,7 @@ test.describe('Admin Products', () => {
 
     const res = await fetch(`${apiUrl}/api/products/${createdProductId}/images`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${session.session!.access_token}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
       body: form,
     });
     expect(res.status).toBe(201);
