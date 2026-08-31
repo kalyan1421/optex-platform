@@ -125,7 +125,7 @@ export default async function CategoryPage(props) {
       </div>
 
       {/* Products Grid */}
-      <main className="page-container py-10 sm:py-12">
+      <div className="page-container py-10 sm:py-12">
         {/* Header row */}
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -171,7 +171,7 @@ export default async function CategoryPage(props) {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {/* Related Categories */}
       <section className="mt-4 bg-[#f8f9fa] py-12">

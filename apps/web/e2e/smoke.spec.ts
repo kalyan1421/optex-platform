@@ -53,12 +53,29 @@ test.describe('Storefront purchase path', () => {
     expect(total).toBeGreaterThan(0);
 
     // The result count must agree with what is on screen.
-    await expect(page.getByText(/showing \d+/i)).toBeVisible();
+    //
+    // Scoped to `#main-content` deliberately. While React is streaming, the
+    // not-yet-swapped copy of this section also sits in the document (inside
+    // React's `div#S:0` staging container), so an unscoped match finds the
+    // text twice — and Playwright raises a strict-mode violation immediately
+    // rather than retrying until the swap completes, so it cannot settle on
+    // its own. `#main-content` is the layout's real content region and holds
+    // exactly one.
+    await expect(page.locator('#main-content').getByText(/showing \d+/i)).toBeVisible();
 
     // Narrow by the first non-"All" brand and confirm the count moves down.
     const brandHeading = page.getByRole('heading', { name: 'Brands' });
     if (await brandHeading.isVisible().catch(() => false)) {
-      const brandOption = page.locator('aside button').filter({ hasNotText: /^All/ }).first();
+      // `:not([disabled])` matters: a facet whose count is zero is rendered
+      // disabled on purpose (`ProductFilters`' `isEmpty`), and picking blindly
+      // landed on one — the click then retried against a permanently disabled
+      // button until the test timed out, reported as a filtering failure when
+      // nothing was wrong with filtering.
+      const brandOption = page
+        .locator('aside button:not([disabled])')
+        .filter({ hasNotText: /^All/ })
+        .first();
+      if ((await brandOption.count()) === 0) return; // no facet with results to narrow by
       const label = (await brandOption.textContent()) ?? '';
       await brandOption.click();
       await expect(page.getByRole('button', { name: /clear all filters/i })).toBeVisible();

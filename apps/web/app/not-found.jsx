@@ -18,7 +18,7 @@ export const metadata = {
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-[60vh] max-w-[560px] flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="mx-auto flex min-h-[60vh] max-w-[560px] flex-col items-center justify-center px-6 py-20 text-center">
       <p className="mb-2 font-mono text-[13px] uppercase tracking-[0.14em] text-gray-400">
         Error 404
       </p>
@@ -55,6 +55,6 @@ export default function NotFound() {
         </Link>
         .
       </p>
-    </main>
+    </div>
   );
 }

@@ -28,7 +28,13 @@ test.describe('Admin Payments — reconcile', () => {
         vat_kes: 1600,
         shipping_kes: 300,
         total_kes: 11900,
-        status: 'received',
+        // `pending_payment`, not `received`: reconciling an orphan payment is
+        // only offered for an order still AWAITING payment, and
+        // `adminLinkPayment` enforces that — it rejects anything further along
+        // with "is not awaiting payment (status: …)". Seeding `received` made
+        // the happy-path test assert on a link the API is right to refuse, so
+        // it failed with the dialog left open on a 409 the test never showed.
+        status: 'pending_payment',
         payment_status: 'pending',
         payment_method: 'mpesa',
         shipping: { name: 'E2E Payments Tester', city: 'Nairobi' },
