@@ -439,7 +439,7 @@ describe('Branch scoping — inventory / appointments / orders (e2e)', () => {
       expect(countRes.body.count).toBe(listRes.body.length);
     });
 
-    it("PATCH /admin/cancellations/:id/approve 404s for another branch, and does not cancel the order", async () => {
+    it('PATCH /admin/cancellations/:id/approve 404s for another branch, and does not cancel the order', async () => {
       const b = await newRequestOn(branchB);
       const token = await newBranchManager(branchA);
 
@@ -459,7 +459,7 @@ describe('Branch scoping — inventory / appointments / orders (e2e)', () => {
       expect(req!.status).toBe('pending');
     });
 
-    it("PATCH /admin/cancellations/:id/decline 404s for another branch", async () => {
+    it('PATCH /admin/cancellations/:id/decline 404s for another branch', async () => {
       const b = await newRequestOn(branchB);
       const token = await newBranchManager(branchA);
 

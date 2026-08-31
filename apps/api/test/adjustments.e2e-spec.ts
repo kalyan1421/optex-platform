@@ -48,7 +48,10 @@ describe('Stock adjustments (e2e)', () => {
 
   let serialCounter = 0;
 
-  async function newProductWithSerials(name: string, count: number): Promise<{ productId: string; serialIds: string[] }> {
+  async function newProductWithSerials(
+    name: string,
+    count: number,
+  ): Promise<{ productId: string; serialIds: string[] }> {
     const { data, error } = await db
       .from('products')
       .insert({
@@ -74,17 +77,29 @@ describe('Stock adjustments (e2e)', () => {
         status: 'in_stock',
         current_branch_id: branchId,
       }));
-      const { data: inserted, error: serialError } = await db.from('product_serials').insert(serials).select('id');
+      const { data: inserted, error: serialError } = await db
+        .from('product_serials')
+        .insert(serials)
+        .select('id');
       if (serialError) throw serialError;
       serialIds = (inserted ?? []).map((r) => (r as { id: string }).id);
-      await db.from('inventory').update({ stock: count }).eq('product_id', data.id).eq('branch_id', branchId);
+      await db
+        .from('inventory')
+        .update({ stock: count })
+        .eq('product_id', data.id)
+        .eq('branch_id', branchId);
     }
 
     return { productId: data.id, serialIds };
   }
 
   async function stockOf(productId: string): Promise<number> {
-    const { data } = await db.from('inventory').select('stock').eq('product_id', productId).eq('branch_id', branchId).single();
+    const { data } = await db
+      .from('inventory')
+      .select('stock')
+      .eq('product_id', productId)
+      .eq('branch_id', branchId)
+      .single();
     return (data as { stock: number } | null)?.stock ?? 0;
   }
 
@@ -110,7 +125,12 @@ describe('Stock adjustments (e2e)', () => {
       .single<{ id: string }>();
     categoryId = cat!.id;
 
-    const { data: branch } = await db.from('branches').select('id').eq('is_active', true).limit(1).single<{ id: string }>();
+    const { data: branch } = await db
+      .from('branches')
+      .select('id')
+      .eq('is_active', true)
+      .limit(1)
+      .single<{ id: string }>();
     branchId = branch!.id;
   });
 
@@ -134,7 +154,10 @@ describe('Stock adjustments (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/admin/adjustments')
       .set(auth(token))
-      .send({ branch_id: branchId, items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'damage' }] })
+      .send({
+        branch_id: branchId,
+        items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'damage' }],
+      })
       .expect(403);
   });
 
@@ -145,7 +168,10 @@ describe('Stock adjustments (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/admin/adjustments')
       .set(auth(token))
-      .send({ branch_id: branchId, items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'damage' }] })
+      .send({
+        branch_id: branchId,
+        items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'damage' }],
+      })
       .expect(201);
 
     expect(res.body.items).toHaveLength(1);
@@ -153,7 +179,11 @@ describe('Stock adjustments (e2e)', () => {
     expect(res.body.items[0].reason_code).toBe('damage');
     expect(await stockOf(productId)).toBe(1);
 
-    const { data: serial } = await db.from('product_serials').select('status, current_branch_id').eq('id', serialIds[0]).single();
+    const { data: serial } = await db
+      .from('product_serials')
+      .select('status, current_branch_id')
+      .eq('id', serialIds[0])
+      .single();
     expect((serial as { status: string }).status).toBe('written_off');
     expect((serial as { current_branch_id: string | null }).current_branch_id).toBeNull();
   });
@@ -165,7 +195,10 @@ describe('Stock adjustments (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/admin/adjustments')
       .set(auth(token))
-      .send({ branch_id: branchId, items: [{ direction: 'add', product_id: productId, reason_code: 'found' }] })
+      .send({
+        branch_id: branchId,
+        items: [{ direction: 'add', product_id: productId, reason_code: 'found' }],
+      })
       .expect(201);
 
     expect(res.body.items[0].direction).toBe('add');
@@ -178,7 +211,11 @@ describe('Stock adjustments (e2e)', () => {
       .eq('reference_id', res.body.id)
       .single();
     expect((ledgerRow as { movement_type: string }).movement_type).toBe('found');
-    const serial = (ledgerRow as { serial: { cost_price_kes: number | null } | { cost_price_kes: number | null }[] }).serial;
+    const serial = (
+      ledgerRow as {
+        serial: { cost_price_kes: number | null } | { cost_price_kes: number | null }[];
+      }
+    ).serial;
     const cost = Array.isArray(serial) ? serial[0]?.cost_price_kes : serial?.cost_price_kes;
     expect(cost).toBeNull();
   });
@@ -211,7 +248,10 @@ describe('Stock adjustments (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/admin/adjustments')
       .set(auth(token))
-      .send({ branch_id: branchId, items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'found' }] })
+      .send({
+        branch_id: branchId,
+        items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'found' }],
+      })
       .expect(400);
   });
 
@@ -222,7 +262,10 @@ describe('Stock adjustments (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/admin/adjustments')
       .set(auth(token))
-      .send({ branch_id: branchId, items: [{ direction: 'add', product_id: productId, reason_code: 'damage' }] })
+      .send({
+        branch_id: branchId,
+        items: [{ direction: 'add', product_id: productId, reason_code: 'damage' }],
+      })
       .expect(400);
 
     expect(await stockOf(productId)).toBe(0);
@@ -232,12 +275,18 @@ describe('Stock adjustments (e2e)', () => {
     const { serialIds } = await newProductWithSerials('already-sold', 1);
     const token = await newStaffAccount('inventory_manager');
 
-    await db.from('product_serials').update({ status: 'sold', current_branch_id: null }).eq('id', serialIds[0]);
+    await db
+      .from('product_serials')
+      .update({ status: 'sold', current_branch_id: null })
+      .eq('id', serialIds[0]);
 
     await request(app.getHttpServer())
       .post('/api/admin/adjustments')
       .set(auth(token))
-      .send({ branch_id: branchId, items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'damage' }] })
+      .send({
+        branch_id: branchId,
+        items: [{ direction: 'remove', serial_id: serialIds[0], reason_code: 'damage' }],
+      })
       .expect(400);
   });
 

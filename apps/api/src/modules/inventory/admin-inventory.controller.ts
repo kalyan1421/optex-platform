@@ -47,16 +47,26 @@ export class AdminInventoryController {
   @Get('serials/:id/history')
   @ApiOperation({ summary: 'Trace one serial through every inventory movement' })
   @ApiOkResponse({ type: SerialHistoryDto })
-  serialHistory(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser): Promise<SerialHistoryDto> {
+  serialHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<SerialHistoryDto> {
     return this.ledger.serialHistory(id, user);
   }
 
   @RequirePermission('inventory.read')
   @Get('aging')
   @ApiOperation({ summary: 'List in-stock serials ordered by oldest receipt date' })
-  @ApiQuery({ name: 'minimumDays', required: false, description: 'Only include serials at least this many days old.' })
+  @ApiQuery({
+    name: 'minimumDays',
+    required: false,
+    description: 'Only include serials at least this many days old.',
+  })
   @ApiOkResponse({ type: [AgingSerialDto] })
-  aging(@CurrentUser() user: AuthUser, @Query('minimumDays') minimumDays?: string): Promise<AgingSerialDto[]> {
+  aging(
+    @CurrentUser() user: AuthUser,
+    @Query('minimumDays') minimumDays?: string,
+  ): Promise<AgingSerialDto[]> {
     const parsed = minimumDays === undefined ? 0 : Number(minimumDays);
     if (!Number.isInteger(parsed) || parsed < 0) {
       throw new BadRequestException('minimumDays must be a non-negative integer');

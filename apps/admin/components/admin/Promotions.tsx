@@ -1,6 +1,15 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Tag, Image as ImageIcon, Pencil, ExternalLink, ArrowUpDown, Upload } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  Tag,
+  Image as ImageIcon,
+  Pencil,
+  ExternalLink,
+  ArrowUpDown,
+  Upload,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -366,13 +375,27 @@ export function Promotions() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Code</th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Description</th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Discount</th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Usage</th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Expiry</th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Code
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Description
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Discount
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Usage
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Expiry
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Status
+                      </th>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   {loading ? (
@@ -437,9 +460,9 @@ export function Promotions() {
         <TabsContent value="banners" className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Banners are shown in <strong>sort order</strong> as a carousel on the homepage.
-              Only <span className="font-semibold text-green-700">active</span> banners within
-              their date window are displayed.
+              Banners are shown in <strong>sort order</strong> as a carousel on the homepage. Only{' '}
+              <span className="font-semibold text-green-700">active</span> banners within their date
+              window are displayed.
             </p>
             <Button
               onClick={openCreateBanner}
@@ -530,9 +553,7 @@ export function Promotions() {
                       <div className="flex items-center justify-between">
                         <span
                           className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                            b.isActive
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-500'
+                            b.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                           }`}
                         >
                           {b.isActive ? 'Live' : 'Paused'}
@@ -732,7 +753,14 @@ export function Promotions() {
                   {imageUploading ? (
                     <span className="flex items-center gap-1 text-xs">
                       <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>
                       Uploading
@@ -772,8 +800,8 @@ export function Promotions() {
                 placeholder="/shop or /category/sunglasses"
               />
               <p className="text-xs text-gray-400">
-                Clicking the banner will navigate here. Use a relative path (e.g.{' '}
-                <code>/shop</code>) or an absolute URL.
+                Clicking the banner will navigate here. Use a relative path (e.g. <code>/shop</code>
+                ) or an absolute URL.
               </p>
             </div>
 
@@ -790,9 +818,7 @@ export function Promotions() {
                 onChange={(e) => updateBannerField('sortOrder', e.target.value)}
                 placeholder="0"
               />
-              <p className="text-xs text-gray-400">
-                Lower number = shown first in the carousel.
-              </p>
+              <p className="text-xs text-gray-400">Lower number = shown first in the carousel.</p>
             </div>
 
             {/* Date window */}

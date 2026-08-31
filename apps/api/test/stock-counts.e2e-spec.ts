@@ -69,7 +69,11 @@ describe('Physical stock counts (e2e)', () => {
   }
 
   /** Inserts a serial row. Caller is responsible for setting `inventory.stock` to match — same fixture convention as the other R2 e2e specs. */
-  async function newSerial(productId: string, branchId: string | null, status = 'in_stock'): Promise<{ id: string; serial_number: string }> {
+  async function newSerial(
+    productId: string,
+    branchId: string | null,
+    status = 'in_stock',
+  ): Promise<{ id: string; serial_number: string }> {
     const serial_number = `E2E-CNT-SERIAL-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}-${serialCounter++}`;
     const { data, error } = await db
       .from('product_serials')
@@ -81,7 +85,12 @@ describe('Physical stock counts (e2e)', () => {
   }
 
   async function stockAt(productId: string, branchId: string): Promise<number> {
-    const { data } = await db.from('inventory').select('stock').eq('product_id', productId).eq('branch_id', branchId).maybeSingle();
+    const { data } = await db
+      .from('inventory')
+      .select('stock')
+      .eq('product_id', productId)
+      .eq('branch_id', branchId)
+      .maybeSingle();
     return (data as { stock: number } | null)?.stock ?? 0;
   }
 
@@ -107,7 +116,11 @@ describe('Physical stock counts (e2e)', () => {
       .single<{ id: string }>();
     categoryId = cat!.id;
 
-    const { data: branches } = await db.from('branches').select('id').eq('is_active', true).limit(2);
+    const { data: branches } = await db
+      .from('branches')
+      .select('id')
+      .eq('is_active', true)
+      .limit(2);
     branchA = branches![0].id;
     branchB = branches![1].id;
   });
@@ -136,7 +149,11 @@ describe('Physical stock counts (e2e)', () => {
 
   it('starting a count snapshots every serial the system believes is in stock at that branch', async () => {
     const productId = await newProduct('snapshot');
-    await db.from('inventory').update({ stock: 2 }).eq('product_id', productId).eq('branch_id', branchA);
+    await db
+      .from('inventory')
+      .update({ stock: 2 })
+      .eq('product_id', productId)
+      .eq('branch_id', branchA);
     const s1 = await newSerial(productId, branchA);
     const s2 = await newSerial(productId, branchA);
 
@@ -150,12 +167,18 @@ describe('Physical stock counts (e2e)', () => {
     expect(res.body.status).toBe('in_progress');
     const serialIds = res.body.items.map((i: { serial_id: string }) => i.serial_id);
     expect(serialIds).toEqual(expect.arrayContaining([s1.id, s2.id]));
-    expect(res.body.items.every((i: { expected: boolean; found: boolean }) => i.expected && !i.found)).toBe(true);
+    expect(
+      res.body.items.every((i: { expected: boolean; found: boolean }) => i.expected && !i.found),
+    ).toBe(true);
   });
 
   it('accepting writes off an expected serial that was never scanned', async () => {
     const productId = await newProduct('missing');
-    await db.from('inventory').update({ stock: 1 }).eq('product_id', productId).eq('branch_id', branchA);
+    await db
+      .from('inventory')
+      .update({ stock: 1 })
+      .eq('product_id', productId)
+      .eq('branch_id', branchA);
     const serial = await newSerial(productId, branchA);
 
     const token = await newStaffAccount('inventory_manager');
@@ -175,7 +198,11 @@ describe('Physical stock counts (e2e)', () => {
     expect(acceptRes.body.status).toBe('completed');
     expect(await stockAt(productId, branchA)).toBe(0);
 
-    const { data: after } = await db.from('product_serials').select('status').eq('id', serial.id).single();
+    const { data: after } = await db
+      .from('product_serials')
+      .select('status')
+      .eq('id', serial.id)
+      .single();
     expect((after as { status: string }).status).toBe('written_off');
 
     const { data: adjItem } = await db
@@ -189,7 +216,11 @@ describe('Physical stock counts (e2e)', () => {
 
   it('scanning a serial the system thinks is at a different branch relocates it (count_variance)', async () => {
     const productId = await newProduct('relocated');
-    await db.from('inventory').update({ stock: 1 }).eq('product_id', productId).eq('branch_id', branchA);
+    await db
+      .from('inventory')
+      .update({ stock: 1 })
+      .eq('product_id', productId)
+      .eq('branch_id', branchA);
     const serial = await newSerial(productId, branchA); // system thinks it's at branch A
 
     const token = await newStaffAccount('inventory_manager');
@@ -215,7 +246,11 @@ describe('Physical stock counts (e2e)', () => {
     expect(await stockAt(productId, branchA)).toBe(0);
     expect(await stockAt(productId, branchB)).toBe(1);
 
-    const { data: after } = await db.from('product_serials').select('status, current_branch_id').eq('id', serial.id).single();
+    const { data: after } = await db
+      .from('product_serials')
+      .select('status, current_branch_id')
+      .eq('id', serial.id)
+      .single();
     expect((after as { status: string }).status).toBe('in_stock');
     expect((after as { current_branch_id: string }).current_branch_id).toBe(branchB);
 
@@ -289,7 +324,13 @@ describe('Physical stock counts (e2e)', () => {
     const countId = startRes.body.id;
     void productId;
 
-    await request(app.getHttpServer()).post(`/api/admin/stock-counts/${countId}/accept`).set(auth(token)).expect(201);
-    await request(app.getHttpServer()).post(`/api/admin/stock-counts/${countId}/accept`).set(auth(token)).expect(409);
+    await request(app.getHttpServer())
+      .post(`/api/admin/stock-counts/${countId}/accept`)
+      .set(auth(token))
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/admin/stock-counts/${countId}/accept`)
+      .set(auth(token))
+      .expect(409);
   });
 });

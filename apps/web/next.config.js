@@ -7,7 +7,9 @@
 // double slash Nest's router treats as a different, nonexistent path, so
 // every proxied request silently 404s with no build-time or runtime warning.
 const API_PROXY_ORIGIN = (
-  process.env.API_PROXY_ORIGIN || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:1111'
+  process.env.API_PROXY_ORIGIN ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://127.0.0.1:1111'
 ).replace(/\/+$/, '');
 
 /**
@@ -134,7 +136,7 @@ const nextConfig = {
               // against the post-redirect URL, so that origin is needed too —
               // scoped to /maps/ rather than the bare origin so this doesn't
               // also allow framing unrelated www.google.com surfaces.
-              "frame-src https://www.google.com/maps/ https://maps.google.com",
+              'frame-src https://www.google.com/maps/ https://maps.google.com',
               // The counterpart to X-Frame-Options, for browsers that prefer it.
               "frame-ancestors 'none'",
               // Nothing on this site posts to another origin.

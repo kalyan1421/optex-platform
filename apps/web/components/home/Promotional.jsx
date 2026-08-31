@@ -8,7 +8,7 @@ const Promotional = () => {
         {/* Card 1: Limited Offer */}
         <div
           data-aos="fade-right"
-          className="group relative flex w-full h-[450px] cursor-pointer flex-col overflow-hidden lg:h-[500px] lg:w-[604px]"
+          className="group relative flex h-[450px] w-full cursor-pointer flex-col overflow-hidden lg:h-[500px] lg:w-[604px]"
           style={{ borderRadius: '40px', backgroundColor: '#1A1A1A' }}
         >
           <Image
@@ -91,7 +91,7 @@ const Promotional = () => {
         {/* Card 2: New Collection */}
         <div
           data-aos="fade-left"
-          className="group relative flex w-full h-[450px] cursor-pointer flex-col overflow-hidden lg:h-[500px] lg:w-[604px]"
+          className="group relative flex h-[450px] w-full cursor-pointer flex-col overflow-hidden lg:h-[500px] lg:w-[604px]"
           style={{ borderRadius: '40px', backgroundColor: '#2E3192' }}
         >
           <Image

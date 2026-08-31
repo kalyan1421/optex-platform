@@ -35,7 +35,7 @@ const WhyOptex = () => {
         {/* Left Side: Image */}
         <div
           data-aos="fade-right"
-          className="relative w-full h-[400px] flex-shrink-0 sm:h-[500px] lg:h-[664.375px] lg:w-[531.5px]"
+          className="relative h-[400px] w-full flex-shrink-0 sm:h-[500px] lg:h-[664.375px] lg:w-[531.5px]"
         >
           <Image
             src="/images/why-aptox.png"

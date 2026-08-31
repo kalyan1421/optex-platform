@@ -118,7 +118,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               >
                 {/* Price Tag */}
                 <div
-                  className="absolute right-3 top-3 z-10 flex h-[40px] w-[81px] items-center justify-center bg-[#FFFFFFE5] lg:left-[156.98px] lg:top-[16px] lg:right-auto"
+                  className="absolute right-3 top-3 z-10 flex h-[40px] w-[81px] items-center justify-center bg-[#FFFFFFE5] lg:left-[156.98px] lg:right-auto lg:top-[16px]"
                   style={{ borderRadius: '33554400px' }}
                 >
                   <div className="flex items-baseline gap-[2px]">
@@ -158,7 +158,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                     alt={product.name}
                     fill
                     sizes="(min-width: 1024px) 242px, (min-width: 640px) 45vw, 90vw"
-                    className="mix-blend-multiply object-contain transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                     style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                   />
                 </Link>

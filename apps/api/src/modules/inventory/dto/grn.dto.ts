@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMinSize, IsArray, IsInt, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateGrnItemDto {
@@ -7,7 +16,10 @@ export class CreateGrnItemDto {
   @IsUUID()
   product_id!: string;
 
-  @ApiProperty({ description: 'Actual cost paid per unit, in KES. Used for FIFO valuation.', minimum: 0 })
+  @ApiProperty({
+    description: 'Actual cost paid per unit, in KES. Used for FIFO valuation.',
+    minimum: 0,
+  })
   @IsInt()
   @Min(0)
   unit_cost_kes!: number;

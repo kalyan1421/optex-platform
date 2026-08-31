@@ -1030,7 +1030,9 @@ export class PaymentsService {
     if (error) {
       // Don't fail a legitimate payment because the audit read failed; the
       // throttle is still in force.
-      this.logger.error(`Could not read prior STK destinations for order ${order.id}: ${error.message}`);
+      this.logger.error(
+        `Could not read prior STK destinations for order ${order.id}: ${error.message}`,
+      );
       return;
     }
 

@@ -79,6 +79,8 @@ export class InventoryReconciliationResponseDto {
   @ApiProperty({ type: [InventoryReconciliationItemDto] })
   items!: InventoryReconciliationItemDto[];
 
-  @ApiProperty({ description: 'True only when every product/branch cache matches its in-stock serial count.' })
+  @ApiProperty({
+    description: 'True only when every product/branch cache matches its in-stock serial count.',
+  })
   reconciled!: boolean;
 }

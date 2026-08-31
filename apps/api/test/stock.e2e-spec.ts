@@ -86,7 +86,11 @@ describe('Checkout stock enforcement (e2e)', () => {
    * target branch starts at zero stock/no serials for this product, which
    * every caller below satisfies.
    */
-  async function seedStock(productId: string, targetBranchId: string, stock: number): Promise<void> {
+  async function seedStock(
+    productId: string,
+    targetBranchId: string,
+    stock: number,
+  ): Promise<void> {
     if (stock > 0) {
       const serials = Array.from({ length: stock }, () => ({
         product_id: productId,
@@ -257,7 +261,13 @@ describe('Checkout stock enforcement (e2e)', () => {
     expect(res.body.reconciled).toBe(false);
     expect(res.body.items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ product_id: productId, branch_id: branchId, cached_stock: 0, serial_stock: 1, difference: -1 }),
+        expect.objectContaining({
+          product_id: productId,
+          branch_id: branchId,
+          cached_stock: 0,
+          serial_stock: 1,
+          difference: -1,
+        }),
       ]),
     );
   });
@@ -330,7 +340,11 @@ describe('Checkout stock enforcement (e2e)', () => {
       },
     ]);
     if (serialError) throw serialError;
-    await db.from('inventory').update({ stock: 2 }).eq('product_id', productId).eq('branch_id', branchId);
+    await db
+      .from('inventory')
+      .update({ stock: 2 })
+      .eq('product_id', productId)
+      .eq('branch_id', branchId);
 
     await addToCart(token, productId, 1);
     await checkout(token).expect(201);
@@ -343,7 +357,9 @@ describe('Checkout stock enforcement (e2e)', () => {
     if (error) throw error;
 
     expect(serials?.find((serial) => serial.serial_number === olderSerial)?.status).toBe('sold');
-    expect(serials?.find((serial) => serial.serial_number === newerSerial)?.status).toBe('in_stock');
+    expect(serials?.find((serial) => serial.serial_number === newerSerial)?.status).toBe(
+      'in_stock',
+    );
   });
 
   it('draws a single line across several branches when no one branch can cover it', async () => {

@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { SuppliersService, type SupplierRow } from './suppliers.service';
@@ -19,7 +27,11 @@ export class SuppliersController {
   @RequirePermission('suppliers.manage')
   @Get()
   @ApiOperation({ summary: 'List suppliers' })
-  @ApiQuery({ name: 'activeOnly', required: false, description: 'When true, excludes deactivated suppliers.' })
+  @ApiQuery({
+    name: 'activeOnly',
+    required: false,
+    description: 'When true, excludes deactivated suppliers.',
+  })
   @ApiOkResponse({ type: [SupplierDto], description: 'Suppliers' })
   list(@Query('activeOnly') activeOnly?: string): Promise<SupplierRow[]> {
     return this.suppliers.findAllForAdmin(activeOnly === 'true');
@@ -38,10 +50,7 @@ export class SuppliersController {
   @Post()
   @ApiOperation({ summary: 'Create a supplier' })
   @ApiCreatedResponse({ type: SupplierDto })
-  create(
-    @Body() dto: CreateSupplierDto,
-    @CurrentUser() actorUser: AuthUser,
-  ): Promise<SupplierRow> {
+  create(@Body() dto: CreateSupplierDto, @CurrentUser() actorUser: AuthUser): Promise<SupplierRow> {
     return this.suppliers.create(dto, actorUser);
   }
 

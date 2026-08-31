@@ -51,7 +51,10 @@ describe('Inter-branch transfers (e2e)', () => {
   let serialCounter = 0;
 
   /** Creates a product with `count` in_stock serials at branchA. Returns [productId, serialIds]. */
-  async function newProductWithSerials(name: string, count: number): Promise<{ productId: string; serialIds: string[] }> {
+  async function newProductWithSerials(
+    name: string,
+    count: number,
+  ): Promise<{ productId: string; serialIds: string[] }> {
     const { data, error } = await db
       .from('products')
       .insert({
@@ -75,10 +78,17 @@ describe('Inter-branch transfers (e2e)', () => {
       status: 'in_stock',
       current_branch_id: branchA,
     }));
-    const { data: inserted, error: serialError } = await db.from('product_serials').insert(serials).select('id');
+    const { data: inserted, error: serialError } = await db
+      .from('product_serials')
+      .insert(serials)
+      .select('id');
     if (serialError) throw serialError;
 
-    await db.from('inventory').update({ stock: count }).eq('product_id', data.id).eq('branch_id', branchA);
+    await db
+      .from('inventory')
+      .update({ stock: count })
+      .eq('product_id', data.id)
+      .eq('branch_id', branchA);
 
     return { productId: data.id, serialIds: (inserted ?? []).map((r) => (r as { id: string }).id) };
   }
@@ -115,7 +125,11 @@ describe('Inter-branch transfers (e2e)', () => {
       .single<{ id: string }>();
     categoryId = cat!.id;
 
-    const { data: branches } = await db.from('branches').select('id').eq('is_active', true).limit(2);
+    const { data: branches } = await db
+      .from('branches')
+      .select('id')
+      .eq('is_active', true)
+      .limit(2);
     branchA = branches![0].id;
     branchB = branches![1].id;
   });
@@ -153,7 +167,12 @@ describe('Inter-branch transfers (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/admin/transfers')
       .set(auth(token))
-      .send({ from_branch_id: branchA, to_branch_id: branchB, serial_ids: serialIds, notes: 'e2e dispatch' })
+      .send({
+        from_branch_id: branchA,
+        to_branch_id: branchB,
+        serial_ids: serialIds,
+        notes: 'e2e dispatch',
+      })
       .expect(201);
 
     expect(res.body.status).toBe('in_transit');
@@ -253,11 +272,15 @@ describe('Inter-branch transfers (e2e)', () => {
 
     expect(await stockAt(productId, branchA)).toBe(0);
     expect(await stockAt(productId, branchB)).toBe(0);
-    const { data: serial } = await db.from('product_serials').select('status').eq('id', serialIds[0]).single();
+    const { data: serial } = await db
+      .from('product_serials')
+      .select('status')
+      .eq('id', serialIds[0])
+      .single();
     expect((serial as { status: string }).status).toBe('in_transit');
   });
 
-  it("re-receiving an already-resolved serial is a no-op, not a double credit", async () => {
+  it('re-receiving an already-resolved serial is a no-op, not a double credit', async () => {
     const { productId, serialIds } = await newProductWithSerials('idempotent-receive', 1);
     const token = await newStaffAccount('inventory_manager');
 

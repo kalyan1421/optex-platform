@@ -12,3 +12,6 @@
 
 # style: apply prettier across the tree (228 files, formatting only)
 8b83ac17974755dab5585a805b1d42e1ceec2628
+
+# style: apply prettier across the repo (37 files, formatting only)
+582676f594e3d63365d7b56ec1f00b93d110ac60

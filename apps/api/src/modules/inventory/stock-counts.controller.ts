@@ -1,5 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { StockCountsService } from './stock-counts.service';
@@ -36,21 +44,31 @@ export class StockCountsController {
   @ApiOperation({ summary: 'Get a stock count with its lines' })
   @ApiOkResponse({ type: StockCountDto })
   @ApiNotFoundResponse({ description: 'Stock count not found' })
-  get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser): Promise<StockCountDto> {
+  get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<StockCountDto> {
     return this.stockCounts.findById(id, user);
   }
 
   @RequirePermission('inventory.count')
   @Post()
-  @ApiOperation({ summary: 'Start a count — snapshots every serial the system believes is at this branch' })
+  @ApiOperation({
+    summary: 'Start a count — snapshots every serial the system believes is at this branch',
+  })
   @ApiCreatedResponse({ type: StockCountDto })
-  start(@Body() dto: StartStockCountDto, @CurrentUser() actorUser: AuthUser): Promise<StockCountDto> {
+  start(
+    @Body() dto: StartStockCountDto,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<StockCountDto> {
     return this.stockCounts.start(dto, actorUser);
   }
 
   @RequirePermission('inventory.count')
   @Patch(':id/scan')
-  @ApiOperation({ summary: 'Record scanned serials against an in-progress count — callable repeatedly' })
+  @ApiOperation({
+    summary: 'Record scanned serials against an in-progress count — callable repeatedly',
+  })
   @ApiOkResponse({ type: StockCountDto })
   @ApiNotFoundResponse({ description: 'Stock count not found' })
   scan(
@@ -64,11 +82,15 @@ export class StockCountsController {
   @RequirePermission('inventory.count')
   @Post(':id/accept')
   @ApiOperation({
-    summary: 'Accept a count — writes off what is missing, relocates what was mistracked, creates what was never recorded',
+    summary:
+      'Accept a count — writes off what is missing, relocates what was mistracked, creates what was never recorded',
   })
   @ApiOkResponse({ type: StockCountDto })
   @ApiNotFoundResponse({ description: 'Stock count not found' })
-  accept(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() actorUser: AuthUser): Promise<StockCountDto> {
+  accept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actorUser: AuthUser,
+  ): Promise<StockCountDto> {
     return this.stockCounts.accept(id, actorUser);
   }
 }

@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMinSize, IsArray, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class DispatchTransferDto {
@@ -11,7 +18,10 @@ export class DispatchTransferDto {
   @IsUUID()
   to_branch_id!: string;
 
-  @ApiProperty({ type: [String], description: 'Serials being transferred — must be in_stock at from_branch_id.' })
+  @ApiProperty({
+    type: [String],
+    description: 'Serials being transferred — must be in_stock at from_branch_id.',
+  })
   @IsArray()
   @ArrayMinSize(1)
   @IsUUID('4', { each: true })
@@ -47,7 +57,11 @@ export class ReceiveTransferDto {
   @IsUUID('4', { each: true })
   received?: string[];
 
-  @ApiProperty({ type: [ReceiveTransferLostItemDto], description: 'Serials that did not arrive, with a reason.', required: false })
+  @ApiProperty({
+    type: [ReceiveTransferLostItemDto],
+    description: 'Serials that did not arrive, with a reason.',
+    required: false,
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

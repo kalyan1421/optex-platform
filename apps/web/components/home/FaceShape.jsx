@@ -87,7 +87,7 @@ const FaceShape = () => {
               }}
             >
               <div
-                className="relative flex w-full aspect-square items-center justify-center overflow-hidden bg-[#F3F4F6] lg:h-[265.75px] lg:w-[265.75px]"
+                className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-[#F3F4F6] lg:h-[265.75px] lg:w-[265.75px]"
                 style={{ borderRadius: '31px 31px 0 0' }}
               >
                 {shape.image ? (

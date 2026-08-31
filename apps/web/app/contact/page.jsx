@@ -96,7 +96,7 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Banner Section */}
-      <section className="relative flex w-full flex-col items-end justify-center overflow-hidden bg-[#E53935] px-6 py-12 sm:px-10 sm:py-16 lg:h-[354px] lg:px-0 lg:pr-[100px] lg:py-0">
+      <section className="relative flex w-full flex-col items-end justify-center overflow-hidden bg-[#E53935] px-6 py-12 sm:px-10 sm:py-16 lg:h-[354px] lg:px-0 lg:py-0 lg:pr-[100px]">
         {/* Background Image */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center"

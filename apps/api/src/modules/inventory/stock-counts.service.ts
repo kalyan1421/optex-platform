@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -13,7 +20,8 @@ interface StockCountHeaderRow {
 }
 
 type EmbeddedProduct = { name: string } | { name: string }[] | null;
-const unwrapProduct = (embed: EmbeddedProduct) => (Array.isArray(embed) ? (embed[0] ?? null) : embed);
+const unwrapProduct = (embed: EmbeddedProduct) =>
+  Array.isArray(embed) ? (embed[0] ?? null) : embed;
 
 /**
  * Physical stock counts — R2 sub-phase 2d. Starting a count and scanning
@@ -56,7 +64,9 @@ export class StockCountsService {
       .eq('current_branch_id', dto.branch_id);
     if (expectedError) {
       await this.db.from('stock_counts').delete().eq('id', count.id);
-      this.logger.error(`Failed to snapshot expected stock for count ${count.id}: ${expectedError.message}`);
+      this.logger.error(
+        `Failed to snapshot expected stock for count ${count.id}: ${expectedError.message}`,
+      );
       throw new InternalServerErrorException('Failed to start stock count');
     }
 
@@ -72,7 +82,9 @@ export class StockCountsService {
       );
       if (itemsError) {
         await this.db.from('stock_counts').delete().eq('id', count.id);
-        this.logger.error(`Failed to insert expected items for count ${count.id}: ${itemsError.message}`);
+        this.logger.error(
+          `Failed to insert expected items for count ${count.id}: ${itemsError.message}`,
+        );
         throw new InternalServerErrorException('Failed to start stock count');
       }
     }
@@ -134,7 +146,10 @@ export class StockCountsService {
 
         if (existingItem) {
           if (!existingItem.found) {
-            await this.db.from('stock_count_items').update({ found: true }).eq('id', existingItem.id);
+            await this.db
+              .from('stock_count_items')
+              .update({ found: true })
+              .eq('id', existingItem.id);
           }
         } else {
           await this.db.from('stock_count_items').insert({
@@ -158,7 +173,10 @@ export class StockCountsService {
 
       if (existingUnresolved) {
         if (!existingUnresolved.product_id && scan.product_id) {
-          await this.db.from('stock_count_items').update({ product_id: scan.product_id }).eq('id', existingUnresolved.id);
+          await this.db
+            .from('stock_count_items')
+            .update({ product_id: scan.product_id })
+            .eq('id', existingUnresolved.id);
         }
       } else {
         await this.db.from('stock_count_items').insert({
@@ -281,7 +299,9 @@ export class StockCountsService {
   private async attachItems(header: StockCountHeaderRow): Promise<StockCountDto> {
     const { data, error } = await this.db
       .from('stock_count_items')
-      .select('serial_id, scanned_serial_number, product_id, expected, found, product:products(name)')
+      .select(
+        'serial_id, scanned_serial_number, product_id, expected, found, product:products(name)',
+      )
       .eq('count_id', header.id);
     if (error) {
       this.logger.error(`Failed to load stock count ${header.id} items: ${error.message}`);

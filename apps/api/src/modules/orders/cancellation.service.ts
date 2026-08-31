@@ -376,7 +376,11 @@ export class CancellationService {
    * stock permanently if its RPC fails, so `cancel_order_and_restock` owns
    * both writes and rolls both back together.
    */
-  private async cancelAndRestock(orderId: string, actor: AuthUser, notes: string | null = null): Promise<void> {
+  private async cancelAndRestock(
+    orderId: string,
+    actor: AuthUser,
+    notes: string | null = null,
+  ): Promise<void> {
     const { error } = await this.db.rpc('cancel_order_and_restock', {
       p_order_id: orderId,
       p_notes: notes,
