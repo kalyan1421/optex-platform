@@ -16,6 +16,35 @@ export const useCart = () => useContext(CartContext);
  * line total or a cart total, so what the customer sees is always a figure the
  * server actually blessed.
  */
+/** Human labels for the configuration keys the PDP currently sends. */
+const LENS_OPTION_LABELS = { frameColor: 'Frame' };
+
+/**
+ * Renders a line's configuration the way the shopper picked it.
+ *
+ * The guest cart keeps the label the PDP supplies ("Frame: Black"); the
+ * account cart only gets `lensOption` back from the API and used to show it as
+ * `JSON.stringify` output — so the same line read "Frame: Black" signed out and
+ * `{"frameColor":"black"}` signed in. Formatting here means both carts, and the
+ * checkout summary that reads the same field, say the same thing.
+ *
+ * Unknown keys degrade rather than disappear: `lensCoating` becomes
+ * "Lens Coating", so a configurator that adds fields stays readable before
+ * anyone adds a label for them.
+ */
+function formatLensOption(lensOption) {
+  if (!lensOption || typeof lensOption !== 'object') return '';
+  return Object.entries(lensOption)
+    .map(([key, value]) => {
+      const label =
+        LENS_OPTION_LABELS[key] ??
+        key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+      const text = String(value ?? '');
+      return `${label}: ${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+    })
+    .join(', ');
+}
+
 function apiItemToCartItem(item) {
   return {
     id: item.id,
@@ -30,7 +59,7 @@ function apiItemToCartItem(item) {
     image: resolveImageUrl(item.product.image),
     quantity: item.quantity,
     brand: item.product.brand ?? '',
-    variant: item.lensOption ? JSON.stringify(item.lensOption) : '',
+    variant: formatLensOption(item.lensOption),
   };
 }
 
@@ -183,6 +212,11 @@ export const CartProvider = ({ children }) => {
             await api.cart.addItem({
               productId: line.productId ?? line.id,
               quantity: line.quantity ?? 1,
+              // Carry the line's configuration across. Without it, a guest who
+              // configured two different lens options on the same frame has
+              // both lines merged into one on sign-in — the API keys a line on
+              // (product, lens_option), so dropping it here collapses them.
+              lensOption: line.lensOption,
             });
           } catch (err) {
             console.error('Cart merge: could not carry over a line:', err);
@@ -215,6 +249,7 @@ export const CartProvider = ({ children }) => {
         const cart = await api.cart.addItem({
           productId: product.id,
           quantity: product.quantity ?? 1,
+          lensOption: product.lensOption,
         });
         applyCart(cart);
         setError('');
@@ -232,15 +267,36 @@ export const CartProvider = ({ children }) => {
       // frame with different lens options is not collapsed into one cart item.
       setItems((prev) => {
         const variantKey = product.variant ?? '';
-        const existing = prev.find((i) => i.id === product.id && (i.variant ?? '') === variantKey);
+        const existing = prev.find(
+          (i) => (i.productId ?? i.id) === product.id && (i.variant ?? '') === variantKey,
+        );
         if (existing) {
           return prev.map((i) =>
-            i.id === product.id && (i.variant ?? '') === variantKey
-              ? { ...i, quantity: i.quantity + (product.quantity ?? 1) }
+            (i.productId ?? i.id) === product.id && (i.variant ?? '') === variantKey
+              ? { ...i, quantity: Math.min(100, i.quantity + (product.quantity ?? 1)) }
               : i,
           );
         }
-        return [...prev, { ...product, quantity: product.quantity ?? 1 }];
+        return [
+          ...prev,
+          {
+            ...product,
+            // The line id has to include the variant. Matching on
+            // (product, variant) above keeps two lens configurations of the
+            // same frame as separate lines — but storing both under the raw
+            // product id gave them the SAME id, so `updateQuantity`/
+            // `removeItem`, which look a line up by id, would always act on
+            // whichever came first.
+            id: `${product.id}:${encodeURIComponent(variantKey || 'default')}`,
+            // Keep the real product id for the sign-in merge, which posts
+            // `productId` to the API.
+            productId: product.id,
+            lensOption: product.lensOption,
+            // Same ceiling the API enforces, so a guest cannot build a line
+            // locally that the server will refuse to take at sign-in.
+            quantity: Math.min(100, product.quantity ?? 1),
+          },
+        ];
       });
     }
   };

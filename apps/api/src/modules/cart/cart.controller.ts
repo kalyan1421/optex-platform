@@ -28,7 +28,7 @@ export class CartController {
   @ApiOperation({ summary: 'Add a product to the cart (or increment quantity)' })
   @ApiOkResponse({ description: 'The updated cart' })
   addItem(@CurrentUser('id') authUserId: string, @Body() dto: AddCartItemDto): Promise<CartView> {
-    return this.cart.addItem(authUserId, dto.productId, dto.quantity ?? 1);
+    return this.cart.addItem(authUserId, dto.productId, dto.quantity ?? 1, dto.lensOption);
   }
 
   @Patch('items/:id')
