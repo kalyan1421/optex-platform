@@ -161,20 +161,28 @@ function formatSlotLabel(hhmm) {
 }
 
 function todayString() {
-  return new Date().toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function formatApptDate(dateStr, timeStr) {
   if (!dateStr || !timeStr) return '';
-  const dt = new Date(`${dateStr}T${timeStr}`);
-  return dt.toLocaleString('en-KE', {
+  const dt = new Date(`${dateStr}T${timeStr}:00+03:00`);
+  return new Intl.DateTimeFormat('en-KE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+    timeZone: 'Africa/Nairobi',
+  }).format(dt);
 }
 
 // ─── Progress Indicator ───────────────────────────────────────────────────────
@@ -674,9 +682,9 @@ export default function Page() {
 
             {/* Appointment type */}
             <div className="mb-6">
-              <label className="mb-3 block text-[13px] font-bold uppercase tracking-widest text-[#2A3182]">
+              <p className="mb-3 block text-[13px] font-bold uppercase tracking-widest text-[#2A3182]">
                 Appointment Type
-              </label>
+              </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {APPT_TYPES.map(({ value, label, desc, Icon }) => {
                   const active = apptType === value;
@@ -711,10 +719,14 @@ export default function Page() {
             {/* Date and time */}
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
+                <label
+                  htmlFor="appointment-date"
+                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                >
                   Preferred Date
                 </label>
                 <input
+                  id="appointment-date"
                   type="date"
                   min={todayString()}
                   value={date}
@@ -723,10 +735,14 @@ export default function Page() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
+                <label
+                  htmlFor="appointment-time"
+                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                >
                   Available Time
                 </label>
                 <select
+                  id="appointment-time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   disabled={!date || slotsLoading || slots.length === 0}
@@ -759,10 +775,14 @@ export default function Page() {
 
             {/* Notes */}
             <div className="mb-8">
-              <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
+              <label
+                htmlFor="appointment-step-notes"
+                className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+              >
                 Notes <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <textarea
+                id="appointment-step-notes"
                 rows={3}
                 placeholder="Any specific concerns or requests…"
                 value={stepNotes}
@@ -830,10 +850,14 @@ export default function Page() {
 
             <form onSubmit={handleSubmit}>
               <div className="mb-4 sm:mb-6">
-                <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
+                <label
+                  htmlFor="appointment-contact-name"
+                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                >
                   Contact Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="appointment-contact-name"
                   type="text"
                   required
                   placeholder="Jane Mwangi"
@@ -844,10 +868,14 @@ export default function Page() {
               </div>
 
               <div className="mb-4 sm:mb-6">
-                <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
+                <label
+                  htmlFor="appointment-contact-phone"
+                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                >
                   Contact Phone <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="appointment-contact-phone"
                   type="tel"
                   required
                   placeholder="07XXXXXXXX"
@@ -861,10 +889,14 @@ export default function Page() {
               </div>
 
               <div className="mb-8">
-                <label className="mb-1.5 block text-[13px] font-medium text-[#2A3182]">
+                <label
+                  htmlFor="appointment-notes"
+                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                >
                   Additional Notes <span className="font-normal text-gray-400">(optional)</span>
                 </label>
                 <textarea
+                  id="appointment-notes"
                   rows={3}
                   placeholder="Any additional information for the branch…"
                   value={notes}

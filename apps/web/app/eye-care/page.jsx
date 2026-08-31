@@ -122,10 +122,14 @@ export default function EyeCarePage() {
                 <div className="flex flex-col gap-[20px] md:flex-row md:gap-[40px]">
                   {/* Full Name Container */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-full-name"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Full Name
                     </label>
                     <input
+                      id="eye-full-name"
                       type="text"
                       placeholder="Enter your name"
                       className="font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] px-[16px] py-[12px] text-[16px] font-normal outline-none transition-colors focus:border-[#2E3192]"
@@ -134,10 +138,14 @@ export default function EyeCarePage() {
 
                   {/* Age Container */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-age"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Age
                     </label>
                     <input
+                      id="eye-age"
                       type="text"
                       placeholder="Age"
                       className="font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] px-[16px] py-[12px] text-[16px] font-normal outline-none transition-colors focus:border-[#2E3192]"
@@ -149,10 +157,14 @@ export default function EyeCarePage() {
                 <div className="flex flex-col gap-[20px] md:flex-row md:gap-[40px]">
                   {/* Phone number Container */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-phone"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Phone number
                     </label>
                     <input
+                      id="eye-phone"
                       type="text"
                       placeholder="Phone number"
                       className="font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] px-[16px] py-[12px] text-[16px] font-normal outline-none transition-colors focus:border-[#2E3192]"
@@ -160,10 +172,14 @@ export default function EyeCarePage() {
                   </div>
                   {/* Email Container */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-email"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Email
                     </label>
                     <input
+                      id="eye-email"
                       type="text"
                       placeholder="yourname@gmail.com"
                       className="font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] px-[16px] py-[12px] text-[16px] font-normal outline-none transition-colors placeholder:text-[#0A0A0A]/50 focus:border-[#2E3192]"
@@ -175,11 +191,15 @@ export default function EyeCarePage() {
                 <div className="flex flex-col gap-[20px] md:flex-row md:gap-[40px]">
                   {/* Gender Container */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-gender"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Gender
                     </label>
                     <div className="relative h-[44px] w-full">
                       <select
+                        id="eye-gender"
                         defaultValue=""
                         className="font-inter h-full w-full cursor-pointer appearance-none rounded-[14px] border-[0.8px] border-[#E5E7EB] bg-white py-[12px] pl-[16px] pr-[40px] text-[16px] font-normal text-[#0A0A0A] outline-none transition-colors focus:border-[#2E3192]"
                       >
@@ -379,10 +399,14 @@ export default function EyeCarePage() {
                 <div className="flex w-full flex-col items-center gap-[20px] md:h-[73px] md:flex-row md:gap-[40px]">
                   {/* Preferred Date */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-date"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Preferred date
                     </label>
                     <input
+                      id="eye-date"
                       type="date"
                       className="font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] bg-transparent px-[16px] py-[12px] text-[16px] font-normal text-[#0A0A0A]/50 outline-none transition-colors focus:border-[#2E3192]"
                     />
@@ -390,10 +414,14 @@ export default function EyeCarePage() {
 
                   {/* Preferred Time */}
                   <div className="flex h-[73px] w-full flex-col gap-[8px] md:w-[333px]">
-                    <label className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]">
+                    <label
+                      htmlFor="eye-time"
+                      className="font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]"
+                    >
                       Preferred time
                     </label>
                     <input
+                      id="eye-time"
                       type="time"
                       className="font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] bg-transparent px-[16px] py-[12px] text-[16px] font-normal text-[#0A0A0A]/50 outline-none transition-colors focus:border-[#2E3192]"
                     />

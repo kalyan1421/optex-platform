@@ -11,15 +11,22 @@ export function AuthProvider({ children }) {
   const supabase = createBrowserSupabase();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+      })
+      .catch((error) => {
+        console.error('Could not restore the auth session:', error);
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

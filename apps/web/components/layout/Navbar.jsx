@@ -217,7 +217,7 @@ export default function Navbar() {
           <button
             aria-label="Search"
             onClick={openSearch}
-            className="p-1 transition-opacity hover:opacity-80 sm:hidden"
+            className="flex p-1 transition-opacity hover:opacity-80"
           >
             <SearchNavIcon />
           </button>
@@ -300,7 +300,12 @@ export default function Navbar() {
       {isSearchOpen && (
         <>
           {/* Backdrop */}
-          <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={closeSearch} />
+          <button
+            type="button"
+            aria-label="Close search"
+            className="fixed inset-0 z-40 cursor-default bg-black/30 backdrop-blur-sm"
+            onClick={closeSearch}
+          />
           {/* Search bar panel */}
           <div className="absolute left-0 top-full z-50 w-full border-t border-gray-100 bg-white px-6 py-5 shadow-2xl">
             <div className="site-container mx-auto flex max-w-3xl items-start gap-3">

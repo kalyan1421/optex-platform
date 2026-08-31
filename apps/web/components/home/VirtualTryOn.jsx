@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function VirtualTryOn() {
   return (
@@ -38,13 +39,13 @@ export default function VirtualTryOn() {
                 color: 'rgba(255, 255, 255, 0.8)',
               }}
             >
-              See how your frames look on your face in real time with our live virtual try-on. Using
-              smart camera technology, you can explore styles instantly and find the perfect fit
-              with confidence.
+              Explore frame styles before you visit a branch. Browse the collection online, then
+              book an eye test for professional fitting and guidance.
             </p>
           </div>
 
-          <button
+          <Link
+            href="/shop"
             className="flex items-center justify-center bg-[#FFFFFF] transition-colors hover:bg-gray-100 lg:h-[64px] lg:w-[159.31px]"
             style={{ borderRadius: '32px' }}
           >
@@ -58,9 +59,9 @@ export default function VirtualTryOn() {
                 letterSpacing: '-0.24px',
               }}
             >
-              Try Now
+              Explore Frames
             </span>
-          </button>
+          </Link>
         </div>
 
         {/* Right Image */}

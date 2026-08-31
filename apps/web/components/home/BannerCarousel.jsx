@@ -26,6 +26,7 @@ const ChevronRight = () => (
 export default function BannerCarousel({ banners }) {
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const timerRef = useRef(null);
 
   const total = banners.length;
@@ -40,12 +41,20 @@ export default function BannerCarousel({ banners }) {
   const next = useCallback(() => goTo(current + 1), [current, goTo]);
   const prev = useCallback(() => goTo(current - 1), [current, goTo]);
 
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
+
   // Auto-play — pauses when the user hovers over the carousel.
   useEffect(() => {
-    if (total <= 1 || isHovered) return;
+    if (total <= 1 || isHovered || reducedMotion) return;
     timerRef.current = setInterval(next, AUTO_PLAY_INTERVAL);
     return () => clearInterval(timerRef.current);
-  }, [total, isHovered, next]);
+  }, [total, isHovered, next, reducedMotion]);
 
   if (total === 0) return null;
 
@@ -174,9 +183,11 @@ export default function BannerCarousel({ banners }) {
         <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 gap-2">
           {banners.map((_, i) => (
             <button
+              type="button"
               key={i}
               onClick={() => goTo(i)}
               aria-label={`Go to banner ${i + 1}`}
+              aria-current={i === current ? 'true' : undefined}
               className={`rounded-full transition-all duration-300 ${
                 i === current ? 'h-3 w-7 bg-[#2E3192]' : 'h-3 w-3 bg-white/70 hover:bg-white'
               }`}

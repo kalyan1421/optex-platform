@@ -32,13 +32,13 @@ export default function NotFound() {
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Link
           href="/shop"
-          className="rounded-md bg-[#2A3182] px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-[#232a6e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2A3182]"
+          className="rounded-md bg-[#2E3192] px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-[#232a6e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E3192]"
         >
           Browse all frames
         </Link>
         <Link
           href="/"
-          className="rounded-md border border-gray-300 px-6 py-3 text-[15px] font-semibold text-[#1A1A2E] transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2A3182]"
+          className="rounded-md border border-gray-300 px-6 py-3 text-[15px] font-semibold text-[#1A1A2E] transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E3192]"
         >
           Back to home
         </Link>

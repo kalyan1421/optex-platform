@@ -252,6 +252,7 @@ const Signup = () => {
         >
           <div className="flex flex-col gap-[5.4px]">
             <label
+              htmlFor="signup-name"
               className="text-[#1A1C1E]"
               style={{
                 fontFamily: 'Manrope, sans-serif',
@@ -268,6 +269,7 @@ const Signup = () => {
                 <UserIcon />
               </div>
               <input
+                id="signup-name"
                 type="text"
                 placeholder="John Doe"
                 value={name}
@@ -286,6 +288,7 @@ const Signup = () => {
 
           <div className="flex flex-col gap-[5.4px]">
             <label
+              htmlFor="signup-email"
               className="text-[#1A1C1E]"
               style={{
                 fontFamily: 'Manrope, sans-serif',
@@ -302,6 +305,7 @@ const Signup = () => {
                 <MailIcon />
               </div>
               <input
+                id="signup-email"
                 type="email"
                 placeholder="john@example.com"
                 value={email}
@@ -320,6 +324,7 @@ const Signup = () => {
 
           <div className="flex flex-col gap-[5.4px]">
             <label
+              htmlFor="signup-password"
               className="text-[#1A1C1E]"
               style={{
                 fontFamily: 'Manrope, sans-serif',
@@ -336,6 +341,7 @@ const Signup = () => {
                 <LockIcon />
               </div>
               <input
+                id="signup-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
@@ -363,6 +369,7 @@ const Signup = () => {
 
           <div className="flex flex-col gap-[5.4px]">
             <label
+              htmlFor="signup-confirm-password"
               className="text-[#1A1C1E]"
               style={{
                 fontFamily: 'Manrope, sans-serif',
@@ -379,6 +386,7 @@ const Signup = () => {
                 <HistoryIcon />
               </div>
               <input
+                id="signup-confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={confirmPassword}

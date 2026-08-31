@@ -152,6 +152,7 @@ const Login = () => {
         >
           <div className="flex flex-col gap-[9px]">
             <label
+              htmlFor="login-email"
               className="text-[#1A1C1E]"
               style={{
                 fontFamily: 'Manrope, sans-serif',
@@ -168,6 +169,7 @@ const Login = () => {
                 <MailIcon />
               </div>
               <input
+                id="login-email"
                 type="email"
                 placeholder="Enter your email"
                 value={email}
@@ -187,6 +189,7 @@ const Login = () => {
           <div className="flex flex-col gap-[9px]">
             <div className="flex h-[18.9px] items-center justify-between">
               <label
+                htmlFor="login-password"
                 className="text-[#1A1C1E]"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
@@ -216,6 +219,7 @@ const Login = () => {
                 <LockIcon />
               </div>
               <input
+                id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={password}

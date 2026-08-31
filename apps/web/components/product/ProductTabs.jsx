@@ -12,10 +12,17 @@ export default function ProductTabs({ product }) {
 
   return (
     <div className="mx-auto mb-[60px] w-full max-w-[1240px]">
-      <div className="mb-[32px] flex h-[50.8px] gap-[40px] border-b-[0.8px] border-[#D4D4D4]">
+      <div
+        className="mb-[32px] flex h-[50.8px] gap-[40px] border-b-[0.8px] border-[#D4D4D4]"
+        role="tablist"
+      >
         {['Features', 'Specifications', 'Shipping'].map((tab) => (
           <button
             key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            aria-controls={`product-tabpanel-${tab.toLowerCase()}`}
             onClick={() => setActiveTab(tab)}
             className={`flex h-[50px] items-center justify-center pb-[4px] transition-all ${activeTab === tab ? 'border-b-[4px] border-[#2E3192] text-[#2E3192]' : 'text-[#717182] hover:text-black'}`}
             style={{
@@ -31,7 +38,11 @@ export default function ProductTabs({ product }) {
       </div>
 
       {activeTab === 'Features' && (
-        <div className="flex min-h-[185px] flex-col gap-[16px] md:flex-row">
+        <div
+          id="product-tabpanel-features"
+          role="tabpanel"
+          className="flex min-h-[185px] flex-col gap-[16px] md:flex-row"
+        >
           <div className="flex flex-col gap-[16px] py-[8px] md:w-[469.6px]">
             <ul className="flex flex-col gap-[16px]">
               {[
@@ -90,6 +101,8 @@ export default function ProductTabs({ product }) {
       )}
       {activeTab === 'Specifications' && (
         <div
+          id="product-tabpanel-specifications"
+          role="tabpanel"
           className="text-[#4A4A4A]"
           style={{
             fontFamily: 'Inter, sans-serif',
@@ -118,6 +131,8 @@ export default function ProductTabs({ product }) {
       )}
       {activeTab === 'Shipping' && (
         <div
+          id="product-tabpanel-shipping"
+          role="tabpanel"
           className="text-[#4A4A4A]"
           style={{
             fontFamily: 'Inter, sans-serif',

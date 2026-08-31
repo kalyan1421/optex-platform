@@ -5,10 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 import CancelOrder from '@/components/orders/CancelOrder';
+import { api } from '@/lib/api';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -168,23 +168,43 @@ export default function OrderTrackingPage() {
     }
     if (!user || !orderId) return;
 
-    const db = createBrowserSupabase();
-    db.from('orders')
-      .select(
-        'id, order_number, status, payment_status, payment_method, mpesa_ref, total_kes, created_at, updated_at, shipping, order_items(id, quantity, unit_price_kes, product:products(name, images))',
-      )
-      .eq('id', orderId)
-      .maybeSingle()
-      .then(({ data, error: err }) => {
-        if (err) {
-          setError(err.message);
-          return;
-        }
-        setOrder(data);
+    let cancelled = false;
+    api.orders
+      .get(orderId)
+      .then((detail) => {
+        if (cancelled) return;
+        setOrder({
+          id: detail.id,
+          order_number: detail.orderNumber,
+          status: detail.status,
+          payment_status: detail.paymentStatus,
+          payment_method: detail.paymentMethod,
+          mpesa_ref: null,
+          total_kes: detail.totalKes,
+          created_at: detail.createdAt,
+          updated_at: detail.createdAt,
+          shipping: detail.shipping,
+          order_items: (detail.items ?? []).map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            unit_price_kes: item.unitPriceKes,
+            product: item.product
+              ? {
+                  name: item.product.name,
+                  images: item.product.image ? [item.product.image] : [],
+                }
+              : null,
+          })),
+        });
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      })
       .finally(() => setLoading(false));
-  }, [user, authLoading, orderId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, authLoading, orderId, router]);
 
   if (authLoading || loading) {
     return (
@@ -204,17 +224,29 @@ export default function OrderTrackingPage() {
           <div className="mb-4 flex justify-center text-red-400">
             <XCircleIcon />
           </div>
-          <h2 className="mb-2 text-[18px] font-bold text-[#1a1a1a]">Order not found</h2>
+          <h2 className="mb-2 text-[18px] font-bold text-[#1a1a1a]">
+            {error ? 'Could not load this order' : 'Order not found'}
+          </h2>
           <p className="mb-6 text-[13px] text-gray-400">
             {error ?? 'This order does not exist or you do not have access to it.'}
           </p>
-          <Link
-            href="/profile"
-            className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
-          >
-            <BackArrowIcon />
-            Back to Profile
-          </Link>
+          {error ? (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+            >
+              Try again
+            </button>
+          ) : (
+            <Link
+              href="/profile"
+              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+            >
+              <BackArrowIcon />
+              Back to Profile
+            </Link>
+          )}
         </div>
       </div>
     );

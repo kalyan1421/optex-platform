@@ -74,21 +74,24 @@ export default function DeliveryPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-[17px] font-black text-gray-900">Outside Nairobi</h3>
+                <h3 className="text-[17px] font-black text-gray-900">Other Kenyan locations</h3>
               </div>
-              <p className="text-[28px] font-black text-gray-700">KES 500</p>
+              <p className="text-[28px] font-black text-gray-700">KES 300</p>
               <p className="text-[14px] text-gray-600">
                 <strong>2–4 business days</strong> after order confirmation
               </p>
               <p className="text-[13px] text-gray-500">
-                Covers all other counties in Kenya via our courier partner network.
+                Standard online delivery currently uses the same KES 300 charge outside Nairobi.
+                Availability is confirmed from the address during checkout.
               </p>
             </div>
           </div>
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Free Delivery</h2>
+          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">
+            Current online delivery rule
+          </h2>
           <div className="flex items-start gap-4 rounded-[20px] border border-green-200 bg-green-50 p-6">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
               <svg
@@ -107,11 +110,11 @@ export default function DeliveryPage() {
             </div>
             <div>
               <p className="mb-1 text-[16px] font-bold text-green-900">
-                Free delivery on orders over KES 5,000
+                Standard delivery is KES 300
               </p>
               <p className="text-[14px] text-green-800">
-                Any single order totalling KES 5,000 or more qualifies for complimentary delivery to
-                any location within Kenya.
+                The checkout total is calculated by the server and shown before payment. Any future
+                free-delivery promotion will be reflected there automatically.
               </p>
             </div>
           </div>
@@ -139,8 +142,8 @@ export default function DeliveryPage() {
           </ul>
           <p className="mt-4 text-[14px] text-gray-500">
             You can also check your delivery status any time from your{' '}
-            <Link href="/orders" className="font-bold text-[#2A3182] hover:underline">
-              order history page
+            <Link href="/profile" className="font-bold text-[#2A3182] hover:underline">
+              profile page
             </Link>
             .
           </p>

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import CancelOrder from '@/components/orders/CancelOrder';
 import { api } from '@/lib/api';
@@ -237,6 +236,7 @@ export default function Page() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState('');
   const [prescription, setPrescription] = useState(null);
 
   useEffect(() => {
@@ -245,7 +245,6 @@ export default function Page() {
       return;
     }
     if (!user) return;
-    const db = createBrowserSupabase();
     // Order history through the API.
     //
     // This used to call listOrdersForCustomer(db, user.id), which filters
@@ -257,32 +256,16 @@ export default function Page() {
     api.orders
       .list()
       .then((res) => setOrders(res?.data ?? []))
-      .catch(console.error)
+      .catch((error) => {
+        console.error('Could not load orders:', error);
+        setOrdersError(error?.message ?? 'Could not load your orders.');
+      })
       .finally(() => setOrdersLoading(false));
-    // Fetch most recent prescription via customer bridge
-    void (async () => {
-      try {
-        const { data: cust } = await db
-          .from('customers')
-          .select('id')
-          .eq('auth_user_id', user.id)
-          .maybeSingle();
-        if (!cust) return;
-        const { data: pres } = await db
-          .from('prescriptions')
-          .select(
-            'id, sphere_od, sphere_os, cyl_od, cyl_os, axis_od, axis_os, pd, status, created_at',
-          )
-          .eq('customer_id', cust.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (pres) setPrescription(pres);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, [user, authLoading]);
+    api.prescriptions
+      .listMine()
+      .then((prescriptions) => setPrescription(prescriptions?.[0] ?? null))
+      .catch((error) => console.error('Could not load prescription:', error));
+  }, [user, authLoading, router]);
 
   if (authLoading) return null;
 
@@ -598,6 +581,17 @@ export default function Page() {
 
           {ordersLoading ? (
             <div className="p-10 text-center text-[14px] text-gray-400">Loading orders…</div>
+          ) : ordersError ? (
+            <div className="p-10 text-center">
+              <p className="mb-4 text-[15px] font-medium text-red-700">{ordersError}</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-full bg-[#2A3182] px-5 py-2.5 text-[13px] font-bold text-white"
+              >
+                Try again
+              </button>
+            </div>
           ) : orders.length === 0 ? (
             <div className="p-10 text-center">
               <p className="mb-2 text-[15px] font-medium text-gray-500">No orders yet</p>

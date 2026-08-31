@@ -60,12 +60,13 @@ export default function FeaturedCollectionTabs({ products, categories }) {
           const isActive = activeCategory === cat.id;
 
           return (
-            <div
+            <button
+              type="button"
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               data-aos="fade-up"
               data-aos-delay={index * 100}
-              className={`relative flex max-w-[370px] flex-1 cursor-pointer flex-col overflow-hidden rounded-[32px] bg-white transition-all duration-300 lg:h-[144px] ${isActive ? 'border-2 border-[#2E3192]' : 'border border-[#D4D4D4]'} `}
+              className={`relative flex max-w-[370px] flex-1 cursor-pointer flex-col overflow-hidden rounded-[32px] bg-white p-0 text-left transition-all duration-300 lg:h-[144px] ${isActive ? 'border-2 border-[#2E3192]' : 'border border-[#D4D4D4]'} `}
             >
               {/* Inner image area — fills full card */}
               <div className="relative aspect-square w-full overflow-hidden rounded-[28px] lg:aspect-auto lg:w-auto lg:flex-1">
@@ -91,7 +92,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                   {cat.name}
                 </span>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

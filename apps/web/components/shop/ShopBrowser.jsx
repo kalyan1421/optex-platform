@@ -161,7 +161,7 @@ export default function ShopBrowser({ products, categories }) {
                         lineHeight: '21px',
                       }}
                     >
-                      {product.brand || 'RAYBAN'}
+                      {product.brand || '—'}
                     </span>
                   </div>
 
@@ -205,6 +205,10 @@ export default function ShopBrowser({ products, categories }) {
 
                     {/* Button */}
                     <button
+                      type="button"
+                      disabled={
+                        product.available_stock !== null && Number(product.available_stock) <= 0
+                      }
                       onClick={() =>
                         addToCart({
                           id: product.id,
@@ -214,13 +218,15 @@ export default function ShopBrowser({ products, categories }) {
                           quantity: 1,
                         })
                       }
-                      className="flex items-center justify-center bg-[#E53935] text-white transition-all hover:bg-[#D32F2F] active:scale-95 lg:h-[41px] lg:w-[121.375px] lg:rounded-[24px]"
+                      className="flex items-center justify-center bg-[#E53935] text-white transition-all hover:bg-[#D32F2F] active:scale-95 disabled:cursor-not-allowed disabled:bg-[#9CA3AF] lg:h-[41px] lg:w-[121.375px] lg:rounded-[24px]"
                     >
                       <span
                         className="flex items-center justify-center whitespace-nowrap text-center text-[14px] font-semibold lg:h-[21px] lg:w-[82px]"
                         style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '21px' }}
                       >
-                        Add to Cart
+                        {product.available_stock !== null && Number(product.available_stock) <= 0
+                          ? 'Out of stock'
+                          : 'Add to Cart'}
                       </span>
                     </button>
                   </div>

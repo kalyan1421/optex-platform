@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { createBrowserSupabase } from '@optex/db/browser';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -97,15 +98,42 @@ const PAYMENT_STATUS_BADGE = {
   failed: { label: 'Failed', cls: 'bg-red-50 text-red-700 border-red-200' },
 };
 
+function toDisplayOrder(detail) {
+  return {
+    id: detail.id,
+    order_number: detail.orderNumber,
+    total_kes: detail.totalKes,
+    subtotal_kes: detail.subtotalKes,
+    vat_kes: detail.vatKes,
+    shipping_kes: detail.shippingKes,
+    status: detail.status,
+    payment_status: detail.paymentStatus,
+    payment_method: detail.paymentMethod,
+    mpesa_ref: null,
+    shipping: detail.shipping,
+    created_at: detail.createdAt,
+    order_items: (detail.items ?? []).map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      unit_price_kes: item.unitPriceKes,
+      product: item.product
+        ? { name: item.product.name, images: item.product.image ? [item.product.image] : [] }
+        : null,
+    })),
+  };
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Page() {
   const { orderId } = useParams();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(null);
 
   const pollRef = useRef(null);
@@ -114,67 +142,38 @@ export default function Page() {
 
   // ── Auth + initial fetch ────────────────────────────────────────────────────
   useEffect(() => {
-    const db = createBrowserSupabase();
-
-    async function init() {
-      // Auth guard
-      const {
-        data: { user },
-      } = await db.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      // Fetch order with items + products
-      const { data, error } = await db
-        .from('orders')
-        .select(
-          `
-          id,
-          order_number,
-          total_kes,
-          subtotal_kes,
-          vat_kes,
-          shipping_kes,
-          status,
-          payment_status,
-          payment_method,
-          mpesa_ref,
-          shipping,
-          created_at,
-          order_items (
-            id,
-            quantity,
-            unit_price_kes,
-            product:products ( name, images )
-          )
-        `,
-        )
-        .eq('id', orderId)
-        .maybeSingle();
-
-      if (error || !data) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      setOrder(data);
-      setPaymentStatus(data.payment_status);
-      setLoading(false);
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
     }
-
-    init();
-  }, [orderId, router]);
+    let cancelled = false;
+    api.orders
+      .get(orderId)
+      .then((detail) => {
+        if (cancelled) return;
+        const displayOrder = toDisplayOrder(detail);
+        setOrder(displayOrder);
+        setPaymentStatus(displayOrder.payment_status);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        if (error?.status === 404) setNotFound(true);
+        else setLoadError(error?.message ?? 'Could not load this order.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, router, user, authLoading]);
 
   // ── M-Pesa pending poller ───────────────────────────────────────────────────
   useEffect(() => {
     if (!order) return;
     const isMpesaPending = order.payment_method === 'mpesa' && paymentStatus === 'pending';
     if (!isMpesaPending) return;
-
-    const db = createBrowserSupabase();
 
     pollRef.current = setInterval(async () => {
       attemptsRef.current += 1;
@@ -183,17 +182,14 @@ export default function Page() {
         return;
       }
       try {
-        const { data } = await db
-          .from('orders')
-          .select('payment_status')
-          .eq('id', orderId)
-          .maybeSingle();
-        if (data?.payment_status && data.payment_status !== 'pending') {
-          setPaymentStatus(data.payment_status);
+        const detail = await api.orders.get(orderId);
+        if (detail.paymentStatus && detail.paymentStatus !== 'pending') {
+          setPaymentStatus(detail.paymentStatus);
+          setOrder(toDisplayOrder(detail));
           clearInterval(pollRef.current);
         }
-      } catch (_) {
-        /* silent */
+      } catch (error) {
+        console.error('Could not refresh payment status:', error);
       }
     }, 5000);
 
@@ -242,6 +238,26 @@ export default function Page() {
             className="rounded-full bg-[#2A3182] px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
           >
             View Order History
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-24">
+        <div className="mx-4 w-full max-w-md rounded-[24px] border border-gray-100 bg-white p-10 text-center shadow-sm">
+          <h2 className="mb-2 text-[24px] font-black text-[#2A3182]">
+            We could not load your order
+          </h2>
+          <p className="mb-8 text-[14px] text-gray-500">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-full bg-[#2A3182] px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
+          >
+            Try again
           </button>
         </div>
       </div>
@@ -397,7 +413,9 @@ export default function Page() {
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="font-medium text-gray-500">Shipping</span>
-                <span className="font-medium text-gray-500">FREE</span>
+                <span className="font-medium text-gray-500">
+                  {Number(order.shipping_kes) > 0 ? formatKes(Number(order.shipping_kes)) : 'FREE'}
+                </span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="font-medium text-gray-500">VAT (16%)</span>
@@ -439,6 +457,7 @@ export default function Page() {
             {/* CTA buttons */}
             <div className="flex flex-col gap-3 pt-2 sm:flex-row">
               <button
+                type="button"
                 onClick={() => router.push('/shop')}
                 className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#c1272d] py-4 text-[14px] font-bold text-white shadow-lg shadow-red-500/20 transition-colors hover:bg-red-800"
               >
@@ -446,6 +465,7 @@ export default function Page() {
                 Continue Shopping
               </button>
               <button
+                type="button"
                 onClick={() => router.push('/profile')}
                 className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#2A3182] py-4 text-[14px] font-bold text-[#2A3182] transition-colors hover:bg-blue-50"
               >

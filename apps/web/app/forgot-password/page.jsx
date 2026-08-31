@@ -77,10 +77,14 @@ export default function ForgotPasswordPage() {
               )}
 
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                <label
+                  htmlFor="forgot-email"
+                  className="mb-1.5 block text-sm font-semibold text-gray-700"
+                >
                   Email Address
                 </label>
                 <input
+                  id="forgot-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

@@ -76,6 +76,8 @@ function ProductCard({ product }) {
             {formatKes(Number(product.price_kes))}
           </p>
           <button
+            type="button"
+            disabled={product.available_stock !== null && Number(product.available_stock) <= 0}
             onClick={() =>
               addToCart({
                 id: product.id,
@@ -85,9 +87,11 @@ function ProductCard({ product }) {
                 quantity: 1,
               })
             }
-            className="whitespace-nowrap rounded-full bg-[#EF4444] px-4 py-2 text-[11px] font-bold text-white shadow-md transition-all hover:bg-red-600 active:scale-95"
+            className="whitespace-nowrap rounded-full bg-[#EF4444] px-4 py-2 text-[11px] font-bold text-white shadow-md transition-all hover:bg-red-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-[#9CA3AF]"
           >
-            Add to Cart
+            {product.available_stock !== null && Number(product.available_stock) <= 0
+              ? 'Out of stock'
+              : 'Add to Cart'}
           </button>
         </div>
       </div>

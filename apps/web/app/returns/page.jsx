@@ -19,35 +19,36 @@ export default function ReturnsPage() {
       {/* Content */}
       <div className="mx-auto max-w-4xl space-y-10 px-4 py-12">
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">14-Day Return Window</h2>
+          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">No general refunds</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
-            We want you to be completely satisfied with your purchase. If you are not happy with
-            your order for any reason, you may return eligible items within{' '}
-            <strong>14 calendar days</strong> of the delivery date for a full refund or exchange.
+            Online orders are not eligible for general refunds or change-of-mind returns. Please
+            confirm your frame, lens and prescription choices before payment. If an item arrives
+            damaged, incorrect, or has a manufacturing defect, contact Optex support promptly so we
+            can investigate and arrange the appropriate remedy.
           </p>
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Return Conditions</h2>
+          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">When to contact us</h2>
           <p className="mb-4 text-[15px] leading-relaxed text-gray-700">
-            To be eligible for a return, items must meet all of the following conditions:
+            Contact us as soon as possible if any of the following applies:
           </p>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
-              Returned within 14 days of the delivery date
+              The delivered item is damaged or materially different from the order
             </li>
             <li className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
-              Unused, unworn, and in its original condition
+              The wrong frame, size, or prescription configuration was supplied
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>A
+              manufacturing defect is present
             </li>
             <li className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
-              In the original packaging with all tags, case, and cleaning cloth included
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
-              Accompanied by the original receipt or order confirmation
+              You need help with a warranty or fitting issue
             </li>
           </ul>
         </section>
@@ -127,33 +128,13 @@ export default function ReturnsPage() {
           </div>
         </section>
 
-        <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Refund Timeline</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-[20px] border border-gray-200 p-5">
-              <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-[12px] font-bold text-green-700">
-                  MP
-                </div>
-                <p className="font-bold text-gray-900">M-Pesa</p>
-              </div>
-              <p className="text-[15px] text-gray-700">
-                <strong>3–5 business days</strong> after the return is approved and processed.
-              </p>
-            </div>
-            <div className="rounded-[20px] border border-gray-200 p-5">
-              <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-[12px] font-bold text-blue-700">
-                  CC
-                </div>
-                <p className="font-bold text-gray-900">Visa / Mastercard</p>
-              </div>
-              <p className="text-[15px] text-gray-700">
-                <strong>5–7 business days</strong> after the return is approved, subject to your
-                bank's processing times.
-              </p>
-            </div>
-          </div>
+        <section className="rounded-[20px] border border-blue-100 bg-blue-50 p-6">
+          <h2 className="mb-2 text-[22px] font-black text-[#2A3182]">Resolution process</h2>
+          <p className="text-[15px] leading-relaxed text-gray-700">
+            Our support team will review the order, photos, and any relevant prescription or
+            warranty information. If the issue is confirmed, we will explain the available repair,
+            replacement, exchange, or other remedy before proceeding.
+          </p>
         </section>
 
         <section className="border-t border-gray-100 pt-8">

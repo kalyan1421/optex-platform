@@ -235,7 +235,11 @@ const Footer = () => {
                 Lens Replacement
               </li>
               <li className="cursor-pointer transition-colors hover:text-white">Repairs</li>
-              <li className="cursor-pointer transition-colors hover:text-white">Virtual Try-On</li>
+              <li>
+                <Link href="/shop" className="transition-colors hover:text-white">
+                  Explore Frames
+                </Link>
+              </li>
             </ul>
           </div>
 

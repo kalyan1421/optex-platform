@@ -150,8 +150,8 @@ const Promotional = () => {
                 lineHeight: 1.5,
               }}
             >
-              Elevate your look with premium frames from Rayban, Oakley, and more at unbeatable
-              prices.
+              Elevate your look with premium frames from our curated collection, selected for
+              comfort, fit, and everyday style.
             </p>
 
             <button

@@ -39,7 +39,7 @@ export default function TopBar() {
           </a>
         </div>
 
-        {/* Center: Offer Text */}
+        {/* Center: evergreen message; campaign copy belongs in CMS-managed content. */}
         <span
           className="min-w-0 flex-1 truncate text-center"
           style={{
@@ -51,7 +51,7 @@ export default function TopBar() {
             color: '#FFFFFF',
           }}
         >
-          offer on 25th december for christmas collection
+          Quality eyewear and eye care across Kenya
         </span>
 
         {/* Right: Phone — hidden on mobile, room's too tight alongside the offer text */}

@@ -46,8 +46,7 @@ const FinalCTA = () => {
           data-aos="fade-up"
           data-aos-delay="100"
         >
-          Join over 50,000+ satisfied customers who have chosen Optex Opticians for their vision
-          needs.
+          Join customers who trust Optex Opticians for clearer vision and confident style.
         </p>
 
         {/* Buttons Container */}

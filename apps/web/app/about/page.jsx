@@ -464,10 +464,10 @@ export default function AboutPage() {
         <div className="relative z-10 grid w-full max-w-[1440px] grid-cols-2 divide-x divide-white/10 border-white/10 px-6 md:grid-cols-4 lg:px-[132px]">
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center lg:py-[66px]">
             <span className="font-outfit text-[32px] font-extrabold leading-none text-white lg:text-[42px]">
-              50,000+
+              Trusted
             </span>
             <span className="font-poppins text-[13px] font-normal text-[#B3B4D6]">
-              Happy Customers
+              Customers across Kenya
             </span>
           </div>
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center lg:py-[66px]">

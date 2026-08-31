@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { publicApi } from '@/lib/api-server';
@@ -8,6 +7,7 @@ import ProductPurchasePanel from '@/components/product/ProductPurchasePanel';
 import ProductTabs from '@/components/product/ProductTabs';
 import ReviewForm from '@/components/product/ReviewForm';
 import SimilarProducts from '@/components/product/SimilarProducts';
+import ProductGallery from '@/components/product/ProductGallery';
 import { serializeJsonLd } from '@/lib/json-ld';
 
 /**
@@ -229,34 +229,7 @@ export default async function Page(props) {
         {/* Product Section */}
         <div className="mx-auto mb-[60px] flex w-full max-w-[1240px] flex-col gap-[60px] lg:flex-row">
           {/* Image Gallery */}
-          <div className="flex flex-col gap-[16px] lg:w-[590px]">
-            <div className="relative w-full overflow-hidden rounded-[40px] border-[0.8px] border-[#D4D4D4] bg-[#F5F5F5] p-[0.8px] lg:h-[459.6px]">
-              <Image
-                src={mainImage}
-                alt={product.name}
-                fill
-                priority
-                sizes="(min-width: 1024px) 590px, 100vw"
-                className="rounded-[40px] object-contain transition-transform duration-500 hover:scale-105"
-              />
-            </div>
-            <div className="flex w-full snap-x snap-mandatory gap-[16px] overflow-x-auto">
-              {[0, 1, 2, 3].map((idx) => (
-                <div
-                  key={idx}
-                  className={`relative h-[102.9px] w-[102.9px] flex-shrink-0 cursor-pointer snap-center rounded-[16px] border-[0.8px] bg-[#F5F5F5] p-[0.8px] transition-opacity ${idx === 0 ? 'border-[#D4D4D4] opacity-100' : 'border-[#D4D4D4] opacity-60 hover:opacity-100'}`}
-                >
-                  <Image
-                    src={mainImage}
-                    alt={`Thumbnail ${idx + 1}`}
-                    fill
-                    sizes="103px"
-                    className="rounded-[16px] object-contain"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          <ProductGallery product={product} />
 
           {/* Product Info */}
           <div className="flex flex-col lg:w-[590px]">

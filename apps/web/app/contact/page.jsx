@@ -195,6 +195,7 @@ const Contact = () => {
                   {/* Full Name */}
                   <div className="flex flex-col lg:h-[78.6px] lg:w-[206px] lg:gap-[8px]">
                     <label
+                      htmlFor="contact-name"
                       className="text-[#000000] lg:h-[21px]"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
@@ -206,6 +207,7 @@ const Contact = () => {
                       Full Name
                     </label>
                     <input
+                      id="contact-name"
                       type="text"
                       value={form.name}
                       onChange={(e) => updateField('name', e.target.value)}
@@ -223,6 +225,7 @@ const Contact = () => {
                   {/* Email */}
                   <div className="flex flex-col lg:h-[78.6px] lg:w-[206px] lg:gap-[8px]">
                     <label
+                      htmlFor="contact-email"
                       className="text-[#000000] lg:h-[21px]"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
@@ -234,6 +237,7 @@ const Contact = () => {
                       Email Address
                     </label>
                     <input
+                      id="contact-email"
                       type="email"
                       value={form.email}
                       onChange={(e) => updateField('email', e.target.value)}
@@ -255,6 +259,7 @@ const Contact = () => {
                   {/* Phone */}
                   <div className="flex flex-col lg:h-[78.6px] lg:w-[206px] lg:gap-[8px]">
                     <label
+                      htmlFor="contact-phone"
                       className="text-[#000000] lg:h-[21px]"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
@@ -266,6 +271,7 @@ const Contact = () => {
                       Phone Number
                     </label>
                     <input
+                      id="contact-phone"
                       type="tel"
                       value={form.phone}
                       onChange={(e) => updateField('phone', e.target.value)}
@@ -282,6 +288,7 @@ const Contact = () => {
                   {/* Subject */}
                   <div className="flex flex-col lg:h-[78.6px] lg:w-[206px] lg:gap-[8px]">
                     <label
+                      htmlFor="contact-subject"
                       className="text-[#000000] lg:h-[21px]"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
@@ -293,6 +300,7 @@ const Contact = () => {
                       Subject
                     </label>
                     <input
+                      id="contact-subject"
                       type="text"
                       value={form.subject}
                       onChange={(e) => updateField('subject', e.target.value)}
@@ -311,6 +319,7 @@ const Contact = () => {
                 {/* Message */}
                 <div className="flex flex-col lg:h-[174.6px] lg:w-[436px] lg:gap-[8px]">
                   <label
+                    htmlFor="contact-message"
                     className="text-[#000000] lg:h-[21px]"
                     style={{
                       fontFamily: 'Poppins, sans-serif',
@@ -322,6 +331,7 @@ const Contact = () => {
                     Message
                   </label>
                   <textarea
+                    id="contact-message"
                     value={form.message}
                     onChange={(e) => updateField('message', e.target.value)}
                     placeholder="Your message here..."
