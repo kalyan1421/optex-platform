@@ -314,6 +314,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
   }
   const origin = options.baseUrl.replace(/\/+$/, '');
   const apiBase = `${origin}/api`;
+  const REQUEST_TIMEOUT_MS = 20_000;
 
   async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     const { method = 'GET', body, form, query, init } = opts;
@@ -341,12 +342,37 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     }
 
     const url = `${apiBase}${path}${serializeQuery(query)}`;
-    const response = await doFetch(url, {
-      ...init,
-      method,
-      headers,
-      body: payload,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const externalSignal = init?.signal;
+    const abortFromCaller = () => controller.abort();
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener('abort', abortFromCaller, { once: true });
+    }
+
+    let response: Response;
+    try {
+      response = await doFetch(url, {
+        ...init,
+        method,
+        headers,
+        body: payload,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error(
+          externalSignal?.aborted
+            ? 'Request was cancelled.'
+            : 'The request timed out. Please check your connection and try again.',
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+      externalSignal?.removeEventListener('abort', abortFromCaller);
+    }
 
     if (!response.ok) {
       throw await toApiError(response);
