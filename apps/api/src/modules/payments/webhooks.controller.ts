@@ -1,14 +1,13 @@
 import { Body, Controller, Get, Logger, Post, Query } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/decorators';
 import { PaymentsService } from './payments.service';
 
 /**
  * Provider webhook receivers, mounted at `/api/webhooks/...`.
  *
- * Both handlers are `@Public()` (providers carry no JWT) AND `@SkipThrottle()`
- * (the global rate limiter must not drop provider callbacks). They NEVER throw
+ * Both handlers are `@Public()` — providers carry no JWT. They NEVER throw
  * to the provider: M-Pesa always gets `{ ResultCode: 0, ResultDesc: "Accepted" }`
  * and Pesapal always gets its expected JSON ack, so the provider stops retrying
  * even if our internal processing fails — failures are logged for reconcile.
@@ -22,14 +21,29 @@ import { PaymentsService } from './payments.service';
  * believing the posted body, and (c) amount verification before any order is
  * credited (see PaymentsService).
  *
- * These two routes are the only ones exempt from rate limiting. That is
- * deliberate — dropping a provider callback loses a customer's payment
- * confirmation — but it makes them the API's only unbounded surface, and the
- * Pesapal handler amplifies (one inbound request causes one outbound
- * GetTransactionStatus). The control for that is provider IP allow-listing at
- * the edge rather than anything in this file; `load/webhook-flood.js` is how to
- * size it.
+ * ON RATE LIMITING (audit B-04). These were `@SkipThrottle()` — the API's only
+ * unbounded surface — on the reasoning that dropping a provider callback loses
+ * a customer's payment confirmation, with provider IP allow-listing at the edge
+ * named as the compensating control. That allowlist is not in this repository:
+ * not in `docker/`, not in `.github/`, nowhere in the API (the `whitelist`
+ * entries in `docker/kong.yml` are ACL consumer groups, not source-IP rules).
+ * So the stated control was an assumption about an ingress nothing here
+ * describes, while the Pesapal handler amplifies one-to-one — each inbound POST
+ * triggers an outbound GetTransactionStatus, spending Pesapal quota rather than
+ * just CPU.
+ *
+ * The ceiling below is deliberately far above real provider volume: a payment
+ * generates a handful of callbacks, so 600/min per caller cannot drop a genuine
+ * one, while still bounding a flood. It is a backstop, not a replacement for
+ * the edge allowlist — put that in place too, and commit it so it is
+ * reviewable. `load/webhook-flood.js` is how to size both.
  */
+/**
+ * Per-minute ceiling per caller on provider callbacks. Resolved per request so
+ * it stays overridable — same idiom as `authRateLimit` in `auth.controller.ts`.
+ */
+const webhookRateLimit = (): number => Number(process.env.WEBHOOK_RATE_LIMIT ?? 600);
+
 @ApiExcludeController()
 @Controller('webhooks')
 export class WebhooksController {
@@ -39,7 +53,7 @@ export class WebhooksController {
 
   /** Daraja STK callback. Always acks `{ ResultCode: 0, ResultDesc: "Accepted" }`. */
   @Public()
-  @SkipThrottle()
+  @Throttle({ default: { ttl: 60_000, limit: webhookRateLimit } })
   @Post('mpesa')
   async mpesaCallback(@Body() body: unknown): Promise<{ ResultCode: number; ResultDesc: string }> {
     try {
@@ -57,7 +71,7 @@ export class WebhooksController {
    * then re-query GetTransactionStatus. Responds with Pesapal's expected ack.
    */
   @Public()
-  @SkipThrottle()
+  @Throttle({ default: { ttl: 60_000, limit: webhookRateLimit } })
   @Post('pesapal')
   async pesapalIpnPost(
     @Body() body: PesapalIpnBody,
@@ -67,7 +81,7 @@ export class WebhooksController {
   }
 
   @Public()
-  @SkipThrottle()
+  @Throttle({ default: { ttl: 60_000, limit: webhookRateLimit } })
   @Get('pesapal')
   async pesapalIpnGet(@Query() query: PesapalIpnQuery): Promise<PesapalIpnAck> {
     return this.processPesapalIpn({}, query);

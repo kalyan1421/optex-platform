@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { escapeForPostgrestFilter } from '../../common/postgrest';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
@@ -63,7 +64,7 @@ export class BranchesService {
 
     const term = q?.trim();
     if (term) {
-      const pattern = `%${this.escapeLike(term)}%`;
+      const pattern = `%${escapeForPostgrestFilter(term)}%`;
       query = query.or(`name.ilike.${pattern},address.ilike.${pattern}`);
     }
 
@@ -84,7 +85,7 @@ export class BranchesService {
 
     const term = q?.trim();
     if (term) {
-      const pattern = `%${this.escapeLike(term)}%`;
+      const pattern = `%${escapeForPostgrestFilter(term)}%`;
       query = query.or(`name.ilike.${pattern},address.ilike.${pattern}`);
     }
 
@@ -204,20 +205,5 @@ export class BranchesService {
       resourceId: id,
       before,
     });
-  }
-
-  /**
-   * Makes user input safe inside a PostgREST `or(...)` filter string.
-   *
-   * Two separate concerns, and only the first was handled before:
-   *   - `%` and `_` are `ilike` wildcards, escaped so they match literally.
-   *   - `,` `.` `(` `)` are PostgREST's own filter DELIMITERS. Left unescaped,
-   *     a term like `x,is_active.eq.false` injects an extra OR condition and
-   *     changes which rows the query returns. Same class as the confirmed
-   *     injection on the payments path (CODE-REVIEW C-2). Stripped to spaces,
-   *     matching the approach already used in customers.service.ts.
-   */
-  private escapeLike(value: string): string {
-    return value.replace(/[(),.]/g, ' ').replace(/[%_]/g, (match) => `\\${match}`);
   }
 }

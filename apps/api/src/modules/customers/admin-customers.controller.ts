@@ -7,9 +7,14 @@ import { AdminCustomerDto } from './dto/customer.dto';
 import { SetCustomerStatusDto } from './dto/set-customer-status.dto';
 
 /**
- * Super-admin customer directory. Mounted at `/api/admin/customers` (global
- * prefix applied in `main.ts`). Every route requires a `customers.*`
- * permission, enforced by the global `PermissionsGuard` via `@RequirePermission`.
+ * Customer directory. Mounted at `/api/admin/customers` (global prefix applied
+ * in `main.ts`). Every route requires a `customers.*` permission, enforced by
+ * the global `PermissionsGuard` via `@RequirePermission`.
+ *
+ * `customers.read` is held by the two branch-scoped roles as well as Super
+ * Admin, so the list is branch-scoped server-side from the caller's JWT
+ * (audit A-01) — never from a client-supplied branch. `customers.write` is
+ * Super Admin only, so `setStatus` needs no equivalent filter.
  */
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -26,8 +31,13 @@ export class AdminCustomersController {
     description: 'Case-insensitive match across name, email and phone.',
   })
   @ApiOkResponse({ type: [AdminCustomerDto], description: 'Customers, newest signup first' })
-  list(@Query('search') search?: string): Promise<AdminCustomerDto[]> {
-    return this.customers.listForAdmin(search?.trim() || undefined);
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query('search') search?: string,
+  ): Promise<AdminCustomerDto[]> {
+    // `user.branchId` is set only for the branch-scoped roles; Super Admin
+    // passes `undefined` and keeps the unscoped directory.
+    return this.customers.listForAdmin(search?.trim() || undefined, user.branchId ?? undefined);
   }
 
   @RequirePermission('customers.write')

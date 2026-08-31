@@ -94,22 +94,36 @@ async function bootstrap(): Promise<void> {
   // Graceful shutdown (closes DB/queue handles, flushes logs).
   app.enableShutdownHooks();
 
-  // OpenAPI docs at /api/docs.
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('OPTEX API')
-    .setDescription('Backend API for the OPTEX eyewear retail platform (Kenya)')
-    .setVersion('0.1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'supabase')
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  // OpenAPI docs at /api/docs — NON-PRODUCTION ONLY.
+  //
+  // Audit B-02: `SwaggerModule.setup` mounts Express middleware, so it sits
+  // outside the Nest guard chain entirely — neither `SupabaseAuthGuard` nor the
+  // throttler sees it, and `@Public()` has nothing to do with it. Left mounted
+  // in production it hands any anonymous caller a complete map of the admin
+  // surface: every route, every DTO field, every permission name. That grants
+  // no access on its own, but it removes all the guesswork from attacking the
+  // routes it advertises.
+  const swaggerEnabled =
+    process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('OPTEX API')
+      .setDescription('Backend API for the OPTEX eyewear retail platform (Kenya)')
+      .setVersion('0.1.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'supabase')
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
 
   const logger = app.get(PinoLogger);
   logger.log(`OPTEX API listening on http://localhost:${port}/api`);
-  logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
+  if (swaggerEnabled) {
+    logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
+  }
 }
 
 void bootstrap();

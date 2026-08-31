@@ -52,6 +52,7 @@ export class AdjustmentsService {
   }
 
   async create(dto: CreateAdjustmentDto, actorUser: AuthUser): Promise<AdjustmentDto> {
+    this.assertInScope(actorUser, dto.branch_id);
     this.validateItems(dto.items);
 
     const { data, error } = await this.db.rpc('post_adjustment', {
@@ -76,7 +77,7 @@ export class AdjustmentsService {
     }
 
     const adjustmentId = data as string;
-    const created = await this.findById(adjustmentId);
+    const created = await this.findById(adjustmentId, actorUser);
     await this.auditLog.record({
       actor: actorUser,
       action: 'adjustments.create',
@@ -88,12 +89,38 @@ export class AdjustmentsService {
     return created;
   }
 
-  async findAllForAdmin(filters: { branchId?: string }): Promise<AdjustmentDto[]> {
+  /**
+   * Resolves the branch a request may act on.
+   *
+   * Audit B-03. These R2 surfaces took `branchId` straight off the query string
+   * or request body with no reference to the caller, unlike `inventory.service`
+   * and `ledger.service` in this same module, which both derive it from
+   * `user.branchId`. Nothing is exposed by that today — `inventory.count`,
+   * `inventory.adjust` and `inventory.transfer` are granted only to
+   * `inventory_manager` and `super_admin` (migration 0026), neither of which is
+   * branch-scoped — but the RBAC matrix is DATA, editable from the admin panel
+   * without a deploy or a review. Granting one of these to a branch role would
+   * silently open cross-branch access with no code change. Enforcing it here
+   * while it is still a no-op is what keeps that from being true later.
+   */
+  private scopedBranch(user: AuthUser, requested?: string): string | undefined {
+    return user.branchId ?? requested;
+  }
+
+  /** 404s a row outside a branch-scoped caller's branch (existence stays hidden). */
+  private assertInScope(user: AuthUser, branchId: string | null): void {
+    if (user.branchId && branchId !== user.branchId) {
+      throw new NotFoundException('Adjustment not found');
+    }
+  }
+
+  async findAllForAdmin(filters: { branchId?: string }, user: AuthUser): Promise<AdjustmentDto[]> {
+    const branchId = this.scopedBranch(user, filters.branchId);
     let query = this.db
       .from('stock_adjustments')
       .select('id, branch_id, notes, created_at')
       .order('created_at', { ascending: false });
-    if (filters.branchId) query = query.eq('branch_id', filters.branchId);
+    if (branchId) query = query.eq('branch_id', branchId);
 
     const { data, error } = await query;
     if (error) {
@@ -104,7 +131,7 @@ export class AdjustmentsService {
     return Promise.all(headers.map((h) => this.attachItems(h)));
   }
 
-  async findById(id: string): Promise<AdjustmentDto> {
+  async findById(id: string, user: AuthUser): Promise<AdjustmentDto> {
     const { data, error } = await this.db
       .from('stock_adjustments')
       .select('id, branch_id, notes, created_at')
@@ -115,6 +142,7 @@ export class AdjustmentsService {
       throw new InternalServerErrorException('Failed to fetch adjustment');
     }
     if (!data) throw new NotFoundException(`Adjustment ${id} not found`);
+    this.assertInScope(user, (data as AdjustmentHeaderRow).branch_id);
     return this.attachItems(data as AdjustmentHeaderRow);
   }
 

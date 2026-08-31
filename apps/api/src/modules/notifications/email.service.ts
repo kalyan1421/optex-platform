@@ -98,7 +98,12 @@ export class EmailService {
         return { ok: false };
       }
 
-      this.logger.log(`Email dispatched to ${recipient}`);
+      // Audit C-03: the recipient address used to be logged here, putting a
+      // customer's email into production logs on every send and inheriting the
+      // aggregator's retention. `notification_log` (migration 0023) already
+      // holds the durable record, so log the handle and resolve it there when
+      // someone genuinely needs the address.
+      this.logger.log(`Email dispatched (${input.dedupeKey ?? 'no dedupe key'})`);
       await this.log.markSent(logId);
       return { ok: true };
     } catch (error) {
