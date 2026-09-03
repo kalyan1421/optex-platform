@@ -7,7 +7,9 @@
 // double slash Nest's router treats as a different, nonexistent path, so
 // every proxied request silently 404s with no build-time or runtime warning.
 const API_PROXY_ORIGIN = (
-  process.env.API_PROXY_ORIGIN || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:1111'
+  process.env.API_PROXY_ORIGIN ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://127.0.0.1:1111'
 ).replace(/\/+$/, '');
 
 /**
@@ -26,6 +28,9 @@ function supabaseOrigin() {
 }
 
 /** @type {import('next').NextConfig} */
+/** HTTPS-only hardening is skipped in dev, where the server speaks plain http. */
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
   transpilePackages: [
     '@optex/ui',
@@ -91,7 +96,12 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
+              // Product images come from Supabase Storage. `https:` alone misses
+              // local Docker Supabase, which serves storage over plain http on
+              // :54321, so every uploaded product thumbnail was CSP-blocked in
+              // dev and rendered as a broken image. apps/web already appends
+              // the origin here; this config was never brought in line.
+              `img-src 'self' data: blob: https: ${supabaseOrigin()}`.trim(),
               "font-src 'self' data:",
               // Same-origin for the API, plus the Supabase origin the admin
               // middleware and browser client authenticate against.
@@ -102,12 +112,19 @@ const nextConfig = {
               // — same bug as apps/web/next.config.js. maps.google.com
               // redirects to www.google.com/maps/embed?..., scoped to /maps/
               // rather than the bare origin.
-              "frame-src https://www.google.com/maps/ https://maps.google.com",
+              'frame-src https://www.google.com/maps/ https://maps.google.com',
               "frame-ancestors 'none'",
               "form-action 'self'",
               "base-uri 'self'",
               "object-src 'none'",
-              'upgrade-insecure-requests',
+              // Production-only: over plain http (local dev) this upgrades
+              // same-origin requests to https, and Next's RSC prefetches then
+              // die with ERR_SSL_PROTOCOL_ERROR against a dev server that
+              // speaks no TLS. Next falls back to a full browser navigation,
+              // so the app still works but every client-side link reloads the
+              // page. Deployments are https end-to-end, where the directive
+              // does its real job.
+              ...(isProd ? ['upgrade-insecure-requests'] : []),
             ].join('; '),
           },
         ],

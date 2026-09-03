@@ -6,6 +6,7 @@
 #   /auth/v1/*     → supabase-auth:9999   (GoTrue)
 #   /rest/v1/*     → supabase-rest:3000   (PostgREST)
 #   /storage/v1/*  → supabase-storage:5000
+#   /storage/v1/object/public/*  → same, but unauthenticated (public buckets)
 #   /pg/*          → supabase-meta:8080   (admin only)
 #
 # Credentials (well-known local-dev keys — same as `supabase start` defaults):
@@ -87,6 +88,28 @@ services:
           whitelist:
             - anon
             - admin
+
+  # ── Storage: public objects (no key — this is what "public bucket" means) ──
+  #
+  # Must be declared before `storage-v1` and carries no key-auth/acl: a public
+  # object is fetched by the browser straight from an <img src>, which sends no
+  # apikey header. Without this route the catch-all `/storage/v1/` below
+  # answered "No API key found in request" with a 401, so every uploaded
+  # product image rendered as a broken image in the admin panel and the
+  # storefront. Hosted Supabase already exposes this path unauthenticated;
+  # only the local gateway was stricter than production.
+  #
+  # `strip_path` removes the matched prefix, so the service URL carries the
+  # `/object/public` segment to keep the upstream path intact.
+  - name: storage-v1-public
+    url: http://supabase-storage:5000/object/public
+    routes:
+      - name: storage-v1-object-public
+        strip_path: true
+        paths:
+          - /storage/v1/object/public
+    plugins:
+      - name: cors
 
   # ── Storage ──────────────────────────────────────────────────────────────
   - name: storage-v1

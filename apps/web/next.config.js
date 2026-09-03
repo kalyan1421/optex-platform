@@ -35,6 +35,9 @@ function supabaseOrigin() {
 }
 
 /** @type {import('next').NextConfig} */
+/** HTTPS-only hardening is skipped in dev, where the server speaks plain http. */
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
   transpilePackages: [
     '@optex/ui',
@@ -143,7 +146,14 @@ const nextConfig = {
               "form-action 'self'",
               "base-uri 'self'",
               "object-src 'none'",
-              'upgrade-insecure-requests',
+              // Production-only: over plain http (local dev) this upgrades
+              // same-origin requests to https, and Next's RSC prefetches then
+              // die with ERR_SSL_PROTOCOL_ERROR against a dev server that
+              // speaks no TLS. Next falls back to a full browser navigation,
+              // so the app still works but every client-side link reloads the
+              // page. Deployments are https end-to-end, where the directive
+              // does its real job.
+              ...(isProd ? ['upgrade-insecure-requests'] : []),
             ].join('; '),
           },
         ],
