@@ -5,6 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
@@ -440,6 +450,15 @@ export function Products() {
   const [viewProduct, setViewProduct] = useState<AdminProduct | undefined>();
   /** Validation message from the API for create / update / deactivate. */
   const [formError, setFormError] = useState('');
+  /**
+   * Product pending deactivation confirmation. An in-app AlertDialog rather
+   * than `window.confirm()` — a native confirm() silently returns `false`
+   * with no dialog at all once a user has ever dismissed a prior one with
+   * "Prevent this page from creating additional dialogs," which made
+   * deactivating look like it did nothing.
+   */
+  const [deactivateTarget, setDeactivateTarget] = useState<AdminProduct | undefined>();
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     Promise.all([fetchAllProducts(), api.catalog.listCategories()])
@@ -541,15 +560,21 @@ export function Products() {
     }
   }
 
-  async function handleDeleteProduct(id: string) {
-    if (!confirm('Deactivate this product? It will be hidden from the storefront.')) return;
+  async function handleDeleteProduct() {
+    if (!deactivateTarget) return;
+    const id = deactivateTarget.id;
+    setDeactivating(true);
     try {
       await api.admin.products.remove(id);
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: false } : p)));
       setFormError('');
+      setDeactivateTarget(undefined);
     } catch (err) {
       console.error('deactivate product failed:', err);
       setFormError((err as Error)?.message ?? 'Could not deactivate the product.');
+      setDeactivateTarget(undefined);
+    } finally {
+      setDeactivating(false);
     }
   }
 
@@ -617,6 +642,35 @@ export function Products() {
         }}
         onEdit={setEditProduct}
       />
+
+      <AlertDialog
+        open={!!deactivateTarget}
+        onOpenChange={(v) => {
+          if (!v && !deactivating) setDeactivateTarget(undefined);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate {deactivateTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It will be hidden from the storefront. You can restore it later from this list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deactivating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deactivating}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDeleteProduct();
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deactivating ? 'Deactivating…' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {formError && (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
@@ -743,7 +797,7 @@ export function Products() {
                                 size="icon"
                                 className="h-7 w-7 text-red-500 hover:text-red-700"
                                 title="Deactivate (hides it from the storefront)"
-                                onClick={() => handleDeleteProduct(product.id)}
+                                onClick={() => setDeactivateTarget(product)}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
