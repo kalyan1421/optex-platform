@@ -136,6 +136,24 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
     }
+
+    /*
+     * The rule above only ever covered AOS's own scroll-reveal animations.
+     * Every other transition in the app — product-card hover zoom, button
+     * press scale, filter-toggle rotation, and anything else built with
+     * Tailwind's transition-duration utility classes — ignored this media
+     * query entirely, since those utilities have no shared selector to hang
+     * a single override off. This is the standard broad "kill all motion"
+     * rule: it neutralizes every animation/transition site-wide rather than
+     * requiring each new hover effect to remember to opt in.
+     */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 

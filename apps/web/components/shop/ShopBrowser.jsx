@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
-import { formatKes } from '@optex/ui';
+import { formatKesNumber } from '@optex/ui';
 import { getProductImageUrl } from '@/lib/product-image';
 import StarRating from '@/components/ui/StarRating';
 import CompareToggle from '@/components/compare/CompareToggle';
@@ -100,8 +100,8 @@ export default function ShopBrowser({ products, categories }) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:w-[918px] lg:grid-cols-3 lg:gap-[24px]">
-            {pageItems.map((product) => (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:w-[918px] lg:grid-cols-3 lg:gap-[24px]">
+            {pageItems.map((product, index) => (
               <div
                 key={product.id}
                 className="group relative flex w-full flex-col overflow-hidden border-[#D4D4D4] bg-[#FFFFFF] transition-shadow duration-300 hover:shadow-lg lg:h-[480px] lg:w-[290px]"
@@ -110,16 +110,26 @@ export default function ShopBrowser({ products, categories }) {
                   borderWidth: '0.8px',
                 }}
               >
-                {/* Image Box */}
-                <div className="relative flex w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:h-[288.4px]">
+                {/* Image Box. `aspect-square` gives this a real height below
+                    `lg:` — without it, the box had no height at all outside
+                    the `lg:h-[288.4px]` class, and since the <Image> inside
+                    uses `fill` (position: absolute, contributes nothing to
+                    parent height), the whole box — and every product photo
+                    on the page — collapsed to 0px on any screen under
+                    1024px. `lg:aspect-auto` hands back to the fixed desktop
+                    height once there's room for one. */}
+                <div className="relative flex aspect-square w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:aspect-auto lg:h-[288.4px]">
                   <CompareToggle
                     product={product}
                     image={getProductImageUrl(product)}
-                    className="absolute left-[16px] top-[16px] z-10"
+                    className="absolute left-4 top-4 z-10"
                   />
                   <WishlistToggle
                     productId={product.id}
-                    className="absolute left-[56px] top-[16px] z-10"
+                    // 16px (compare's left) + 44px (its new touch-target
+                    // width) + 8px minimum gap = 68px, so growing compare to
+                    // meet the 44×44 minimum doesn't run it into this.
+                    className="absolute left-[68px] top-4 z-10"
                   />
                   {/* Frame-shape pill — omitted rather than guessed when the
                   product has no shape set, so the card never labels an
@@ -141,20 +151,36 @@ export default function ShopBrowser({ products, categories }) {
                       alt={product.name}
                       fill
                       sizes="(min-width: 1024px) 22vw, 45vw"
+                      // First row (and most of the second, across
+                      // breakpoints) — this page's Largest Contentful Paint
+                      // is almost certainly one of these, and Next lazy-loads
+                      // <Image> by default.
+                      priority={index < 4}
                       className="object-contain transition-transform duration-500 group-hover:scale-105"
                     />
                   </Link>
                 </div>
 
-                {/* Content Area */}
-                <div className="flex flex-col lg:mx-[24.8px] lg:mt-[24px] lg:w-[240.4px]">
-                  {/* Row 1: Title & Brand */}
-                  <div className="flex items-start justify-between lg:h-[27px] lg:w-[240.4px]">
-                    <h3 className="font-poppins truncate font-semibold text-[#000000] transition-colors group-hover:text-[#2E3192] lg:w-[135px] lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]">
+                {/* Content Area. `mx-4 mt-4` is the mobile-first base — this
+                    div had no spacing at all outside `lg:`, so text sat flush
+                    against the card's edge below 1024px. */}
+                <div className="mx-4 mb-4 mt-4 flex flex-col lg:mx-[24.8px] lg:mb-0 lg:mt-[24px] lg:w-[240.4px]">
+                  {/* Row 1: Title & Brand. The title used to be a hardcoded
+                      lg:w-[135px] truncate with no way to see the cut-off
+                      name — most of the real catalogue ("Full Rim Rectangle
+                      Classic Eyeglasses — Brown/Blue") lost most of its name.
+                      `min-w-0 flex-1` lets it use whatever space is actually
+                      available instead of a desktop-tuned pixel width, and
+                      `title=` gives a hover tooltip with the rest. */}
+                  <div className="flex items-start justify-between gap-2 lg:h-[27px] lg:w-[240.4px]">
+                    <h3
+                      title={product.name}
+                      className="font-poppins min-w-0 flex-1 truncate font-semibold text-[#000000] transition-colors group-hover:text-[#2E3192] lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]"
+                    >
                       {product.name}
                     </h3>
                     <span
-                      className="text-right uppercase text-[#2E3192] lg:h-[21px] lg:w-[57px]"
+                      className="shrink-0 truncate text-right uppercase text-[#2E3192] lg:h-[21px] lg:w-[57px]"
                       style={{
                         fontFamily: 'Arimo, sans-serif',
                         fontSize: '14px',
@@ -171,11 +197,11 @@ export default function ShopBrowser({ products, categories }) {
                   <StarRating
                     rating={product.rating_avg}
                     count={product.rating_count}
-                    className="lg:mt-[6px]"
+                    className="mt-1.5 lg:mt-[6px]"
                   />
 
                   {/* Row 2: Description */}
-                  <div className="lg:mt-[8px] lg:h-[42px] lg:w-[240.4px]">
+                  <div className="mt-2 lg:mt-[8px] lg:h-[42px] lg:w-[240.4px]">
                     <p
                       className="font-inter line-clamp-2 text-[#717182]"
                       style={{ fontSize: '14px', lineHeight: '21px' }}
@@ -186,7 +212,7 @@ export default function ShopBrowser({ products, categories }) {
                   </div>
 
                   {/* Row 3: Price & Action */}
-                  <div className="flex items-center justify-between lg:mt-[24px] lg:h-[41px] lg:w-[240.4px]">
+                  <div className="mt-4 flex items-center justify-between lg:mt-[24px] lg:h-[41px] lg:w-[240.4px]">
                     {/* Price Block */}
                     <div className="flex items-baseline gap-[4px] text-[#2E3192] lg:mt-[0.8px] lg:h-[33px] lg:w-[101px]">
                       <span
@@ -199,11 +225,15 @@ export default function ShopBrowser({ products, categories }) {
                         className="text-[22px] font-bold"
                         style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
                       >
-                        {Number(product.price_kes).toLocaleString()}
+                        {formatKesNumber(product.price_kes, { precise: false })}
                       </span>
                     </div>
 
-                    {/* Button */}
+                    {/* Button. Had no base sizing at all outside `lg:` — on
+                        mobile it shrank to whatever its padding-less content
+                        demanded, well under the 44px touch-target minimum.
+                        `h-11` (44px) is the mobile-first base and the new
+                        `lg:` height; width/radius stay desktop-specific. */}
                     <button
                       type="button"
                       disabled={
@@ -218,7 +248,7 @@ export default function ShopBrowser({ products, categories }) {
                           quantity: 1,
                         })
                       }
-                      className="flex items-center justify-center bg-[#E53935] text-white transition-all hover:bg-[#D32F2F] active:scale-95 disabled:cursor-not-allowed disabled:bg-[#9CA3AF] lg:h-[41px] lg:w-[121.375px] lg:rounded-[24px]"
+                      className="flex h-11 items-center justify-center rounded-full bg-[#E53935] px-5 text-white transition-all hover:bg-[#D32F2F] active:scale-95 disabled:cursor-not-allowed disabled:bg-[#9CA3AF] lg:h-11 lg:w-[121.375px] lg:rounded-[24px] lg:px-0"
                     >
                       <span
                         className="flex items-center justify-center whitespace-nowrap text-center text-[14px] font-semibold lg:h-[21px] lg:w-[82px]"

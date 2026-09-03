@@ -26,7 +26,9 @@ export default function CompareToggle({ product, image, className = '' }) {
         compared ? `Remove ${product.name} from comparison` : `Add ${product.name} to comparison`
       }
       title={compared ? 'Remove from comparison' : 'Add to comparison'}
-      className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+      // h-11 w-11 (44×44px) meets the WCAG 2.5.5 / Apple HIG minimum touch
+      // target — was 32×32px.
+      className={`flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${
         compared
           ? 'border-[#2A3182] bg-[#2A3182] text-white'
           : 'border-[#D4D4D4] bg-white text-[#717182] hover:border-[#2A3182] hover:text-[#2A3182]'

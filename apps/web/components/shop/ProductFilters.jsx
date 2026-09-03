@@ -2,6 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 
+const FilterIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 9h12M10 14h4M11 19h2" />
+  </svg>
+);
+
+const CaretDownIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+  </svg>
+);
+
 /**
  * Shared product faceting for /shop and /search.
  *
@@ -103,7 +115,7 @@ export function FacetBlock({ title, options, active, onSelect, counts }) {
                 aria-pressed={isActive}
                 disabled={isEmpty}
                 onClick={() => onSelect(opt)}
-                className={`flex w-full items-center px-[16px] text-left capitalize transition-colors lg:h-[40px] lg:w-[250px] lg:rounded-[10px] ${
+                className={`flex h-11 w-full items-center px-[16px] text-left capitalize transition-colors lg:w-[250px] lg:rounded-[10px] ${
                   isActive
                     ? 'bg-[#2E3192] text-white'
                     : isEmpty
@@ -264,64 +276,98 @@ export function ProductFilterSidebar({
   clearFilters,
   hasProducts,
 }) {
-  return (
-    <aside
-      className={`w-full flex-shrink-0 lg:w-[250px] lg:flex-col lg:gap-[32px] ${hasProducts ? 'lg:flex' : 'hidden'}`}
-    >
-      {categories.length > 0 && (
-        <FacetBlock
-          title="Categories"
-          options={categories.map((c) => c.name)}
-          active={selection.category}
-          onSelect={setCategory}
-          counts={categoryCounts}
-        />
-      )}
-      <FacetBlock
-        title="Brands"
-        options={brands}
-        active={selection.brand}
-        onSelect={setBrand}
-        counts={brandCounts}
-      />
-      <FacetBlock
-        title="Price"
-        options={PRICE_BANDS.map((b) => b.name)}
-        active={selection.price}
-        onSelect={setPrice}
-        counts={priceCounts}
-      />
-      <FacetBlock
-        title="Frame shape"
-        options={shapes}
-        active={selection.shape}
-        onSelect={setShape}
-        counts={shapeCounts}
-      />
-      <FacetBlock
-        title="Gender"
-        options={genders}
-        active={selection.gender}
-        onSelect={setGender}
-        counts={genderCounts}
-      />
-      <FacetBlock
-        title="Material"
-        options={materials}
-        active={selection.material}
-        onSelect={setMaterial}
-        counts={materialCounts}
-      />
+  // Below `lg:`, the full six-facet list used to render inline, in full,
+  // above the product grid — a shopper had to scroll past Categories,
+  // Brands, Price and whichever of Shape/Gender/Material applied before
+  // reaching a single product. Collapsed behind a toggle on mobile only;
+  // `lg:` ignores this entirely and always shows every facet, matching the
+  // existing desktop behavior exactly.
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-      {activeFilters > 0 && (
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="font-inter mt-[8px] flex h-[40px] w-full items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] text-[15px] text-[#2E3192] transition-colors hover:bg-gray-50 lg:w-[250px]"
-        >
-          Clear all filters ({activeFilters})
-        </button>
-      )}
+  if (!hasProducts) return null;
+
+  return (
+    <aside className="w-full flex-shrink-0 lg:w-[250px]">
+      <button
+        type="button"
+        onClick={() => setMobileOpen((v) => !v)}
+        aria-expanded={mobileOpen}
+        aria-controls="shop-filter-panel"
+        className="flex h-11 w-full items-center justify-between rounded-[10px] border-[0.8px] border-[#D4D4D4] px-4 text-[15px] font-medium text-[#0A0A0A] lg:hidden"
+      >
+        <span className="flex items-center gap-2">
+          <FilterIcon />
+          Filters
+          {activeFilters > 0 && (
+            <span className="rounded-full bg-[#2E3192] px-2 py-0.5 text-[12px] font-semibold text-white">
+              {activeFilters}
+            </span>
+          )}
+        </span>
+        <span className={`transition-transform ${mobileOpen ? 'rotate-180' : ''}`}>
+          <CaretDownIcon />
+        </span>
+      </button>
+
+      <div
+        id="shop-filter-panel"
+        className={`mt-4 flex-col gap-[32px] lg:mt-0 lg:flex ${mobileOpen ? 'flex' : 'hidden'}`}
+      >
+        {categories.length > 0 && (
+          <FacetBlock
+            title="Categories"
+            options={categories.map((c) => c.name)}
+            active={selection.category}
+            onSelect={setCategory}
+            counts={categoryCounts}
+          />
+        )}
+        <FacetBlock
+          title="Brands"
+          options={brands}
+          active={selection.brand}
+          onSelect={setBrand}
+          counts={brandCounts}
+        />
+        <FacetBlock
+          title="Price"
+          options={PRICE_BANDS.map((b) => b.name)}
+          active={selection.price}
+          onSelect={setPrice}
+          counts={priceCounts}
+        />
+        <FacetBlock
+          title="Frame shape"
+          options={shapes}
+          active={selection.shape}
+          onSelect={setShape}
+          counts={shapeCounts}
+        />
+        <FacetBlock
+          title="Gender"
+          options={genders}
+          active={selection.gender}
+          onSelect={setGender}
+          counts={genderCounts}
+        />
+        <FacetBlock
+          title="Material"
+          options={materials}
+          active={selection.material}
+          onSelect={setMaterial}
+          counts={materialCounts}
+        />
+
+        {activeFilters > 0 && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="font-inter mt-[8px] flex h-11 w-full items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] text-[15px] text-[#2E3192] transition-colors hover:bg-gray-50 lg:w-[250px]"
+          >
+            Clear all filters ({activeFilters})
+          </button>
+        )}
+      </div>
     </aside>
   );
 }
@@ -335,7 +381,7 @@ export function SortSelect({ value, onChange }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="font-inter h-[36px] cursor-pointer rounded-[10px] border-[0.8px] border-[#D4D4D4] bg-white px-[12px] text-[15px] text-[#0A0A0A] focus:border-[#2E3192] focus:outline-none"
+        className="font-inter h-11 cursor-pointer rounded-[10px] border-[0.8px] border-[#D4D4D4] bg-white px-[12px] text-[15px] text-[#0A0A0A] focus:border-[#2E3192] focus:outline-none"
       >
         {SORT_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>
@@ -359,7 +405,7 @@ export function Pagination({ page, pageCount, onChange }) {
         type="button"
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
-        className="font-inter flex h-[40px] items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] px-[16px] text-[15px] text-[#0A0A0A] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="font-inter flex h-11 items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] px-[16px] text-[15px] text-[#0A0A0A] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Previous
       </button>
@@ -370,7 +416,7 @@ export function Pagination({ page, pageCount, onChange }) {
           type="button"
           onClick={() => onChange(n)}
           aria-current={n === page ? 'page' : undefined}
-          className={`font-inter flex h-[40px] w-[40px] items-center justify-center rounded-[10px] text-[15px] transition-colors ${
+          className={`font-inter flex h-11 w-11 items-center justify-center rounded-[10px] text-[15px] transition-colors ${
             n === page
               ? 'bg-[#2E3192] text-white'
               : 'border-[0.8px] border-[#D4D4D4] text-[#0A0A0A] hover:bg-gray-50'
@@ -384,7 +430,7 @@ export function Pagination({ page, pageCount, onChange }) {
         type="button"
         onClick={() => onChange(page + 1)}
         disabled={page === pageCount}
-        className="font-inter flex h-[40px] items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] px-[16px] text-[15px] text-[#0A0A0A] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="font-inter flex h-11 items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] px-[16px] text-[15px] text-[#0A0A0A] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>

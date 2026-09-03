@@ -86,7 +86,9 @@ export default function WishlistToggle({ productId, variant = 'icon', className 
       aria-pressed={active}
       aria-label={label}
       title={label}
-      className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-gray-600 shadow-md transition-all hover:scale-105 hover:text-[#E53935] disabled:opacity-60 ${className}`}
+      // h-11 w-11 (44×44px) meets the WCAG 2.5.5 / Apple HIG minimum touch
+      // target — was 36×36px.
+      className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-gray-600 shadow-md transition-all hover:scale-105 hover:text-[#E53935] disabled:opacity-60 ${className}`}
     >
       {heart}
     </button>
