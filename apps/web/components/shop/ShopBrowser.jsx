@@ -35,7 +35,7 @@ const PAGE_SIZE = 12;
 export default function ShopBrowser({ products, categories }) {
   const [sortBy, setSortBy] = useState('featured');
   const [page, setPage] = useState(1);
-  const { addToCart } = useCart();
+  const { addToCart, items: cartItems } = useCart();
 
   const { filtered, activeFilters, clearFilters, selection, sidebarProps } = useProductFacets(
     products,
@@ -101,16 +101,26 @@ export default function ShopBrowser({ products, categories }) {
           )}
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:w-[918px] lg:grid-cols-3 lg:gap-[24px]">
-            {pageItems.map((product, index) => (
-              <div
-                key={product.id}
-                className="group relative flex w-full flex-col overflow-hidden border-[#D4D4D4] bg-[#FFFFFF] transition-shadow duration-300 hover:shadow-lg lg:h-[480px] lg:w-[290px]"
-                style={{
-                  borderRadius: '32px',
-                  borderWidth: '0.8px',
-                }}
-              >
-                {/* Image Box. `aspect-square` gives this a real height below
+            {pageItems.map((product, index) => {
+              // Sums every cart line for this product regardless of variant,
+              // matching how CartContext itself matches a line back to a
+              // product (`i.productId ?? i.id`) — a customer who added a
+              // colour variant from the PDP should still see the total here,
+              // not just a variant-less count.
+              const qtyInCart = cartItems.reduce(
+                (sum, i) => ((i.productId ?? i.id) === product.id ? sum + i.quantity : sum),
+                0,
+              );
+              return (
+                <div
+                  key={product.id}
+                  className="group relative flex w-full flex-col overflow-hidden border-[#D4D4D4] bg-[#FFFFFF] transition-shadow duration-300 hover:shadow-lg lg:h-[480px] lg:w-[290px]"
+                  style={{
+                    borderRadius: '32px',
+                    borderWidth: '0.8px',
+                  }}
+                >
+                  {/* Image Box. `aspect-square` gives this a real height below
                     `lg:` — without it, the box had no height at all outside
                     the `lg:h-[288.4px]` class, and since the <Image> inside
                     uses `fill` (position: absolute, contributes nothing to
@@ -118,151 +128,172 @@ export default function ShopBrowser({ products, categories }) {
                     on the page — collapsed to 0px on any screen under
                     1024px. `lg:aspect-auto` hands back to the fixed desktop
                     height once there's room for one. */}
-                <div className="relative flex aspect-square w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:aspect-auto lg:h-[288.4px]">
-                  <CompareToggle
-                    product={product}
-                    image={getProductImageUrl(product)}
-                    className="absolute left-4 top-4 z-10"
-                  />
-                  <WishlistToggle
-                    productId={product.id}
-                    // 16px (compare's left) + 44px (its new touch-target
-                    // width) + 8px minimum gap = 68px, so growing compare to
-                    // meet the 44×44 minimum doesn't run it into this.
-                    className="absolute left-[68px] top-4 z-10"
-                  />
-                  {/* Frame-shape pill — omitted rather than guessed when the
+                  <div className="relative flex aspect-square w-full shrink-0 items-center justify-center bg-[#F5F5F5] lg:aspect-auto lg:h-[288.4px]">
+                    <CompareToggle
+                      product={product}
+                      image={getProductImageUrl(product)}
+                      className="absolute left-4 top-4 z-10"
+                    />
+                    <WishlistToggle
+                      productId={product.id}
+                      // 16px (compare's left) + 44px (its new touch-target
+                      // width) + 8px minimum gap = 68px, so growing compare to
+                      // meet the 44×44 minimum doesn't run it into this.
+                      className="absolute left-[68px] top-4 z-10"
+                    />
+                    {/* Frame-shape pill — omitted rather than guessed when the
                   product has no shape set, so the card never labels an
                   eyeglass frame "Sunglasses". */}
-                  {product.frame_shape && (
-                    <div className="absolute right-[16px] top-[16px] z-10 flex items-center justify-center rounded-[20px] bg-white px-[12px] py-[6px] shadow-sm">
-                      <span className="font-inter text-[12px] font-medium capitalize text-[#2E3192]">
-                        {product.frame_shape}
-                      </span>
-                    </div>
-                  )}
+                    {product.frame_shape && (
+                      <div className="absolute right-[16px] top-[16px] z-10 flex items-center justify-center rounded-[20px] bg-white px-[12px] py-[6px] shadow-sm">
+                        <span className="font-inter text-[12px] font-medium capitalize text-[#2E3192]">
+                          {product.frame_shape}
+                        </span>
+                      </div>
+                    )}
 
-                  <Link
-                    href={`/product/${product.slug}`}
-                    className="relative block h-full w-full overflow-hidden"
-                  >
-                    <Image
-                      src={getProductImageUrl(product)}
-                      alt={product.name}
-                      fill
-                      sizes="(min-width: 1024px) 22vw, 45vw"
-                      // First row (and most of the second, across
-                      // breakpoints) — this page's Largest Contentful Paint
-                      // is almost certainly one of these, and Next lazy-loads
-                      // <Image> by default.
-                      priority={index < 4}
-                      className="object-contain transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </Link>
-                </div>
+                    <Link
+                      href={`/product/${product.slug}`}
+                      className="relative block h-full w-full overflow-hidden"
+                    >
+                      <Image
+                        src={getProductImageUrl(product)}
+                        alt={product.name}
+                        fill
+                        sizes="(min-width: 1024px) 22vw, 45vw"
+                        // First row (and most of the second, across
+                        // breakpoints) — this page's Largest Contentful Paint
+                        // is almost certainly one of these, and Next lazy-loads
+                        // <Image> by default.
+                        priority={index < 4}
+                        className="object-contain transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </Link>
+                  </div>
 
-                {/* Content Area. `mx-4 mt-4` is the mobile-first base — this
+                  {/* Content Area. `mx-4 mt-4` is the mobile-first base — this
                     div had no spacing at all outside `lg:`, so text sat flush
                     against the card's edge below 1024px. */}
-                <div className="mx-4 mb-4 mt-4 flex flex-col lg:mx-[24.8px] lg:mb-0 lg:mt-[24px] lg:w-[240.4px]">
-                  {/* Row 1: Title & Brand. The title used to be a hardcoded
+                  <div className="mx-4 mb-4 mt-4 flex flex-col lg:mx-[24.8px] lg:mb-0 lg:mt-[24px] lg:w-[240.4px]">
+                    {/* Row 1: Title & Brand. The title used to be a hardcoded
                       lg:w-[135px] truncate with no way to see the cut-off
                       name — most of the real catalogue ("Full Rim Rectangle
                       Classic Eyeglasses — Brown/Blue") lost most of its name.
                       `min-w-0 flex-1` lets it use whatever space is actually
                       available instead of a desktop-tuned pixel width, and
                       `title=` gives a hover tooltip with the rest. */}
-                  <div className="flex items-start justify-between gap-2 lg:h-[27px] lg:w-[240.4px]">
-                    <h3
-                      title={product.name}
-                      className="font-poppins min-w-0 flex-1 truncate font-semibold text-[#000000] transition-colors group-hover:text-[#2E3192] lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]"
-                    >
-                      {product.name}
-                    </h3>
-                    <span
-                      className="shrink-0 truncate text-right uppercase text-[#2E3192] lg:h-[21px] lg:w-[57px]"
-                      style={{
-                        fontFamily: 'Arimo, sans-serif',
-                        fontSize: '14px',
-                        lineHeight: '21px',
-                      }}
-                    >
-                      {product.brand || '—'}
-                    </span>
-                  </div>
-
-                  {/* F-11: the rating, finally visible outside the PDP. Renders
-                      nothing for an unrated product — a row of empty stars reads
-                      as "rated badly" rather than "not yet rated". */}
-                  <StarRating
-                    rating={product.rating_avg}
-                    count={product.rating_count}
-                    className="mt-1.5 lg:mt-[6px]"
-                  />
-
-                  {/* Row 2: Description */}
-                  <div className="mt-2 lg:mt-[8px] lg:h-[42px] lg:w-[240.4px]">
-                    <p
-                      className="font-inter line-clamp-2 text-[#717182]"
-                      style={{ fontSize: '14px', lineHeight: '21px' }}
-                    >
-                      {product.description ||
-                        'Premium quality sunglasses designed for maximum comfort and style.'}
-                    </p>
-                  </div>
-
-                  {/* Row 3: Price & Action */}
-                  <div className="mt-4 flex items-center justify-between lg:mt-[24px] lg:h-[41px] lg:w-[240.4px]">
-                    {/* Price Block */}
-                    <div className="flex items-baseline gap-[4px] text-[#2E3192] lg:mt-[0.8px] lg:h-[33px] lg:w-[101px]">
-                      <span
-                        className="text-[12px] font-bold uppercase"
-                        style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
+                    <div className="flex items-start justify-between gap-2 lg:h-[27px] lg:w-[240.4px]">
+                      <h3
+                        title={product.name}
+                        className="font-poppins min-w-0 flex-1 truncate font-semibold text-[#000000] transition-colors group-hover:text-[#2E3192] lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]"
                       >
-                        KSH.
-                      </span>
+                        {product.name}
+                      </h3>
                       <span
-                        className="text-[22px] font-bold"
-                        style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
+                        className="shrink-0 truncate text-right uppercase text-[#2E3192] lg:h-[21px] lg:w-[57px]"
+                        style={{
+                          fontFamily: 'Arimo, sans-serif',
+                          fontSize: '14px',
+                          lineHeight: '21px',
+                        }}
                       >
-                        {formatKesNumber(product.price_kes, { precise: false })}
+                        {product.brand || '—'}
                       </span>
                     </div>
 
-                    {/* Button. Had no base sizing at all outside `lg:` — on
+                    {/* F-11: the rating, finally visible outside the PDP. Renders
+                      nothing for an unrated product — a row of empty stars reads
+                      as "rated badly" rather than "not yet rated". */}
+                    <StarRating
+                      rating={product.rating_avg}
+                      count={product.rating_count}
+                      className="mt-1.5 lg:mt-[6px]"
+                    />
+
+                    {/* Row 2: Description */}
+                    <div className="mt-2 lg:mt-[8px] lg:h-[42px] lg:w-[240.4px]">
+                      <p
+                        className="font-inter line-clamp-2 text-[#717182]"
+                        style={{ fontSize: '14px', lineHeight: '21px' }}
+                      >
+                        {product.description ||
+                          'Premium quality sunglasses designed for maximum comfort and style.'}
+                      </p>
+                    </div>
+
+                    {/* Row 3: Price & Action */}
+                    <div className="mt-4 flex items-center justify-between lg:mt-[24px] lg:h-[41px] lg:w-[240.4px]">
+                      {/* Price Block */}
+                      <div className="flex items-baseline gap-[4px] text-[#2E3192] lg:mt-[0.8px] lg:h-[33px] lg:w-[101px]">
+                        <span
+                          className="text-[12px] font-bold uppercase"
+                          style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
+                        >
+                          KSH.
+                        </span>
+                        <span
+                          className="text-[22px] font-bold"
+                          style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
+                        >
+                          {formatKesNumber(product.price_kes, { precise: false })}
+                        </span>
+                      </div>
+
+                      {/* Button. Had no base sizing at all outside `lg:` — on
                         mobile it shrank to whatever its padding-less content
                         demanded, well under the 44px touch-target minimum.
                         `h-11` (44px) is the mobile-first base and the new
                         `lg:` height; width/radius stay desktop-specific. */}
-                    <button
-                      type="button"
-                      disabled={
-                        product.available_stock !== null && Number(product.available_stock) <= 0
-                      }
-                      onClick={() =>
-                        addToCart({
-                          id: product.id,
-                          title: product.name,
-                          price: String(product.price_kes),
-                          image: getProductImageUrl(product),
-                          quantity: 1,
-                        })
-                      }
-                      className="flex h-11 items-center justify-center rounded-full bg-[#E53935] px-5 text-white transition-all hover:bg-[#D32F2F] active:scale-95 disabled:cursor-not-allowed disabled:bg-[#9CA3AF] lg:h-11 lg:w-[121.375px] lg:rounded-[24px] lg:px-0"
-                    >
-                      <span
-                        className="flex items-center justify-center whitespace-nowrap text-center text-[14px] font-semibold lg:h-[21px] lg:w-[82px]"
-                        style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '21px' }}
-                      >
-                        {product.available_stock !== null && Number(product.available_stock) <= 0
-                          ? 'Out of stock'
-                          : 'Add to Cart'}
-                      </span>
-                    </button>
+                      <div className="relative">
+                        {/* Clicking "Add to Cart" again after the first click
+                          changed nothing visible on the card itself — only
+                          the header badge moved, easy to miss mid-scroll.
+                          This mirrors it right where the click happened. */}
+                        {qtyInCart > 0 && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute -right-2 -top-2 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2E3192] px-1 text-[11px] font-bold text-white shadow-sm"
+                          >
+                            {qtyInCart}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          disabled={
+                            product.available_stock !== null && Number(product.available_stock) <= 0
+                          }
+                          onClick={() =>
+                            addToCart({
+                              id: product.id,
+                              title: product.name,
+                              price: String(product.price_kes),
+                              image: getProductImageUrl(product),
+                              quantity: 1,
+                            })
+                          }
+                          aria-label={
+                            qtyInCart > 0
+                              ? `Add another ${product.name} to cart — ${qtyInCart} already in cart`
+                              : `Add ${product.name} to cart`
+                          }
+                          className="flex h-11 items-center justify-center rounded-full bg-[#E53935] px-5 text-white transition-all hover:bg-[#D32F2F] active:scale-95 disabled:cursor-not-allowed disabled:bg-[#9CA3AF] lg:h-11 lg:w-[121.375px] lg:rounded-[24px] lg:px-0"
+                        >
+                          <span
+                            className="flex items-center justify-center whitespace-nowrap text-center text-[14px] font-semibold lg:h-[21px] lg:w-[82px]"
+                            style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '21px' }}
+                          >
+                            {product.available_stock !== null &&
+                            Number(product.available_stock) <= 0
+                              ? 'Out of stock'
+                              : 'Add to Cart'}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <Pagination page={safePage} pageCount={pageCount} onChange={setPage} />
