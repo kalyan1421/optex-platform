@@ -52,10 +52,28 @@ export interface StkQueryResponse {
  * Exported by `PaymentsModule` so the upcoming Cron module can reuse this Daraja
  * client (OAuth + `stkQuery`) for unattended status polling.
  */
+/**
+ * How long a mock STK push stays "pending" before `stkQuery` starts reporting
+ * it as paid. Real Daraja push→confirm rarely resolves in under a couple of
+ * seconds — mirroring that (rather than resolving instantly) is what lets the
+ * checkout page's own polling UI ("waiting for STK confirmation…") actually
+ * be exercised locally, not skipped past.
+ */
+const MOCK_PENDING_MS = 4000;
+
+/** Prefix on every mock CheckoutRequestID — unmistakable in logs, the DB, and
+ *  on a support call, so a simulated payment can never be read as a real
+ *  Safaricom reference. */
+const MOCK_ID_PREFIX = 'ws_CO_MOCK';
+
 @Injectable()
 export class MpesaService {
   private readonly logger = new Logger(MpesaService.name);
   private tokenCache: CachedToken | null = null;
+  /** CheckoutRequestID → when the mock push was initiated (epoch ms). Purely
+   *  in-memory bookkeeping for `isMockMode()`; a server restart mid-test just
+   *  means that one simulated push resets, which is fine for local testing. */
+  private readonly mockPending = new Map<string, number>();
 
   constructor(private readonly config: ConfigService<Env, true>) {}
 
@@ -67,6 +85,21 @@ export class MpesaService {
         this.config.get('MPESA_SHORTCODE', { infer: true }) &&
         this.config.get('MPESA_PASSKEY', { infer: true }),
     );
+  }
+
+  /**
+   * True when `stkPush`/`stkQuery` should simulate Daraja instead of calling
+   * it — no real credentials, no public callback URL, no Safaricom sandbox
+   * account required. Explicit opt-in (`MPESA_MOCK_MODE=true`) rather than an
+   * automatic fallback whenever creds are missing, so a genuinely
+   * misconfigured deployment still fails loudly instead of silently faking
+   * payments. Gated on environment as well as the flag — `envSchema`'s
+   * `superRefine` separately refuses to boot in production without real
+   * Daraja credentials, so this is defense in depth, not the only guard.
+   */
+  private isMockMode(): boolean {
+    const nodeEnv = this.config.get('NODE_ENV', { infer: true });
+    return !isProd(nodeEnv) && this.config.get('MPESA_MOCK_MODE', { infer: true }) === 'true';
   }
 
   private requireCreds(): {
@@ -154,6 +187,10 @@ export class MpesaService {
    * idempotency anchor before the async callback arrives.
    */
   async stkPush(params: StkPushParams): Promise<StkPushResponse> {
+    if (this.isMockMode()) {
+      return this.mockStkPush();
+    }
+
     const { shortcode, passkey, callbackUrl } = this.requireCreds();
     if (!callbackUrl) {
       this.logger.error('MPESA_CALLBACK_URL is empty — STK callback cannot be delivered');
@@ -217,6 +254,10 @@ export class MpesaService {
    * cancelled, `1037` timeout, etc.) indicates failure.
    */
   async stkQuery(checkoutRequestId: string): Promise<StkQueryResponse> {
+    if (this.isMockMode() && this.mockPending.has(checkoutRequestId)) {
+      return this.mockStkQuery(checkoutRequestId);
+    }
+
     const { shortcode, passkey } = this.requireCreds();
     const token = await this.getAccessToken();
     const timestamp = darajaTimestamp();
@@ -254,5 +295,62 @@ export class MpesaService {
     }
 
     return body;
+  }
+
+  // ── Mock mode ────────────────────────────────────────────────────────────
+  //
+  // Simulates Daraja closely enough that everything downstream — the pending
+  // `mpesa_transactions` row, the checkout page's polling loop, and
+  // `PaymentsService.applyMpesaSuccess()` marking the order paid — runs
+  // completely unmodified. Only the two network calls that would otherwise
+  // reach Safaricom are faked; every other line of the real payment flow,
+  // ownership checks included, still executes for real.
+
+  private mockStkPush(): StkPushResponse {
+    const checkoutRequestId = `${MOCK_ID_PREFIX}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    this.mockPending.set(checkoutRequestId, Date.now());
+    this.logger.log(
+      `MPESA_MOCK_MODE: simulating STK push (${checkoutRequestId}) — resolves in ~${MOCK_PENDING_MS / 1000}s`,
+    );
+    return {
+      MerchantRequestID: `mock-${checkoutRequestId}`,
+      CheckoutRequestID: checkoutRequestId,
+      ResponseCode: '0',
+      ResponseDescription: 'Success. Request accepted for processing',
+      CustomerMessage:
+        '[TEST MODE] Simulating M-Pesa — no real prompt was sent to your phone. This will confirm automatically in a few seconds.',
+    };
+  }
+
+  private mockStkQuery(checkoutRequestId: string): StkQueryResponse {
+    const startedAt = this.mockPending.get(checkoutRequestId) ?? Date.now();
+    const stillPending = Date.now() - startedAt < MOCK_PENDING_MS;
+
+    if (stillPending) {
+      // Mirrors Daraja's real "still being processed" shape: no ResultCode at
+      // all, which is exactly what `PaymentsService.queryMpesaStatus` already
+      // treats as "not resolved yet, keep polling" for a genuine push.
+      return {
+        ResponseCode: '0',
+        ResponseDescription: 'The service request is processed successfully.',
+        MerchantRequestID: `mock-${checkoutRequestId}`,
+        CheckoutRequestID: checkoutRequestId,
+      };
+    }
+
+    // Resolved — clean up so this id isn't held in memory forever, and so a
+    // second query after resolution takes the real-Daraja code path (moot in
+    // practice: the transaction is FINAL by then and `applyMpesaSuccess` is
+    // idempotent, but there's no reason to keep faking a closed request).
+    this.mockPending.delete(checkoutRequestId);
+    this.logger.log(`MPESA_MOCK_MODE: resolving ${checkoutRequestId} as paid`);
+    return {
+      ResponseCode: '0',
+      ResponseDescription: 'The service request is processed successfully.',
+      MerchantRequestID: `mock-${checkoutRequestId}`,
+      CheckoutRequestID: checkoutRequestId,
+      ResultCode: '0',
+      ResultDesc: '[TEST MODE] The service request is processed successfully.',
+    };
   }
 }

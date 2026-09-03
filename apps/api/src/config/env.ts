@@ -80,6 +80,12 @@ export const envSchema = z
     MPESA_SHORTCODE: z.string().optional(),
     MPESA_PASSKEY: z.string().optional(),
     MPESA_CALLBACK_URL: z.string().optional(),
+    // Simulates the STK push + Safaricom's async confirmation locally, with no
+    // Daraja account, real credentials, or public callback URL needed — see
+    // MpesaService.isMockMode(). Only ever consulted when NODE_ENV !==
+    // 'production', and the superRefine below still requires real credentials
+    // whenever it is — this flag cannot make mock mode reachable in prod.
+    MPESA_MOCK_MODE: z.string().optional(),
 
     // --- Pesapal — optional until payments module ships ---
     PESAPAL_CONSUMER_KEY: z.string().optional(),
