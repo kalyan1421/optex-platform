@@ -2,11 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import EmptyCartState from '@/components/ui/EmptyCartState';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { formatKes, formatKesNumber } from '@optex/ui';
+import { KENYA_COUNTIES } from '@/lib/kenya-counties';
+import { splitFullName } from '@/lib/full-name';
 
 // Flat delivery fee mirrors the server (`place_order` RPC: 300 KES for delivery,
 // 0 for branch pickup). Kept in sync so the displayed total equals what the API
@@ -97,60 +101,9 @@ const PAYMENT_METHODS = [
   // end of a filled-in checkout form.
 ];
 
-const KENYA_COUNTIES = [
-  'Nairobi',
-  'Mombasa',
-  'Kisumu',
-  'Nakuru',
-  'Eldoret',
-  'Kiambu',
-  'Machakos',
-  'Kajiado',
-  'Muranga',
-  'Nyeri',
-  'Meru',
-  'Embu',
-  'Kirinyaga',
-  'Nyandarua',
-  'Laikipia',
-  'Samburu',
-  'Trans Nzoia',
-  'Uasin Gishu',
-  'Elgeyo-Marakwet',
-  'Nandi',
-  'Baringo',
-  'West Pokot',
-  'Turkana',
-  'Marsabit',
-  'Isiolo',
-  'Tharaka-Nithi',
-  'Kitui',
-  'Makueni',
-  'Narok',
-  'Kericho',
-  'Bomet',
-  'Kakamega',
-  'Vihiga',
-  'Bungoma',
-  'Busia',
-  'Siaya',
-  'Homa Bay',
-  'Migori',
-  'Kisii',
-  'Nyamira',
-  'Kilifi',
-  'Kwale',
-  'Taita-Taveta',
-  'Tana River',
-  'Lamu',
-  'Garissa',
-  'Wajir',
-  'Mandera',
-];
-
 export default function Page() {
   const router = useRouter();
-  const { items, cartView } = useCart();
+  const { items, cartView, loading: cartLoading } = useCart();
   const { user, loading: authLoading } = useAuth();
 
   const [activeStep, setActiveStep] = useState(1);
@@ -174,6 +127,10 @@ export default function Page() {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [saveAddress, setSaveAddress] = useState(false);
+  // Richer profile data (full_name, phone) than the auth session alone
+  // carries — see the prefill effect below.
+  const [profile, setProfile] = useState(null);
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
 
   // H-3 FIX: guard on authLoading so we don't redirect while the session is
   // still being resolved (user starts as undefined, not null, during load).
@@ -198,13 +155,55 @@ export default function Page() {
           setSaveAddress(true);
         }
       })
-      .catch((err) => console.error('Failed to load saved addresses:', err));
+      .catch((err) => console.error('Failed to load saved addresses:', err))
+      .finally(() => {
+        if (!cancelled) setAddressesLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
     // Deliberately keyed on `user` alone — `selectSavedAddress` is re-created
     // every render but only ever called with the freshly-fetched list here.
   }, [user]);
+
+  // The account's own name/phone from `customers` (`GET /me`), which can
+  // differ from — and is more current than — `user.user_metadata`, a value
+  // fixed at signup and never updated after. Used below to prefill a blank
+  // shipping form.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    api.account
+      .me()
+      .then((me) => {
+        if (!cancelled) setProfile(me);
+      })
+      .catch((err) => console.error('Could not load account profile:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  // Fill a still-blank shipping form from the account's own details, so a
+  // customer with no saved address does not land on a form that looks
+  // disconnected from the account they are signed into. Only ever fills a
+  // field that is still empty — never overwrites a saved address's values or
+  // anything the customer has already typed — and re-runs harmlessly once
+  // `profile` resolves after `user.user_metadata` already seeded a first pass.
+  useEffect(() => {
+    if (!user || !addressesLoaded || selectedAddressId !== null) return;
+    const { firstName, lastName } = splitFullName(
+      profile?.full_name ?? user.user_metadata?.full_name,
+    );
+    const phone = profile?.phone ?? '';
+    if (!firstName && !lastName && !phone) return;
+    setShipping((s) => ({
+      ...s,
+      firstName: s.firstName || firstName,
+      lastName: s.lastName || lastName,
+      phone: s.phone || phone,
+    }));
+  }, [user, profile, addressesLoaded, selectedAddressId]);
 
   /** Populates the shipping form from a saved address and marks it selected. */
   function selectSavedAddress(addr) {
@@ -221,13 +220,21 @@ export default function Page() {
     });
   }
 
-  /** Switches to a blank free-text form, e.g. for a first-time delivery address. */
+  /**
+   * Switches to a blank free-text form, e.g. for a first-time delivery
+   * address. "Blank" still means the account's own name/phone, same as the
+   * initial no-saved-addresses case above — a customer adding a second
+   * address is not typing their own name again, only the new location.
+   */
   function startNewAddress() {
     setSelectedAddressId(null);
+    const { firstName, lastName } = splitFullName(
+      profile?.full_name ?? user?.user_metadata?.full_name,
+    );
     setShipping({
-      firstName: '',
-      lastName: '',
-      phone: '',
+      firstName,
+      lastName,
+      phone: profile?.phone ?? '',
       address: '',
       city: '',
       county: '',
@@ -384,6 +391,25 @@ export default function Page() {
     return false;
   }
 
+  // A customer can land here with nothing to check out — a stale tab, a
+  // cart cleared in another tab, a bookmarked /checkout link. The full
+  // three-step form was still fully fillable in that case even though
+  // `handlePlaceOrder` refuses an empty cart at submit — so filling it in
+  // was always going to end in "Your cart is empty." at the last step
+  // instead of not letting you start. Gated on `cartLoading` for the same
+  // reason /cart is: both cart sources (guest localStorage, account API)
+  // resolve asynchronously, so `items` is briefly empty for someone who
+  // actually has one.
+  if (!cartLoading && items.length === 0) {
+    return (
+      <EmptyCartState
+        title="Checkout"
+        heading="Nothing to check out yet"
+        description="Your cart is empty. Add something from the shop, then come back here to complete your order."
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-10 pt-32 lg:bg-white lg:pb-[50px] lg:pt-[50px]">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 lg:px-[100px]">
@@ -496,24 +522,43 @@ export default function Page() {
                                   onChange={() => selectSavedAddress(addr)}
                                   className="mt-1 accent-[#141776]"
                                 />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    {addr.label && (
-                                      <span
-                                        className="text-[13px] font-semibold text-[#141776]"
-                                        style={{ fontFamily: 'Manrope, sans-serif' }}
-                                      >
-                                        {addr.label}
-                                      </span>
-                                    )}
-                                    {addr.is_default && (
-                                      <span
-                                        className="rounded-full bg-[#E8E7F5] px-2 py-0.5 text-[11px] font-medium text-[#141776]"
-                                        style={{ fontFamily: 'Manrope, sans-serif' }}
-                                      >
-                                        Default
-                                      </span>
-                                    )}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                      {addr.label && (
+                                        <span
+                                          className="text-[13px] font-semibold text-[#141776]"
+                                          style={{ fontFamily: 'Manrope, sans-serif' }}
+                                        >
+                                          {addr.label}
+                                        </span>
+                                      )}
+                                      {addr.is_default && (
+                                        <span
+                                          className="rounded-full bg-[#E8E7F5] px-2 py-0.5 text-[11px] font-medium text-[#141776]"
+                                          style={{ fontFamily: 'Manrope, sans-serif' }}
+                                        >
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                    {/* A saved address is otherwise only fixable
+                                        from /profile/addresses, which a customer
+                                        mid-checkout has no reason to already know
+                                        about — surface the fix right where the
+                                        wrong details are visible. A nested Link
+                                        inside a <label> doesn't trigger the
+                                        radio (browsers only forward the click for
+                                        the label element itself, not an
+                                        interactive descendant), so this can't
+                                        double as "select this address" too. */}
+                                    <Link
+                                      href={`/profile/addresses?edit=${addr.id}&from=/checkout`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="shrink-0 text-[12px] font-semibold text-[#141776] hover:underline"
+                                    >
+                                      Edit
+                                    </Link>
                                   </div>
                                   <p
                                     className="mt-1 text-[15px] text-[#141776]"

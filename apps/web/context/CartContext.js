@@ -103,6 +103,14 @@ export const CartProvider = ({ children }) => {
   // applied promo. `null` for a guest cart, which has no server counterpart.
   const [cartView, setCartView] = useState(null);
   const [error, setError] = useState('');
+  // A confirmation for a successful add. Every "Add to Cart" button across
+  // the storefront (shop grid, featured products, search, similar products,
+  // compare) fired addToCart and changed nothing visible on success — no
+  // toast, no button state, nothing but a badge count that was easy to miss
+  // mid-scroll. Centralised here, the same way the error toast below already
+  // is, so fixing it once covers every one of those buttons rather than
+  // patching five separate components the same way five separate times.
+  const [addedNotice, setAddedNotice] = useState('');
   // Starts true. Both carts arrive asynchronously — the guest cart from
   // localStorage after mount, the account cart from the API — so `items` is
   // briefly `[]` for a customer who has one. Without this, any consumer that
@@ -253,6 +261,7 @@ export const CartProvider = ({ children }) => {
         });
         applyCart(cart);
         setError('');
+        setAddedNotice(`${product.title || 'Item'} added to your cart.`);
       } catch (err) {
         console.error('addItem error:', err);
         setError(err?.message ?? 'Could not add that item to your cart.');
@@ -298,8 +307,18 @@ export const CartProvider = ({ children }) => {
           },
         ];
       });
+      setAddedNotice(`${product.title || 'Item'} added to your cart.`);
     }
   };
+
+  // Auto-dismiss the confirmation — unlike the error toast, which stays until
+  // the customer dismisses it (a rejected add needs their attention), a
+  // successful add is not something they need to act on.
+  useEffect(() => {
+    if (!addedNotice) return;
+    const timer = setTimeout(() => setAddedNotice(''), 3000);
+    return () => clearTimeout(timer);
+  }, [addedNotice]);
 
   const updateQuantity = async (id, delta) => {
     const item = items.find((i) => i.id === id);
@@ -387,27 +406,64 @@ export const CartProvider = ({ children }) => {
     >
       {children}
       {/*
-        The API owns availability and quantity bounds, so a rejected cart
-        mutation is the only signal the customer gets that (say) stock ran out.
-        Rendering it here rather than in each consumer means every surface that
-        calls addToCart/updateQuantity/removeItem is covered — previously the
-        error was set on every failure path but read by nobody, so a rejected
-        add looked identical to nothing happening.
+        Both toasts render from one fixed, centered stack — rendering them
+        here rather than in each consumer means every surface that calls
+        addToCart/updateQuantity/removeItem is covered by both, success and
+        failure, from one place instead of five call sites each doing their
+        own (or, as it was, none of them doing it at all).
       */}
-      {error && (
-        <div
-          role="alert"
-          className="fixed bottom-4 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-sm text-white shadow-lg"
-        >
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={() => setError('')}
-            aria-label="Dismiss"
-            className="shrink-0 text-lg leading-none opacity-80 hover:opacity-100"
-          >
-            &times;
-          </button>
+      {(error || addedNotice) && (
+        <div className="fixed bottom-4 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 flex-col items-center gap-2">
+          {/*
+            The API owns availability and quantity bounds, so a rejected cart
+            mutation is the only signal the customer gets that (say) stock ran
+            out. Stays until dismissed — a failure needs their attention, not
+            a fixed number of seconds' worth of it.
+          */}
+          {error && (
+            <div
+              role="alert"
+              className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-sm text-white shadow-lg"
+            >
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => setError('')}
+                aria-label="Dismiss"
+                className="shrink-0 text-lg leading-none opacity-80 hover:opacity-100"
+              >
+                &times;
+              </button>
+            </div>
+          )}
+          {/*
+            The success counterpart to the error toast above. Every "Add to
+            Cart" button across the storefront called `addToCart` and changed
+            nothing visible on success — no toast, no button state, just a
+            badge count easy to miss mid-scroll. This is set inside
+            `addToCart` itself (both branches, above), so fixing it here
+            covers every one of those buttons at once. Auto-dismisses, unlike
+            the error above, since there's nothing here the customer needs to
+            act on.
+          */}
+          {addedNotice && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm text-white shadow-lg"
+            >
+              <svg
+                className="h-4 w-4 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{addedNotice}</span>
+            </div>
+          )}
         </div>
       )}
     </CartContext.Provider>

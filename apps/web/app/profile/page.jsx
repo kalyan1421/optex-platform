@@ -111,22 +111,6 @@ const TableIcon = () => (
   </svg>
 );
 
-const NotesIcon = () => (
-  <svg
-    className="h-5 w-5 text-[#2A3182]"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-    />
-  </svg>
-);
-
 const VirtualLensIcon = () => (
   <svg
     className="h-6 w-6 text-white"
@@ -203,6 +187,86 @@ const ShieldCheckIcon = () => (
   </svg>
 );
 
+const EyeGlyphIcon = () => (
+  <svg
+    className="h-5 w-5 text-[#2A3182]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"
+    />
+    <circle cx="12" cy="12" r="2.75" />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+);
+
+const PinIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+    />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const ApptNavIcon = () => (
+  <svg
+    className="h-5 w-5 text-[#2A3182]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    />
+  </svg>
+);
+
+const CalendarPlainIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    />
+  </svg>
+);
+
+const RxEmptyIcon = () => (
+  <svg
+    className="h-7 w-7 text-[#2A3182]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+    />
+  </svg>
+);
+
 const STATUS_STYLES = {
   delivered: 'bg-green-50 text-green-700 border-green-200',
   dispatched: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -231,6 +295,107 @@ function formatDate(iso) {
   });
 }
 
+// ─── Prescription formatting ─────────────────────────────────────────────────
+
+/** The two eyes of an RX, in the order an optician reads them. */
+const RX_EYES = [
+  { key: 'od', abbr: 'OD', name: 'Right eye' },
+  { key: 'os', abbr: 'OS', name: 'Left eye' },
+];
+
+/**
+ * Dioptre values always carry a sign and two decimals — "+1.25", "-0.75" —
+ * because in an RX the sign is the clinically meaningful part, not decoration.
+ * Returns null (not a placeholder) when the optician left the field blank, so
+ * the caller decides how an absent measurement is rendered.
+ */
+function formatDioptre(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return (n > 0 ? '+' : '') + n.toFixed(2);
+}
+
+/** Axis runs 1-180 and is conventionally written zero-padded to three digits. */
+function formatAxis(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return String(Math.round(n)).padStart(3, '0') + '\u00B0';
+}
+
+// ─── Appointment formatting ──────────────────────────────────────────────────
+
+const APPT_STATUS_STYLES = {
+  pending: 'border-amber-200 bg-amber-50 text-amber-700',
+  confirmed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  rescheduled: 'border-blue-200 bg-blue-50 text-blue-700',
+  completed: 'border-gray-200 bg-gray-50 text-gray-600',
+  cancelled: 'border-red-200 bg-red-50 text-red-700',
+};
+
+const APPT_STATUS_DOTS = {
+  pending: 'bg-amber-500',
+  confirmed: 'bg-emerald-500',
+  rescheduled: 'bg-blue-500',
+  completed: 'bg-gray-400',
+  cancelled: 'bg-red-500',
+};
+
+const APPT_TYPE_LABELS = {
+  eye_test: 'Eye Test',
+  frame_fitting: 'Frame Fitting',
+  consultation: 'Consultation',
+};
+
+function apptTypeLabel(type) {
+  return APPT_TYPE_LABELS[type] ?? statusLabel(String(type ?? 'appointment'));
+}
+
+/**
+ * Bookings are stored as UTC timestamptz but are always *about* a wall-clock
+ * time in the branch, so every appointment formatter pins Africa/Nairobi
+ * explicitly. Without it a customer travelling abroad sees their Nairobi eye
+ * test shifted into a different hour, or a different day.
+ */
+const NAIROBI = 'Africa/Nairobi';
+
+function formatApptDate(iso) {
+  return new Date(iso).toLocaleDateString('en-KE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: NAIROBI,
+  });
+}
+
+function formatApptTime(iso) {
+  return new Date(iso).toLocaleTimeString('en-KE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: NAIROBI,
+  });
+}
+
+/** Day number + short month, for the date tile on an upcoming booking. */
+function apptDayParts(iso) {
+  const d = new Date(iso);
+  return {
+    day: d.toLocaleDateString('en-KE', { day: '2-digit', timeZone: NAIROBI }),
+    month: d.toLocaleDateString('en-KE', { month: 'short', timeZone: NAIROBI }).toUpperCase(),
+  };
+}
+
+/**
+ * "Upcoming" is both a clock question and a status question: a cancelled or
+ * already-completed booking is history even if its slot has not arrived yet.
+ */
+function isUpcoming(appt, now) {
+  if (appt.status === 'cancelled' || appt.status === 'completed') return false;
+  return new Date(appt.scheduled_at).getTime() >= now;
+}
+
 export default function Page() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
@@ -238,6 +403,13 @@ export default function Page() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
   const [prescription, setPrescription] = useState(null);
+  const [rxDownloading, setRxDownloading] = useState(false);
+  const [rxDownloadError, setRxDownloadError] = useState('');
+  const [appointments, setAppointments] = useState([]);
+  const [apptsLoading, setApptsLoading] = useState(true);
+  const [apptsError, setApptsError] = useState('');
+  const [branchNames, setBranchNames] = useState({});
+  const [cancellingId, setCancellingId] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -265,7 +437,59 @@ export default function Page() {
       .listMine()
       .then((prescriptions) => setPrescription(prescriptions?.[0] ?? null))
       .catch((error) => console.error('Could not load prescription:', error));
+    // Bookings for this customer. `GET /appointments` scopes to the caller's
+    // customers.id from the JWT, so there is no id to pass here either.
+    api.appointments
+      .listMine()
+      .then((rows) => setAppointments(Array.isArray(rows) ? rows : []))
+      .catch((error) => {
+        console.error('Could not load appointments:', error);
+        setApptsError(error?.message ?? 'Could not load your appointments.');
+      })
+      .finally(() => setApptsLoading(false));
+    // An appointment row carries only `branch_id`, so resolve the names once
+    // rather than per row. A failure here is cosmetic — the bookings still
+    // render, just without a branch name — so it must not surface an error.
+    api.branches
+      .list()
+      .then((rows) => {
+        const byId = {};
+        for (const b of rows ?? []) byId[b.id] = b.name;
+        setBranchNames(byId);
+      })
+      .catch((error) => console.error('Could not load branches:', error));
   }, [user, authLoading, router]);
+
+  async function handleDownloadRx() {
+    if (!prescription || rxDownloading) return;
+    setRxDownloading(true);
+    setRxDownloadError('');
+    try {
+      // The bucket is private; the API ownership-checks and hands back a
+      // short-lived signed URL rather than a permanent public link.
+      const { url } = await api.prescriptions.download(prescription.id);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Could not download prescription:', error);
+      setRxDownloadError(error?.message ?? 'Could not open that file.');
+    } finally {
+      setRxDownloading(false);
+    }
+  }
+
+  async function handleCancelAppointment(id) {
+    setCancellingId(id);
+    setApptsError('');
+    try {
+      const updated = await api.appointments.cancel(id);
+      setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...updated } : a)));
+    } catch (error) {
+      console.error('Could not cancel appointment:', error);
+      setApptsError(error?.message ?? 'Could not cancel that appointment.');
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   if (authLoading) return null;
 
@@ -273,6 +497,17 @@ export default function Page() {
   const shortId = user?.id?.slice(0, 8).toUpperCase() ?? '—';
   const memberSince = user?.created_at ? formatDate(user.created_at) : '—';
   const lastOrder = orders[0] ? formatDate(orders[0].created_at) : '—';
+
+  // Split once, here, so the two lists below stay pure markup. Upcoming reads
+  // soonest-first (the next visit is the useful one); history reads
+  // newest-first (the last visit is the useful one).
+  const nowMs = Date.now();
+  const upcomingAppts = appointments
+    .filter((a) => isUpcoming(a, nowMs))
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+  const pastAppts = appointments
+    .filter((a) => !isUpcoming(a, nowMs))
+    .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] pb-16 pt-[15px] sm:pb-24">
@@ -314,10 +549,13 @@ export default function Page() {
             </div>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row">
-              <button className="flex w-full items-center justify-center gap-2 rounded-full bg-[#EF4444] px-6 py-3 text-[14px] font-bold text-white shadow-md shadow-red-500/20 transition-colors hover:bg-red-600 sm:w-auto">
+              <a
+                href="#prescription-record"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#EF4444] px-6 py-3 text-[14px] font-bold text-white shadow-md shadow-red-500/20 transition-colors hover:bg-red-600 sm:w-auto"
+              >
                 <FolderIcon />
                 My Prescriptions
-              </button>
+              </a>
               <button
                 onClick={async () => {
                   await signOut();
@@ -360,21 +598,28 @@ export default function Page() {
 
         {/* Middle Section */}
         <div className="mb-8 flex flex-col gap-8 lg:flex-row">
-          {/* Left — Prescription Record (fixture until prescriptions are wired) */}
-          <div className="flex flex-[2] flex-col overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]">
+          {/* Left — Vision Prescription Record */}
+          <section
+            id="prescription-record"
+            aria-labelledby="rx-heading"
+            className="flex flex-[2] scroll-mt-24 flex-col overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]"
+          >
             <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-100 bg-[#fafbfc] p-6 sm:flex-row sm:items-center sm:p-8">
               <div className="flex items-center gap-3">
                 <div className="text-[#2A3182]">
                   <TableIcon />
                 </div>
-                <h2 className="text-[16px] font-bold uppercase tracking-wide text-[#1a1a1a]">
+                <h2
+                  id="rx-heading"
+                  className="text-[16px] font-bold uppercase tracking-wide text-[#1a1a1a]"
+                >
                   Vision Prescription Record
                 </h2>
               </div>
               {prescription ? (
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] font-medium text-gray-400">
-                    {formatDate(prescription.created_at)}
+                    Issued {formatDate(prescription.created_at)}
                   </span>
                   <span
                     className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
@@ -383,138 +628,178 @@ export default function Page() {
                         : 'bg-blue-50 text-blue-600'
                     }`}
                   >
-                    {prescription.status === 'processed' ? 'Processed' : 'Pending'}
+                    {prescription.status === 'processed' ? 'Processed' : 'Pending review'}
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-medium text-gray-400">
-                    No prescription on file
-                  </span>
-                </div>
+                <span className="text-[11px] font-medium text-gray-400">
+                  No prescription on file
+                </span>
               )}
             </div>
 
-            <div className="flex flex-1 flex-col p-6 sm:p-8">
-              <div className="mb-8 overflow-x-auto">
-                <table className="w-full min-w-[500px] border-collapse text-left">
-                  <thead>
-                    <tr className="border-b-2 border-gray-100">
-                      <th className="w-1/3 pb-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                        Metric
-                      </th>
-                      <th className="w-1/3 pb-4 text-[11px] font-bold uppercase tracking-widest text-[#2A3182]">
-                        OD (Right Eye)
-                      </th>
-                      <th className="w-1/3 pb-4 text-[11px] font-bold uppercase tracking-widest text-[#2A3182]">
-                        OS (Left Eye)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-[16px] font-black text-[#1a1a1a] sm:text-[18px]">
-                    <tr className="border-b border-gray-50">
-                      <td className="py-5 text-[13px] font-medium text-gray-500">Sphere (SPH)</td>
-                      <td className="py-5">
-                        {prescription
-                          ? prescription.sphere_od != null
-                            ? (prescription.sphere_od > 0 ? '+' : '') +
-                              Number(prescription.sphere_od).toFixed(2)
-                            : '—'
-                          : '-2.50'}
-                      </td>
-                      <td className="py-5">
-                        {prescription
-                          ? prescription.sphere_os != null
-                            ? (prescription.sphere_os > 0 ? '+' : '') +
-                              Number(prescription.sphere_os).toFixed(2)
-                            : '—'
-                          : '-2.25'}
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-50">
-                      <td className="py-5 text-[13px] font-medium text-gray-500">Cylinder (CYL)</td>
-                      <td className="py-5">
-                        {prescription
-                          ? prescription.cyl_od != null
-                            ? (prescription.cyl_od > 0 ? '+' : '') +
-                              Number(prescription.cyl_od).toFixed(2)
-                            : '—'
-                          : '-0.75'}
-                      </td>
-                      <td className="py-5">
-                        {prescription
-                          ? prescription.cyl_os != null
-                            ? (prescription.cyl_os > 0 ? '+' : '') +
-                              Number(prescription.cyl_os).toFixed(2)
-                            : '—'
-                          : '-1.00'}
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-50">
-                      <td className="py-5 text-[13px] font-medium text-gray-500">Axis</td>
-                      <td className="py-5">
-                        {prescription
-                          ? prescription.axis_od != null
-                            ? prescription.axis_od + '°'
-                            : '—'
-                          : '165°'}
-                      </td>
-                      <td className="py-5">
-                        {prescription
-                          ? prescription.axis_os != null
-                            ? String(prescription.axis_os).padStart(3, '0') + '°'
-                            : '—'
-                          : '015°'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-5 text-[13px] font-medium text-gray-500">PD (mm)</td>
-                      <td className="colspan={2} py-5 text-gray-500">
-                        {prescription
-                          ? prescription.pd != null
-                            ? Number(prescription.pd).toFixed(1)
-                            : '—'
-                          : '—'}
-                      </td>
-                      <td className="py-5 text-gray-300">—</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            {prescription ? (
+              <div className="flex flex-1 flex-col p-6 sm:p-8">
+                {/* One card per eye. The old layout was a metric-by-eye table,
+                    which forced a 500px min-width and read as a spreadsheet;
+                    an RX is naturally two small groups of three numbers. */}
+                <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                  {RX_EYES.map((eye) => {
+                    const measurements = [
+                      {
+                        label: 'Sphere',
+                        abbr: 'SPH',
+                        value: formatDioptre(prescription[`sphere_${eye.key}`]),
+                      },
+                      {
+                        label: 'Cylinder',
+                        abbr: 'CYL',
+                        value: formatDioptre(prescription[`cyl_${eye.key}`]),
+                      },
+                      {
+                        label: 'Axis',
+                        abbr: 'AXIS',
+                        value: formatAxis(prescription[`axis_${eye.key}`]),
+                      },
+                    ];
+                    return (
+                      <article
+                        key={eye.key}
+                        className="rounded-2xl border border-gray-100 bg-[#fafbfc] p-5"
+                      >
+                        <div className="mb-5 flex items-center justify-between">
+                          <div>
+                            <p className="text-[13px] font-black uppercase tracking-widest text-[#2A3182]">
+                              {eye.abbr}
+                            </p>
+                            <p className="text-[12px] font-medium text-gray-400">{eye.name}</p>
+                          </div>
+                          <EyeGlyphIcon />
+                        </div>
+                        <dl className="flex flex-col gap-4">
+                          {measurements.map((m) => (
+                            <div key={m.abbr} className="flex items-baseline justify-between gap-4">
+                              <dt className="text-[13px] font-medium text-gray-500">
+                                {m.label}{' '}
+                                <span className="text-[11px] uppercase tracking-wider text-gray-400">
+                                  {m.abbr}
+                                </span>
+                              </dt>
+                              <dd
+                                className={
+                                  m.value
+                                    ? 'font-mono text-[19px] font-black tabular-nums text-[#1a1a1a]'
+                                    : 'text-[16px] font-medium text-gray-500'
+                                }
+                              >
+                                {m.value ?? (
+                                  <>
+                                    <span aria-hidden="true">—</span>
+                                    <span className="sr-only">Not recorded</span>
+                                  </>
+                                )}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </article>
+                    );
+                  })}
+                </div>
 
-              <div className="mt-auto">
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-50 text-[#2A3182]">
-                    <NotesIcon />
-                  </div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                    Clinical Notes & Recommendations
-                  </h3>
-                </div>
-                <p className="mb-8 pl-11 text-[15px] font-medium leading-relaxed text-gray-600">
-                  Blue light filter recommended for digital screen usage. Anti-reflective coating
-                  recommended.
-                </p>
-                <div className="mt-4 flex items-end justify-between border-t border-gray-100 pt-6">
+                {/* PD is a single binocular measurement, not one value per eye.
+                    The old table gave it an OD and an OS cell (and tried to
+                    span them with a `colspan={2}` that landed in className),
+                    which is why the row always showed a stray dash. */}
+                <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-5">
                   <div>
-                    <p className="mb-1 text-[11px] text-gray-400">
-                      Upload your prescription to get personalised recommendations.
+                    <p className="text-[13px] font-medium text-gray-500">
+                      Pupillary Distance{' '}
+                      <span className="text-[11px] uppercase tracking-wider text-gray-400">PD</span>
                     </p>
+                    <p className="text-[12px] text-gray-400">Measured across both eyes</p>
                   </div>
-                  <div className="flex items-center gap-4 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="mb-1 flex h-8 w-8 items-center justify-center">
-                        <ShieldCheckIcon />
-                      </div>
-                      <span className="text-[8px] font-bold tracking-wider text-gray-500">
-                        CERTIFIED PORTAL
-                      </span>
-                    </div>
+                  <p
+                    className={
+                      prescription.pd != null
+                        ? 'font-mono text-[19px] font-black tabular-nums text-[#1a1a1a]'
+                        : 'text-[16px] font-medium text-gray-500'
+                    }
+                  >
+                    {prescription.pd != null ? (
+                      <>
+                        {Number(prescription.pd).toFixed(1)}
+                        <span className="ml-1 text-[12px] font-bold uppercase text-gray-400">
+                          mm
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">Not recorded</span>
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                <div className="mt-auto flex flex-col gap-4 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    {prescription.file_url ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleDownloadRx}
+                          disabled={rxDownloading}
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-2.5 text-[13px] font-bold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <DownloadIcon />
+                          {rxDownloading ? 'Preparing…' : 'Download original'}
+                        </button>
+                        {rxDownloadError ? (
+                          <p role="alert" className="mt-2 text-[12px] font-medium text-red-700">
+                            {rxDownloadError}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="text-[12px] text-gray-400">
+                        Recorded by an Optex optician. Ask at any branch for a printed copy.
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <ShieldCheckIcon />
+                    <span className="mt-1 text-[8px] font-bold tracking-wider text-gray-500">
+                      CERTIFIED PORTAL
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            ) : (
+              /* Empty state. This deliberately shows no numbers: the previous
+                 version fell back to a hardcoded sample RX (-2.50 / -2.25 …)
+                 that a customer could not tell apart from their own. */
+              <div className="flex flex-1 flex-col items-center justify-center px-6 py-14 text-center sm:px-8">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
+                  <RxEmptyIcon />
+                </div>
+                <h3 className="mb-2 text-[18px] font-bold text-[#1a1a1a]">
+                  No prescription on file yet
+                </h3>
+                <p className="mb-7 max-w-[380px] text-[14px] font-medium leading-relaxed text-gray-500">
+                  Once an Optex optician completes your eye test, your sphere, cylinder, axis and PD
+                  measurements appear here.
+                </p>
+                <Link
+                  href="/appointments"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+                >
+                  <CalendarPlainIcon />
+                  Book an eye test
+                </Link>
+              </div>
+            )}
+          </section>
 
           {/* Right Column */}
           <div className="flex flex-1 flex-col gap-8">
@@ -542,31 +827,240 @@ export default function Page() {
                 </h3>
               </div>
               <ul className="flex flex-col">
-                <li className="group flex cursor-pointer items-center justify-between border-b border-gray-50 py-4">
-                  <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
-                    Security & Password
-                  </span>
-                  <RightArrowIcon />
+                <li className="border-b border-gray-50">
+                  <Link
+                    href="/profile/security"
+                    className="group flex items-center justify-between py-4"
+                  >
+                    <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
+                      Security &amp; Password
+                    </span>
+                    <RightArrowIcon />
+                  </Link>
                 </li>
-                <li className="group flex cursor-pointer items-center justify-between border-b border-gray-50 py-4">
-                  <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
-                    Order History
-                  </span>
-                  <RightArrowIcon />
+                <li className="border-b border-gray-50">
+                  <a href="#order-history" className="group flex items-center justify-between py-4">
+                    <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
+                      Order History
+                    </span>
+                    <RightArrowIcon />
+                  </a>
                 </li>
-                <li className="group flex cursor-pointer items-center justify-between py-4">
-                  <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
-                    Delivery Addresses
-                  </span>
-                  <RightArrowIcon />
+                <li>
+                  <Link
+                    href="/profile/addresses"
+                    className="group flex items-center justify-between py-4"
+                  >
+                    <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
+                      Delivery Addresses
+                    </span>
+                    <RightArrowIcon />
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Order History Table */}
-        <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]">
+        {/* Appointments — upcoming, then past visits */}
+        <section
+          aria-labelledby="appointments-heading"
+          className="mb-8 overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]"
+        >
+          <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-100 bg-[#fafbfc] p-6 sm:flex-row sm:items-center sm:p-8">
+            <div className="flex items-center gap-3">
+              <ApptNavIcon />
+              <h2
+                id="appointments-heading"
+                className="text-[16px] font-bold uppercase tracking-wide text-[#1a1a1a]"
+              >
+                Appointments
+              </h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                {upcomingAppts.length} upcoming
+              </span>
+              <Link
+                href="/appointments"
+                className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-4 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+              >
+                <CalendarPlainIcon />
+                Book
+              </Link>
+            </div>
+          </div>
+
+          {apptsLoading ? (
+            <div className="p-10 text-center text-[14px] text-gray-400">Loading appointments…</div>
+          ) : apptsError && appointments.length === 0 ? (
+            <div className="p-10 text-center">
+              <p role="alert" className="mb-4 text-[15px] font-medium text-red-700">
+                {apptsError}
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-full bg-[#2A3182] px-5 py-2.5 text-[13px] font-bold text-white"
+              >
+                Try again
+              </button>
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="p-10 text-center">
+              <p className="mb-2 text-[15px] font-medium text-gray-500">No appointments yet</p>
+              <p className="text-[13px] text-gray-400">
+                Book an eye test, frame fitting or consultation at any Optex branch.
+              </p>
+            </div>
+          ) : (
+            <div className="p-6 sm:p-8">
+              {/* A cancel that failed still needs reporting even though the
+                  list itself rendered fine. */}
+              {apptsError ? (
+                <p
+                  role="alert"
+                  className="mb-6 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700"
+                >
+                  {apptsError}
+                </p>
+              ) : null}
+
+              {upcomingAppts.length > 0 ? (
+                <div className="mb-8">
+                  <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                    Upcoming
+                  </h3>
+                  <ul className="flex flex-col gap-4">
+                    {upcomingAppts.map((appt) => {
+                      const { day, month } = apptDayParts(appt.scheduled_at);
+                      return (
+                        <li
+                          key={appt.id}
+                          className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-[#fafbfc] p-5 sm:flex-row sm:items-center sm:gap-6"
+                        >
+                          <div className="flex h-[64px] w-[64px] flex-shrink-0 flex-col items-center justify-center rounded-2xl bg-[#2A3182] text-white">
+                            <span className="text-[22px] font-black leading-none">{day}</span>
+                            <span className="mt-1 text-[10px] font-bold tracking-widest">
+                              {month}
+                            </span>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="mb-2 text-[16px] font-bold text-[#1a1a1a]">
+                              {apptTypeLabel(appt.type)}
+                            </p>
+                            <div className="flex flex-col gap-2 text-[13px] font-medium text-gray-500 sm:flex-row sm:items-center sm:gap-5">
+                              <span className="flex items-center gap-1.5">
+                                <ClockIcon />
+                                {formatApptTime(appt.scheduled_at)}
+                              </span>
+                              <span className="flex items-center gap-1.5">
+                                <PinIcon />
+                                {branchNames[appt.branch_id] ?? 'Optex branch'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`inline-flex items-center rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${APPT_STATUS_STYLES[appt.status] ?? 'border-gray-200 bg-gray-50 text-gray-600'}`}
+                            >
+                              <span
+                                className={`mr-1.5 h-1.5 w-1.5 rounded-full ${APPT_STATUS_DOTS[appt.status] ?? 'bg-gray-400'}`}
+                              />
+                              {statusLabel(appt.status)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelAppointment(appt.id)}
+                              disabled={cancellingId === appt.id}
+                              className="whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {cancellingId === appt.id ? 'Cancelling…' : 'Cancel'}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <div className="mb-8 rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+                  <p className="mb-1 text-[14px] font-medium text-gray-500">
+                    No upcoming appointments
+                  </p>
+                  <p className="text-[13px] text-gray-400">Your past visits are listed below.</p>
+                </div>
+              )}
+
+              {pastAppts.length > 0 ? (
+                <div>
+                  <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                    Visit history
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] border-collapse text-left">
+                      <thead>
+                        <tr className="border-b-2 border-gray-100">
+                          <th className="pb-4 pr-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Date
+                          </th>
+                          <th className="pb-4 pr-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Time
+                          </th>
+                          <th className="pb-4 pr-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Service
+                          </th>
+                          <th className="pb-4 pr-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Branch
+                          </th>
+                          <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-[14px] font-medium text-[#1a1a1a]">
+                        {pastAppts.map((appt) => (
+                          <tr key={appt.id} className="border-b border-gray-50 last:border-b-0">
+                            <td className="py-5 pr-6 font-bold">
+                              {formatApptDate(appt.scheduled_at)}
+                            </td>
+                            <td className="py-5 pr-6 text-gray-500">
+                              {formatApptTime(appt.scheduled_at)}
+                            </td>
+                            <td className="py-5 pr-6 text-gray-500">{apptTypeLabel(appt.type)}</td>
+                            <td className="py-5 pr-6 text-gray-500">
+                              {branchNames[appt.branch_id] ?? '—'}
+                            </td>
+                            <td className="py-5">
+                              <span
+                                className={`inline-flex items-center rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${APPT_STATUS_STYLES[appt.status] ?? 'border-gray-200 bg-gray-50 text-gray-600'}`}
+                              >
+                                <span
+                                  className={`mr-1.5 h-1.5 w-1.5 rounded-full ${APPT_STATUS_DOTS[appt.status] ?? 'bg-gray-400'}`}
+                                />
+                                {statusLabel(appt.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </section>
+
+        {/* Order History Table. `id` is the anchor target for the "Order
+            History" link in the Account Settings panel above — it lives on
+            this page already, so that link is a scroll, not a route. */}
+        <div
+          id="order-history"
+          className="scroll-mt-24 overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]"
+        >
           <div className="flex items-center justify-between border-b border-gray-100 bg-[#fafbfc] p-6 sm:p-8">
             <div className="flex items-center gap-3">
               <HistoryNavIcon />
