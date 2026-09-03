@@ -1,6 +1,18 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { CalendarCheck, Clock, MapPin, Check, RefreshCw, X } from 'lucide-react';
+import {
+  CalendarCheck,
+  Clock,
+  MapPin,
+  Check,
+  RefreshCw,
+  X,
+  Eye,
+  Phone,
+  Mail,
+  User,
+  FileText,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
@@ -17,19 +29,33 @@ interface Appointment {
   id: string;
   customer: string;
   phone: string;
+  /** Account email, when the booking is tied to a registered customer. */
+  email: string;
+  /** Name/phone typed into the booking form, which may differ from the account. */
+  contactName: string;
+  contactPhone: string;
   type: AppointmentType;
   branch: string;
   scheduledAt: string; // YYYY-MM-DD local date
   time: string; // HH:MM
   status: AppointmentStatus;
   notes: string;
+  /** Whether the booking belongs to a registered customer or a walk-in guest. */
+  isGuest: boolean;
+  /** When the booking was made, for the detail panel. */
+  createdAt: string;
   /** Raw ISO string from DB, used for DB updates */
   scheduled_at_iso: string;
   /** Needed to look up real availability when rescheduling. */
   branchId: string;
 }
 
-const FILTERS = ['Today', 'Tomorrow', 'This Week', 'All'];
+/**
+ * `Pending` was already handled by the filter predicate but was missing from
+ * this list, so it was unreachable from the UI even though a summary card
+ * counts it.
+ */
+const FILTERS = ['Today', 'Tomorrow', 'This Week', 'Pending', 'All'];
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   Pending: 'bg-yellow-100 text-yellow-700',
@@ -44,6 +70,18 @@ const TYPE_COLORS: Record<AppointmentType, string> = {
   'Frame Fitting': 'bg-cyan-100 text-cyan-700',
   Consultation: 'bg-orange-100 text-orange-700',
 };
+
+/**
+ * A booking reference a human can read out over the phone.
+ *
+ * The table used to print the raw UUID, which is 36 characters of noise that
+ * nobody can dictate or compare at a glance. The first block of a v4 UUID is
+ * enough to pick a row out of a branch's day; the detail dialog still shows
+ * the full id for support and for cross-referencing the audit log.
+ */
+function shortRef(id: string): string {
+  return `APT-${id.slice(0, 8).toUpperCase()}`;
+}
 
 /** Returns YYYY-MM-DD in local timezone */
 function toLocalDate(iso: string): string {
@@ -84,6 +122,7 @@ export function Appointments() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Today');
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
+  const [detailTarget, setDetailTarget] = useState<Appointment | null>(null);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   /** Validation message from the API when a reschedule is rejected. */
@@ -120,6 +159,11 @@ export function Appointments() {
               id: row.id,
               customer: customerName,
               phone,
+              email: row.customer?.email ?? '',
+              contactName: row.contact_name ?? '',
+              contactPhone: row.contact_phone ?? '',
+              isGuest: !row.customer_id,
+              createdAt: row.created_at ?? '',
               type: toAppointmentType(row.type ?? ''),
               branch: row.branch?.name ?? '—',
               scheduledAt: isoStr ? toLocalDate(isoStr) : '',
@@ -179,13 +223,15 @@ export function Appointments() {
     };
   }, [rescheduleTarget, newDate]);
 
-  const filtered = appointments.filter((a) => {
-    if (filter === 'Today') return a.scheduledAt === TODAY;
-    if (filter === 'Tomorrow') return a.scheduledAt === TOMORROW;
-    if (filter === 'This Week') return a.scheduledAt >= TODAY && a.scheduledAt <= WEEK_END;
-    if (filter === 'Pending') return a.status === 'Pending';
+  function matchesFilter(a: Appointment, f: string): boolean {
+    if (f === 'Today') return a.scheduledAt === TODAY;
+    if (f === 'Tomorrow') return a.scheduledAt === TOMORROW;
+    if (f === 'This Week') return a.scheduledAt >= TODAY && a.scheduledAt <= WEEK_END;
+    if (f === 'Pending') return a.status === 'Pending';
     return true;
-  });
+  }
+
+  const filtered = appointments.filter((a) => matchesFilter(a, filter));
 
   function confirm(id: string) {
     void (async () => {
@@ -332,19 +378,30 @@ export function Appointments() {
 
       {/* Filter tabs */}
       <div className="flex gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              filter === f
-                ? 'bg-[#141776] text-white'
-                : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {f}
-          </button>
-        ))}
+        {/* Counts on the tab itself: the list defaults to Today, and with an
+            empty count and no other signal an admin reasonably concludes the
+            bookings never arrived rather than that they are on another day. */}
+        {FILTERS.map((f) => {
+          const count = appointments.filter((a) => matchesFilter(a, f)).length;
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                filter === f
+                  ? 'bg-[#141776] text-white'
+                  : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {f}
+              {!loading && (
+                <span className={filter === f ? 'ml-1.5 text-white/70' : 'ml-1.5 text-gray-400'}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <Card>
@@ -375,74 +432,127 @@ export function Appointments() {
                 </tr>
               </thead>
               <tbody>
-                {loading
-                  ? [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
-                  : filtered.map((apt) => (
-                      <tr key={apt.id} className="border-b hover:bg-gray-50">
-                        <td className="px-3 py-3 text-sm font-medium text-[#141776]">{apt.id}</td>
-                        <td className="px-3 py-3">
-                          <p className="text-sm font-medium">{apt.customer}</p>
-                          <p className="text-xs text-gray-500">{apt.phone}</p>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLORS[apt.type] ?? 'bg-gray-100 text-gray-600'}`}
+                {loading ? (
+                  [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-10 text-center">
+                      <p className="text-sm font-medium text-gray-600">
+                        No appointments match &ldquo;{filter}&rdquo;
+                      </p>
+                      {appointments.length > 0 && filter !== 'All' && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          {appointments.length} booking{appointments.length === 1 ? '' : 's'} on
+                          other dates.{' '}
+                          <button
+                            type="button"
+                            onClick={() => setFilter('All')}
+                            className="font-medium text-[#141776] hover:underline"
                           >
-                            {apt.type}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex items-center gap-1 text-sm">
-                            <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                            {apt.branch}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 text-sm">
-                          <p>{apt.scheduledAt}</p>
-                          <p className="text-gray-500">{apt.time}</p>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[apt.status]}`}
+                            View all
+                          </button>
+                        </p>
+                      )}
+                      {appointments.length === 0 && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Bookings made in the storefront appear here.
+                        </p>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((apt) => (
+                    <tr key={apt.id} className="border-b hover:bg-gray-50">
+                      <td className="px-3 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setDetailTarget(apt)}
+                          title={apt.id}
+                          className="font-mono text-sm font-medium text-[#141776] hover:underline"
+                        >
+                          {shortRef(apt.id)}
+                        </button>
+                      </td>
+                      <td className="px-3 py-3">
+                        <p className="text-sm font-medium">
+                          {apt.customer}
+                          {apt.isGuest && (
+                            <span className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+                              Guest
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">{apt.phone}</p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLORS[apt.type] ?? 'bg-gray-100 text-gray-600'}`}
+                        >
+                          {apt.type}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1 text-sm">
+                          <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                          {apt.branch}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-sm">
+                        <p>{apt.scheduledAt}</p>
+                        <p className="text-gray-500">{apt.time}</p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[apt.status]}`}
+                        >
+                          {apt.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setDetailTarget(apt)}
+                            title="View details"
+                            className="h-7 px-2 text-xs"
                           >
-                            {apt.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex items-center gap-1">
-                            {apt.status === 'Pending' && (
-                              <Button
-                                size="sm"
-                                onClick={() => confirm(apt.id)}
-                                className="h-7 bg-green-600 px-2 text-xs hover:bg-green-700"
-                              >
-                                <Check className="mr-1 h-3 w-3" />
-                                Confirm
-                              </Button>
-                            )}
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          {apt.status === 'Pending' && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => setRescheduleTarget(apt)}
-                              className="h-7 px-2 text-xs"
+                              onClick={() => confirm(apt.id)}
+                              className="h-7 bg-green-600 px-2 text-xs hover:bg-green-700"
                             >
-                              <RefreshCw className="mr-1 h-3 w-3" />
-                              Reschedule
+                              <Check className="mr-1 h-3 w-3" />
+                              Confirm
                             </Button>
-                            {apt.status !== 'Cancelled' && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => cancel(apt.id)}
-                                className="h-7 px-2 text-xs text-red-500 hover:text-red-700"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setRescheduleTarget(apt)}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <RefreshCw className="mr-1 h-3 w-3" />
+                            Reschedule
+                          </Button>
+                          {apt.status !== 'Cancelled' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => cancel(apt.id)}
+                              className="h-7 px-2 text-xs text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -453,6 +563,156 @@ export function Appointments() {
           )}
         </CardContent>
       </Card>
+
+      {/* Detail dialog — the full booking, including the fields the table has
+          no room for (email, the contact typed on the form, notes, the full
+          UUID for support and audit-log cross-referencing). */}
+      <Dialog open={!!detailTarget} onOpenChange={() => setDetailTarget(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+            <DialogDescription>{detailTarget ? shortRef(detailTarget.id) : ''}</DialogDescription>
+          </DialogHeader>
+          {detailTarget && (
+            <div className="space-y-5 py-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[detailTarget.status]}`}
+                >
+                  {detailTarget.status}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLORS[detailTarget.type] ?? 'bg-gray-100 text-gray-600'}`}
+                >
+                  {detailTarget.type}
+                </span>
+                {detailTarget.isGuest && (
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                    Guest booking
+                  </span>
+                )}
+              </div>
+
+              <section className="space-y-2.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Customer
+                </h4>
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 shrink-0 text-gray-400" />
+                  <span className="font-medium">{detailTarget.customer}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                  {detailTarget.phone && detailTarget.phone !== '—' ? (
+                    <a
+                      href={`tel:${detailTarget.phone}`}
+                      className="text-[#141776] hover:underline"
+                    >
+                      {detailTarget.phone}
+                    </a>
+                  ) : (
+                    <span className="text-gray-500">No phone on file</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+                  {detailTarget.email ? (
+                    <a
+                      href={`mailto:${detailTarget.email}`}
+                      className="text-[#141776] hover:underline"
+                    >
+                      {detailTarget.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-500">No email on file</span>
+                  )}
+                </div>
+                {/* Only worth showing when it differs from the account — otherwise
+                    it is the same name and phone twice. */}
+                {detailTarget.contactName && detailTarget.contactName !== detailTarget.customer && (
+                  <p className="text-sm text-gray-500">
+                    Booked as {detailTarget.contactName}
+                    {detailTarget.contactPhone ? ` · ${detailTarget.contactPhone}` : ''}
+                  </p>
+                )}
+              </section>
+
+              <section className="space-y-2.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Booking
+                </h4>
+                <div className="flex items-center gap-2 text-sm">
+                  <CalendarCheck className="h-4 w-4 shrink-0 text-gray-400" />
+                  <span>
+                    {detailTarget.scheduledAt} at {detailTarget.time}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                  <span>{detailTarget.branch}</span>
+                </div>
+                {detailTarget.createdAt && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+                    <span className="text-gray-500">
+                      Booked {new Date(detailTarget.createdAt).toLocaleString('en-GB')}
+                    </span>
+                  </div>
+                )}
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Notes
+                </h4>
+                <div className="flex gap-2 text-sm">
+                  <FileText className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                  {detailTarget.notes ? (
+                    <p className="whitespace-pre-wrap">{detailTarget.notes}</p>
+                  ) : (
+                    <p className="text-gray-500">No notes</p>
+                  )}
+                </div>
+              </section>
+
+              <section className="space-y-1 border-t pt-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Reference
+                </h4>
+                <p className="break-all font-mono text-xs text-gray-500">{detailTarget.id}</p>
+              </section>
+
+              <div className="flex justify-end gap-2 pt-1">
+                {detailTarget.status === 'Pending' && (
+                  <Button
+                    onClick={() => {
+                      confirm(detailTarget.id);
+                      setDetailTarget(null);
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="mr-1 h-4 w-4" />
+                    Confirm
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setRescheduleTarget(detailTarget);
+                    setDetailTarget(null);
+                  }}
+                >
+                  <RefreshCw className="mr-1 h-4 w-4" />
+                  Reschedule
+                </Button>
+                <Button variant="ghost" onClick={() => setDetailTarget(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Reschedule dialog */}
       <Dialog
@@ -469,7 +729,7 @@ export function Appointments() {
           <DialogHeader>
             <DialogTitle>Reschedule Appointment</DialogTitle>
             <DialogDescription>
-              {rescheduleTarget?.id} — {rescheduleTarget?.customer}
+              {rescheduleTarget ? shortRef(rescheduleTarget.id) : ''} — {rescheduleTarget?.customer}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">

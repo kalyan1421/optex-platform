@@ -54,11 +54,139 @@ async function fetchAllProducts(): Promise<AdminProduct[]> {
   return all;
 }
 
+/**
+ * Thumbnails that fail loudly-but-tidily.
+ *
+ * Some seeded rows still carry storefront-relative paths like
+ * `/seed/executive_pro.png`, which resolve against the admin origin and 404.
+ * A bare <img> renders those as the browser's broken-image glyph, which is
+ * indistinguishable from an upload having failed — so swap in a caption
+ * naming the problem instead.
+ */
+function ProductImageStrip({ images }: { images: string[] }) {
+  const [broken, setBroken] = useState<Record<number, boolean>>({});
+  if (images.length === 0) {
+    return <p className="text-muted-foreground text-sm">No images yet.</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {images.map((src, i) =>
+        broken[i] ? (
+          <div
+            key={`${src}-${i}`}
+            title={src}
+            className="flex h-14 w-14 flex-col items-center justify-center rounded-md border border-dashed bg-gray-50 px-1 text-center"
+          >
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            <span className="mt-0.5 text-[9px] leading-tight text-gray-500">Missing</span>
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`${src}-${i}`}
+            src={src}
+            alt=""
+            title={src}
+            onError={() => setBroken((b) => ({ ...b, [i]: true }))}
+            className="h-14 w-14 rounded-md border object-cover"
+          />
+        ),
+      )}
+    </div>
+  );
+}
+
 function productImage(p: AdminProduct) {
   const src = p.images?.[0];
   if (!src) return '';
   if (src.startsWith('http')) return src;
   return '';
+}
+
+/**
+ * Read-only view of a product. The grid's eye icon rendered a button with no
+ * `onClick`, so "view" did nothing at all; edit was the only way to see a
+ * product's description, images or try-on URL, which meant opening a form just
+ * to read a value.
+ */
+function ProductViewDialog({
+  product,
+  categoryName,
+  onOpenChange,
+  onEdit,
+}: {
+  product?: AdminProduct;
+  categoryName: (id: string | null) => string;
+  onOpenChange: (v: boolean) => void;
+  onEdit: (p: AdminProduct) => void;
+}) {
+  return (
+    <Dialog open={!!product} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{product?.name ?? 'Product'}</DialogTitle>
+          <DialogDescription className="font-mono">{product?.sku}</DialogDescription>
+        </DialogHeader>
+        {product && (
+          <div className="space-y-5 py-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <StockBadge isActive={product.is_active} />
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                {categoryName(product.category_id)}
+              </span>
+            </div>
+
+            <ProductImageStrip images={product.images ?? []} />
+
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <dt className="text-xs font-medium text-gray-500">Price</dt>
+                <dd className="font-medium">KSh {Number(product.price_kes).toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-500">Brand</dt>
+                <dd>{product.brand || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-500">Frame material</dt>
+                <dd>{product.frame_material || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-500">Frame shape</dt>
+                <dd>{product.frame_shape || '—'}</dd>
+              </div>
+            </dl>
+
+            <div>
+              <h4 className="mb-1 text-xs font-medium text-gray-500">Description</h4>
+              <p className="whitespace-pre-wrap text-sm">{product.description || '—'}</p>
+            </div>
+
+            <div className="space-y-1 border-t pt-4">
+              <h4 className="text-xs font-medium text-gray-500">Product ID</h4>
+              <p className="break-all font-mono text-xs text-gray-500">{product.id}</p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onEdit(product);
+                  onOpenChange(false);
+                }}
+              >
+                <Edit className="mr-1 h-4 w-4" />
+                Edit
+              </Button>
+              <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function ProductFormDialog({
@@ -233,18 +361,7 @@ function ProductFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Images</Label>
-            {images.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {images.map((src, i) => (
-                  <img
-                    key={src + i}
-                    src={src}
-                    alt=""
-                    className="h-14 w-14 rounded-md border object-cover"
-                  />
-                ))}
-              </div>
-            )}
+            {images.length > 0 && <ProductImageStrip images={images} />}
             {isEdit ? (
               <>
                 <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
@@ -320,6 +437,7 @@ export function Products() {
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<AdminProduct | undefined>();
+  const [viewProduct, setViewProduct] = useState<AdminProduct | undefined>();
   /** Validation message from the API for create / update / deactivate. */
   const [formError, setFormError] = useState('');
 
@@ -408,6 +526,21 @@ export function Products() {
     }
   }
 
+  /**
+   * Undo for the deactivate above. Without it a mis-click was one-way from
+   * the grid, even though the row was still sitting there marked Inactive.
+   */
+  async function handleReactivateProduct(id: string) {
+    try {
+      await api.admin.products.update(id, { is_active: true });
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: true } : p)));
+      setFormError('');
+    } catch (err) {
+      console.error('reactivate product failed:', err);
+      setFormError((err as Error)?.message ?? 'Could not reactivate the product.');
+    }
+  }
+
   async function handleDeleteProduct(id: string) {
     if (!confirm('Deactivate this product? It will be hidden from the storefront.')) return;
     try {
@@ -474,6 +607,15 @@ export function Products() {
         categories={categories}
         onSave={handleEditProduct}
         onImageUploaded={refreshProducts}
+      />
+
+      <ProductViewDialog
+        product={viewProduct}
+        categoryName={categoryName}
+        onOpenChange={(v) => {
+          if (!v) setViewProduct(undefined);
+        }}
+        onEdit={setEditProduct}
       />
 
       {formError && (
@@ -573,7 +715,13 @@ export function Products() {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="View product"
+                              onClick={() => setViewProduct(product)}
+                            >
                               <Eye className="h-3.5 w-3.5" />
                             </Button>
                             <Button
@@ -584,14 +732,32 @@ export function Products() {
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteProduct(product.id)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {/* Soft delete: the API deactivates rather than
+                                removing, because orders reference products.
+                                The row stays put with an Inactive badge, so
+                                without this affordance the click looked like
+                                it had done nothing. */}
+                            {product.is_active ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-500 hover:text-red-700"
+                                title="Deactivate (hides it from the storefront)"
+                                onClick={() => handleDeleteProduct(product.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-green-600 hover:text-green-700"
+                                title="Reactivate (shows it in the storefront again)"
+                                onClick={() => handleReactivateProduct(product.id)}
+                              >
+                                Restore
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
