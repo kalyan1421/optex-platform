@@ -1208,7 +1208,9 @@ export default function Page() {
               >
                 By placing your order, you agree to our{' '}
                 <a
-                  href="#terms"
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="underline decoration-solid hover:text-gray-800"
                   style={{ lineHeight: '100%' }}
                 >
@@ -1216,7 +1218,9 @@ export default function Page() {
                 </a>{' '}
                 and{' '}
                 <a
-                  href="#privacy"
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="underline decoration-solid hover:text-gray-800"
                   style={{ lineHeight: '100%' }}
                 >

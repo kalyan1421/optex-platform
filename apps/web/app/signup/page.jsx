@@ -428,11 +428,21 @@ const Signup = () => {
               }}
             >
               I agree to the{' '}
-              <a href="#terms" className="underline hover:text-[#141776]">
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-[#141776]"
+              >
                 Terms of Service
               </a>{' '}
               and{' '}
-              <a href="#privacy" className="underline hover:text-[#141776]">
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-[#141776]"
+              >
                 Privacy Policy
               </a>
               .

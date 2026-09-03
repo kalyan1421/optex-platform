@@ -232,6 +232,10 @@ export default function PrivacyPage() {
         <section className="border-t border-gray-100 pt-8">
           <p className="text-[14px] text-gray-500">
             See also:{' '}
+            <Link href="/terms" className="font-bold text-[#2A3182] hover:underline">
+              Terms of Service
+            </Link>{' '}
+            ·{' '}
             <Link href="/returns" className="font-bold text-[#2A3182] hover:underline">
               Returns Policy
             </Link>{' '}
