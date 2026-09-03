@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
 import { SmsService } from '../notifications/sms.service';
 import type { AuthUser } from '../../auth/auth-user';
 import type { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -35,6 +36,35 @@ const APPOINTMENT_COLUMNS =
  * approach already used for admin reviews.
  */
 const ADMIN_APPOINTMENT_COLUMNS = `${APPOINTMENT_COLUMNS}, customer:customers(full_name, email, phone), branch:branches(name)`;
+
+/**
+ * In-app notification copy for an admin-driven status change
+ * (`updateForAdmin`). `pending` is absent — nothing reaches it from that
+ * path (it's only the just-booked default); `cancelled`/`rescheduled` here
+ * cover the admin panel's own Confirm/Reschedule/Cancel actions, distinct
+ * from the customer's own `cancelOwn`/`rescheduleOwn`, which send their own
+ * copy directly.
+ */
+const APPOINTMENT_STATUS_NOTIFICATION_COPY: Partial<
+  Record<AppointmentStatus, { title: string; body: string }>
+> = {
+  confirmed: {
+    title: 'Appointment confirmed',
+    body: 'Your appointment has been confirmed.',
+  },
+  rescheduled: {
+    title: 'Appointment rescheduled',
+    body: 'Your appointment time has changed — check the new date and time.',
+  },
+  cancelled: {
+    title: 'Appointment cancelled',
+    body: 'Your appointment has been cancelled by the branch.',
+  },
+  completed: {
+    title: 'Appointment completed',
+    body: 'Your appointment has been marked complete. Thanks for visiting Optex.',
+  },
+};
 
 /**
  * Booking grid resolution, in minutes. Candidate slots are generated on this
@@ -85,6 +115,7 @@ export class AppointmentsService {
     private readonly supabase: SupabaseService,
     private readonly sms: SmsService,
     private readonly auditLog: AuditLogService,
+    private readonly notifications: CustomerNotificationsService,
   ) {}
 
   // ─── Public: availability ──────────────────────────────────────────────────
@@ -154,6 +185,13 @@ export class AppointmentsService {
     }
 
     await this.sendConfirmationSms(customerId, dto.branchId, dto.date, dto.time);
+    void this.notifications.notify(
+      customerId,
+      'appointment',
+      'Appointment booked',
+      `Your appointment is booked for ${dto.date} at ${dto.time}.`,
+      '/appointments',
+    );
 
     return data;
   }
@@ -190,7 +228,15 @@ export class AppointmentsService {
       throw new ConflictException('A completed appointment cannot be cancelled');
     }
 
-    return this.applyUpdate(id, { status: 'cancelled' });
+    const updated = await this.applyUpdate(id, { status: 'cancelled' });
+    void this.notifications.notify(
+      customerId,
+      'appointment',
+      'Appointment cancelled',
+      `Your appointment has been cancelled.`,
+      '/appointments',
+    );
+    return updated;
   }
 
   /**
@@ -211,10 +257,18 @@ export class AppointmentsService {
 
     await this.assertSlotBookable(existing.branch_id, dto.date, dto.time, id);
 
-    return this.applyUpdate(id, {
+    const updated = await this.applyUpdate(id, {
       scheduled_at: this.toUtcIso(dto.date, dto.time),
       status: 'rescheduled',
     });
+    void this.notifications.notify(
+      customerId,
+      'appointment',
+      'Appointment rescheduled',
+      `Your appointment has been moved to ${dto.date} at ${dto.time}.`,
+      '/appointments',
+    );
+    return updated;
   }
 
   // ─── Admin ──────────────────────────────────────────────────────────────────
@@ -319,6 +373,20 @@ export class AppointmentsService {
       resourceId: id,
       after: updated,
     });
+
+    if (updated.status !== existing.status && existing.customer_id) {
+      const copy = APPOINTMENT_STATUS_NOTIFICATION_COPY[updated.status];
+      if (copy) {
+        void this.notifications.notify(
+          existing.customer_id,
+          'appointment',
+          copy.title,
+          copy.body,
+          '/appointments',
+        );
+      }
+    }
+
     return updated;
   }
 

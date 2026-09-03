@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
 import { SmsService } from '../notifications/sms.service';
 import { CronLeaseService } from './cron-lease.service';
 
@@ -14,6 +15,8 @@ interface ClaimedReminderRow {
   contact_phone: string | null;
   /** Joined `customers.phone` (preferred when the booking has a customer). */
   customer_phone: string | null;
+  /** Null for a guest booking with no account. */
+  customer_id: string | null;
 }
 
 /** Which lead-time bucket a reminder belongs to. */
@@ -81,6 +84,7 @@ export class AppointmentRemindersJob {
     private readonly supabase: SupabaseService,
     private readonly sms: SmsService,
     private readonly lease: CronLeaseService,
+    private readonly notifications: CustomerNotificationsService,
   ) {}
 
   private get db() {
@@ -150,6 +154,17 @@ export class AppointmentRemindersJob {
         // SmsService no-ops (returns {ok:false}) without creds — that's fine,
         // it logs its own warning; we just don't count it as delivered.
         if (result.ok) sent += 1;
+
+        if (appt.customer_id) {
+          const lead = bucket === '24h' ? 'tomorrow' : 'in about an hour';
+          void this.notifications.notify(
+            appt.customer_id,
+            'appointment',
+            'Appointment reminder',
+            `Your appointment is ${lead} (${this.formatNairobi(appt.scheduled_at)} EAT).`,
+            '/appointments',
+          );
+        }
       } catch (err) {
         // sendSms already swallows network errors, but stay defensive so one
         // bad send can't abort the batch.

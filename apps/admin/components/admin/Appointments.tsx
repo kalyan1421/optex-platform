@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { DatePicker } from '../ui/date-picker';
 import { Skeleton } from '../ui/skeleton';
 import { api } from '../../lib/api';
+import type { AuditLogEntry } from '@optex/api-client';
 
 type AppointmentStatus = 'Pending' | 'Confirmed' | 'Rescheduled' | 'Cancelled' | 'Completed';
 type AppointmentType = 'Eye Test' | 'Frame Fitting' | 'Consultation';
@@ -123,6 +124,18 @@ export function Appointments() {
   const [filter, setFilter] = useState('Today');
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
   const [detailTarget, setDetailTarget] = useState<Appointment | null>(null);
+  // `null` = not loaded (or the caller lacks `audit_log.read` — Branch
+  // Manager/Staff, who never see this section at all rather than an error).
+  const [timeline, setTimeline] = useState<AuditLogEntry[] | null>(null);
+
+  function openDetail(apt: Appointment) {
+    setDetailTarget(apt);
+    setTimeline(null);
+    void api.admin.auditLog
+      .list({ resourceType: 'appointments', resourceId: apt.id })
+      .then((res) => setTimeline(res.data))
+      .catch(() => {});
+  }
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   /** Validation message from the API when a reschedule is rejected. */
@@ -466,7 +479,7 @@ export function Appointments() {
                       <td className="px-3 py-3">
                         <button
                           type="button"
-                          onClick={() => setDetailTarget(apt)}
+                          onClick={() => openDetail(apt)}
                           title={apt.id}
                           className="font-mono text-sm font-medium text-[#141776] hover:underline"
                         >
@@ -513,7 +526,7 @@ export function Appointments() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => setDetailTarget(apt)}
+                            onClick={() => openDetail(apt)}
                             title="View details"
                             className="h-7 px-2 text-xs"
                           >
@@ -681,6 +694,39 @@ export function Appointments() {
                 </h4>
                 <p className="break-all font-mono text-xs text-gray-500">{detailTarget.id}</p>
               </section>
+
+              {/* Timeline — real audit history. Only ever populated for
+                  Super Admin (the only role with `audit_log.read`); stays
+                  null for everyone else and this section just doesn't
+                  render rather than showing an error. */}
+              {timeline && timeline.length > 0 && (
+                <section className="space-y-3 border-t pt-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Timeline
+                  </h4>
+                  {timeline.map((entry) => {
+                    const after = entry.after as { status?: string } | null;
+                    return (
+                      <div key={entry.id} className="flex items-start gap-3 text-sm">
+                        <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#141776]" />
+                        <div>
+                          <p className="text-gray-700">
+                            <span className="font-medium capitalize">
+                              {entry.actor_role.replace(/_/g, ' ')}
+                            </span>{' '}
+                            {after?.status
+                              ? `set status to ${after.status.replace(/_/g, ' ')}`
+                              : 'updated this appointment'}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(entry.created_at).toLocaleString('en-GB')}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </section>
+              )}
 
               <div className="flex justify-end gap-2 pt-1">
                 {detailTarget.status === 'Pending' && (

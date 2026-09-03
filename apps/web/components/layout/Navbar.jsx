@@ -4,7 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { api } from '@/lib/api';
 import SearchAutocomplete from '@/components/search/SearchAutocomplete';
 
 const CATEGORIES = [
@@ -78,14 +80,50 @@ const SearchNavIcon = () => (
   </svg>
 );
 
+const BellIcon = () => (
+  <svg
+    className="text-brand-blue h-6 w-6 sm:h-7 sm:w-7"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+    />
+  </svg>
+);
+
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const searchInputRef = useRef(null);
   const { cartCount } = useCart();
+  const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    function loadUnreadCount() {
+      api.notifications
+        .unreadCount()
+        .then((res) => setUnreadCount(res.count))
+        .catch((err) => console.error('Unread notifications count error:', err));
+    }
+    loadUnreadCount();
+    window.addEventListener('focus', loadUnreadCount);
+    return () => window.removeEventListener('focus', loadUnreadCount);
+    // Re-checks on route change too — e.g. after visiting /notifications and
+    // marking things read, the badge should drop as soon as they navigate away.
+  }, [user, pathname]);
 
   const [isCatOpen, setIsCatOpen] = useState(false);
   const catRef = useRef(null);
@@ -233,6 +271,20 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+          {user && (
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="relative p-1 transition-opacity hover:opacity-80 sm:p-0"
+            >
+              <BellIcon />
+              {unreadCount > 0 && (
+                <span className="absolute right-0 top-0 inline-flex h-4 w-4 -translate-y-1 translate-x-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white sm:h-5 sm:w-5 sm:text-[11px]">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
           <Link
             href="/profile"
             aria-label="Profile"

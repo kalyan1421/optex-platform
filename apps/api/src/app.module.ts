@@ -25,6 +25,7 @@ import { BranchesModule } from './modules/branches/branches.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CronModule } from './modules/cron/cron.module';
+import { CustomerNotificationsModule } from './modules/customer-notifications/customer-notifications.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -112,6 +113,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     // Pending-features sprint plan (Sprint 2, Sprint 3)
     AddressesModule,
     WishlistModule,
+    CustomerNotificationsModule,
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorize.

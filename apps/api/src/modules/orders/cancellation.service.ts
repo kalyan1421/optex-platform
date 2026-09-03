@@ -9,6 +9,7 @@ import {
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 
@@ -83,6 +84,7 @@ export class CancellationService {
     private readonly email: EmailService,
     private readonly sms: SmsService,
     private readonly auditLog: AuditLogService,
+    private readonly notifications: CustomerNotificationsService,
   ) {}
 
   private get db() {
@@ -690,13 +692,14 @@ export class CancellationService {
     try {
       const { data } = await this.db
         .from('orders')
-        .select('order_number, customer:customers(email, phone)')
+        .select('order_number, customer:customers(id, email, phone)')
         .eq('id', orderId)
         .maybeSingle();
       if (!data) return;
 
       const embed = (data as { customer: unknown }).customer;
       const customer = (Array.isArray(embed) ? embed[0] : embed) as {
+        id: string | null;
         email: string | null;
         phone: string | null;
       } | null;
@@ -729,6 +732,15 @@ export class CancellationService {
       }
       if (customer?.phone) {
         await this.sms.sendSms(customer.phone, `Optex: ${body}`);
+      }
+      if (customer?.id) {
+        void this.notifications.notify(
+          customer.id,
+          'order',
+          subject,
+          body,
+          `/orders/${orderId}/tracking`,
+        );
       }
     } catch (e) {
       this.logger.warn(

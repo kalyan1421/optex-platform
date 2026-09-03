@@ -9,7 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { api } from '@/lib/api';
-import type { AdminOrderSummary, OrderDetail, OrderStatus } from '@optex/api-client';
+import type {
+  AdminOrderDetail,
+  AdminOrderSummary,
+  AuditLogEntry,
+  OrderStatus,
+} from '@optex/api-client';
 import { formatKes } from '@optex/ui';
 import { Skeleton } from '../ui/skeleton';
 import { TableSkeleton } from '../ui/table-skeleton';
@@ -76,7 +81,10 @@ const paymentColors: Record<string, string> = {
 type ShippingJSON = {
   name?: string;
   phone?: string;
+  address?: string;
   city?: string;
+  county?: string;
+  postal?: string;
 };
 
 function customerName(order: AdminOrderSummary) {
@@ -91,14 +99,27 @@ function formatDate(iso: string) {
   });
 }
 
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString('en-KE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AdminOrderSummary | null>(null);
-  const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [detail, setDetail] = useState<AdminOrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  // `null` = not yet loaded (or the caller lacks `audit_log.read` — Branch
+  // Manager/Staff, who never see this section at all rather than an error).
+  const [timeline, setTimeline] = useState<AuditLogEntry[] | null>(null);
   const [newStatus, setNewStatus] = useState<OrderStatus | ''>('');
   const [updating, setUpdating] = useState(false);
 
@@ -159,6 +180,7 @@ export function Orders() {
     setCancelling(false);
     setCancelReason('');
     setCancelError('');
+    setTimeline(null);
     void (async () => {
       try {
         setDetail(await api.admin.orders.get(order.id));
@@ -168,6 +190,13 @@ export function Orders() {
         setDetailLoading(false);
       }
     })();
+    // Best-effort: only Super Admin holds `audit_log.read`. A Branch
+    // Manager/Staff caller gets a 403 here, which just leaves `timeline`
+    // null — no error shown, the section simply doesn't render for them.
+    void api.admin.auditLog
+      .list({ resourceType: 'orders', resourceId: order.id })
+      .then((res) => setTimeline(res.data))
+      .catch(() => {});
   }
 
   async function handleStatusUpdate() {
@@ -175,12 +204,19 @@ export function Orders() {
     setUpdating(true);
     try {
       const updated = await api.admin.orders.updateStatus(selected.id, { status: newStatus });
-      setDetail(updated);
+      // `updateStatus` returns the plain (non-admin-enriched) detail — merge
+      // rather than replace so the branch/payment fields fetched by `get()`
+      // survive a status change instead of disappearing from the dialog.
+      setDetail((prev) => (prev ? { ...prev, ...updated } : null));
       setOrders((prev) =>
         prev.map((o) => (o.id === selected.id ? { ...o, status: newStatus } : o)),
       );
       setSelected((prev) => (prev ? { ...prev, status: newStatus } : null));
       setNewStatus('');
+      void api.admin.auditLog
+        .list({ resourceType: 'orders', resourceId: selected.id })
+        .then((res) => setTimeline(res.data))
+        .catch(() => {});
     } catch (e) {
       console.error(e);
     } finally {
@@ -204,6 +240,10 @@ export function Orders() {
       setDetail((prev) => (prev ? { ...prev, status: 'cancelled' } : null));
       setCancelling(false);
       setCancelReason('');
+      void api.admin.auditLog
+        .list({ resourceType: 'orders', resourceId: selected.id })
+        .then((res) => setTimeline(res.data))
+        .catch(() => {});
     } catch (e) {
       // The API returns a specific, readable reason — paid without
       // acknowledgement, a pending request already covering this order, or
@@ -410,20 +450,61 @@ export function Orders() {
                   <p className="font-medium">
                     {selected.customer?.phone ?? detailShipping?.phone ?? '—'}
                   </p>
-                  <p className="text-sm text-gray-500">{detailShipping?.city ?? ''}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Date</p>
                   <p className="font-medium">{formatDate(selected.createdAt)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Payment Method</p>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${paymentColors[selected.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
-                  >
-                    {paymentLabels[selected.paymentMethod ?? ''] ?? selected.paymentMethod ?? '—'}
-                  </span>
-                  <p className="mt-1 text-xs text-gray-400">Payment: {selected.paymentStatus}</p>
+                  <p className="text-xs text-gray-500">Branch</p>
+                  {/* Checkout doesn't assign a fulfilment branch today, so this
+                      is honestly the current data state most orders will show,
+                      not a bug this dialog is hiding. */}
+                  <p className="font-medium">{detail?.branch?.name ?? 'Not yet assigned'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Delivery Address</p>
+                  <p className="font-medium">
+                    {[
+                      detailShipping?.address,
+                      detailShipping?.city,
+                      detailShipping?.county,
+                      detailShipping?.postal,
+                    ]
+                      .filter(Boolean)
+                      .join(', ') || '—'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Payment */}
+              <div>
+                <p className="mb-2 font-medium">Payment</p>
+                <div className="space-y-2 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${paymentColors[selected.paymentMethod ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
+                    >
+                      {paymentLabels[selected.paymentMethod ?? ''] ?? selected.paymentMethod ?? '—'}
+                    </span>
+                    <span className="text-xs text-gray-500">{selected.paymentStatus}</span>
+                  </div>
+                  {(() => {
+                    const txn = detail?.mpesaTransaction ?? detail?.pesapalTransaction ?? null;
+                    if (!txn) {
+                      return <p className="text-sm text-gray-400">Awaiting confirmation.</p>;
+                    }
+                    return (
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p>
+                          Reference: <span className="font-mono">{txn.reference}</span>
+                        </p>
+                        <p>Amount confirmed: {formatKes(txn.amountKes)}</p>
+                        {txn.phone && <p>Payer phone: {txn.phone}</p>}
+                        <p>Received: {formatDateTime(txn.receivedAt)}</p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -506,6 +587,41 @@ export function Orders() {
                               className={`mb-4 h-0.5 flex-1 ${i < current ? 'bg-[#141776]' : 'bg-gray-200'}`}
                             />
                           )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline — real audit history. Only ever populated for Super
+                  Admin (the only role with `audit_log.read`); `timeline` stays
+                  null for everyone else, and this section just doesn't render
+                  rather than showing an error. */}
+              {timeline && timeline.length > 0 && (
+                <div className="border-t pt-4">
+                  <p className="mb-3 font-medium">Timeline</p>
+                  <div className="space-y-3">
+                    {timeline.map((entry) => {
+                      const meta = entry.metadata as { from?: string; to?: string } | null;
+                      return (
+                        <div key={entry.id} className="flex items-start gap-3 text-sm">
+                          <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#141776]" />
+                          <div>
+                            <p className="text-gray-700">
+                              <span className="font-medium capitalize">
+                                {entry.actor_role.replace(/_/g, ' ')}
+                              </span>{' '}
+                              {entry.action === 'orders.status_change' && meta?.from && meta?.to
+                                ? `changed status ${STATUS_LABELS[meta.from] ?? meta.from} → ${STATUS_LABELS[meta.to] ?? meta.to}`
+                                : entry.action === 'orders.cancel'
+                                  ? 'cancelled this order'
+                                  : entry.action}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {formatDateTime(entry.created_at)}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}

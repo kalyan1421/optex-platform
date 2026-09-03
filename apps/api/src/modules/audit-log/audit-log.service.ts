@@ -82,6 +82,7 @@ export class AuditLogService {
       .range(from, to);
 
     if (query.resourceType) builder = builder.eq('resource_type', query.resourceType);
+    if (query.resourceId) builder = builder.eq('resource_id', query.resourceId);
     if (query.actorUserId) builder = builder.eq('actor_user_id', query.actorUserId);
     if (query.branchId) builder = builder.eq('branch_id', query.branchId);
     if (query.from) builder = builder.gte('created_at', query.from);

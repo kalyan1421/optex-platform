@@ -4,7 +4,12 @@ import { RequirePermission, CurrentUser } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { AdminListOrdersQueryDto } from './dto/admin-list-orders-query.dto';
 import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
-import { AdminOrderSummaryView, OrderDetailView, PaginatedOrders } from './dto/order-views';
+import {
+  AdminOrderDetailView,
+  AdminOrderSummaryView,
+  OrderDetailView,
+  PaginatedOrders,
+} from './dto/order-views';
 import { OrdersService } from './orders.service';
 import { CancellationService } from './cancellation.service';
 import {
@@ -55,7 +60,7 @@ export class OrdersAdminController {
   getOrder(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: AuthUser,
-  ): Promise<OrderDetailView> {
+  ): Promise<AdminOrderDetailView> {
     return this.orders.adminOrderDetail(id, user);
   }
 

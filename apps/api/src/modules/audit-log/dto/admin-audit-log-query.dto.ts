@@ -9,6 +9,13 @@ export class AdminAuditLogQueryDto {
   @IsOptional()
   resourceType?: string;
 
+  @ApiPropertyOptional({
+    description: "Filter to one record's history, e.g. an order or appointment id.",
+  })
+  @IsString()
+  @IsOptional()
+  resourceId?: string;
+
   @ApiPropertyOptional({ format: 'uuid', description: 'Filter to one actor.' })
   @IsUUID()
   @IsOptional()

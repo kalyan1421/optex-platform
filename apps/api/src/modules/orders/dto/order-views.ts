@@ -56,6 +56,27 @@ export interface AdminOrderSummaryView extends OrderSummaryView {
   } | null;
 }
 
+/** One side of a matched M-Pesa/Pesapal payment. */
+export interface OrderPaymentTransactionView {
+  reference: string;
+  amountKes: number;
+  /** Payer phone, when the provider supplied one (M-Pesa only). */
+  phone: string | null;
+  status: string;
+  receivedAt: string;
+}
+
+/**
+ * Admin order detail (`GET /admin/orders/:id`): `OrderDetailView` plus the
+ * fulfilment branch (often not yet set — checkout doesn't assign one today)
+ * and the matched payment transaction, when one exists.
+ */
+export interface AdminOrderDetailView extends OrderDetailView {
+  branch: { id: string; name: string } | null;
+  mpesaTransaction: OrderPaymentTransactionView | null;
+  pesapalTransaction: OrderPaymentTransactionView | null;
+}
+
 /** Paginated envelope shared by the customer and admin list endpoints. */
 export interface PaginatedOrders<T> {
   data: T[];

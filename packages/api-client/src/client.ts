@@ -56,6 +56,7 @@ import type {
   AdminListOrdersQuery,
   AdminListPaymentsQuery,
   AdminOrderCancelInput,
+  AdminOrderDetail,
   AdminOrderStatusInput,
   AdminOrderSummary,
   AdminPayment,
@@ -87,10 +88,13 @@ import type {
   MpesaStatus,
   MpesaStkPushInput,
   MpesaStkPushResult,
+  NotificationItem,
+  NotificationQuery,
   OrderDetail,
   OrderSummary,
   OrderTracking,
   Paginated,
+  PaginatedNotifications,
   PaginatedOrders,
   PaginatedPayments,
   PesapalInitiateInput,
@@ -291,6 +295,7 @@ export interface ApiClient {
   prescriptions: PrescriptionsApi;
   addresses: AddressesApi;
   wishlist: WishlistApi;
+  notifications: NotificationsApi;
   reviews: ReviewsApi;
   promotions: PromotionsApi;
   branches: BranchesApi;
@@ -569,6 +574,18 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       }),
   };
 
+  // ── notifications ────────────────────────────────────────────────────────
+  const notifications: NotificationsApi = {
+    list: (query) =>
+      request<PaginatedNotifications>('/notifications', { query: query as QueryParams }),
+    unreadCount: () => request<{ count: number }>('/notifications/unread-count'),
+    markRead: (id) =>
+      request<NotificationItem>(`/notifications/${encodeURIComponent(id)}/read`, {
+        method: 'PATCH',
+      }),
+    markAllRead: () => request<{ count: number }>('/notifications/read-all', { method: 'POST' }),
+  };
+
   // ── reviews ──────────────────────────────────────────────────────────────
   const reviews: ReviewsApi = {
     listForProduct: (productId) =>
@@ -615,7 +632,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
         request<PaginatedOrders<AdminOrderSummary>>('/admin/orders', {
           query: query as QueryParams,
         }),
-      get: (id) => request<OrderDetail>(`/admin/orders/${encodeURIComponent(id)}`),
+      get: (id) => request<AdminOrderDetail>(`/admin/orders/${encodeURIComponent(id)}`),
       updateStatus: (id, input) =>
         request<OrderDetail>(`/admin/orders/${encodeURIComponent(id)}/status`, {
           method: 'PATCH',
@@ -897,6 +914,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     prescriptions,
     addresses,
     wishlist,
+    notifications,
     reviews,
     promotions,
     branches,
@@ -1050,6 +1068,18 @@ export interface WishlistApi {
   remove: (productId: string) => Promise<{ productId: string }>;
 }
 
+/** The signed-in customer's notification feed (`/notifications/...`). */
+export interface NotificationsApi {
+  /** `GET /notifications` — newest first */
+  list: (query?: NotificationQuery) => Promise<PaginatedNotifications>;
+  /** `GET /notifications/unread-count` */
+  unreadCount: () => Promise<{ count: number }>;
+  /** `PATCH /notifications/:id/read` — idempotent */
+  markRead: (id: string) => Promise<NotificationItem>;
+  /** `POST /notifications/read-all` */
+  markAllRead: () => Promise<{ count: number }>;
+}
+
 /** Product reviews (`/products/:productId/reviews`). `list` is public. */
 export interface ReviewsApi {
   /** `GET /products/:productId/reviews` (public) */
@@ -1094,7 +1124,7 @@ export interface AdminApi {
     /** `GET /admin/orders` */
     list: (query?: AdminListOrdersQuery) => Promise<PaginatedOrders<AdminOrderSummary>>;
     /** `GET /admin/orders/:id` */
-    get: (id: string) => Promise<OrderDetail>;
+    get: (id: string) => Promise<AdminOrderDetail>;
     /** `PATCH /admin/orders/:id/status` */
     updateStatus: (id: string, input: AdminOrderStatusInput) => Promise<OrderDetail>;
     /**

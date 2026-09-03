@@ -9,6 +9,7 @@ import {
 import type { AuthUser } from '../../auth/auth-user';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
 import { CheckoutDeliveryOption, CheckoutDto, CheckoutPaymentMethod } from './dto/checkout.dto';
@@ -17,10 +18,12 @@ import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { AdminListOrdersQueryDto } from './dto/admin-list-orders-query.dto';
 import {
+  AdminOrderDetailView,
   AdminOrderSummaryView,
   CheckoutResultView,
   OrderDetailView,
   OrderItemView,
+  OrderPaymentTransactionView,
   OrderSummaryView,
   OrderTrackingView,
   PaginatedOrders,
@@ -49,6 +52,37 @@ const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.DISPATCHED]: [OrderStatus.DELIVERED],
   [OrderStatus.DELIVERED]: [],
   [OrderStatus.CANCELLED]: [],
+};
+
+/**
+ * In-app notification copy per status reached via `adminUpdateStatus`.
+ * `pending_payment` and `cancelled` are absent: the former is covered by
+ * checkout's own "order placed" notification, and cancellation always
+ * flows through `CancellationService` instead (see the comment above
+ * `STATUS_TRANSITIONS`), which sends its own.
+ */
+const ORDER_STATUS_NOTIFICATION_COPY: Partial<
+  Record<
+    OrderStatus,
+    { title: (orderNumber: string) => string; body: (orderNumber: string) => string }
+  >
+> = {
+  [OrderStatus.RECEIVED]: {
+    title: (n) => `Payment received for order ${n}`,
+    body: (n) => `We've received payment for order ${n} and it's queued for processing.`,
+  },
+  [OrderStatus.PROCESSING]: {
+    title: (n) => `Order ${n} is being processed`,
+    body: (n) => `Order ${n} is now being prepared.`,
+  },
+  [OrderStatus.DISPATCHED]: {
+    title: (n) => `Order ${n} has been dispatched`,
+    body: (n) => `Order ${n} is on its way to you.`,
+  },
+  [OrderStatus.DELIVERED]: {
+    title: (n) => `Order ${n} delivered`,
+    body: (n) => `Order ${n} has been delivered. Enjoy!`,
+  },
 };
 
 /** Ordered fulfilment stages for the tracking timeline (excludes cancelled). */
@@ -99,6 +133,7 @@ export class OrdersService {
     private readonly email: EmailService,
     private readonly sms: SmsService,
     private readonly auditLog: AuditLogService,
+    private readonly notifications: CustomerNotificationsService,
   ) {}
 
   // ─── Checkout ──────────────────────────────────────────────────────────────
@@ -187,6 +222,13 @@ export class OrdersService {
 
     // ── Best-effort confirmation notifications (never block / fail checkout) ──
     void this.sendOrderConfirmation(detail, customer);
+    void this.notifications.notify(
+      customer.id,
+      'order',
+      `Order ${detail.orderNumber} placed`,
+      `We've received your order ${detail.orderNumber}. We'll update you as it's processed.`,
+      `/orders/${orderId}/tracking`,
+    );
 
     return { order: detail, payment };
   }
@@ -474,6 +516,18 @@ export class OrdersService {
       void this.sendStatusUpdate(detail, contact);
     }
 
+    const copy = ORDER_STATUS_NOTIFICATION_COPY[nextStatus];
+    if (copy && nextStatus !== currentStatus) {
+      const customerId = (current as { customer_id: string }).customer_id;
+      void this.notifications.notify(
+        customerId,
+        'order',
+        copy.title(detail.orderNumber),
+        copy.body(detail.orderNumber),
+        `/orders/${orderId}/tracking`,
+      );
+    }
+
     return detail;
   }
 
@@ -481,8 +535,70 @@ export class OrdersService {
    * Full detail for any order (admin; no per-customer ownership check).
    * Branch-scoped for Branch Manager/Staff — see `adminGetOrderDetailWithContact`.
    */
-  async adminOrderDetail(orderId: string, user: AuthUser): Promise<OrderDetailView> {
-    return this.adminGetOrderDetail(orderId, user);
+  async adminOrderDetail(orderId: string, user: AuthUser): Promise<AdminOrderDetailView> {
+    const { detail, branch, mpesaRef, pesapalId } = await this.adminGetOrderDetailWithContact(
+      orderId,
+      user,
+    );
+
+    const [mpesaTransaction, pesapalTransaction] = await Promise.all([
+      mpesaRef ? this.lookupMpesaTransaction(mpesaRef) : Promise.resolve(null),
+      pesapalId ? this.lookupPesapalTransaction(pesapalId) : Promise.resolve(null),
+    ]);
+
+    return { ...detail, branch, mpesaTransaction, pesapalTransaction };
+  }
+
+  /** Looks up the matched M-Pesa transaction for a reference, when one exists. */
+  private async lookupMpesaTransaction(
+    mpesaRef: string,
+  ): Promise<OrderPaymentTransactionView | null> {
+    const { data } = await this.supabase.client
+      .from('mpesa_transactions')
+      .select('mpesa_ref, amount_kes, customer_phone, status, received_at')
+      .eq('mpesa_ref', mpesaRef)
+      .maybeSingle();
+    if (!data) return null;
+    const row = data as {
+      mpesa_ref: string;
+      amount_kes: number;
+      customer_phone: string | null;
+      status: string;
+      received_at: string;
+    };
+    return {
+      reference: row.mpesa_ref,
+      amountKes: Number(row.amount_kes),
+      phone: row.customer_phone,
+      status: row.status,
+      receivedAt: row.received_at,
+    };
+  }
+
+  /** Looks up the matched Pesapal transaction for an order id, when one exists. */
+  private async lookupPesapalTransaction(
+    pesapalOrderId: string,
+  ): Promise<OrderPaymentTransactionView | null> {
+    const { data } = await this.supabase.client
+      .from('pesapal_transactions')
+      .select('pesapal_order_id, amount_kes, status, received_at')
+      .eq('pesapal_order_id', pesapalOrderId)
+      .maybeSingle();
+    if (!data) return null;
+    const row = data as {
+      pesapal_order_id: string;
+      amount_kes: number | null;
+      status: string;
+      received_at: string;
+    };
+    return {
+      reference: row.pesapal_order_id,
+      amountKes: Number(row.amount_kes ?? 0),
+      // Pesapal's IPN doesn't carry a payer phone the way Daraja's does.
+      phone: null,
+      status: row.status,
+      receivedAt: row.received_at,
+    };
   }
 
   // ─── Internals ─────────────────────────────────────────────────────────────
@@ -529,6 +645,9 @@ export class OrdersService {
   ): Promise<{
     detail: OrderDetailView;
     contact: { email: string | null; phone: string | null } | null;
+    branch: { id: string; name: string } | null;
+    mpesaRef: string | null;
+    pesapalId: string | null;
   }> {
     const { data, error } = await this.supabase.client
       .from('orders')
@@ -537,7 +656,9 @@ export class OrdersService {
         id, order_number, status, payment_status, payment_method,
         subtotal_kes, discount_kes, vat_kes, shipping_kes, total_kes,
         promo_code, shipping, notes, created_at, customer_id, branch_id,
+        mpesa_ref, pesapal_id,
         customer:customers!customer_id ( id, email, full_name, phone ),
+        branch:branches ( id, name ),
         order_items (
           id, product_id, quantity, unit_price_kes, lens_option,
           product:products ( id, slug, name, brand, images )
@@ -551,12 +672,15 @@ export class OrdersService {
 
     const row = data as unknown as OrderDetailRow & {
       branch_id: string | null;
+      mpesa_ref: string | null;
+      pesapal_id: string | null;
       customer: {
         id: string;
         email: string | null;
         full_name: string | null;
         phone: string | null;
       } | null;
+      branch: { id: string; name: string } | null;
     };
 
     if (user.branchId && row.branch_id !== user.branchId) {
@@ -566,13 +690,10 @@ export class OrdersService {
     return {
       detail: this.toDetail(row),
       contact: row.customer ? { email: row.customer.email, phone: row.customer.phone } : null,
+      branch: row.branch ?? null,
+      mpesaRef: row.mpesa_ref,
+      pesapalId: row.pesapal_id,
     };
-  }
-
-  /** Admin order-detail read (no per-customer ownership check; branch-scoped for staff). */
-  private async adminGetOrderDetail(orderId: string, user: AuthUser): Promise<OrderDetailView> {
-    const { detail } = await this.adminGetOrderDetailWithContact(orderId, user);
-    return detail;
   }
 
   /** Map a compact order row (+ joined items) to the summary view. */

@@ -370,6 +370,27 @@ export interface AdminOrderSummary extends OrderSummary {
   } | null;
 }
 
+/** One side of a matched M-Pesa/Pesapal payment, as shown on the admin order detail view. */
+export interface OrderPaymentTransaction {
+  reference: string;
+  amountKes: number;
+  /** Payer phone, when the provider supplied one (M-Pesa only). */
+  phone: string | null;
+  status: string;
+  receivedAt: string;
+}
+
+/**
+ * Admin order detail: `OrderDetail` plus the fulfilment branch (often not
+ * yet set — checkout doesn't assign one today) and the matched payment
+ * transaction, when one exists (`GET /admin/orders/:id`).
+ */
+export interface AdminOrderDetail extends OrderDetail {
+  branch: { id: string; name: string } | null;
+  mpesaTransaction: OrderPaymentTransaction | null;
+  pesapalTransaction: OrderPaymentTransaction | null;
+}
+
 /**
  * Paginated envelope shared by the customer and admin order list endpoints
  * (`PaginatedOrders<T>`). Note: this uses `data` + `totalPages`, unlike the
@@ -774,6 +795,41 @@ export interface PrescriptionQuery {
 export interface SignedDownloadUrl {
   url: string;
   expiresIn: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type NotificationCategory = 'order' | 'appointment' | 'offer';
+
+/** A `customer_notifications` row (`NotificationDto`). */
+export interface NotificationItem {
+  id: string;
+  category: NotificationCategory;
+  title: string;
+  body: string;
+  /** In-app path to navigate to, when there is one, e.g. `/orders/<id>/tracking`. */
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+/** Query for `GET /notifications` (`NotificationQueryDto`). */
+export interface NotificationQuery {
+  category?: NotificationCategory;
+  unreadOnly?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+/** Paginated envelope for `GET /notifications`. */
+export interface PaginatedNotifications {
+  data: NotificationItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1559,6 +1615,8 @@ export interface AuditLogEntry {
 /** Query for `GET /admin/audit-log` (`AdminAuditLogQueryDto`). */
 export interface AdminAuditLogQuery {
   resourceType?: string;
+  /** Scope to one record's history, e.g. an order or appointment id. */
+  resourceId?: string;
   actorUserId?: string;
   branchId?: string;
   /** ISO 8601 */

@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
 import type { AuthUser } from '../../auth/auth-user';
 import { CreatePromoBannerDto } from './dto/create-promo-banner.dto';
 import { CreatePromoCodeDto } from './dto/create-promo-code.dto';
@@ -64,6 +65,7 @@ export class PromotionsService {
     private readonly supabase: SupabaseService,
     private readonly auditLog: AuditLogService,
     private readonly config: ConfigService<Env, true>,
+    private readonly notifications: CustomerNotificationsService,
   ) {}
 
   /**
@@ -394,6 +396,11 @@ export class PromotionsService {
       resourceId: created.id,
       after: created,
     });
+    // Banners default active (DB default + the DTO's documented default), so
+    // a plain create is the common "announce this offer" path.
+    if (created.is_active) {
+      void this.notifyOffer(created);
+    }
     return this.toPublicBanner(created);
   }
 
@@ -423,7 +430,26 @@ export class PromotionsService {
       resourceId: id,
       after: updated,
     });
+    // Only fans out when this request explicitly (re-)activated the banner —
+    // an unrelated edit (e.g. the headline text) to an already-active banner
+    // must not re-announce it.
+    if (dto.is_active === true && updated.is_active) {
+      void this.notifyOffer(updated);
+    }
     return this.toPublicBanner(updated);
+  }
+
+  /** Fans out a new/reactivated banner to every customer's notification feed. */
+  private async notifyOffer(banner: PromoBannerRow): Promise<void> {
+    const title = banner.headline?.trim() || 'New offer at Optex';
+    await this.notifications.notifyAllCustomers(
+      'offer',
+      title,
+      banner.headline?.trim()
+        ? `${banner.headline.trim()} — check it out.`
+        : 'A new offer is live at Optex.',
+      banner.target_url ?? '/shop',
+    );
   }
 
   /** Delete a promo banner by id. */
