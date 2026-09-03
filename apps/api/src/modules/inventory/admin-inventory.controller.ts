@@ -4,7 +4,7 @@ import { CurrentUser, RequirePermission } from '../../auth/decorators';
 import type { AuthUser } from '../../auth/auth-user';
 import { InventoryService } from './inventory.service';
 import { InventoryReconciliationResponseDto, InventoryResponseDto } from './dto/inventory.dto';
-import { AgingSerialDto, SerialHistoryDto } from './dto/ledger.dto';
+import { AgingSerialDto, InventorySerialDto, SerialHistoryDto } from './dto/ledger.dto';
 import { LedgerService } from './ledger.service';
 
 /**
@@ -41,6 +41,28 @@ export class AdminInventoryController {
   @ApiOkResponse({ type: InventoryReconciliationResponseDto })
   reconciliation(@CurrentUser() user: AuthUser): Promise<InventoryReconciliationResponseDto> {
     return this.inventory.reconciliation(user);
+  }
+
+  @RequirePermission('inventory.read')
+  @Get('serials')
+  @ApiOperation({ summary: 'List in-stock serials, for transfer and adjustment pickers' })
+  @ApiQuery({ name: 'branchId', required: false, description: 'Branch holding the units.' })
+  @ApiQuery({ name: 'productId', required: false, description: 'Narrow to one product.' })
+  @ApiQuery({ name: 'search', required: false, description: 'Serial number contains this.' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Max rows (1-500, default 200).' })
+  @ApiOkResponse({ type: [InventorySerialDto] })
+  serials(
+    @CurrentUser() user: AuthUser,
+    @Query('branchId') branchId?: string,
+    @Query('productId') productId?: string,
+    @Query('search') search?: string,
+    @Query('limit') limit?: string,
+  ): Promise<InventorySerialDto[]> {
+    const parsedLimit = limit === undefined ? undefined : Number(limit);
+    if (parsedLimit !== undefined && (!Number.isInteger(parsedLimit) || parsedLimit < 1)) {
+      throw new BadRequestException('limit must be a positive integer');
+    }
+    return this.ledger.listSerials(user, { branchId, productId, search, limit: parsedLimit });
   }
 
   @RequirePermission('inventory.read')

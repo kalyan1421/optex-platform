@@ -1245,6 +1245,23 @@ export interface SerialLedgerEntry {
   created_at: string;
 }
 
+/**
+ * One in-stock unit, from `GET /admin/inventory/serials`. Transfers move
+ * `serial_ids` and a `remove` adjustment names one, so the admin pickers need
+ * to enumerate what a branch is actually holding.
+ */
+export interface InventorySerial {
+  serial_id: string;
+  serial_number: string;
+  product_id: string;
+  product_name: string;
+  product_sku: string | null;
+  branch_id: string | null;
+  status: string;
+  received_at: string;
+  cost_price_kes: number | null;
+}
+
 export interface SerialHistory {
   serial_id: string;
   serial_number: string;
@@ -1277,14 +1294,26 @@ export interface Supplier {
   is_active: boolean;
   created_at: string;
 }
-export type CreateSupplierInput = Omit<Supplier, 'id' | 'created_at' | 'is_active'> & {
+/**
+ * Body for `POST /admin/suppliers` (`CreateSupplierDto`).
+ *
+ * Mirrors the DTO rather than being derived from `Supplier`. The row type has
+ * `string | null` on every optional column, but the DTO validates them with
+ * `@IsOptional() @IsString()`, which rejects an explicit `null` — deriving
+ * from `Supplier` therefore typed callers into sending a body the API would
+ * refuse, and made `Create`/`Update` disagree on `null` vs `undefined`.
+ * Omit a field to leave the column NULL.
+ */
+export interface CreateSupplierInput {
+  name: string;
   contact_name?: string;
   phone?: string;
   email?: string;
   address?: string;
-};
-export type UpdateSupplierInput = Partial<Omit<CreateSupplierInput, 'name'>> & {
-  name?: string;
+}
+
+/** Body for `PATCH /admin/suppliers/:id` (`UpdateSupplierDto`). */
+export type UpdateSupplierInput = Partial<CreateSupplierInput> & {
   is_active?: boolean;
 };
 export interface GrnItem {

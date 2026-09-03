@@ -36,6 +36,7 @@ import type {
   Grn,
   InventoryReconciliationResponse,
   InventoryResponse,
+  InventorySerial,
   SerialHistory,
   ScanStockCountInput,
   SetCustomerStatusInput,
@@ -782,6 +783,10 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
       list: () => request<InventoryResponse>('/admin/inventory'),
       reconciliation: () =>
         request<InventoryReconciliationResponse>('/admin/inventory/reconciliation'),
+      serials: (query) =>
+        request<InventorySerial[]>('/admin/inventory/serials', {
+          query: query as QueryParams,
+        }),
       serialHistory: (id) =>
         request<SerialHistory>(`/admin/inventory/serials/${encodeURIComponent(id)}/history`),
       aging: (minimumDays) =>
@@ -1193,6 +1198,14 @@ export interface AdminApi {
     list: () => Promise<InventoryResponse>;
     /** `GET /admin/inventory/reconciliation` */
     reconciliation: () => Promise<InventoryReconciliationResponse>;
+    /** `GET /admin/inventory/serials?branchId=&productId=&search=&limit=` */
+    serials: (query?: {
+      branchId?: string;
+      productId?: string;
+      /** Serial number contains this (server-side, case-insensitive). */
+      search?: string;
+      limit?: number;
+    }) => Promise<InventorySerial[]>;
     /** `GET /admin/inventory/serials/:id/history` */
     serialHistory: (id: string) => Promise<SerialHistory>;
     /** `GET /admin/inventory/aging?minimumDays=` */

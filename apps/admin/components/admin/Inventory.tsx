@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { api } from '@/lib/api';
+import { InventoryNav } from './inventory/InventoryNav';
 
 interface BranchMeta {
   id: string;
@@ -29,9 +30,9 @@ function stockColor(n: number): string {
 
 /**
  * R2 (CR-01) retired direct stock edits: `PATCH /admin/inventory` is gone —
- * stock is now derived from the ledger (GRN, transfers, adjustments, counts),
- * never set directly, so a number here can no longer be typed over. Read-only
- * until the GRN/transfer/adjustment/count admin UI lands (sub-phase 2e).
+ * stock is derived from the ledger (GRN, transfers, adjustments, counts) and
+ * never set directly, so a number here is a readout, not an input. Changing
+ * it is done on the sibling tabs, each of which records a reason.
  */
 function StockCell({ value }: { value: number }) {
   return (
@@ -156,8 +157,8 @@ export function Inventory() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Inventory</h2>
           <p className="mt-1 text-gray-500">
-            Stock levels per branch. Stock is now tracked through goods-received notes, transfers,
-            adjustments, and counts — each requires a reason and is logged.
+            Stock levels per branch. To change a number, use Receiving, Transfers, Adjustments or
+            Stock Counts — each records a reason and is logged.
           </p>
         </div>
         <Button variant="outline" onClick={() => exportCSV(items, branches)} disabled={loading}>
@@ -165,6 +166,8 @@ export function Inventory() {
           Export CSV
         </Button>
       </div>
+
+      <InventoryNav />
 
       {/* Low stock alert */}
       {!loading && lowStockItems.length > 0 && (
