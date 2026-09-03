@@ -553,6 +553,21 @@ export default async function Page(props) {
                     <StarDisplay rating={review.rating} />
                   </div>
                   <p className="text-[14px] leading-relaxed text-gray-600">{review.body}</p>
+                  {/* `admin_reply` has been part of the API's review payload
+                      since it shipped (the admin panel's Reviews page can set
+                      one on any review), but nothing on the storefront ever
+                      rendered it — a customer's review could be replied to
+                      and the reply would exist only in the database. */}
+                  {review.admin_reply && (
+                    <div className="mt-3 rounded-[14px] border-l-[3px] border-[#2A3182] bg-[#f8f9fa] px-4 py-3">
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#2A3182]">
+                        Response from Optex Opticians
+                      </p>
+                      <p className="text-[13px] leading-relaxed text-gray-600">
+                        {review.admin_reply}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -48,6 +48,12 @@ export function Reviews() {
   const [searchTerm, setSearchTerm] = useState('');
   const [replyTarget, setReplyTarget] = useState<Review | null>(null);
   const [replyText, setReplyText] = useState('');
+  /** The row an approve/flag request is in flight for — disables its own
+   * buttons only, so a slow request on one review doesn't freeze the rest. */
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [replySaving, setReplySaving] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -80,42 +86,52 @@ export function Reviews() {
     return matchStatus && matchSearch;
   });
 
-  function approve(id: string) {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Approved' } : r)));
-    void (async () => {
-      try {
-        await api.admin.reviews.moderate(id, { status: 'approved' });
-      } catch (e) {
-        console.error('Failed to approve review:', e);
-      }
-    })();
+  /**
+   * Approve/flag used to update `reviews` before the request even started
+   * and only `console.error` on failure — a rejected moderation call left
+   * the card reading "Approved" while the review's actual status, and
+   * whether it is now visible on the storefront, never changed. Awaiting
+   * first and setting state only on success means what's on screen is
+   * always what the server has, matching every other moderation surface in
+   * this panel (Appointments' confirm/cancel, Adjustments' submit).
+   */
+  async function setStatus(id: string, status: 'approved' | 'flagged') {
+    setBusyId(id);
+    setActionError('');
+    try {
+      await api.admin.reviews.moderate(id, { status });
+      const label = status === 'approved' ? 'Approved' : 'Flagged';
+      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: label } : r)));
+    } catch (e) {
+      console.error(`Failed to ${status === 'approved' ? 'approve' : 'flag'} review:`, e);
+      setActionError((e as Error)?.message ?? `Could not ${status} that review.`);
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function flag(id: string) {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Flagged' } : r)));
-    void (async () => {
-      try {
-        await api.admin.reviews.moderate(id, { status: 'flagged' });
-      } catch (e) {
-        console.error('Failed to flag review:', e);
-      }
-    })();
-  }
+  const approve = (id: string) => void setStatus(id, 'approved');
+  const flag = (id: string) => void setStatus(id, 'flagged');
 
-  function submitReply() {
+  async function submitReply() {
     if (!replyTarget || !replyText.trim()) return;
     const id = replyTarget.id;
     const text = replyText;
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, adminReply: text } : r)));
-    setReplyTarget(null);
-    setReplyText('');
-    void (async () => {
-      try {
-        await api.admin.reviews.moderate(id, { admin_reply: text });
-      } catch (e) {
-        console.error('Failed to save reply:', e);
-      }
-    })();
+    setReplySaving(true);
+    setReplyError('');
+    try {
+      await api.admin.reviews.moderate(id, { admin_reply: text });
+      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, adminReply: text } : r)));
+      setReplyTarget(null);
+      setReplyText('');
+    } catch (e) {
+      console.error('Failed to save reply:', e);
+      // Left open on failure — closing it here would silently discard what
+      // they typed along with the error that explains why it didn't save.
+      setReplyError((e as Error)?.message ?? 'Could not save that reply.');
+    } finally {
+      setReplySaving(false);
+    }
   }
 
   const counts = {
@@ -157,6 +173,12 @@ export function Reviews() {
           />
         </div>
       </div>
+
+      {actionError && (
+        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {actionError}
+        </p>
+      )}
 
       {loading ? (
         <div className="space-y-4">
@@ -205,10 +227,11 @@ export function Reviews() {
                       <Button
                         size="sm"
                         onClick={() => approve(review.id)}
+                        disabled={busyId === review.id}
                         className="h-7 bg-green-600 px-2 text-xs hover:bg-green-700"
                       >
                         <Check className="mr-1 h-3 w-3" />
-                        Approve
+                        {busyId === review.id ? 'Approving…' : 'Approve'}
                       </Button>
                     )}
                     {review.status !== 'Flagged' && (
@@ -216,10 +239,11 @@ export function Reviews() {
                         size="sm"
                         variant="outline"
                         onClick={() => flag(review.id)}
+                        disabled={busyId === review.id}
                         className="h-7 border-red-200 px-2 text-xs text-red-500 hover:bg-red-50"
                       >
                         <Flag className="mr-1 h-3 w-3" />
-                        Flag
+                        {busyId === review.id ? 'Flagging…' : 'Flag'}
                       </Button>
                     )}
                     <Button
@@ -228,6 +252,7 @@ export function Reviews() {
                       onClick={() => {
                         setReplyTarget(review);
                         setReplyText(review.adminReply);
+                        setReplyError('');
                       }}
                       className="h-7 px-2 text-xs"
                     >
@@ -243,7 +268,13 @@ export function Reviews() {
       )}
 
       {/* Reply dialog */}
-      <Dialog open={!!replyTarget} onOpenChange={() => setReplyTarget(null)}>
+      <Dialog
+        open={!!replyTarget}
+        onOpenChange={() => {
+          setReplyTarget(null);
+          setReplyError('');
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Reply to Review</DialogTitle>
@@ -269,16 +300,27 @@ export function Reviews() {
                 rows={4}
               />
             </div>
+            {replyError && (
+              <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {replyError}
+              </p>
+            )}
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setReplyTarget(null)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReplyTarget(null);
+                  setReplyError('');
+                }}
+              >
                 Cancel
               </Button>
               <Button
-                onClick={submitReply}
-                disabled={!replyText.trim()}
+                onClick={() => void submitReply()}
+                disabled={!replyText.trim() || replySaving}
                 className="bg-[#141776] hover:bg-[#0f1258]"
               >
-                Post Reply
+                {replySaving ? 'Saving…' : 'Post Reply'}
               </Button>
             </div>
           </div>
