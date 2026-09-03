@@ -29,26 +29,38 @@ const ChevronDown = () => (
   </svg>
 );
 
-// streamline:shopping-cart-2-solid
+// One consistent outlined icon language for the whole action cluster —
+// stroke-2, 24x24 viewBox — replacing the previous mix of thin-stroke
+// (search/bell) and bold filled custom paths (cart/profile) at wildly
+// different sizes.
 const CartIcon = () => (
-  <svg className="h-6 w-6 text-[#2E3192] sm:h-[37px] sm:w-[37px]" fill="none" viewBox="0 0 37 37">
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M1.98214 3.96429H5.67157L6.67321 7.77L6.69964 7.85986L9.25793 20.6645L9.28964 20.8706L10.3996 26.4206V26.4286C10.552 27.1748 10.9574 27.8454 11.5474 28.327C12.1373 28.8086 12.8756 29.0716 13.6371 29.0714H29.7321C30.2578 29.0714 30.762 28.8626 31.1337 28.4909C31.5055 28.1191 31.7143 27.615 31.7143 27.0893C31.7143 26.5636 31.5055 26.0594 31.1337 25.6877C30.762 25.316 30.2578 25.1071 29.7321 25.1071H14.1789L13.5182 21.8036H32.0076C32.1001 21.8036 32.3644 21.8115 32.6076 21.7719C33.0435 21.6981 33.4542 21.5173 33.803 21.2456C34.1517 20.9739 34.4275 20.6198 34.6056 20.2152C34.7483 19.8875 34.8196 19.4726 34.8434 19.3351L34.8514 19.2981L36.9419 9.09143L36.9471 9.065C37.0167 8.68477 37.002 8.29391 36.9042 7.91997C36.8063 7.54602 36.6275 7.19811 36.3806 6.90074C36.1336 6.60338 35.8244 6.36381 35.4748 6.19892C35.1252 6.03404 34.7437 5.94785 34.3571 5.94643H10.2886L9.40857 2.57679C9.24354 1.84502 8.83437 1.1912 8.24837 0.722884C7.66237 0.254564 6.93443 -0.000374735 6.18429 4.13439e-07H1.98214C1.45645 4.13439e-07 0.95228 0.208833 0.580556 0.580557C0.208832 0.95228 0 1.45645 0 1.98214C0 2.50784 0.208832 3.01201 0.580556 3.38373C0.95228 3.75545 1.45645 3.96429 1.98214 3.96429ZM30.7364 33.8286C30.7364 33.0232 30.4165 32.2508 29.847 31.6813C29.2775 31.1119 28.5052 30.7919 27.6998 30.7919C26.8944 30.7919 26.122 31.1119 25.5526 31.6813C24.9831 32.2508 24.6631 33.0232 24.6631 33.8286C24.6864 34.6181 25.0164 35.3675 25.5831 35.9177C26.1498 36.4679 26.9086 36.7756 27.6985 36.7756C28.4883 36.7756 29.2471 36.4679 29.8138 35.9177C30.3805 35.3675 30.7105 34.6181 30.7338 33.8286H30.7364ZM14.4829 30.7946C14.889 30.7826 15.2934 30.8522 15.6721 30.9994C16.0509 31.1465 16.3962 31.3682 16.6878 31.6512C16.9793 31.9343 17.211 32.2729 17.3693 32.6472C17.5275 33.0214 17.6091 33.4236 17.6091 33.8299C17.6091 34.2362 17.5275 34.6384 17.3693 35.0126C17.211 35.3869 16.9793 35.7255 16.6878 36.0086C16.3962 36.2916 16.0509 36.5133 15.6721 36.6604C15.2934 36.8076 14.889 36.8772 14.4829 36.8652C13.6933 36.8419 12.944 36.5119 12.3938 35.9452C11.8435 35.3785 11.5358 34.6197 11.5358 33.8299C11.5358 33.04 11.8435 32.2813 12.3938 31.7146C12.944 31.1479 13.6933 30.8179 14.4829 30.7946Z"
-      fill="currentColor"
-    />
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    viewBox="0 0 24 24"
+  >
+    <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l2.775 10.405a1.125 1.125 0 001.11.91h9.593a1.125 1.125 0 001.11-.91l1.313-6.545a1.125 1.125 0 00-1.11-1.34H5.85" />
+    <circle cx="6.75" cy="20.25" r="1.125" fill="currentColor" stroke="none" />
+    <circle cx="17.25" cy="20.25" r="1.125" fill="currentColor" stroke="none" />
   </svg>
 );
 
 const UserIcon = () => (
-  <svg className="h-6 w-6 text-[#2E3192] sm:h-[38px] sm:w-[38px]" fill="none" viewBox="0 0 38 38">
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M18.75 2.06013e-10C21.2123 -1.15418e-05 23.6504 0.484962 25.9253 1.42723C28.2002 2.3695 30.2672 3.75061 32.0083 5.49171C33.7494 7.23281 35.1305 9.29979 36.0728 11.5746C37.015 13.8495 37.5 16.2877 37.5 18.75C37.5 29.1053 29.1053 37.5 18.75 37.5C8.3947 37.5 0 29.1053 0 18.75C0 8.3947 8.3947 2.06013e-10 18.75 2.06013e-10ZM20.625 20.625H16.875C12.2331 20.625 8.24783 23.4364 6.52896 27.4496C9.24864 31.2632 13.7089 33.75 18.75 33.75C23.791 33.75 28.2513 31.2632 30.9711 27.4493C29.2522 23.4364 25.267 20.625 20.625 20.625ZM18.75 5.625C15.6434 5.625 13.125 8.14342 13.125 11.25C13.125 14.3566 15.6434 16.875 18.75 16.875C21.8566 16.875 24.375 14.3566 24.375 11.25C24.375 8.14342 21.8566 5.625 18.75 5.625Z"
-      fill="currentColor"
-    />
+  <svg
+    className="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    viewBox="0 0 24 24"
+  >
+    <path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0A9 9 0 106.018 18.725m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275" />
+    <circle cx="12" cy="9.75" r="3" />
   </svg>
 );
 
@@ -65,13 +77,7 @@ const CloseIcon = () => (
 );
 
 const SearchNavIcon = () => (
-  <svg
-    className="text-brand-blue h-6 w-6 sm:h-7 sm:w-7"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
+  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -81,13 +87,7 @@ const SearchNavIcon = () => (
 );
 
 const BellIcon = () => (
-  <svg
-    className="text-brand-blue h-6 w-6 sm:h-7 sm:w-7"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
+  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -251,47 +251,54 @@ export default function Navbar() {
           })}
         </div>
 
-        <div className="ml-auto flex items-center gap-2 sm:gap-[20px] lg:ml-0">
-          <button
-            aria-label="Search"
-            onClick={openSearch}
-            className="flex p-1 transition-opacity hover:opacity-80"
-          >
-            <SearchNavIcon />
-          </button>
-          <Link
-            href="/cart"
-            aria-label="Cart"
-            className="relative p-1 transition-opacity hover:opacity-80 sm:p-0"
-          >
-            <CartIcon />
-            {cartCount > 0 && (
-              <span className="absolute right-0 top-0 inline-flex h-4 w-4 -translate-y-1 translate-x-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white sm:h-5 sm:w-5 sm:text-[11px]">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-          {user && (
-            <Link
-              href="/notifications"
-              aria-label="Notifications"
-              className="relative p-1 transition-opacity hover:opacity-80 sm:p-0"
+        <div className="ml-auto flex items-center gap-2 sm:gap-3 lg:ml-0">
+          {/* One grouped pill for the utility icons — a single consistent
+              outline icon language (was a mix of thin-stroke search/bell and
+              bold custom-path cart/profile at three different sizes), each
+              getting its own "lifted" hover segment against the shared tint
+              so the group reads as one control instead of four loose icons. */}
+          <div className="flex items-center gap-0.5 rounded-full bg-[#2A3182]/[0.06] p-1">
+            <button
+              aria-label="Search"
+              onClick={openSearch}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
             >
-              <BellIcon />
-              {unreadCount > 0 && (
-                <span className="absolute right-0 top-0 inline-flex h-4 w-4 -translate-y-1 translate-x-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white sm:h-5 sm:w-5 sm:text-[11px]">
-                  {unreadCount > 9 ? '9+' : unreadCount}
+              <SearchNavIcon />
+            </button>
+            <Link
+              href="/cart"
+              aria-label="Cart"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
+            >
+              <CartIcon />
+              {cartCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E53935] px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}
             </Link>
-          )}
-          <Link
-            href="/profile"
-            aria-label="Profile"
-            className="p-1 transition-opacity hover:opacity-80 sm:p-0"
-          >
-            <UserIcon />
-          </Link>
+            {user && (
+              <Link
+                href="/notifications"
+                aria-label="Notifications"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
+              >
+                <BellIcon />
+                {unreadCount > 0 && (
+                  <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E53935] px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            <Link
+              href="/profile"
+              aria-label="Profile"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
+            >
+              <UserIcon />
+            </Link>
+          </div>
           <Link href="/appointments" className="btn-appointment hidden sm:block">
             Book Appointment
           </Link>
