@@ -30,12 +30,12 @@ const ChevronDown = () => (
 );
 
 // One consistent outlined icon language for the whole action cluster —
-// stroke-2, 24x24 viewBox — replacing the previous mix of thin-stroke
-// (search/bell) and bold filled custom paths (cart/profile) at wildly
-// different sizes.
+// stroke-1.75, 24x24 viewBox, matching MenuIcon/CloseIcon's existing size —
+// replacing the previous mix of thin-stroke (search/bell) and bold filled
+// custom paths (cart/profile) at wildly different sizes.
 const CartIcon = () => (
   <svg
-    className="h-5 w-5"
+    className="h-6 w-6"
     fill="none"
     stroke="currentColor"
     strokeWidth="1.75"
@@ -51,7 +51,7 @@ const CartIcon = () => (
 
 const UserIcon = () => (
   <svg
-    className="h-5 w-5"
+    className="h-6 w-6"
     fill="none"
     stroke="currentColor"
     strokeWidth="1.75"
@@ -77,7 +77,7 @@ const CloseIcon = () => (
 );
 
 const SearchNavIcon = () => (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -87,7 +87,7 @@ const SearchNavIcon = () => (
 );
 
 const BellIcon = () => (
-  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -251,54 +251,53 @@ export default function Navbar() {
           })}
         </div>
 
-        <div className="ml-auto flex items-center gap-2 sm:gap-3 lg:ml-0">
-          {/* One grouped pill for the utility icons — a single consistent
-              outline icon language (was a mix of thin-stroke search/bell and
-              bold custom-path cart/profile at three different sizes), each
-              getting its own "lifted" hover segment against the shared tint
-              so the group reads as one control instead of four loose icons. */}
-          <div className="flex items-center gap-0.5 rounded-full bg-[#2A3182]/[0.06] p-1">
-            <button
-              aria-label="Search"
-              onClick={openSearch}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
-            >
-              <SearchNavIcon />
-            </button>
+        <div className="ml-auto flex items-center gap-3 sm:gap-[22px] lg:ml-0">
+          {/* Same consistent outline icon set as before (search/cart/bell/
+              profile all one stroke weight, one size) — but ungrouped, on
+              the site's own existing hover language (opacity dip, no
+              background chip) and its actual brand-primary blue (#2E3192,
+              the Figma-matched value `.nav-link:hover` already uses), not
+              boxed into a pill that no other part of this nav uses. */}
+          <button
+            aria-label="Search"
+            onClick={openSearch}
+            className="flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+          >
+            <SearchNavIcon />
+          </button>
+          <Link
+            href="/cart"
+            aria-label="Cart"
+            className="relative flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+          >
+            <CartIcon />
+            {cartCount > 0 && (
+              <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E53935] px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </Link>
+          {user && (
             <Link
-              href="/cart"
-              aria-label="Cart"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
+              href="/notifications"
+              aria-label="Notifications"
+              className="relative flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
             >
-              <CartIcon />
-              {cartCount > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E53935] px-1 text-[10px] font-bold text-white ring-2 ring-white">
-                  {cartCount > 9 ? '9+' : cartCount}
+              <BellIcon />
+              {unreadCount > 0 && (
+                <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E53935] px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </Link>
-            {user && (
-              <Link
-                href="/notifications"
-                aria-label="Notifications"
-                className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
-              >
-                <BellIcon />
-                {unreadCount > 0 && (
-                  <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E53935] px-1 text-[10px] font-bold text-white ring-2 ring-white">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
-            )}
-            <Link
-              href="/profile"
-              aria-label="Profile"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#2A3182] transition-colors hover:bg-white hover:shadow-sm"
-            >
-              <UserIcon />
-            </Link>
-          </div>
+          )}
+          <Link
+            href="/profile"
+            aria-label="Profile"
+            className="flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+          >
+            <UserIcon />
+          </Link>
           <Link href="/appointments" className="btn-appointment hidden sm:block">
             Book Appointment
           </Link>
