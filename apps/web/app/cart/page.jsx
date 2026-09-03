@@ -49,6 +49,26 @@ const ArrowRotateIcon = () => (
   </svg>
 );
 
+/**
+ * Shown in place of a cart line's photo when it fails to load. Some products
+ * carry reference photography hotlinked from a supplier's own live site
+ * (see product-image.js) rather than a copy hosted on our own storage — an
+ * inherently unreliable dependency, since a third party's CDN can time out,
+ * rate-limit, or take the file down without any warning to us. When that
+ * happens the customer would otherwise see a blank grey box with no
+ * indication anything is wrong; this at least says so plainly, on an item
+ * they are about to pay for.
+ */
+const ImageOffIcon = () => (
+  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 3l18 18M9.5 9.5L4 15v3a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-1M14 5H8a2 2 0 00-2 2v1"
+    />
+  </svg>
+);
+
 const Cart = () => {
   const {
     items,
@@ -62,6 +82,8 @@ const Cart = () => {
   const [promoInput, setPromoInput] = useState('');
   const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
+  // Which cart lines' photos failed to load — see ImageOffIcon above.
+  const [brokenImages, setBrokenImages] = useState({});
 
   // Money comes from the server, which is the only thing that knows what the
   // order will actually charge. The API returns subtotal, discount, VAT and
@@ -177,13 +199,21 @@ const Cart = () => {
                 >
                   {/* Product Image */}
                   <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-[26px] bg-[#EEEEF0] sm:h-[180px] sm:w-[180px]">
-                    <Image
-                      src={item.image || '/images/executive_pro.png'}
-                      alt={item.title}
-                      fill
-                      sizes="(min-width: 640px) 180px, 90vw"
-                      className="object-contain"
-                    />
+                    {brokenImages[item.id] ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-gray-400">
+                        <ImageOffIcon />
+                        <span className="text-[11px] font-medium">Image unavailable</span>
+                      </div>
+                    ) : (
+                      <Image
+                        src={item.image || '/images/executive_pro.png'}
+                        alt={item.title}
+                        fill
+                        sizes="(min-width: 640px) 180px, 90vw"
+                        className="object-contain"
+                        onError={() => setBrokenImages((prev) => ({ ...prev, [item.id]: true }))}
+                      />
+                    )}
                   </div>
 
                   {/* Product Info */}
