@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -84,6 +84,14 @@ const Login = () => {
     redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
       ? redirectParam
       : '/';
+
+  // Set by `onUnauthorized` in lib/api.js after it force-signs-out a stale
+  // session (expired/revoked token, or one whose account no longer exists).
+  useEffect(() => {
+    if (searchParams.get('expired') === '1') {
+      setError('Your session has expired. Please sign in again.');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e) {
     e.preventDefault();

@@ -203,6 +203,16 @@ export interface CreateApiClientOptions {
   fetch?: typeof fetch;
   /** Optional default headers merged into every request. */
   defaultHeaders?: Record<string, string>;
+  /**
+   * Called when an authenticated request (one that actually attached a
+   * bearer token) comes back 401 — a session whose token is stale, revoked,
+   * or references a deleted user. Never fires for anonymous calls or a
+   * failed login (no token was sent, so there's no session to invalidate).
+   * The original `ApiError` is still thrown after this runs; callers use it
+   * to sign the user out and redirect to login instead of leaving the UI
+   * "logged in" while every request silently 401s.
+   */
+  onUnauthorized?: () => void;
 }
 
 /** Query value types accepted by the param serializer. */
@@ -290,7 +300,7 @@ export interface ApiClient {
 }
 
 export function createApiClient(options: CreateApiClientOptions): ApiClient {
-  const { getAccessToken, defaultHeaders } = options;
+  const { getAccessToken, defaultHeaders, onUnauthorized } = options;
   const doFetch = options.fetch ?? globalThis.fetch;
   if (typeof doFetch !== 'function') {
     throw new Error(
@@ -326,10 +336,16 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     }
     headers.set('Accept', 'application/json');
 
-    // Attach the bearer token when one is available.
+    // Attach the bearer token when one is available. Tracked separately so a
+    // 401 can be told apart from a public call and from a failed login (no
+    // token was ever sent in either of those, so there's no session to kill).
+    let hasToken = false;
     if (getAccessToken) {
       const token = await getAccessToken();
-      if (token) headers.set('Authorization', `Bearer ${token}`);
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+        hasToken = true;
+      }
     }
 
     // Body handling: FormData uploads must NOT set a JSON content-type — the
@@ -376,7 +392,15 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     }
 
     if (!response.ok) {
-      throw await toApiError(response);
+      const apiError = await toApiError(response);
+      if (apiError.status === 401 && hasToken) {
+        try {
+          onUnauthorized?.();
+        } catch {
+          // Never let a misbehaving handler mask the original API error.
+        }
+      }
+      throw apiError;
     }
 
     // 204 No Content (e.g. DELETE /branches/:id) — nothing to parse.

@@ -1,21 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserSupabase } from '@optex/db/browser';
 import { api } from '../../lib/api';
 import { isStaffRole } from '../../lib/roles';
 import { firstPermittedRoute } from '../../lib/route-permissions';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createBrowserSupabase();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Set by `onUnauthorized` in lib/api.js after it force-signs-out a stale
+  // session (expired/revoked token, or one whose account no longer exists).
+  useEffect(() => {
+    if (searchParams.get('expired') === '1') {
+      setError('Your session has expired. Please sign in again.');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -167,5 +176,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
