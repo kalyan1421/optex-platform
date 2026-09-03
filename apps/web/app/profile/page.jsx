@@ -17,7 +17,7 @@ const VerifyBadgeIcon = () => (
 
 const ShieldCrossIcon = () => (
   <svg
-    className="h-3 w-3 text-white"
+    className="h-3 w-3 text-[#5C4415]"
     fill="none"
     stroke="currentColor"
     strokeWidth="2.5"
@@ -27,14 +27,8 @@ const ShieldCrossIcon = () => (
   </svg>
 );
 
-const BuildingIcon = () => (
-  <svg
-    className="h-4 w-4 text-[#2A3182]"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
+const BuildingIcon = ({ className = 'h-4 w-4 text-[#2A3182]' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -59,38 +53,6 @@ const DownloadIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-    />
-  </svg>
-);
-
-const IdCardIcon = () => (
-  <svg
-    className="h-4 w-4 text-[#3b82f6]"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
-    />
-  </svg>
-);
-
-const CalendarIcon = () => (
-  <svg
-    className="h-4 w-4 text-[#10b981]"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
     />
   </svg>
 );
@@ -496,6 +458,10 @@ export default function Page() {
   const displayName = user?.user_metadata?.full_name || user?.email || 'Customer';
   const shortId = user?.id?.slice(0, 8).toUpperCase() ?? '—';
   const memberSince = user?.created_at ? formatDate(user.created_at) : '—';
+  // Decorative "barcode" on the membership card, below. Derived from the
+  // customer's own ID rather than random so it's stable across renders (no
+  // hydration mismatch) and happens to be unique per customer.
+  const barcodeBars = shortId.split('').map((char) => 35 + (char.charCodeAt(0) % 65));
   const lastOrder = orders[0] ? formatDate(orders[0].created_at) : '—';
 
   // Split once, here, so the two lists below stay pure markup. Upcoming reads
@@ -512,85 +478,117 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#f4f6f8] pb-16 pt-[15px] sm:pb-24">
       <div className="site-container">
-        {/* Top Profile Card */}
-        <div className="relative mb-8 flex flex-col items-center gap-8 overflow-hidden rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm sm:rounded-[32px] sm:p-10 md:flex-row md:items-start">
-          <div className="pointer-events-none absolute right-[-20px] top-[-20px] opacity-[0.03]">
+        {/* Top Profile Card — styled as a physical membership card: an
+            identity panel and a card-details panel separated by a
+            perforated "tear" divider, the way a loyalty or boarding-pass
+            card splits the holder's name from their printed number. */}
+        <div className="relative mb-8 overflow-hidden rounded-[24px] bg-[#1A1A2E] shadow-lg sm:rounded-[32px]">
+          {/* Fine dot-grid texture — depth without a gradient or glass
+              effect, at low enough opacity to read as paper grain. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+              backgroundSize: '18px 18px',
+            }}
+          />
+          <div className="pointer-events-none absolute right-[-24px] top-[-24px] text-white opacity-[0.04]">
             <svg className="h-64 w-64" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
             </svg>
           </div>
 
-          {/* Avatar */}
-          <div className="relative flex-shrink-0">
-            <div className="flex h-[140px] w-[140px] items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#2A3182] shadow-lg sm:h-[160px] sm:w-[160px]">
-              <span className="select-none text-[48px] font-black text-white">
-                {displayName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="absolute bottom-2 right-2 rounded-full bg-white p-0.5 shadow-sm">
-              <VerifyBadgeIcon />
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="z-10 flex-1 text-center md:text-left">
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#2A3182] px-3 py-1 text-white">
-              <ShieldCrossIcon />
-              <span className="text-[10px] font-bold uppercase tracking-widest">
-                Verified Account
-              </span>
-            </div>
-            <h1 className="mb-2 text-[32px] font-black leading-tight text-[#2A3182] sm:text-[40px]">
-              {displayName}
-            </h1>
-            <div className="mb-6 flex items-center justify-center gap-2 text-[14px] font-medium text-gray-500 sm:text-[15px] md:justify-start">
-              <BuildingIcon />
-              <span>{user?.email}</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-4 sm:flex-row">
-              <a
-                href="#prescription-record"
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#EF4444] px-6 py-3 text-[14px] font-bold text-white shadow-md shadow-red-500/20 transition-colors hover:bg-red-600 sm:w-auto"
-              >
-                <FolderIcon />
-                My Prescriptions
-              </a>
-              <button
-                onClick={async () => {
-                  await signOut();
-                  router.push('/');
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-3 text-[14px] font-bold text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto"
-              >
-                <DownloadIcon />
-                Sign Out
-              </button>
-            </div>
-          </div>
-
-          {/* Right Floating Pills */}
-          <div className="z-10 mt-6 flex w-full flex-col gap-3 md:mt-0 md:w-auto">
-            <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#f8fafc] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-                <IdCardIcon />
+          <div className="relative flex flex-col md:flex-row">
+            {/* Identity panel */}
+            <div className="flex flex-1 flex-col items-center gap-6 p-6 text-center sm:p-10 md:flex-row md:items-start md:text-left">
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-white/10 shadow-lg sm:h-[140px] sm:w-[140px]">
+                  <span className="select-none text-[44px] font-black text-white">
+                    {displayName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="absolute bottom-1 right-1 rounded-full bg-[#EFE1C0] p-1 shadow-sm">
+                  <VerifyBadgeIcon />
+                </div>
               </div>
+
+              {/* Info */}
+              <div className="z-10 flex-1">
+                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#EFE1C0] px-3 py-1">
+                  <ShieldCrossIcon />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#5C4415]">
+                    Verified Account
+                  </span>
+                </div>
+                <h1 className="mb-1.5 text-[32px] font-black leading-tight text-white sm:text-[40px]">
+                  {displayName}
+                </h1>
+                <div className="mb-6 flex items-center justify-center gap-2 text-[14px] font-medium text-white/60 sm:text-[15px] md:justify-start">
+                  <BuildingIcon className="h-4 w-4 text-white/50" />
+                  <span>{user?.email}</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-3 sm:flex-row">
+                  <a
+                    href="#prescription-record"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#E53935] px-6 py-3 text-[14px] font-bold text-white shadow-md shadow-black/20 transition-colors hover:bg-[#c62828] sm:w-auto"
+                  >
+                    <FolderIcon />
+                    My Prescriptions
+                  </a>
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                      router.push('/');
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-white/10 sm:w-auto"
+                  >
+                    <DownloadIcon />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Perforated tear divider — desktop: vertical, mobile: horizontal.
+                The notch circles match the page background so the dashed
+                line reads as a die-cut edge, not just a border. */}
+            <div aria-hidden="true" className="relative hidden shrink-0 md:block md:w-px">
+              <div className="absolute inset-y-8 left-0 border-l-2 border-dashed border-white/15" />
+              <div className="absolute -left-[9px] -top-[9px] h-[18px] w-[18px] rounded-full bg-[#f4f6f8]" />
+              <div className="absolute -bottom-[9px] -left-[9px] h-[18px] w-[18px] rounded-full bg-[#f4f6f8]" />
+            </div>
+            <div aria-hidden="true" className="relative mx-6 block md:hidden">
+              <div className="border-t-2 border-dashed border-white/15" />
+              <div className="absolute -left-[9px] -top-[9px] h-[18px] w-[18px] rounded-full bg-[#f4f6f8]" />
+              <div className="absolute -right-[9px] -top-[9px] h-[18px] w-[18px] rounded-full bg-[#f4f6f8]" />
+            </div>
+
+            {/* Card details panel — printed like the imprint on the card */}
+            <div className="z-10 flex flex-col justify-center gap-6 p-6 text-center sm:p-10 md:w-[240px] md:text-left">
               <div>
-                <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
                   Customer ID
                 </p>
-                <p className="text-[14px] font-bold text-[#1a1a1a]">OP-{shortId}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#f8fafc] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
-                <CalendarIcon />
+                <p className="font-mono text-[18px] font-bold tracking-[0.08em] text-white">
+                  OP-{shortId}
+                </p>
+                <div
+                  aria-hidden="true"
+                  className="mt-2 flex h-4 items-end justify-center gap-[2px] opacity-30 md:justify-start"
+                >
+                  {barcodeBars.map((height, i) => (
+                    <span key={i} className="w-[2px] bg-white" style={{ height: `${height}%` }} />
+                  ))}
+                </div>
               </div>
               <div>
-                <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
                   Member Since
                 </p>
-                <p className="text-[14px] font-bold text-[#1a1a1a]">{memberSince}</p>
+                <p className="text-[15px] font-bold text-white">{memberSince}</p>
               </div>
             </div>
           </div>
