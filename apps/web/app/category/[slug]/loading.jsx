@@ -1,18 +1,24 @@
-import { PageHeaderSkeleton, ProductGridSkeleton } from '@/components/ui/Skeleton';
+import { CategoryHeroSkeleton, ProductGridSkeleton, Skeleton } from '@/components/ui/Skeleton';
 
 /**
- * Streaming fallback (audit F-10).
+ * Streaming fallback for /category/[slug] (audit F-10).
  *
- * This route is a Server Component that fetches through the API. Without a
- * `loading.jsx` Next has nothing to stream, so the browser sat on a blank
- * document until the slowest fetch resolved. With one, the chrome and this
- * skeleton paint immediately and the products swap in when they arrive.
+ * Reserves the full-bleed dark image hero and the breadcrumb rule above the
+ * 4-up grid, so nothing below the fold moves when the category resolves.
  */
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
-      <PageHeaderSkeleton />
-      <ProductGridSkeleton count={8} />
+    <div className="min-h-screen bg-white">
+      <CategoryHeroSkeleton />
+
+      <div className="page-container">
+        <div className="flex items-center border-b border-gray-100 py-5">
+          <Skeleton className="h-4 w-56" />
+        </div>
+        <div className="py-8">
+          <ProductGridSkeleton count={8} cols={4} />
+        </div>
+      </div>
     </div>
   );
 }
