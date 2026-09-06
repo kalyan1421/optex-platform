@@ -75,7 +75,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                   alt={cat.name}
                   fill
                   sizes="(min-width: 1024px) 370px, 33vw"
-                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  className="object-contain transition-transform duration-500 hover:scale-105"
                 />
               </div>
               {/* Label below image */}

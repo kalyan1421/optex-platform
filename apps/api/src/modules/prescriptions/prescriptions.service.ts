@@ -26,8 +26,15 @@ const SIGNED_URL_TTL = 60;
 /** Allowed upload MIME types (scan or photo of a paper prescription). */
 const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']);
 
-/** Max upload size: 10 MB — a sane ceiling for a scan/photo. */
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+/**
+ * Max upload size: 10 MB — a sane ceiling for a scan/photo.
+ *
+ * Exported so `PrescriptionsController` can hand the same number to multer.
+ * The check below is the second line of defence: without a multer `limits`,
+ * the whole body is buffered into memory before this runs, so a 300 MB POST
+ * was accepted, held in the heap, and only then rejected here (measured).
+ */
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 /**
  * Collapses the interchangeable spellings of the allowed types so a declared

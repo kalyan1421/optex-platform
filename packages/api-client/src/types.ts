@@ -676,6 +676,91 @@ export interface UpdateAppointmentInput {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Eye records (clinical intake from /eye-care)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Review lifecycle of an `eye_records` row (`eye_record_status`, 0037). */
+export type EyeRecordStatus = 'submitted' | 'reviewed' | 'archived';
+
+/** An `eye_records` row (`EyeRecordDto`). */
+export interface EyeRecord {
+  id: string;
+  customer_id: string;
+  appointment_id: string | null;
+  /** Branch the intake was taken at, from the linked appointment (0038). */
+  branch_id: string | null;
+  full_name: string;
+  age: number | null;
+  phone: string;
+  email: string | null;
+  gender: string | null;
+  /** Selected health-history labels, e.g. ["Diabetes","Glaucoma"]. */
+  conditions: string[];
+  history_notes: string | null;
+  sphere_od: number | null;
+  sphere_os: number | null;
+  cyl_od: number | null;
+  cyl_os: number | null;
+  axis_od: number | null;
+  axis_os: number | null;
+  add_od: number | null;
+  add_os: number | null;
+  pd_od: number | null;
+  pd_os: number | null;
+  status: EyeRecordStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+/**
+ * Body for `POST /eye-records` (`CreateEyeRecordDto`).
+ *
+ * Every prescription value is optional — the intake form invites the customer
+ * to leave them blank and be tested fresh.
+ */
+export interface CreateEyeRecordInput {
+  appointmentId?: string;
+  fullName: string;
+  age?: number;
+  phone: string;
+  email?: string;
+  gender?: string;
+  conditions?: string[];
+  historyNotes?: string;
+  sphereOd?: number;
+  sphereOs?: number;
+  cylOd?: number;
+  cylOs?: number;
+  axisOd?: number;
+  axisOs?: number;
+  addOd?: number;
+  addOs?: number;
+  pdOd?: number;
+  pdOs?: number;
+}
+
+/**
+ * An eye record as returned by the admin endpoints — the base row plus the
+ * resolved branch name (`AdminEyeRecordDto`), so the review queue can show
+ * where the intake was taken without a round trip per row.
+ */
+export interface AdminEyeRecord extends EyeRecord {
+  branch: { name: string } | null;
+}
+
+/** Query for `GET /admin/eye-records` (`EyeRecordQueryDto`). */
+export interface EyeRecordQuery {
+  customerId?: string;
+  status?: EyeRecordStatus;
+}
+
+/** Body for `PATCH /admin/eye-records/:id` (`UpdateEyeRecordStatusDto`). */
+export interface UpdateEyeRecordStatusInput {
+  status: EyeRecordStatus;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Prescriptions
 // ─────────────────────────────────────────────────────────────────────────────
 

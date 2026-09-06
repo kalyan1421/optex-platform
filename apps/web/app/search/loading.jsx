@@ -1,18 +1,21 @@
-import { PageHeaderSkeleton, ProductGridSkeleton } from '@/components/ui/Skeleton';
+import { ProductGridSkeleton, SearchHeroSkeleton, Skeleton } from '@/components/ui/Skeleton';
 
 /**
- * Streaming fallback (audit F-10).
+ * Streaming fallback for /search (audit F-10).
  *
- * This route is a Server Component that fetches through the API. Without a
- * `loading.jsx` Next has nothing to stream, so the browser sat on a blank
- * document until the slowest fetch resolved. With one, the chrome and this
- * skeleton paint immediately and the products swap in when they arrive.
+ * The search route's header is a solid brand-blue band, not the light hero the
+ * shop uses — a shared skeleton made the page flash from blue to white and back
+ * as results arrived.
  */
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-[1280px] px-4 py-10 lg:px-8">
-      <PageHeaderSkeleton />
-      <ProductGridSkeleton count={8} />
+    <div className="min-h-screen bg-[#f4f6f8] pb-16 sm:pb-24">
+      <SearchHeroSkeleton />
+
+      <div className="site-container pt-10">
+        <Skeleton className="mb-6 h-5 w-52" />
+        <ProductGridSkeleton count={8} cols={4} label="Loading search results" />
+      </div>
     </div>
   );
 }

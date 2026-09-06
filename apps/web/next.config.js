@@ -39,6 +39,12 @@ function supabaseOrigin() {
 const isProd = process.env.NODE_ENV === 'production';
 
 const nextConfig = {
+  // Emits .next/standalone: a self-contained server bundle with only the
+  // node_modules it actually imports. Without it the Docker runtime stage has
+  // to carry the whole pnpm workspace, which for this monorepo is most of the
+  // image. Has no effect on `next dev` or on a non-Docker `next start`.
+  output: 'standalone',
+
   transpilePackages: [
     '@optex/ui',
     '@optex/db',

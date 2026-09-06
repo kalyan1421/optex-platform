@@ -117,12 +117,20 @@ test.describe('Admin Products', () => {
   test('deactivates a product — a soft delete, not a removal from the admin list', async ({
     page,
   }) => {
-    page.once('dialog', (dialog) => dialog.accept());
-
     await page.goto('/products');
     await page.getByPlaceholder(/search by name, sku, brand/i).fill(productSku);
     const row = page.getByRole('row').filter({ hasText: productSku });
     await row.getByRole('button').nth(2).click(); // Trash is the third icon
+
+    // Confirmation is an in-app AlertDialog, not a native `confirm()`. This
+    // used to be `page.once('dialog', d => d.accept())`, which listens for the
+    // browser dialog that no longer fires — so the click opened a modal nobody
+    // confirmed, the product was never deactivated, and the assertion below
+    // timed out. Changed in "fix(admin): replace native confirm() with an
+    // in-app dialog on product delete", which did not update this test.
+    const confirmDialog = page.getByRole('alertdialog');
+    await expect(confirmDialog).toBeVisible();
+    await confirmDialog.getByRole('button', { name: 'Deactivate', exact: true }).click();
 
     await expect(row.getByText('Inactive')).toBeVisible();
 

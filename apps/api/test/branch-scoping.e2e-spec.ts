@@ -495,4 +495,129 @@ describe('Branch scoping — inventory / appointments / orders (e2e)', () => {
       expect(req!.status).toBe('declined');
     });
   });
+  describe('eye records', () => {
+    /**
+     * Intake is scoped through the appointment it was taken at (0038), so a
+     * fixture needs a real appointment on the branch first — the API derives
+     * `branch_id` from it and ignores anything the client sends.
+     */
+    async function newRecordOn(branchId: string | null): Promise<string> {
+      let appointmentId: string | null = null;
+      if (branchId) {
+        const { data: appt, error: apptError } = await db
+          .from('appointments')
+          .insert({
+            customer_id: customerId,
+            branch_id: branchId,
+            type: 'eye_test',
+            scheduled_at: new Date(Date.now() + 9 * 864e5).toISOString(),
+          })
+          .select('id')
+          .single();
+        if (apptError) throw apptError;
+        appointmentId = appt!.id;
+      }
+
+      const { data: rec, error } = await db
+        .from('eye_records')
+        .insert({
+          customer_id: customerId,
+          appointment_id: appointmentId,
+          branch_id: branchId,
+          full_name: 'Branch Scoping Patient',
+          phone: '+254700000000',
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return rec!.id;
+    }
+
+    it("GET /admin/eye-records only returns the caller's branch", async () => {
+      const a = await newRecordOn(branchA);
+      const b = await newRecordOn(branchB);
+      const token = await newBranchManager(branchA);
+
+      const res = await request(app.getHttpServer())
+        .get('/api/admin/eye-records')
+        .set(auth(token))
+        .expect(200);
+
+      const ids = res.body.map((r: { id: string }) => r.id);
+      expect(ids).toContain(a);
+      expect(ids).not.toContain(b);
+    });
+
+    it('ignores a client-supplied branchId for a branch that is not the caller’s', async () => {
+      const b = await newRecordOn(branchB);
+      const token = await newBranchManager(branchA);
+
+      // `branchId` is not even a filter this endpoint accepts; the point is
+      // that supplying one cannot widen the scope beyond the JWT's branch.
+      const res = await request(app.getHttpServer())
+        .get('/api/admin/eye-records')
+        .query({ branchId: branchB })
+        .set(auth(token))
+        .expect(200);
+
+      expect(res.body.map((r: { id: string }) => r.id)).not.toContain(b);
+    });
+
+    it("GET /admin/eye-records/:id 404s for another branch's record rather than leaking it", async () => {
+      const b = await newRecordOn(branchB);
+      const token = await newBranchManager(branchA);
+
+      await request(app.getHttpServer())
+        .get(`/api/admin/eye-records/${b}`)
+        .set(auth(token))
+        .expect(404);
+    });
+
+    it('PATCH /admin/eye-records/:id 404s for another branch, and does not change the record', async () => {
+      const b = await newRecordOn(branchB);
+      const token = await newBranchManager(branchA);
+
+      await request(app.getHttpServer())
+        .patch(`/api/admin/eye-records/${b}`)
+        .set(auth(token))
+        .send({ status: 'reviewed' })
+        .expect(404);
+
+      const { data: row } = await db.from('eye_records').select('status').eq('id', b).single();
+      expect(row!.status).toBe('submitted');
+    });
+
+    it('a caller in the right branch can still review the record', async () => {
+      const a = await newRecordOn(branchA);
+      const token = await newBranchManager(branchA);
+
+      await request(app.getHttpServer())
+        .patch(`/api/admin/eye-records/${a}`)
+        .set(auth(token))
+        .send({ status: 'reviewed' })
+        .expect(200);
+
+      const { data: row } = await db.from('eye_records').select('status').eq('id', a).single();
+      expect(row!.status).toBe('reviewed');
+    });
+
+    it('hides a branchless record from a scoped caller, but not from Super Admin', async () => {
+      // Intake submitted with no appointment behind it belongs to no branch, so
+      // no branch queue should claim it.
+      const orphan = await newRecordOn(null);
+      const scoped = await newBranchManager(branchA);
+
+      const scopedRes = await request(app.getHttpServer())
+        .get('/api/admin/eye-records')
+        .set(auth(scoped))
+        .expect(200);
+      expect(scopedRes.body.map((r: { id: string }) => r.id)).not.toContain(orphan);
+
+      const superRes = await request(app.getHttpServer())
+        .get('/api/admin/eye-records')
+        .set(auth(await newSuperAdmin()))
+        .expect(200);
+      expect(superRes.body.map((r: { id: string }) => r.id)).toContain(orphan);
+    });
+  });
 });

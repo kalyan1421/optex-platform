@@ -1,0 +1,37 @@
+# The build context is the monorepo root (every Dockerfile here needs the root
+# lockfile + workspace manifests), so without this the whole tree — including
+# every node_modules and .next — is uploaded to the daemon on each build, and
+# host-built artifacts can shadow what the image builds for itself.
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+
+# Never bake local credentials into an image layer.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+**/!.env.example
+
+# Test, tooling and CI output — none of it is needed to build or run.
+coverage
+**/coverage
+playwright-report
+**/playwright-report
+test-results
+**/test-results
+**/*.tsbuildinfo
+.turbo
+.git
+.github
+.claude
+
+# Docs and local-only stacks.
+docs
+load
+Backend
+docker-compose.yml
