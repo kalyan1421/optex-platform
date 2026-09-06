@@ -17,6 +17,11 @@
  */
 
 import type {
+  AdminEyeRecord,
+  UpdateEyeRecordStatusInput,
+  EyeRecordQuery,
+  EyeRecord,
+  CreateEyeRecordInput,
   AddCartItemInput,
   Address,
   AdminAppointmentQuery,
@@ -293,6 +298,7 @@ export interface ApiClient {
   payments: PaymentsApi;
   appointments: AppointmentsApi;
   prescriptions: PrescriptionsApi;
+  eyeRecords: EyeRecordsApi;
   addresses: AddressesApi;
   wishlist: WishlistApi;
   notifications: NotificationsApi;
@@ -528,6 +534,12 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
   };
 
   // ── prescriptions ──────────────────────────────────────────────────────────
+  // ── eye records ──────────────────────────────────────────────────────────
+  const eyeRecords: EyeRecordsApi = {
+    create: (input) => request<EyeRecord>('/eye-records', { method: 'POST', body: input }),
+    listMine: () => request<EyeRecord[]>('/eye-records'),
+  };
+
   const prescriptions: PrescriptionsApi = {
     upload: (file, fields) => {
       const form = new FormData();
@@ -777,6 +789,18 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
           body: input,
         }),
     },
+    eyeRecords: {
+      list: (query) =>
+        request<AdminEyeRecord[]>('/admin/eye-records', {
+          query: query as QueryParams | undefined,
+        }),
+      get: (id) => request<AdminEyeRecord>(`/admin/eye-records/${encodeURIComponent(id)}`),
+      updateStatus: (id, input) =>
+        request<AdminEyeRecord>(`/admin/eye-records/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: input,
+        }),
+    },
     prescriptions: {
       list: (query) =>
         request<Prescription[]>('/admin/prescriptions', {
@@ -912,6 +936,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     payments,
     appointments,
     prescriptions,
+    eyeRecords,
     addresses,
     wishlist,
     notifications,
@@ -1032,6 +1057,14 @@ export interface AppointmentsApi {
 }
 
 /** Customer prescriptions (`/prescriptions/...`). */
+/** Clinical intake records (`/eye-records/...`). */
+export interface EyeRecordsApi {
+  /** `POST /eye-records` */
+  create: (input: CreateEyeRecordInput) => Promise<EyeRecord>;
+  /** `GET /eye-records` */
+  listMine: () => Promise<EyeRecord[]>;
+}
+
 export interface PrescriptionsApi {
   /**
    * `POST /prescriptions/upload` — multipart. Pass the file as a `Blob`/`File`;
@@ -1214,6 +1247,14 @@ export interface AdminApi {
     list: (query?: AdminAppointmentQuery) => Promise<AdminAppointment[]>;
     /** `PATCH /admin/appointments/:id` */
     update: (id: string, input: UpdateAppointmentInput) => Promise<Appointment>;
+  };
+  eyeRecords: {
+    /** `GET /admin/eye-records?customerId=&status=` */
+    list: (query?: EyeRecordQuery) => Promise<AdminEyeRecord[]>;
+    /** `GET /admin/eye-records/:id` */
+    get: (id: string) => Promise<AdminEyeRecord>;
+    /** `PATCH /admin/eye-records/:id` */
+    updateStatus: (id: string, input: UpdateEyeRecordStatusInput) => Promise<AdminEyeRecord>;
   };
   prescriptions: {
     /** `GET /admin/prescriptions?customerId=` */

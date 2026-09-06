@@ -346,6 +346,47 @@ export type Database = {
           },
         ]
       }
+      customer_notifications: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          customer_id: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+        }
+        Insert: {
+          body: string
+          category: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notifications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           auth_user_id: string | null
@@ -375,6 +416,112 @@ export type Database = {
           phone?: string | null
         }
         Relationships: []
+      }
+      eye_records: {
+        Row: {
+          add_od: number | null
+          add_os: number | null
+          age: number | null
+          appointment_id: string | null
+          axis_od: number | null
+          axis_os: number | null
+          branch_id: string | null
+          conditions: string[]
+          created_at: string
+          customer_id: string
+          cyl_od: number | null
+          cyl_os: number | null
+          email: string | null
+          full_name: string
+          gender: string | null
+          history_notes: string | null
+          id: string
+          pd_od: number | null
+          pd_os: number | null
+          phone: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sphere_od: number | null
+          sphere_os: number | null
+          status: Database["public"]["Enums"]["eye_record_status"]
+        }
+        Insert: {
+          add_od?: number | null
+          add_os?: number | null
+          age?: number | null
+          appointment_id?: string | null
+          axis_od?: number | null
+          axis_os?: number | null
+          branch_id?: string | null
+          conditions?: string[]
+          created_at?: string
+          customer_id: string
+          cyl_od?: number | null
+          cyl_os?: number | null
+          email?: string | null
+          full_name: string
+          gender?: string | null
+          history_notes?: string | null
+          id?: string
+          pd_od?: number | null
+          pd_os?: number | null
+          phone: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sphere_od?: number | null
+          sphere_os?: number | null
+          status?: Database["public"]["Enums"]["eye_record_status"]
+        }
+        Update: {
+          add_od?: number | null
+          add_os?: number | null
+          age?: number | null
+          appointment_id?: string | null
+          axis_od?: number | null
+          axis_os?: number | null
+          branch_id?: string | null
+          conditions?: string[]
+          created_at?: string
+          customer_id?: string
+          cyl_od?: number | null
+          cyl_os?: number | null
+          email?: string | null
+          full_name?: string
+          gender?: string | null
+          history_notes?: string | null
+          id?: string
+          pd_od?: number | null
+          pd_os?: number | null
+          phone?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sphere_od?: number | null
+          sphere_os?: number | null
+          status?: Database["public"]["Enums"]["eye_record_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eye_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eye_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eye_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goods_received_items: {
         Row: {
@@ -1707,6 +1854,7 @@ export type Database = {
         Returns: {
           contact_name: string
           contact_phone: string
+          customer_id: string
           customer_phone: string
           id: string
           scheduled_at: string
@@ -1726,8 +1874,8 @@ export type Database = {
       }
       dispatch_transfer: {
         Args: {
-          p_from_branch_id: string
           p_actor_role: string
+          p_from_branch_id: string
           p_notes: string
           p_requested_by: string
           p_serial_ids: string[]
@@ -1756,7 +1904,7 @@ export type Database = {
       }
       increment_promo_uses: { Args: { p_code: string }; Returns: number }
       inventory_reconciliation_report: {
-        Args: { p_branch_id?: string | null }
+        Args: { p_branch_id?: string }
         Returns: {
           branch_id: string
           branch_name: string
@@ -1769,6 +1917,15 @@ export type Database = {
         }[]
       }
       is_super_admin: { Args: never; Returns: boolean }
+      notify_all_customers: {
+        Args: {
+          p_body: string
+          p_category: string
+          p_link?: string
+          p_title: string
+        }
+        Returns: undefined
+      }
       place_order: {
         Args: {
           p_customer_id: string
@@ -1816,7 +1973,12 @@ export type Database = {
         Returns: string
       }
       post_grn: {
-        Args: { p_actor_id: string; p_actor_role: string; p_grn_id: string; p_serials: Json }
+        Args: {
+          p_actor_id: string
+          p_actor_role: string
+          p_grn_id: string
+          p_serials: Json
+        }
         Returns: undefined
       }
       receive_transfer: {
@@ -1851,6 +2013,7 @@ export type Database = {
         | "completed"
       cancellation_status: "pending" | "approved" | "declined"
       discount_kind: "percent" | "fixed"
+      eye_record_status: "submitted" | "reviewed" | "archived"
       notification_channel: "sms" | "email"
       notification_status: "pending" | "sent" | "failed" | "abandoned"
       order_status:
@@ -2001,6 +2164,7 @@ export const Constants = {
       ],
       cancellation_status: ["pending", "approved", "declined"],
       discount_kind: ["percent", "fixed"],
+      eye_record_status: ["submitted", "reviewed", "archived"],
       notification_channel: ["sms", "email"],
       notification_status: ["pending", "sent", "failed", "abandoned"],
       order_status: [
@@ -2019,3 +2183,4 @@ export const Constants = {
     },
   },
 } as const
+

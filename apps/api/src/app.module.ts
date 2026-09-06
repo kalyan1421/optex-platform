@@ -32,6 +32,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { EyeRecordsModule } from './modules/eye-records/eye-records.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
@@ -99,6 +100,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     // Phase 1A feature modules (Wave 2)
     CartModule,
     AppointmentsModule,
+    EyeRecordsModule,
     PrescriptionsModule,
     AdminMetricsModule,
     // Phase 1A feature modules (Wave 3)
