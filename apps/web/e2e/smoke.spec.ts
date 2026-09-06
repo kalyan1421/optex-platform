@@ -71,8 +71,15 @@ test.describe('Storefront purchase path', () => {
       // landed on one — the click then retried against a permanently disabled
       // button until the test timed out, reported as a filtering failure when
       // nothing was wrong with filtering.
+      // Scoped to `#shop-filter-panel`, not the whole `<aside>`: the aside's
+      // FIRST button is the `lg:hidden` mobile filter toggle, which at the
+      // desktop viewport this suite runs is present, enabled, and permanently
+      // invisible — so `aside button:not([disabled])` resolved to it and the
+      // click waited out the timeout. That was always true; it stayed hidden
+      // only because the `Brands` heading guard above skipped the block.
+      // `:visible` additionally keeps a collapsed facet group from matching.
       const brandOption = page
-        .locator('aside button:not([disabled])')
+        .locator('#shop-filter-panel button:not([disabled]):visible')
         .filter({ hasNotText: /^All/ })
         .first();
       if ((await brandOption.count()) === 0) return; // no facet with results to narrow by
