@@ -119,17 +119,55 @@ describe('Prescriptions (e2e)', () => {
       .expect(400);
   });
 
-  it('rejects a file over the 10MB ceiling', async () => {
-    // `FileInterceptor('file')` has no size limit configured — the cap is
-    // enforced inside `PrescriptionsService.upload()`, so this is a 400 from
-    // application logic, not a body-parser rejection.
+  it('rejects a file over the 10MB ceiling at the parser, without buffering it', async () => {
+    // 413, not 400: `FileInterceptor` now carries `limits.fileSize`, so multer
+    // aborts the stream at the ceiling. This assertion is the regression guard
+    // on that — with no limit, multer's default is Infinity and Nest buffers
+    // the whole body into the heap before the service's `file.size` check can
+    // reject it, which made an arbitrarily large POST a memory-exhaustion
+    // vector (measured: a 300 MB upload was fully buffered, then 400'd).
+    // A 400 here means the limit has been dropped and the old behaviour is back.
     const oversized = Buffer.alloc(10 * 1024 * 1024 + 1, 1);
     await request(app.getHttpServer())
       .post('/api/prescriptions/upload')
       .set(auth(token))
       .attach('file', oversized, 'rx.pdf')
-      .expect(400);
+      .expect(413);
   }, 15000);
+
+  it('caps upload attempts well below the global browsing quota', async () => {
+    // Uploading is not browsing: the global 300/min bucket applied here meant a
+    // single caller could sustain 300 multipart POSTs a minute.
+    //
+    // A tiny file of an unsupported type: rejected by the service before it
+    // reaches storage, so the probe leaves nothing behind, and guards run
+    // before the handler so each attempt still consumes its throttle slot.
+    // (An oversized payload would be the more direct probe but is unusable
+    // here — multer aborts the stream mid-write and supertest raises
+    // ECONNRESET rather than returning a status.) A fresh account gets its own
+    // bucket, since the tracker keys per bearer token, so this cannot starve
+    // the other tests in this file.
+    const previous = process.env.UPLOAD_RATE_LIMIT;
+    process.env.UPLOAD_RATE_LIMIT = '3';
+    try {
+      const probe = await newAccount();
+      const tiny = Buffer.from('not a pdf');
+      const statuses: number[] = [];
+      for (let i = 0; i < 5; i += 1) {
+        const res = await request(app.getHttpServer())
+          .post('/api/prescriptions/upload')
+          .set(auth(probe.token))
+          .attach('file', tiny, 'rx.txt');
+        statuses.push(res.status);
+      }
+      // First few are 400 (unsupported type), then the throttler takes over.
+      expect(statuses).toContain(429);
+      expect(statuses.indexOf(429)).toBeGreaterThan(0);
+    } finally {
+      if (previous === undefined) delete process.env.UPLOAD_RATE_LIMIT;
+      else process.env.UPLOAD_RATE_LIMIT = previous;
+    }
+  }, 60000);
 
   it('uploads a prescription and stores it under the caller alone', async () => {
     const res = await request(app.getHttpServer())
