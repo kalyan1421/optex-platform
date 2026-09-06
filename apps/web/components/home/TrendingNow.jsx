@@ -22,13 +22,13 @@ export default async function TrendingNow() {
 
   return (
     <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 lg:px-[100px]">
-      <div className="flex flex-col lg:w-[1240px] lg:gap-[60px]">
+      <div className="flex w-full max-w-[1240px] flex-col lg:gap-[60px]">
         {/* Header Row */}
         <div
           data-aos="fade-up"
-          className="flex flex-col justify-between lg:h-[142px] lg:w-[1240px] lg:flex-row lg:items-end"
+          className="flex flex-col justify-between lg:h-[142px] lg:flex-row lg:items-end"
         >
-          <div className="flex flex-col lg:h-[142px] lg:w-[600px] lg:gap-[16px]">
+          <div className="flex flex-col lg:h-[142px] lg:max-w-[600px] lg:gap-[16px]">
             <h2
               className="text-[#000000]"
               style={{
@@ -76,22 +76,22 @@ export default async function TrendingNow() {
 
         {/* Product Grid */}
         {products.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:flex lg:h-[381.75px] lg:w-[1240px] lg:grid-cols-none lg:flex-nowrap lg:gap-0">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
             {products.map((product, index) => (
               <div
                 key={product.id}
                 data-aos="fade-up"
                 data-aos-delay={index * 100}
-                className="group flex flex-col gap-3 lg:h-[381.75px] lg:w-[261.75px] lg:gap-[24px]"
+                className="group flex flex-col gap-3 lg:gap-[24px]"
               >
                 {/* Image Block */}
                 <div
-                  className="relative aspect-square w-full overflow-hidden bg-[#F9F9F9] lg:h-[261.75px] lg:w-[261.75px]"
+                  className="relative aspect-square w-full overflow-hidden bg-[#F9F9F9]"
                   style={{ borderRadius: '32px' }}
                 >
                   <div
                     className="absolute z-10 bg-[#E53935] px-[16px] py-[6px] lg:left-[16px] lg:top-[16px]"
-                    style={{ borderRadius: '33554400px' }}
+                    style={{ borderRadius: '9999px' }}
                   >
                     <span
                       className="uppercase text-[#FFFFFF]"
@@ -115,7 +115,7 @@ export default async function TrendingNow() {
                       src={getProductImageUrl(product)}
                       alt={product.name}
                       fill
-                      sizes="262px"
+                      sizes="(min-width: 1024px) 262px, (min-width: 640px) 45vw, 90vw"
                       className="object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                       style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
                     />
@@ -123,10 +123,7 @@ export default async function TrendingNow() {
                 </div>
 
                 {/* Text Block */}
-                <Link
-                  href={`/product/${product.slug}`}
-                  className="flex flex-col lg:h-[96px] lg:w-[261.75px]"
-                >
+                <Link href={`/product/${product.slug}`} className="flex flex-col lg:h-[96px]">
                   <p
                     className="uppercase text-[#717182]"
                     style={{
@@ -177,7 +174,7 @@ export default async function TrendingNow() {
           // permanently rather than resolving, which is worse than an honest
           // empty state.
           <div
-            className="flex flex-col items-center justify-center bg-[#FFFFFF] lg:h-[381.75px] lg:w-[1240px]"
+            className="flex min-h-[240px] flex-col items-center justify-center bg-[#FFFFFF] lg:h-[381.75px]"
             style={{ borderRadius: '32px', border: '1px solid #D4D4D4' }}
           >
             <h3
