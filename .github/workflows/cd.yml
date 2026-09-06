@@ -1,0 +1,164 @@
+name: CD
+
+# Continuous delivery for the three apps.
+#
+# SCOPE. This builds and publishes container images; it does not assume a
+# particular host. The registry is GHCR because it needs no account setup and
+# no third-party secret — `GITHUB_TOKEN` is enough — so the build half of this
+# pipeline is real and verified on every merge rather than sitting untested
+# until someone wires up infrastructure. The deploy job is a thin, explicitly
+# gated step: it runs only when a deploy target is configured, and skips with a
+# notice otherwise, so this workflow is never red for a reason nobody can fix.
+#
+# Deliberately NOT the AWS/ECS pipeline sketched in
+# docs/AWS_DEPLOYMENT_ARCHITECTURE.md §8: that design targets RDS + Cognito,
+# and §13 lists the RLS/claims rewrite as a multi-week prerequisite that has not
+# started. Wiring ECR/ECS now would mean publishing to infrastructure that does
+# not exist against an auth stack that has not migrated.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Run the deploy job after publishing images'
+        type: boolean
+        default: false
+
+concurrency:
+  # Never let two publishes of the same ref race; unlike CI, do NOT cancel in
+  # progress — a half-pushed image manifest is worse than a slow queue.
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ── Gate ──────────────────────────────────────────────────────────────────
+  # CD must not publish something CI has not vetted. `workflow_run` would be the
+  # alternative, but it hides the relationship from the PR view; re-running the
+  # checks here keeps one readable pipeline.
+  verify:
+    name: Verify before publish
+    uses: ./.github/workflows/ci.yml
+
+  build-and-push:
+    name: Build and publish images
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: api
+            context_note: NestJS, no build-time public env
+          - app: web
+            context_note: Next.js standalone
+          - app: admin
+            context_note: Next.js standalone
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Lowercases the owner for the image path — GHCR rejects uppercase, and
+      # GitHub org/user names are free to contain it.
+      - name: Compute image name
+        id: img
+        run: echo "name=${REGISTRY}/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/${{ matrix.app }}" >> "$GITHUB_OUTPUT"
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.img.outputs.name }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # The build context is the repo root for all three apps — each Dockerfile
+      # needs the root lockfile and workspace manifests. See their headers.
+      #
+      # NEXT_PUBLIC_* are build args, not runtime env: Next inlines them into
+      # the client bundle, so an image is bound to the Supabase project and API
+      # origin it was built against. They are read from repo variables (not
+      # secrets) because the anon key is public by design — it is the key the
+      # browser ships. The service-role key must never appear here.
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+
+  # ── Deploy ────────────────────────────────────────────────────────────────
+  # Gated on DEPLOY_WEBHOOK_URL being set. Most container hosts that are not AWS
+  # — Render, Railway, Fly, Coolify, a plain Docker host running Watchtower —
+  # expose exactly this: a URL you POST to, which pulls the new image. When the
+  # host is chosen, set the secret; until then this job reports why it skipped
+  # instead of failing.
+  deploy:
+    name: Deploy
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # Environments give a manual approval gate and hold the per-environment
+    # secrets. Configure required reviewers on `production` in repo settings.
+    environment: production
+    steps:
+      - name: Check a target is configured
+        id: gate
+        run: |
+          if [ -n "${{ secrets.DEPLOY_WEBHOOK_URL }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::No DEPLOY_WEBHOOK_URL secret is set. Images were published to GHCR and can be pulled by tag; set the secret to enable automatic rollout."
+          fi
+
+      - name: Trigger rollout
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          # --fail-with-body so an HTTP error fails the step AND prints the
+          # host's explanation, rather than exiting 22 with nothing to debug.
+          curl --fail-with-body -sS -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"image_tag\":\"sha-${GITHUB_SHA}\",\"ref\":\"${GITHUB_REF}\"}"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Images published"
+            echo
+            for app in api web admin; do
+              echo "- \`ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/$app:sha-${GITHUB_SHA}\`"
+            done
+            echo
+            if [ "${{ steps.gate.outputs.configured }}" = "true" ]; then
+              echo "Rollout triggered."
+            else
+              echo "No deploy target configured — set \`DEPLOY_WEBHOOK_URL\` to enable rollout."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
