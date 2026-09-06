@@ -365,6 +365,8 @@ export default function Page() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
   const [prescription, setPrescription] = useState(null);
+  const [eyeRecords, setEyeRecords] = useState([]);
+  const [eyeRecordsLoading, setEyeRecordsLoading] = useState(true);
   const [rxDownloading, setRxDownloading] = useState(false);
   const [rxDownloadError, setRxDownloadError] = useState('');
   const [appointments, setAppointments] = useState([]);
@@ -395,6 +397,12 @@ export default function Page() {
         setOrdersError(error?.message ?? 'Could not load your orders.');
       })
       .finally(() => setOrdersLoading(false));
+    api.eyeRecords
+      .listMine()
+      .then((rows) => setEyeRecords(rows ?? []))
+      .catch((err) => console.error('[profile] eye records fetch failed:', err))
+      .finally(() => setEyeRecordsLoading(false));
+
     api.prescriptions
       .listMine()
       .then((prescriptions) => setPrescription(prescriptions?.[0] ?? null))
@@ -1049,6 +1057,115 @@ export default function Page() {
                 </div>
               ) : null}
             </div>
+          )}
+        </section>
+
+        {/* Eye-care intake records (migration 0037). Distinct from the
+            Vision Prescription Record above: that is an uploaded document
+            reviewed by staff, this is what the customer reported themselves
+            through the /eye-care form. */}
+        <section
+          aria-labelledby="eye-records-heading"
+          className="mb-8 overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]"
+        >
+          <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-100 bg-[#fafbfc] p-6 sm:flex-row sm:items-center sm:p-8">
+            <h2
+              id="eye-records-heading"
+              className="text-[16px] font-bold uppercase tracking-wide text-[#1a1a1a]"
+            >
+              Eye Care Records
+            </h2>
+            <Link
+              href="/eye-care"
+              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-4 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+            >
+              Submit a new record
+            </Link>
+          </div>
+
+          {eyeRecordsLoading ? (
+            <div className="p-10 text-center text-[14px] text-gray-400">Loading eye records…</div>
+          ) : eyeRecords.length === 0 ? (
+            <div className="p-10 text-center">
+              <p className="text-[15px] text-gray-500">
+                You haven’t submitted an eye-care record yet.
+              </p>
+              <p className="mt-1 text-[13px] text-gray-400">
+                Fill one in before your next eye test and we’ll have your history ready.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {eyeRecords.map((r) => {
+                const hasRx =
+                  r.sphere_od != null ||
+                  r.sphere_os != null ||
+                  r.cyl_od != null ||
+                  r.cyl_os != null ||
+                  r.pd_od != null ||
+                  r.pd_os != null;
+                return (
+                  <li
+                    key={r.id}
+                    className="flex flex-col gap-3 p-6 sm:flex-row sm:items-start sm:justify-between sm:p-8"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-[15px] font-bold text-[#1a1a1a]">{r.full_name}</span>
+                        <span
+                          className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            r.status === 'reviewed'
+                              ? 'bg-green-50 text-green-600'
+                              : r.status === 'archived'
+                                ? 'bg-gray-100 text-gray-500'
+                                : 'bg-blue-50 text-blue-600'
+                          }`}
+                        >
+                          {r.status === 'reviewed'
+                            ? 'Reviewed'
+                            : r.status === 'archived'
+                              ? 'Archived'
+                              : 'Awaiting review'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[12px] text-gray-400">
+                        Submitted {formatDate(r.created_at)}
+                      </p>
+                      {r.conditions?.length ? (
+                        <ul className="mt-3 flex flex-wrap gap-2">
+                          {r.conditions.map((c) => (
+                            <li
+                              key={c}
+                              className="rounded-full bg-gray-100 px-3 py-1 text-[11px] text-gray-600"
+                            >
+                              {c}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-left sm:text-right">
+                      {hasRx ? (
+                        <div className="font-mono text-[13px] tabular-nums text-[#1a1a1a]">
+                          <div>
+                            OD {formatDioptre(r.sphere_od)}
+                            {r.cyl_od != null ? ` / ${formatDioptre(r.cyl_od)}` : ''}
+                          </div>
+                          <div>
+                            OS {formatDioptre(r.sphere_os)}
+                            {r.cyl_os != null ? ` / ${formatDioptre(r.cyl_os)}` : ''}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[12px] italic text-gray-400">
+                          Testing fresh — no prescription given
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
 

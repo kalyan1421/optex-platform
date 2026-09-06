@@ -20,6 +20,7 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   appointments: 'appointments.read',
   customers: 'customers.read',
   prescriptions: 'prescriptions.read',
+  'eye-records': 'eye_records.read',
   cancellations: 'cancellations.decide',
   reviews: 'reviews.moderate',
   promotions: 'promotions.read',
