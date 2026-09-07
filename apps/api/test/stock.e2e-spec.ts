@@ -46,11 +46,13 @@ describe('Checkout stock enforcement (e2e)', () => {
   /**
    * `cancellations.decide` + `orders.cancel` (`branch_manager`) — no `aal2`
    * step-up needed, unlike `super_admin`. Deliberately no `branch_id` in
-   * `app_metadata`: `orders.branch_id` is never set by `place_order` (a known
-   * gap — see `adminCancel`'s own comment), so a branch-scoped caller 404s on
-   * every order. `approve()` has no branch check at all either way
-   * (documented gap, CLAUDE.md) — this account exists to exercise the restock
-   * fix, not branch-scoping, so it's minted without a branch on purpose.
+   * `app_metadata`, so this account is unscoped and reaches every order: it
+   * exists to exercise the restock fix, not branch-scoping, which
+   * `branch-scoping.e2e-spec.ts` covers on its own fixtures.
+   *
+   * (Until 0039 the reason given here was that `place_order` never set
+   * `orders.branch_id` at all, so a scoped caller 404'd on everything. That is
+   * no longer true — the stamp is asserted below.)
    */
   async function newBranchManager(): Promise<string> {
     const anon = createClient(
@@ -399,6 +401,97 @@ describe('Checkout stock enforcement (e2e)', () => {
 
     expect(statuses).toEqual([201, 409]);
     expect(await stockOf(productId)).toBe(0);
+  });
+
+  describe('fulfilling branch (migration 0039)', () => {
+    /**
+     * The bug this guards: `orders.branch_id` existed from 0001 and was never
+     * written, so the three surfaces that branch-scope through it — order list,
+     * order detail/cancel, and the whole cancellation-request workflow —
+     * filtered on a permanently NULL column and showed a Branch Manager nothing
+     * at all. Their scoping code was correct and covered by its own tests; the
+     * data it read was absent. `branch-scoping.e2e-spec.ts` could not catch
+     * that, because it inserts orders with a `branch_id` of its own rather than
+     * placing them through checkout — so the assertion has to live here, on the
+     * real `place_order` path.
+     */
+    it('stamps the branch whose stock actually fulfilled the order', async () => {
+      const token = await newAccount();
+      const productId = await newProduct('branch-stamp', 3);
+      await addToCart(token, productId, 1);
+
+      const res = await checkout(token).expect(201);
+      const orderId: string = res.body.order.id;
+
+      const { data: order } = await db
+        .from('orders')
+        .select('branch_id')
+        .eq('id', orderId)
+        .single();
+      expect(order!.branch_id).not.toBeNull();
+
+      // Not merely "some branch": it must be the branch the ledger says the
+      // unit left, which is what makes this a recorded fact rather than a guess.
+      const { data: items } = await db.from('order_items').select('id').eq('order_id', orderId);
+      const itemIds = (items ?? []).map((i) => (i as { id: string }).id);
+
+      const { data: ledger } = await db
+        .from('stock_ledger')
+        .select('from_branch_id')
+        .eq('reference_type', 'order_item')
+        .eq('movement_type', 'sold')
+        .in('reference_id', itemIds);
+
+      const suppliers = (ledger ?? []).map(
+        (r) => (r as { from_branch_id: string | null }).from_branch_id,
+      );
+      expect(suppliers.length).toBeGreaterThan(0);
+      expect(suppliers).toContain(order!.branch_id);
+    });
+
+    it('keeps the stamp after the order is cancelled and restocked', async () => {
+      const token = await newAccount();
+      const productId = await newProduct('branch-stamp-cancel', 3);
+      await addToCart(token, productId, 1);
+
+      const res = await checkout(token).expect(201);
+      const orderId: string = res.body.order.id;
+
+      const { data: before } = await db
+        .from('orders')
+        .select('branch_id')
+        .eq('id', orderId)
+        .single();
+      expect(before!.branch_id).not.toBeNull();
+
+      // Cancel through the real customer-request → admin-approve path, the same
+      // one the restock test below uses. Calling the SQL function directly here
+      // silently left the order `pending_payment`, which would have made this a
+      // test that asserted nothing.
+      const requestRes = await request(app.getHttpServer())
+        .post(`/api/orders/${orderId}/cancellation`)
+        .set(auth(token))
+        .send({})
+        .expect(201);
+
+      const adminToken = await newBranchManager();
+      await request(app.getHttpServer())
+        .patch(`/api/admin/cancellations/${requestRes.body.id}/approve`)
+        .set(auth(adminToken))
+        .send({})
+        .expect(200);
+
+      // Restocking appends `sale_reversed` and leaves the `sold` rows, so the
+      // branch that shipped an order remains the branch that shipped it — and a
+      // cancelled order stays visible to the branch that has to deal with it.
+      const { data: after } = await db
+        .from('orders')
+        .select('branch_id, status')
+        .eq('id', orderId)
+        .single();
+      expect(after!.status).toBe('cancelled');
+      expect(after!.branch_id).toBe(before!.branch_id);
+    });
   });
 
   describe('cancellation restocking (R2)', () => {
