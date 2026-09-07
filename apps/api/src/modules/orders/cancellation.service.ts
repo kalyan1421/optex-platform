@@ -408,10 +408,12 @@ export class CancellationService {
    * 404 — not a 403 — matching `adminCancel` and every other scoped surface,
    * so the response doesn't confirm the request exists.
    *
-   * `orders.branch_id` is nullable and no storefront order sets it yet, so a
-   * branch-scoped caller currently sees no requests to decide. That is the
-   * same deliberate consequence `adminCancel` and `adminListOrders` already
-   * carry, not a new one introduced here — see `orders.service.ts:342`.
+   * `orders.branch_id` is populated as of migration 0039 (stamped by
+   * `place_order` from the stock ledger's `sold` movements), so this filter now
+   * matches real rows. It stays nullable: an order placed before 0026, or one
+   * whose lines were never stock-tracked, has no ledger to derive a branch
+   * from, and such a row is invisible to a scoped caller by construction —
+   * no branch owns it, so no branch queue should claim it.
    */
   private async loadPendingRequest(requestId: string, user: AuthUser) {
     const { data, error } = await this.db
