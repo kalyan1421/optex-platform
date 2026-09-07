@@ -148,8 +148,7 @@ export class AppointmentsService {
     // the afternoon.
     const now = Date.now();
     const slots = candidates.filter(
-      (t) =>
-        (taken.get(t) ?? 0) < capacity && new Date(this.toUtcIso(date, t)).getTime() >= now,
+      (t) => (taken.get(t) ?? 0) < capacity && new Date(this.toUtcIso(date, t)).getTime() >= now,
     );
 
     return { branchId, date, slots };

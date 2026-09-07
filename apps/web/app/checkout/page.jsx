@@ -879,7 +879,9 @@ export default function Page() {
                                   style={{ fontFamily: 'Manrope, sans-serif' }}
                                 />
                               </div>
-                              <div className={`flex flex-col gap-[9px] ${isPickup ? 'hidden' : ''}`}>
+                              <div
+                                className={`flex flex-col gap-[9px] ${isPickup ? 'hidden' : ''}`}
+                              >
                                 <label
                                   className="text-[18px] text-[#141776]"
                                   style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
