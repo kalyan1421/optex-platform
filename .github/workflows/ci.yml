@@ -81,7 +81,7 @@ jobs:
       # would turn every doc edit into a diff nobody reads. Run
       # `pnpm format` locally if you want Markdown tidied too.
       - name: Check formatting
-        run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,css}"
+        run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,mjs,cjs,css}"
 
   e2e:
     name: API e2e
