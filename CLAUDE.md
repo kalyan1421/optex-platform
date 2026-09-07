@@ -36,6 +36,8 @@ Dev server ports (set in each app's `package.json` and mirrored in `.claude/laun
 
 (These were moved off 3000/3001/4000 to avoid collisions with other local processes — if you see those ports referenced in older docs/scripts, they're stale.)
 
+Applying migrations to a **hosted** project is `Backend/supabase/migrate-hosted.sh` (reads `SUPABASE_DB_URL` from the environment, applies anything missing in order, records into `supabase_migrations.schema_migrations` so the dashboard and CLI agree; `--dry-run` to preview, `--seed` to also load demo data after an explicit confirmation). Deliberately separate from `docker/migrate.sh`, which targets the container by hostname and tracks in its own `_docker.migrations` — pointing that at a hosted database records state somewhere Supabase's own tooling cannot see.
+
 Local Supabase stack: `docker compose up -d supabase-kong` brings up Postgres + Auth + REST + Storage + Kong (gateway at `:54321`, Postgres at `:54322`). `docker/migrate.sh` idempotently applies `Backend/supabase/migrations/*.sql` + `seed.sql` on every `supabase-migrate` run. Each app's `.env.example` ships working local-dev defaults (Kong URL, anon/service-role JWTs signed with the shared local JWT secret) — copy to `.env`/`.env.local` to run against the Docker stack.
 
 ## Backend (Supabase)
