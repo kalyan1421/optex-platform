@@ -1,9 +1,11 @@
 name: CD
 
-# Continuous delivery for the three apps.
+# Continuous delivery for apps/api.
 #
-# SCOPE. This builds and publishes container images; it does not assume a
-# particular host. The registry is GHCR because it needs no account setup and
+# SCOPE. This builds and publishes a container image for apps/api; it does not
+# assume a particular host. web and admin are deployed by Vercel straight from
+# this repo and are deliberately not built here — their Dockerfiles remain,
+# verified and ready, should that ever change. The registry is GHCR because it needs no account setup and
 # no third-party secret — `GITHUB_TOKEN` is enough — so the build half of this
 # pipeline is real and verified on every merge rather than sitting untested
 # until someone wires up infrastructure. The deploy job is a thin, explicitly
@@ -57,11 +59,21 @@ jobs:
       matrix:
         include:
           - app: api
+            # The only app with no other deployment path. Vercel builds and
+            # deploys web and admin from this repo already (confirmed: both had
+            # a successful Production deployment on the last merge), so building
+            # container images for them too would mean two pipelines shipping
+            # the same two apps.
+            #
+            # web/admin are NOT in this matrix for that reason, not because
+            # their Dockerfiles are wrong — they are kept, verified, and ready
+            # if you ever move off Vercel. To publish them, add them back here
+            # and set NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY /
+            # NEXT_PUBLIC_API_URL as repository VARIABLES. Without those the
+            # Next build dies deep inside prerendering with
+            # "[@optex/db] Missing required env var", which is how this
+            # workflow came to fail on four consecutive merges.
             context_note: NestJS, no build-time public env
-          - app: web
-            context_note: Next.js standalone
-          - app: admin
-            context_note: Next.js standalone
     steps:
       - uses: actions/checkout@v4
 
@@ -109,6 +121,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+          # Ignored by apps/api's Dockerfile, which declares no such ARGs.
+          # Present so re-adding web/admin to the matrix above is a one-line
+          # change — but note they are only meaningful once the matching
+          # repository variables exist.
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -152,7 +168,7 @@ jobs:
           {
             echo "### Images published"
             echo
-            for app in api web admin; do
+            for app in api; do
               echo "- \`ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/$app:sha-${GITHUB_SHA}\`"
             done
             echo
