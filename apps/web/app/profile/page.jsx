@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import CancelOrder from '@/components/orders/CancelOrder';
 import { api } from '@/lib/api';
+import PrescriptionUpload from '@/components/prescriptions/PrescriptionUpload';
 
 // Icons
 const VerifyBadgeIcon = () => (
@@ -365,6 +366,14 @@ export default function Page() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
   const [prescription, setPrescription] = useState(null);
+  /**
+   * After an upload the newly created row IS the latest prescription, so it
+   * replaces what the card shows rather than requiring a reload. It arrives
+   * `pending`, which the status pill above already renders.
+   */
+  const handleRxUploaded = (created) => {
+    if (created) setPrescription(created);
+  };
   const [eyeRecords, setEyeRecords] = useState([]);
   const [eyeRecordsLoading, setEyeRecordsLoading] = useState(true);
   const [rxDownloading, setRxDownloading] = useState(false);
@@ -780,6 +789,18 @@ export default function Page() {
                     </span>
                   </div>
                 </div>
+
+                {/* Holding a record does not mean it is current — a customer
+                    re-tested elsewhere needs somewhere to send the newer card,
+                    and the newest upload becomes the one this panel shows. */}
+                <details className="mt-6 border-t border-gray-100 pt-6">
+                  <summary className="cursor-pointer text-[13px] font-bold text-[#2A3182] marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A3182]/40">
+                    Upload a newer prescription
+                  </summary>
+                  <div className="mt-4">
+                    <PrescriptionUpload onUploaded={handleRxUploaded} compact />
+                  </div>
+                </details>
               </div>
             ) : (
               /* Empty state. This deliberately shows no numbers: the previous
@@ -796,13 +817,22 @@ export default function Page() {
                   Once an Optex optician completes your eye test, your sphere, cylinder, axis and PD
                   measurements appear here.
                 </p>
-                <Link
-                  href="/appointments"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461]"
-                >
-                  <CalendarPlainIcon />
-                  Book an eye test
-                </Link>
+                {/* Two ways in, because a customer with no record here is in
+                    one of two situations: they have never been tested, or they
+                    were tested elsewhere and are holding the card. The page
+                    previously only served the first. */}
+                <PrescriptionUpload onUploaded={handleRxUploaded} />
+
+                <div className="mt-8 flex flex-col items-center gap-2 border-t border-gray-100 pt-6">
+                  <p className="text-[13px] text-gray-500">Not been tested yet?</p>
+                  <Link
+                    href="/appointments"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+                  >
+                    <CalendarPlainIcon />
+                    Book an eye test
+                  </Link>
+                </div>
               </div>
             )}
           </section>
