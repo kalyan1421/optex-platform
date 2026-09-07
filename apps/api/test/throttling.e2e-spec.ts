@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
+import { createClient } from '@supabase/supabase-js';
 import { AppModule } from '../src/app.module';
 
 /**
@@ -15,10 +16,19 @@ import { AppModule } from '../src/app.module';
  * `/api/health` sat in the same bucket, so saturation made the liveness probe
  * fail and the orchestrator restart healthy containers at peak.
  *
- * AFTER: `UserAwareThrottlerGuard` keys signed-in callers on their bearer token
- * so they never share a bucket, `main.ts` trusts one forwarding hop so
- * anonymous callers resolve to their real address, and health skips the
- * limiter entirely.
+ * AFTER: `UserAwareThrottlerGuard` keys signed-in callers on the VERIFIED
+ * `sub` of their token so they never share a bucket, `main.ts` trusts one
+ * forwarding hop so anonymous callers resolve to their real address, and
+ * health skips the limiter entirely.
+ *
+ * The tracker keyed on a hash of the raw token until it was found to be
+ * trivially bypassable: any string minted a fresh bucket, so rotating the
+ * `Authorization` header defeated rate limiting entirely, with no credentials.
+ * Measured against the running API: 310 requests with one junk token returned
+ * 429, while rotating the junk token returned 60/60 not throttled. It now
+ * verifies the HS256 signature and keys on `sub`, so junk and forged tokens
+ * fall back to the anonymous IP bucket. The last two tests below are the
+ * regression guards for that.
  *
  * These assertions are about ISOLATION — that two distinct callers do not
  * consume each other's quota — not about the exact ceiling, which is
@@ -29,6 +39,30 @@ describe('Rate limiting (e2e)', () => {
 
   /** Comfortably above the per-route auth override, below the global bucket. */
   const BURST = 12;
+
+  const PASSWORD = 'TestPassword123!';
+  const anon = () =>
+    createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string, {
+      auth: { persistSession: false },
+    });
+
+  /**
+   * A REAL signed token. The tracker verifies the signature now, so a made-up
+   * string no longer reaches the per-user bucket — these tests would be
+   * measuring the shared IP bucket if they kept using junk.
+   */
+  async function newUser(): Promise<{ email: string; token: string }> {
+    const email = `throttle-e2e-${Date.now()}-${Math.floor(Math.random() * 100000)}@optex-test.local`;
+    const { data, error } = await anon().auth.signUp({ email, password: PASSWORD });
+    if (error) throw error;
+    return { email, token: data.session!.access_token };
+  }
+
+  async function signInAgain(email: string): Promise<string> {
+    const { data, error } = await anon().auth.signInWithPassword({ email, password: PASSWORD });
+    if (error) throw error;
+    return data.session!.access_token;
+  }
 
   beforeAll(async () => {
     // Keep the credential override tight so this suite can actually reach it —
@@ -75,10 +109,10 @@ describe('Rate limiting (e2e)', () => {
     expect(headers['x-ratelimit-remaining']).toBeUndefined();
   }, 30_000);
 
-  it('gives distinct bearer tokens independent quotas (F-01)', async () => {
-    // The tokens are junk, so every request 401s — which is fine and is the
-    // point: the throttler runs BEFORE authentication, so a 401 still consumes
-    // quota. What matters is whose quota it consumes.
+  it('gives distinct users independent quotas (F-01)', async () => {
+    // Real signed tokens, not junk: the tracker verifies the signature before
+    // it will hand out a per-user bucket, so junk here would measure the shared
+    // anonymous bucket and prove nothing about isolation.
     //
     // Asserted against a FRESH key's absolute remaining rather than by
     // comparing two callers' counts. The throttler store is in-memory and
@@ -101,21 +135,67 @@ describe('Rate limiting (e2e)', () => {
     // products.controller.ts), so taking the number from /api/products and
     // asserting it against /api/cart compares two different buckets — which is
     // exactly how this test broke when those ceilings were introduced.
+    const userA = await newUser();
     const limit = Number(
-      (await request(app.getHttpServer()).get('/api/cart').set('Authorization', 'Bearer probe'))
-        .headers['x-ratelimit-limit'],
+      (
+        await request(app.getHttpServer())
+          .get('/api/cart')
+          .set('Authorization', `Bearer ${userA.token}`)
+      ).headers['x-ratelimit-limit'],
     );
 
-    const tokenA = `iso-a-${Date.now()}`;
-    const tokenB = `iso-b-${Date.now()}`;
-
-    await burn(tokenA, BURST);
+    await burn(userA.token, BURST);
     // B has never been seen, so its very first request must leave a full
     // quota minus one — regardless of how much A just spent, or anyone else.
-    const remainingB = await burn(tokenB, 1);
+    const userB = await newUser();
+    const remainingB = await burn(userB.token, 1);
 
     expect(remainingB).toBe(limit - 1);
   }, 30_000);
+
+  it('does not hand a user a fresh quota for re-authenticating', async () => {
+    // The bucket is the token's subject, not the token itself. Signing in again
+    // is a new token for the same person and must continue the same ceiling —
+    // otherwise the limit is only ever as strong as the login rate limit.
+    const user = await newUser();
+    const spend = async (token: string) =>
+      Number(
+        (
+          await request(app.getHttpServer())
+            .get('/api/cart')
+            .set('Authorization', `Bearer ${token}`)
+        ).headers['x-ratelimit-remaining'],
+      );
+
+    await spend(user.token);
+    const beforeReauth = await spend(user.token);
+
+    const secondToken = await signInAgain(user.email);
+    expect(secondToken).not.toBe(user.token);
+
+    const afterReauth = await spend(secondToken);
+    expect(afterReauth).toBe(beforeReauth - 1);
+  }, 30_000);
+
+  it('does not let a rotating Authorization header bypass the limit', async () => {
+    // THE REGRESSION GUARD. When the tracker hashed the raw token, every
+    // distinct string was a new bucket, so this loop ran forever unthrottled —
+    // rate limiting was defeated by anyone willing to send a random header, no
+    // credentials required. Junk now fails signature verification and falls
+    // back to the shared anonymous bucket, so the run must hit 429.
+    let throttled = 0;
+    for (let i = 0; i < 400; i++) {
+      const res = await request(app.getHttpServer())
+        .get('/api/cart')
+        .set('X-Forwarded-For', '203.0.113.77')
+        .set('Authorization', `Bearer rotating-junk-${i}-${Math.random()}`);
+      if (res.status === 429) {
+        throttled += 1;
+        if (throttled > 2) break;
+      }
+    }
+    expect(throttled).toBeGreaterThan(0);
+  }, 60_000);
 
   it('separates anonymous callers by forwarded address, not by proxy (F-01)', async () => {
     const hit = (ip: string) =>

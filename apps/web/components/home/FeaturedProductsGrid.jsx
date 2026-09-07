@@ -29,7 +29,7 @@ export default function FeaturedProductsGrid({ products }) {
           }}
         >
           {/* Product Image */}
-          <div className="relative aspect-[289/225.2] w-full lg:h-[225.2px] lg:w-[289px]">
+          <div className="relative aspect-square w-full lg:h-[289px] lg:w-[289px]">
             <WishlistToggle
               productId={product.id}
               className="absolute left-[12px] top-[12px] z-10"

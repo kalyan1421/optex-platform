@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { createHash } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
 
 /**
@@ -10,45 +10,123 @@ import type { Request } from 'express';
  * on `req.ip`. Browser traffic reaches this API through the Next.js `/api/*`
  * rewrite proxy (see `apps/web/next.config.js`), and production adds an ingress
  * hop on top — so with the stock tracker every customer in the country presents
- * the same address and shares ONE 100-request-per-minute bucket. Measured before
- * the fix: 115 sequential requests from a single client returned 98×200 / 17×429,
- * and a distinct `X-Forwarded-For` per request changed nothing.
+ * the same address and shares ONE bucket. `main.ts` sets `trust proxy` so
+ * anonymous traffic resolves to the real client, and authenticated traffic is
+ * keyed per user below, which is what carrier-grade NAT on Kenyan mobile
+ * networks makes necessary.
  *
- * Two changes close it:
+ * WHY IT KEYS ON THE VERIFIED SUBJECT, NOT THE TOKEN STRING. The first version
+ * hashed the raw bearer token, which made the bucket per-SESSION rather than
+ * per-user, and — far worse — meant ANY string minted a fresh bucket. Measured
+ * against the running API before this change: 310 requests with one junk token
+ * returned 429, while rotating the junk token per request returned 60/60 not
+ * throttled. Rate limiting was bypassable by anyone willing to send a random
+ * `Authorization` header, with no credentials at all.
  *
- *   1. `main.ts` now sets `trust proxy`, so `req.ip` resolves through
- *      `X-Forwarded-For` to the real client for ANONYMOUS traffic.
- *   2. This tracker keys AUTHENTICATED traffic on the bearer token instead of
- *      the address, so signed-in customers get their own bucket even when they
- *      share an egress IP — which is the norm on Kenyan mobile networks behind
- *      carrier-grade NAT, where IP-keyed limiting would lump thousands of
- *      unrelated shoppers together.
+ * So the signature is verified here — locally, HMAC only, no network — and the
+ * bucket is the token's `sub`:
  *
- * The token is SHA-256'd and truncated before it becomes a key: the throttler
- * storage is a plain in-memory map, and raw access tokens do not belong in it.
+ *   - a validly signed token  → `u:<sub>`, so a user cannot widen their own
+ *     quota by re-authenticating, and their several devices share one ceiling;
+ *   - anything else           → `ip:<addr>`, so forged and junk tokens fall
+ *     back to the anonymous bucket instead of minting their own.
  *
- * NOTE ON MULTI-INSTANCE. The storage is still `ThrottlerStorageService`, which
- * is per-process — two API replicas each allow the full quota. That is a
- * deliberate limit of the current single-container deployment, not an oversight;
- * sharing the counter across replicas needs a Redis-backed storage provider, and
- * there is no Redis in the stack today. `ThrottlerModule.forRoot` takes a
- * `storage` option, so swapping it is a one-line change when Redis arrives.
+ * Verifying rather than merely decoding matters for a second reason: an
+ * unverified `sub` would let an attacker spend a VICTIM's quota by forging
+ * their id. A forged token fails the HMAC and never reaches the user bucket.
+ *
+ * `exp` is deliberately not checked. An expired but validly signed token still
+ * identifies whose it is, which is the only question being asked here — and
+ * `SupabaseAuthGuard` rejects it a moment later regardless.
+ *
+ * STILL OPEN — MULTI-INSTANCE. The counters live in `ThrottlerStorageService`,
+ * which is per-process, so N replicas allow N times the ceiling. Sharing them
+ * needs a Redis-backed storage provider and there is no Redis in the stack;
+ * `ThrottlerModule.forRoot` takes a `storage` option, so it is a one-line
+ * change once there is. Worth knowing that the "single container" premise this
+ * was originally accepted under may already be stale: migration 0021 added
+ * cron leader election specifically so the API could run more than one replica.
+ * That is a deployment decision, not a code one, which is why it is documented
+ * here rather than papered over.
  */
+
+const logger = new Logger('UserAwareThrottlerGuard');
+let warnedMissingSecret = false;
+
+/**
+ * Returns the `sub` of a Supabase access token whose HS256 signature checks
+ * out, or `null` for anything else — malformed, wrong algorithm, bad
+ * signature, or no configured secret.
+ *
+ * Hand-rolled rather than pulling in a JWT library: this is one HMAC and one
+ * constant-time compare, the API has no other need for one, and the narrower
+ * surface is easier to reason about than a general-purpose verifier whose
+ * defaults would have to be audited (`algorithms`, `none`, and so on).
+ */
+function verifiedSubject(token: string | null): string | null {
+  if (!token) return null;
+
+  const secret = process.env.SUPABASE_JWT_SECRET;
+  if (!secret) {
+    if (!warnedMissingSecret) {
+      warnedMissingSecret = true;
+      // Not fatal: the fallback is the anonymous IP bucket, which is stricter
+      // than per-user, never looser. Worth saying out loud because it silently
+      // costs signed-in users their own quota behind shared egress.
+      logger.warn(
+        'SUPABASE_JWT_SECRET is not set — rate limiting will key authenticated traffic by IP rather than by user.',
+      );
+    }
+    return null;
+  }
+
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [headerSegment, payloadSegment, signatureSegment] = parts;
+
+  try {
+    // Pin the algorithm. Accepting whatever the token declares is the classic
+    // alg-confusion hole — `none` would make every signature "valid", and an
+    // asymmetric alg would have us verify with the wrong key material.
+    const header = JSON.parse(Buffer.from(headerSegment, 'base64url').toString('utf8')) as {
+      alg?: unknown;
+    };
+    if (header.alg !== 'HS256') return null;
+
+    const expected = createHmac('sha256', secret)
+      .update(`${headerSegment}.${payloadSegment}`)
+      .digest();
+    const actual = Buffer.from(signatureSegment, 'base64url');
+    // timingSafeEqual throws on a length mismatch, so check that first — and
+    // a wrong length is a wrong signature anyway.
+    if (actual.length !== expected.length) return null;
+    if (!timingSafeEqual(actual, expected)) return null;
+
+    const payload = JSON.parse(Buffer.from(payloadSegment, 'base64url').toString('utf8')) as {
+      sub?: unknown;
+    };
+    return typeof payload.sub === 'string' && payload.sub ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+function bearerFrom(req: Request): string | null {
+  const header = req.headers?.['authorization'];
+  if (typeof header !== 'string') return null;
+  const [scheme, token] = header.split(' ');
+  if (scheme?.toLowerCase() !== 'bearer') return null;
+  return token?.trim() || null;
+}
+
 @Injectable()
 export class UserAwareThrottlerGuard extends ThrottlerGuard {
   protected override async getTracker(req: Request): Promise<string> {
-    const header = req.headers?.['authorization'];
-    if (typeof header === 'string') {
-      const [scheme, token] = header.split(' ');
-      if (scheme?.toLowerCase() === 'bearer' && token?.trim()) {
-        // Per-session bucket. Hashed so the storage map never holds a usable
-        // credential; truncated because 128 bits is ample for a bucket key.
-        return `u:${createHash('sha256').update(token.trim()).digest('hex').slice(0, 32)}`;
-      }
-    }
+    const subject = verifiedSubject(bearerFrom(req));
+    if (subject) return `u:${subject}`;
 
-    // Anonymous traffic falls back to the address, which is now the real client
-    // rather than the proxy because `main.ts` trusts the forwarding hops.
+    // Anonymous, forged, and junk-token traffic all land here. `main.ts` trusts
+    // the forwarding hops, so this is the real client rather than the proxy.
     return `ip:${req.ip ?? 'unknown'}`;
   }
 }
