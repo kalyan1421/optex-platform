@@ -9,6 +9,12 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "types": ["node", "jest"],
+    // DOM is added for TESTS ONLY, and only because the contract spec imports
+    // `@optex/api-client` — a browser-targeted package whose signatures use
+    // `BodyInit`/`Response`/`Blob`. The app's own tsconfig keeps `lib: ES2022`
+    // with no DOM on purpose: the API is a Node server and must not compile
+    // against browser globals it will not have at runtime.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true
   },
   "include": ["./**/*.ts", "../src/**/*"]
