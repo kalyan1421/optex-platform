@@ -138,7 +138,18 @@ export class AppointmentsService {
 
     const candidates = this.generateSlots(window[0], window[1], breaks?.[dayKey]);
     const taken = await this.takenCounts(branchId, date);
-    const slots = candidates.filter((t) => (taken.get(t) ?? 0) < capacity);
+
+    // P-06: a slot that has already started is not available, whether that is
+    // last year or twenty minutes ago. Without this, asking for 2020-01-01
+    // returned a full day of times — the booking guard in
+    // `assertSlotBookable()` would then reject them, but only after the
+    // customer had picked one, which is a worse way to learn it. Filtering
+    // here also stops today's already-passed morning slots being offered in
+    // the afternoon.
+    const now = Date.now();
+    const slots = candidates.filter(
+      (t) => (taken.get(t) ?? 0) < capacity && new Date(this.toUtcIso(date, t)).getTime() >= now,
+    );
 
     return { branchId, date, slots };
   }
@@ -403,6 +414,28 @@ export class AppointmentsService {
     time: string,
     excludeId?: string,
   ): Promise<void> {
+    // P-06: refuse a slot that has already happened.
+    //
+    // `IsCalendarDate` on the DTO only proves the date is a real Gregorian
+    // date, not that it is in the future, and nothing downstream checked
+    // either — so `date: '2020-01-01'` was accepted, the slot generator
+    // returned a full day of times for it, and the row landed in the branch
+    // queue with a `scheduled_at` six years in the past. Reminders for it can
+    // never fire (`claim_due_reminders` looks forward), so it sits there until
+    // someone cancels it by hand.
+    //
+    // Checked here rather than in the DTO because this is the one chokepoint
+    // all three write paths funnel through — create, customer reschedule and
+    // admin update — and because the comparison needs the branch's wall-clock
+    // slot resolved to a real instant, which is service-layer knowledge.
+    //
+    // Compared against the slot's START instant, so booking during the
+    // half-hour a slot belongs to is still allowed; only a slot that has
+    // already begun is refused.
+    if (new Date(this.toUtcIso(date, time)).getTime() < Date.now()) {
+      throw new BadRequestException('That appointment time is in the past');
+    }
+
     const { hours, breaks, capacity } = await this.loadBranchSchedule(branchId);
     const dayKey = WEEKDAY_KEYS[this.weekdayIndex(date)];
     const window = hours?.[dayKey];

@@ -54,6 +54,10 @@ export default function SearchBox({ initialQuery }) {
         </div>
         <input
           type="text"
+          // P-11: same as the header combobox — the placeholder was doing the
+          // job of an accessible name, and stops doing it as soon as there is a
+          // value in the field.
+          aria-label="Search frames, sunglasses and brands"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Search frames, sunglasses, brands…"

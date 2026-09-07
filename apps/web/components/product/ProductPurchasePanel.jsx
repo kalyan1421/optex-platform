@@ -6,16 +6,30 @@ import { useCart } from '@/context/CartContext';
 import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
 /**
- * The purchasable half of the PDP (SPEC-03 R2): colour, quantity, add-to-cart
- * and the wishlist toggle. Split out of the page so the surrounding gallery,
+ * The purchasable half of the PDP (SPEC-03 R2): quantity, add-to-cart and the
+ * wishlist toggle. Split out of the page so the surrounding gallery,
  * description and badges — none of which need a browser — can stay server
  * rendered.
+ *
+ * NO COLOUR SELECTOR, DELIBERATELY. This panel used to render three hardcoded
+ * swatches — black, blue, grey — on every product in the catalogue, so the
+ * Classic Aviator, described in its own copy as "brushed gold", sold in three
+ * colours it does not come in. The pick was not cosmetic either: it was written
+ * into the cart line as `variant: "Frame: Black"` and `lensOption.frameColor`,
+ * and travelled with the order, so fulfilment was handed a colour that was
+ * never in the catalogue.
+ *
+ * Colour is not a product attribute in this schema — `products` has no colour
+ * column and there is no variants table. Each colourway is its own SKU and its
+ * own row ("… Classic Eyeglasses — Brown/Blue"), which is why the swatches
+ * could only ever have been decorative. A real picker means a variants table
+ * and a migration; until that exists, showing no choice is honest and showing
+ * three is not.
  */
 export default function ProductPurchasePanel({ product, mainImage }) {
   const router = useRouter();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState('black');
   const [addingToCart, setAddingToCart] = useState(false);
   const [addError, setAddError] = useState('');
   const availableStock =
@@ -39,10 +53,9 @@ export default function ProductPurchasePanel({ product, mainImage }) {
         price: String(product.price_kes),
         image: mainImage,
         quantity,
-        // Do not claim a lens choice until the lens/coating configurator is
-        // designed and backed by the product contract.
-        variant: `Frame: ${selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1)}`,
-        lensOption: { frameColor: selectedColor },
+        // No `variant` and no `lensOption`: the product row IS the variant
+        // here, and neither a frame colour nor a lens choice can be claimed
+        // until there is a configurator backed by the product contract.
         brand: product.brand,
       });
       router.push('/cart');
@@ -55,43 +68,6 @@ export default function ProductPurchasePanel({ product, mainImage }) {
 
   return (
     <>
-      <div className="mb-[32px]">
-        <p
-          className="mb-[16px] text-[#000000]"
-          style={{
-            fontFamily: 'Poppins, sans-serif',
-            fontSize: '16px',
-            lineHeight: '24px',
-            fontWeight: 600,
-          }}
-        >
-          Select Color
-        </p>
-        <div className="flex items-center gap-[16px]">
-          <button
-            type="button"
-            aria-label="Black frame color"
-            aria-pressed={selectedColor === 'black'}
-            onClick={() => setSelectedColor('black')}
-            className={`flex items-center justify-center rounded-full transition-all ${selectedColor === 'black' ? 'h-[44px] w-[44px] border-[1.76px] border-[#2E3192] bg-[#1A1A1A]' : 'h-[40px] w-[40px] border-[1.6px] border-[#000000] bg-[#1A1A1A]'}`}
-          ></button>
-          <button
-            type="button"
-            aria-label="Blue frame color"
-            aria-pressed={selectedColor === 'blue'}
-            onClick={() => setSelectedColor('blue')}
-            className={`flex items-center justify-center rounded-full transition-all ${selectedColor === 'blue' ? 'h-[44px] w-[44px] border-[1.76px] border-[#2E3192] bg-[#2E3192]' : 'h-[40px] w-[40px] border-[1.6px] border-[#000000] bg-[#2E3192]'}`}
-          ></button>
-          <button
-            type="button"
-            aria-label="Grey frame color"
-            aria-pressed={selectedColor === 'grey'}
-            onClick={() => setSelectedColor('grey')}
-            className={`flex items-center justify-center rounded-full transition-all ${selectedColor === 'grey' ? 'h-[44px] w-[44px] border-[1.76px] border-[#2E3192] bg-[#717182]' : 'h-[40px] w-[40px] border-[1.6px] border-[#000000] bg-[#717182]'}`}
-          ></button>
-        </div>
-      </div>
-
       <div className="mb-[18px] text-sm font-medium" aria-live="polite">
         {unavailable ? (
           <p className="m-0 text-red-700">Currently out of stock.</p>
@@ -103,8 +79,15 @@ export default function ProductPurchasePanel({ product, mainImage }) {
         {addError && <p className="m-0 mt-2 text-red-700">{addError}</p>}
       </div>
 
-      <div className="mb-[56.8px] flex h-[63px] w-[459.6px] items-center gap-[24px]">
-        <div className="flex h-[49.2px] w-[135.2px] items-center justify-between rounded-[26843500px] border-[1.6px] border-[#D4D4D4] bg-white px-[16px] py-[8px]">
+      {/* P-03: this row was `w-[459.6px]` with a `w-[300.4px]` button inside —
+          fixed pixel widths with no responsive override. At a 375px viewport
+          the button's right edge landed at 484px, so Add to Cart sat off-screen
+          and the whole page scrolled sideways. `w-full` with the old figure as
+          `max-w` keeps the desktop layout pixel-identical (135.2 + 24 gap +
+          300.4 = 459.6, which is what `flex-1` resolves to at that width) while
+          letting the row shrink on a phone. */}
+      <div className="mb-[56.8px] flex h-[63px] w-full max-w-[459.6px] items-center gap-[24px]">
+        <div className="flex h-[49.2px] w-[135.2px] shrink-0 items-center justify-between rounded-[26843500px] border-[1.6px] border-[#D4D4D4] bg-white px-[16px] py-[8px]">
           <button
             type="button"
             aria-label="Decrease quantity"
@@ -141,7 +124,7 @@ export default function ProductPurchasePanel({ product, mainImage }) {
           onClick={handleAddToCart}
           disabled={addingToCart || unavailable}
           aria-busy={addingToCart}
-          className="flex h-[63px] w-[300.4px] items-center justify-center gap-[10px] rounded-[26843500px] bg-[#2E3192] text-[#FFFFFF] transition-all hover:bg-[#1e2361] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-[63px] min-w-0 flex-1 items-center justify-center gap-[10px] rounded-[26843500px] bg-[#2E3192] text-[#FFFFFF] transition-all hover:bg-[#1e2361] disabled:cursor-not-allowed disabled:opacity-60"
           style={{
             fontFamily: 'Poppins, sans-serif',
             fontWeight: 700,

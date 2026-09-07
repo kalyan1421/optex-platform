@@ -11,11 +11,10 @@ import { api } from '@/lib/api';
 import { formatKes, formatKesNumber } from '@optex/ui';
 import { KENYA_COUNTIES } from '@/lib/kenya-counties';
 import { splitFullName } from '@/lib/full-name';
-
 // Flat delivery fee mirrors the server (`place_order` RPC: 300 KES for delivery,
-// 0 for branch pickup). Kept in sync so the displayed total equals what the API
-// charges. NOTE: confirm with Optex whether standard delivery should be free.
-const DELIVERY_FEE_KES = 300;
+// 0 for branch pickup). Shared with the cart page rather than declared twice —
+// the second copy is what the two pages disagreed over. See `lib/pricing.js`.
+import { DELIVERY_FEE_KES, shippingFeeKes } from '@/lib/pricing';
 
 const CaretUpIcon = () => (
   <svg
@@ -120,6 +119,20 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // P-10: branch pickup. `place_order` has always zero-rated shipping for
+  // `deliveryOption: 'pickup'` — this page just hardcoded `'delivery'` and
+  // offered no way to choose, so an optician with branches sold no
+  // collect-in-store and every customer paid a fee they could have avoided.
+  //
+  // Branches are fetched the same way /eye-care fetches them. If the call
+  // fails the toggle simply does not appear and checkout behaves exactly as it
+  // did before, because delivery is the default and needs no branch data.
+  const [deliveryOption, setDeliveryOption] = useState('delivery');
+  const [branches, setBranches] = useState([]);
+  const [pickupBranchId, setPickupBranchId] = useState('');
+  const isPickup = deliveryOption === 'pickup';
+  const pickupBranch = branches.find((b) => b.id === pickupBranchId) ?? null;
+
   // Saved addresses. `selectedAddressId === null` means "typing a new one" —
   // the only state that matters for whether the free-text form or a saved
   // card is driving `shipping`. Starts empty/null so a customer with no
@@ -183,6 +196,16 @@ export default function Page() {
       cancelled = true;
     };
   }, [user]);
+
+  // Branch list for the pickup option. Failure is non-fatal: without branches
+  // the pickup toggle is not rendered and delivery — the default — is
+  // unaffected.
+  useEffect(() => {
+    api.branches
+      .list()
+      .then((rows) => setBranches(rows ?? []))
+      .catch((err) => console.error('[checkout] branch list failed:', err));
+  }, []);
 
   // Fill a still-blank shipping form from the account's own details, so a
   // customer with no saved address does not land on a form that looks
@@ -256,7 +279,7 @@ export default function Page() {
   const subtotal = cartView ? Number(cartView.subtotalKes) : localSubtotal;
   const promoCode = cartView?.promo?.code ?? null;
   const promoDiscount = cartView ? Number(cartView.discountKes) : 0;
-  const shippingKes = DELIVERY_FEE_KES;
+  const shippingKes = shippingFeeKes(deliveryOption);
   const vat = cartView
     ? Number(cartView.vatKes)
     : +(Math.max(0, localSubtotal - promoDiscount) * 0.16).toFixed(2);
@@ -271,7 +294,21 @@ export default function Page() {
       setError('Your cart is empty.');
       return;
     }
-    if (
+    // Pickup still needs a name and phone — someone has to be handed the order
+    // at the counter — but the street address is the branch's, not the
+    // customer's, so those fields are not asked for and not validated.
+    if (isPickup) {
+      if (!pickupBranch) {
+        setError('Please choose the branch you want to collect from.');
+        setActiveStep(1);
+        return;
+      }
+      if (!shipping.firstName || !shipping.lastName || !shipping.phone) {
+        setError('Please give us a name and phone number for collection.');
+        setActiveStep(1);
+        return;
+      }
+    } else if (
       !shipping.firstName ||
       !shipping.lastName ||
       !shipping.phone ||
@@ -292,25 +329,44 @@ export default function Page() {
       //    immediately. No prices/totals are trusted from the client.
       const { order, payment } = await api.orders.checkout({
         paymentMethod,
-        deliveryOption: 'delivery',
+        deliveryOption,
         // Without this the applied code never reached `place_order` and the
         // customer was billed the undiscounted total.
         ...(promoCode ? { promoCode } : {}),
-        shippingAddress: {
-          name: `${shipping.firstName} ${shipping.lastName}`.trim(),
-          phone: shipping.phone,
-          address: shipping.address,
-          city: shipping.city,
-          county: shipping.county,
-          postal: shipping.postal || undefined,
-        },
+        // `shippingAddress` is required by the API for both options. For
+        // pickup it records the branch the customer is collecting from, under
+        // their own name and phone — so the order still says where it is going
+        // and who is coming for it, rather than carrying a blank address.
+        // `branches` carries no city/county columns — only `name` and a single
+        // free-text `address` — so the branch name fills those required fields
+        // and the street detail goes in `address`, where fulfilment reads it.
+        shippingAddress: isPickup
+          ? {
+              name: `${shipping.firstName} ${shipping.lastName}`.trim(),
+              phone: shipping.phone,
+              address: pickupBranch.address
+                ? `Collect at Optex ${pickupBranch.name} — ${pickupBranch.address}`
+                : `Collect at Optex ${pickupBranch.name}`,
+              city: pickupBranch.name,
+              county: pickupBranch.name,
+            }
+          : {
+              name: `${shipping.firstName} ${shipping.lastName}`.trim(),
+              phone: shipping.phone,
+              address: shipping.address,
+              city: shipping.city,
+              county: shipping.county,
+              postal: shipping.postal || undefined,
+            },
       });
 
       // 1b. Save the address for next time, if asked — after order creation
       // succeeds, never before: a failed save here must not block a checkout
       // that otherwise went through, and there's nothing to save until the
       // form has actually been validated above.
-      if (selectedAddressId === null && saveAddress) {
+      // Never for pickup — the address on that order is a branch's, and saving
+      // it would put an Optex shop into the customer's address book.
+      if (!isPickup && selectedAddressId === null && saveAddress) {
         try {
           await api.addresses.create({
             name: `${shipping.firstName} ${shipping.lastName}`.trim(),
@@ -504,7 +560,102 @@ export default function Page() {
                   <div className="px-5 pb-6 lg:px-[36px] lg:pb-[36px]">
                     <div className="border-t border-[#F8FAFC] pt-[27px]">
                       <div className="flex flex-col gap-[27px]">
-                        {savedAddresses.length > 0 && (
+                        {/* P-10: how the order is fulfilled. Only rendered when
+                            branches actually loaded — with no branch list
+                            there is nothing to collect from, and the page then
+                            behaves exactly as it did before this option
+                            existed. */}
+                        {branches.length > 0 && (
+                          <fieldset className="flex flex-col gap-[12px]">
+                            <legend
+                              className="mb-[12px] text-[18px] text-[#141776]"
+                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                            >
+                              How would you like to receive your order?
+                            </legend>
+                            <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2">
+                              {[
+                                {
+                                  value: 'delivery',
+                                  title: 'Deliver to me',
+                                  detail: `${formatKes(DELIVERY_FEE_KES)} · 1–4 business days`,
+                                },
+                                {
+                                  value: 'pickup',
+                                  title: 'Collect at a branch',
+                                  detail: 'Free · ready when we call you',
+                                },
+                              ].map((option) => (
+                                <label
+                                  key={option.value}
+                                  className={`flex cursor-pointer flex-col gap-[4px] rounded-[18px] border p-[18px] transition-colors ${
+                                    deliveryOption === option.value
+                                      ? 'border-[#141776] bg-white'
+                                      : 'border-[#C7C5D4] hover:border-[#141776]'
+                                  }`}
+                                >
+                                  <span className="flex items-center gap-[10px]">
+                                    <input
+                                      type="radio"
+                                      name="delivery-option"
+                                      value={option.value}
+                                      checked={deliveryOption === option.value}
+                                      onChange={() => setDeliveryOption(option.value)}
+                                      className="h-[18px] w-[18px] accent-[#141776]"
+                                    />
+                                    <span
+                                      className="text-[16px] text-[#141776]"
+                                      style={{ fontFamily: 'Manrope, sans-serif' }}
+                                    >
+                                      {option.title}
+                                    </span>
+                                  </span>
+                                  <span
+                                    className="pl-[28px] text-[14px] text-[#464652]"
+                                    style={{ fontFamily: 'Manrope, sans-serif' }}
+                                  >
+                                    {option.detail}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </fieldset>
+                        )}
+
+                        {isPickup && (
+                          <div className="flex flex-col gap-[9px]">
+                            <label
+                              htmlFor="pickup-branch"
+                              className="text-[18px] text-[#141776]"
+                              style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
+                            >
+                              Collect from
+                            </label>
+                            <select
+                              id="pickup-branch"
+                              value={pickupBranchId}
+                              onChange={(e) => setPickupBranchId(e.target.value)}
+                              className="h-[58px] rounded-[18px] border border-[#C7C5D4] bg-white px-[18px] text-[16px] text-[#141776] outline-none focus:border-[#141776]"
+                              style={{ fontFamily: 'Manrope, sans-serif' }}
+                            >
+                              <option value="">Select a branch</option>
+                              {branches.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                  {b.address ? `${b.name} — ${b.address}` : b.name}
+                                </option>
+                              ))}
+                            </select>
+                            <p
+                              className="text-[14px] text-[#464652]"
+                              style={{ fontFamily: 'Manrope, sans-serif' }}
+                            >
+                              We&apos;ll call you on the number below once your order is ready to
+                              collect.
+                            </p>
+                          </div>
+                        )}
+
+                        {!isPickup && savedAddresses.length > 0 && (
                           <div className="flex flex-col gap-[12px]">
                             {savedAddresses.map((addr) => (
                               <label
@@ -594,7 +745,11 @@ export default function Page() {
                           </div>
                         )}
 
-                        {selectedAddressId === null && (
+                        {/* Pickup always shows this block: a collection still
+                            needs a name and a phone number, just not a street
+                            address. The individual address rows below opt
+                            themselves out. */}
+                        {(isPickup || selectedAddressId === null) && (
                           <>
                             {/* Name Row */}
                             <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
@@ -636,8 +791,8 @@ export default function Page() {
                               </div>
                             </div>
 
-                            {/* Address Row */}
-                            <div className="flex flex-col gap-[9px]">
+                            {/* Address Row — delivery only */}
+                            <div className={`flex flex-col gap-[9px] ${isPickup ? 'hidden' : ''}`}>
                               <label
                                 className="text-[18px] text-[#141776]"
                                 style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
@@ -656,8 +811,10 @@ export default function Page() {
                               />
                             </div>
 
-                            {/* City/Postcode Row */}
-                            <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
+                            {/* City/Postcode Row — delivery only */}
+                            <div
+                              className={`grid grid-cols-1 gap-[27px] sm:grid-cols-2 ${isPickup ? 'hidden' : ''}`}
+                            >
                               <div className="flex flex-col gap-[9px]">
                                 <label
                                   className="text-[18px] text-[#141776]"
@@ -696,8 +853,14 @@ export default function Page() {
                               </div>
                             </div>
 
-                            {/* Phone/County Row */}
-                            <div className="grid grid-cols-1 gap-[27px] sm:grid-cols-2">
+                            {/* Phone/County Row. Phone is needed either way —
+                                it is how we tell someone their collection is
+                                ready — so only County drops out for pickup,
+                                and the grid collapses to one column so the
+                                phone field is not left as a half-width orphan. */}
+                            <div
+                              className={`grid grid-cols-1 gap-[27px] ${isPickup ? '' : 'sm:grid-cols-2'}`}
+                            >
                               <div className="flex flex-col gap-[9px]">
                                 <label
                                   className="text-[18px] text-[#141776]"
@@ -716,7 +879,9 @@ export default function Page() {
                                   style={{ fontFamily: 'Manrope, sans-serif' }}
                                 />
                               </div>
-                              <div className="flex flex-col gap-[9px]">
+                              <div
+                                className={`flex flex-col gap-[9px] ${isPickup ? 'hidden' : ''}`}
+                              >
                                 <label
                                   className="text-[18px] text-[#141776]"
                                   style={{ fontFamily: 'Manrope, sans-serif', lineHeight: '27px' }}
@@ -742,7 +907,7 @@ export default function Page() {
                             </div>
 
                             <label
-                              className="flex items-center gap-[9px] text-[15px] text-[#141776]"
+                              className={`flex items-center gap-[9px] text-[15px] text-[#141776] ${isPickup ? 'hidden' : ''}`}
                               style={{ fontFamily: 'Manrope, sans-serif' }}
                             >
                               <input
@@ -833,13 +998,17 @@ export default function Page() {
                               className="text-[18px] text-[#141776]"
                               style={{ fontFamily: 'Manrope, sans-serif' }}
                             >
-                              Standard Delivery — KSH. {formatKesNumber(DELIVERY_FEE_KES)}
+                              {isPickup
+                                ? `Branch Collection — free${pickupBranch ? ` at ${pickupBranch.name}` : ''}`
+                                : `Standard Delivery — KSH. ${formatKesNumber(DELIVERY_FEE_KES)}`}
                             </p>
                             <p
                               className="mt-0.5 text-[14px] text-[#6B7280]"
                               style={{ fontFamily: 'Manrope, sans-serif' }}
                             >
-                              2–5 business days within Nairobi; 3–7 days upcountry
+                              {isPickup
+                                ? 'We call you when your order is ready to collect'
+                                : '2–5 business days within Nairobi; 3–7 days upcountry'}
                             </p>
                           </div>
                         </label>

@@ -127,8 +127,12 @@ const Login = () => {
             className="h-[93px] w-[112px] object-contain"
           />
         </Link>
-        <p
-          className="text-[#464652]"
+        {/* P-11: an <h1>, not a <p>. This page rendered no heading of any
+            level, so a screen-reader user landing here — and a crawler — got a
+            document with no title element in the body. Styles are inline and
+            unchanged, so it looks identical. */}
+        <h1
+          className="m-0 text-[#464652]"
           style={{
             fontFamily: 'Manrope, sans-serif',
             fontSize: '18px',
@@ -137,7 +141,7 @@ const Login = () => {
           }}
         >
           Sign in to your account
-        </p>
+        </h1>
       </div>
 
       <div

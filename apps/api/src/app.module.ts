@@ -12,6 +12,7 @@ import { PermissionsGuard } from './auth/permissions.guard';
 import { SupabaseAuthGuard } from './auth/supabase-auth.guard';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { CommonModule } from './common/common.module';
+import { PostgresThrottlerStorage } from './common/postgres-throttler.storage';
 import { UserAwareThrottlerGuard } from './common/user-aware-throttler.guard';
 import { validate } from './config/env';
 import { HealthModule } from './health/health.module';
@@ -39,6 +40,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { SupabaseModule } from './supabase/supabase.module';
+import { SupabaseService } from './supabase/supabase.service';
 
 @Module({
   imports: [
@@ -81,7 +83,22 @@ import { SupabaseModule } from './supabase/supabase.module';
     // /api/cart). The credential endpoints instead OVERRIDE this bucket locally
     // with `@Throttle({ default: … })`, which is the mechanism that scopes to a
     // route.
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
+    //
+    // P-02: `storage` is a Postgres-backed provider rather than the default
+    // in-memory one. The default keeps counters in a Map inside a single Node
+    // process, so N replicas allowed N times every ceiling — measured in
+    // production as 40 failed logins in a minute against a 10/min limit, with
+    // one 429. `PostgresThrottlerStorage` puts the counters somewhere all
+    // replicas can see. Swapping it for Redis later is a change to this one
+    // line, exactly as `user-aware-throttler.guard.ts` predicted.
+    ThrottlerModule.forRootAsync({
+      imports: [SupabaseModule],
+      inject: [SupabaseService],
+      useFactory: (supabase: SupabaseService) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 300 }],
+        storage: new PostgresThrottlerStorage(supabase),
+      }),
+    }),
     ScheduleModule.forRoot(),
     SupabaseModule,
     PermissionsModule,

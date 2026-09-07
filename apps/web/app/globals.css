@@ -94,6 +94,30 @@
     min-height: 100%;
   }
 
+  /*
+   * P-03. `overflow-x: hidden` was on `body` alone, which stops the page
+   * scrolling sideways but does NOT stop the ROOT scroller accumulating the
+   * overflow — `html` was still `overflow-x: visible`. Chrome then sizes the
+   * initial containing block to that overflow, and every `position: fixed`
+   * element with `width: 100%` stretches to match it.
+   *
+   * That is what pushed the sticky header off-screen: on a 375px phone the
+   * header measured 399px on /shop and 571px on /eye-care, so the cart,
+   * profile and menu icons at its right edge sat outside the viewport — and
+   * because body's `overflow-x: hidden` also blocks scrolling, they could not
+   * be reached at all. The width came from legitimately wide content (the
+   * 560px prescription table) that was already scrolling correctly inside its
+   * own container; only the root scroller was still counting it.
+   *
+   * Hiding it here as well pins the ICB to the viewport, so a fixed header is
+   * always exactly the viewport's width. This is a backstop, not a licence:
+   * genuinely wide content still belongs in its own `overflow-x: auto`
+   * container, because that is what lets a reader actually see it.
+   */
+  html {
+    overflow-x: hidden;
+  }
+
   html {
     background-color: #ffffff !important;
   }

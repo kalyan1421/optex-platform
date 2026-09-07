@@ -243,6 +243,74 @@ describe('Cart (e2e)', () => {
       .expect(404);
   });
 
+  /**
+   * Line-keying on `lens_option`, moved down from the browser suite.
+   *
+   * `apps/web/e2e/cart-variants.spec.ts` used to cover this by driving the
+   * PDP's frame-colour swatches. Those swatches were removed (P-04): they were
+   * three hardcoded values — black, blue, grey — rendered on every product in
+   * the catalogue regardless of what it actually is, and the chosen colour
+   * travelled all the way onto the order, so fulfilment was handed a colourway
+   * that had never existed. `products` has no colour column and there is no
+   * variants table; each colourway is its own SKU.
+   *
+   * The line-keying itself is real and correct, and stays exercised here so it
+   * does not rot while there is no UI emitting a `lensOption` — which there
+   * will be again as soon as a genuine variant or lens-configurator lands.
+   */
+  describe('lens_option line keying', () => {
+    it('keeps two configurations of one product as two separate lines', async () => {
+      const before = await request(app.getHttpServer())
+        .get('/api/cart')
+        .set(auth(token))
+        .expect(200);
+      const baseline = before.body.items.length;
+
+      await request(app.getHttpServer())
+        .post('/api/cart/items')
+        .set(auth(token))
+        .send({ productId: productBId, lensOption: { coating: 'anti-glare' } })
+        .expect(201);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/cart/items')
+        .set(auth(token))
+        .send({ productId: productBId, lensOption: { coating: 'blue-light' } })
+        .expect(201);
+
+      // Two new lines, not one line of quantity 2 — and neither merged into
+      // the existing plain (no lensOption) line for the same product.
+      expect(res.body.items.length).toBe(baseline + 2);
+      const configured = res.body.items.filter(
+        (i: { productId: string; lensOption: unknown }) =>
+          i.productId === productBId && i.lensOption !== null,
+      );
+      expect(configured).toHaveLength(2);
+      expect(configured.every((i: { quantity: number }) => i.quantity === 1)).toBe(true);
+    });
+
+    it('merges a repeat add of the SAME configuration into one line', async () => {
+      const before = await request(app.getHttpServer())
+        .get('/api/cart')
+        .set(auth(token))
+        .expect(200);
+      const baseline = before.body.items.length;
+
+      const res = await request(app.getHttpServer())
+        .post('/api/cart/items')
+        .set(auth(token))
+        .send({ productId: productBId, lensOption: { coating: 'anti-glare' } })
+        .expect(201);
+
+      expect(res.body.items.length).toBe(baseline);
+      const line = res.body.items.find(
+        (i: { productId: string; lensOption: { coating?: string } | null }) =>
+          i.productId === productBId && i.lensOption?.coating === 'anti-glare',
+      );
+      expect(line.quantity).toBe(2);
+    });
+  });
+
   describe('cross-customer isolation', () => {
     it('a second customer has their own, separate empty cart', async () => {
       const res = await request(app.getHttpServer())

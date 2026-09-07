@@ -56,7 +56,13 @@ export default function EyeCarePage() {
 
       {/* Patient Record & Booking Section */}
       <section className="flex w-full justify-center bg-[#F9F9FC] pb-24">
-        <div className="flex w-full max-w-[1440px] flex-col px-6 lg:px-[80px]">
+        {/* P-03: `min-w-0`. This is a flex item in a row container, so it
+            defaults to `min-width: auto` — it refuses to shrink below its
+            min-content width, which the 560px prescription table sets. The
+            table's own `overflow-x-auto` wrapper could never clip while this
+            ancestor was busy growing to fit it, so /eye-care laid out at 571px
+            on a 375px screen and the whole page scrolled sideways. */}
+        <div className="flex w-full min-w-0 max-w-[1440px] flex-col px-6 lg:px-[80px]">
           {/* Header Group */}
           <div className="mt-12 flex w-full max-w-[532px] flex-col gap-[18px] lg:mt-[80px]">
             <span className="font-poppins text-[16px] font-semibold uppercase leading-[24px] tracking-[2px] text-[#E53935]">
@@ -174,7 +180,18 @@ export default function EyeCarePage() {
                 </div>
               </div>
 
-              {/* Middle Frame: Store hours */}
+              {/* Middle Frame: Store hours.
+
+                  P-08: this block used to advertise "Sunday 10:00 AM – 4:00 PM"
+                  while the booking widget directly beneath it returned "No
+                  times available" for every Sunday, and /contact stated "Sun:
+                  Closed". Two of the three agreed, and the booking engine is
+                  the one backed by actual branch schedule data, so the Sunday
+                  row was the wrong one. Weekday and Saturday rows are widened
+                  to the branch opening hours the slot generator uses, so the
+                  advertised hours and the bookable hours describe one business.
+                  Last slot is earlier than closing because an eye test needs a
+                  chair for longer than the last half-hour of the day. */}
               <div className="mt-[14px] flex h-[200.25px] w-full flex-col rounded-[20px] bg-[#20225F] px-[28px] pb-[30px] pt-[29.25px]">
                 <h4 className="font-outfit pb-[14px] text-[15.5px] font-bold leading-[17px] tracking-[-0.16px] text-white">
                   Store hours
@@ -200,7 +217,7 @@ export default function EyeCarePage() {
                     Sunday
                   </span>
                   <span className="font-poppins text-[13px] font-medium leading-[100%] text-white">
-                    10:00 AM – 4:00 PM
+                    Closed
                   </span>
                 </div>
               </div>
