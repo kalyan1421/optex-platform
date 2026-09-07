@@ -20,6 +20,7 @@ Repo siblings at the root:
 - `packages/config/` — Tailwind preset with brand tokens (`brand.blue #2A3182`, `brand.red #E53935`, `brand.dark #1A1A2E`) + Montserrat font + CSS-variable theme tokens.
 - `Backend/supabase/` — Schema, RLS, storage migrations (`0001` through `0008`), seed. See [Backend/README.md](Backend/README.md).
 - `docker-compose.yml` + `docker/` — Full local dev stack (Supabase Postgres/Auth/REST/Storage/Kong + the API), see "Local dev" below.
+- `docs/CI-SECRETS.md` — Every GitHub Actions secret and variable: what it is for, Secrets vs Variables and why, and what breaks without it. Nothing is set today and CI is green regardless; it all belongs to deployment steps not yet wired up.
 - `docs/AUDIT.md` — Consolidated tech-debt audit, Figma-to-code comparison, 8-week ship plan.
 - `docs/MISSING_FEATURES.md` — Feature-by-feature gap analysis against the SOW + CR-01, refreshed 2026-07-22.
 

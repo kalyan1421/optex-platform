@@ -35,6 +35,9 @@ concurrency:
   group: cd-${{ github.ref }}
   cancel-in-progress: false
 
+# Secrets and variables this workflow can use — none are set today, and the
+# build half runs without any of them. See docs/CI-SECRETS.md for what each one
+# is, which tab it belongs in, and what breaks without it.
 env:
   REGISTRY: ghcr.io
 
