@@ -114,7 +114,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               }}
             >
               <div
-                className="relative aspect-[241.75/280] w-full overflow-hidden bg-[#F9F9F9] lg:h-[280px] lg:w-[241.75px]"
+                className="relative aspect-square w-full overflow-hidden bg-[#F9F9F9] lg:h-[241.75px] lg:w-[241.75px]"
                 style={{ borderRadius: '24px' }}
               >
                 {/* Price Tag */}
