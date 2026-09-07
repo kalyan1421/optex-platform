@@ -584,11 +584,17 @@ describe('Checkout stock enforcement (e2e)', () => {
 
       // Calling the RPC again directly (simulating a retried/duplicate restock)
       // must not credit stock a second time.
-      await db.rpc('restock_cancelled_order', {
+      // The error is checked, not discarded. supabase-js RETURNS rpc errors
+      // rather than throwing, so an unchecked call that failed — a renamed
+      // parameter is enough — would leave stock untouched and this assertion
+      // would pass while testing nothing at all. The guard is what keeps this
+      // an idempotency test rather than a tautology.
+      const { error: restockError } = await db.rpc('restock_cancelled_order', {
         p_order_id: orderId,
         p_actor_id: userIds.at(-1)!,
         p_actor_role: 'branch_manager',
       });
+      if (restockError) throw restockError;
       expect(await stockOf(productId)).toBe(3);
     });
   });
