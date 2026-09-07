@@ -12,8 +12,12 @@ export default function ProductTabs({ product }) {
 
   return (
     <div className="mx-auto mb-[60px] w-full max-w-[1240px]">
+      {/* P-03: three tabs at a 40px gap do not fit 375px, and the strip had no
+          overflow handling — so it pushed the page sideways instead of
+          scrolling itself. `hide-scrollbar` matches the similar-products
+          carousel, which already scrolls this way. */}
       <div
-        className="mb-[32px] flex h-[50.8px] gap-[40px] border-b-[0.8px] border-[#D4D4D4]"
+        className="hide-scrollbar mb-[32px] flex h-[50.8px] gap-[24px] overflow-x-auto border-b-[0.8px] border-[#D4D4D4] sm:gap-[40px]"
         role="tablist"
       >
         {['Features', 'Specifications', 'Shipping'].map((tab) => (

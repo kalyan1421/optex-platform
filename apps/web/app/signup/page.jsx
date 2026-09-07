@@ -207,8 +207,12 @@ const Signup = () => {
         style={{ boxShadow: '0px 11.25px 33.75px 0px rgba(45, 50, 140, 0.08)' }}
       >
         <div className="mx-auto mb-[34.88px] flex w-full max-w-[411.75px] flex-col gap-[7.65px] text-center">
-          <h2
-            className="text-[#141776]"
+          {/* P-11: promoted from <h2> to <h1>. This is the visual page title
+              and the page had no <h1> at all; the 18px line above it is a
+              tagline, not the heading. Purely semantic — the styling is inline
+              and unchanged. */}
+          <h1
+            className="m-0 text-[#141776]"
             style={{
               fontFamily: 'Manrope, sans-serif',
               fontSize: '36px',
@@ -217,7 +221,7 @@ const Signup = () => {
             }}
           >
             Create Account
-          </h2>
+          </h1>
           <p
             className="text-[#464652]"
             style={{

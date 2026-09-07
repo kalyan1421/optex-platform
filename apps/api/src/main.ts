@@ -103,8 +103,30 @@ async function bootstrap(): Promise<void> {
   // surface: every route, every DTO field, every permission name. That grants
   // no access on its own, but it removes all the guesswork from attacking the
   // routes it advertises.
+  // P-05 UPDATE (production sweep, 7 Sep 2026): this gate is correct and was
+  // never the problem — but /api/docs and /api/docs-json both answered 200 on
+  // the live deployment, serving the full 112 KB spec to anonymous callers.
+  // The only way that happens is the deployed process running WITHOUT
+  // `NODE_ENV=production` (or with `ENABLE_SWAGGER=true`), because the check
+  // below is fail-open: an unset NODE_ENV is `undefined`, which is
+  // `!== 'production'`, so docs mount.
+  //
+  // Leaving the fail-open default alone on purpose — flipping it to
+  // opt-in-everywhere would silently take the docs away from local dev and
+  // Docker, where they are the point. What was missing is that this decision
+  // was invisible: nothing in the logs said the docs were public. It says so
+  // now, at warn level, so the next person reading production logs sees it
+  // without having to probe the URL.
   const swaggerEnabled =
     process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
+  if (swaggerEnabled && process.env.NODE_ENV !== 'development') {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[startup] OpenAPI docs are PUBLIC at /api/docs (NODE_ENV=${process.env.NODE_ENV ?? 'unset'}, ` +
+        `ENABLE_SWAGGER=${process.env.ENABLE_SWAGGER ?? 'unset'}). ` +
+        'Set NODE_ENV=production and leave ENABLE_SWAGGER unset to disable.',
+    );
+  }
   if (swaggerEnabled) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('OPTEX API')

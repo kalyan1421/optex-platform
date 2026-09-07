@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import EmptyCartState from '@/components/ui/EmptyCartState';
 import { formatKesNumber } from '@optex/ui';
+import { DELIVERY_FEE_KES } from '@/lib/pricing';
 
 const TrashIcon = () => (
   <svg
@@ -95,12 +96,25 @@ const Cart = () => {
   // counterpart yet. It now mirrors `place_order` (taxable base = subtotal −
   // discount, VAT 16% on that) so the two agree, and a guest sees no promo
   // because a promo cannot be applied without an account.
+  //
+  // SHIPPING IS NOT IN `cartView.totalKes`. The cart endpoint stops at
+  // base + VAT by design — a basket has not chosen a delivery option yet, so
+  // the server has nothing to charge for (`cart.service.ts`: "no shipping at
+  // the cart stage"). This page used to render that figure as "Total" beside a
+  // "Shipping FREE" line, which meant the basket quoted KES 300 less than the
+  // order it was one click away from placing. The fee is added here, from the
+  // same constant checkout uses, and labelled an estimate because the option
+  // that could zero it (branch pickup) is chosen on the next page.
   const localSubtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   const subtotal = cartView ? Number(cartView.subtotalKes) : localSubtotal;
   const promoDiscount = cartView ? Number(cartView.discountKes) : 0;
   const promoApplied = cartView?.promo?.code ?? '';
   const estimatedTax = cartView ? Number(cartView.vatKes) : localSubtotal * 0.16;
-  const total = cartView ? Number(cartView.totalKes) : localSubtotal + localSubtotal * 0.16;
+  const shippingKes = items.length > 0 ? DELIVERY_FEE_KES : 0;
+  const totalBeforeShipping = cartView
+    ? Number(cartView.totalKes)
+    : localSubtotal + localSubtotal * 0.16;
+  const total = +(totalBeforeShipping + shippingKes).toFixed(2);
 
   const formatCurrency = (value) => formatKesNumber(Math.max(0, value));
 
@@ -479,10 +493,10 @@ const Cart = () => {
                       fontWeight: 400,
                     }}
                   >
-                    Shipping
+                    Estimated Shipping
                   </span>
                   <span
-                    className="text-[#464652]"
+                    className="text-[#141776]"
                     style={{
                       fontFamily: 'Manrope, sans-serif',
                       fontSize: '18px',
@@ -490,7 +504,7 @@ const Cart = () => {
                       fontWeight: 400,
                     }}
                   >
-                    FREE
+                    KSH. {formatCurrency(shippingKes)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -648,7 +662,7 @@ const Cart = () => {
                       fontWeight: 500,
                     }}
                   >
-                    Free standard delivery on all orders
+                    Standard delivery countrywide, KSH. {formatCurrency(DELIVERY_FEE_KES)}
                   </span>
                 </div>
                 <div className="flex items-center gap-[13.5px]">

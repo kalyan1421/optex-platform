@@ -158,6 +158,13 @@ export default function SearchAutocomplete({
             ref={inputRef}
             type="text"
             role="combobox"
+            // P-11: the only accessible name this field had was its
+            // placeholder, which assistive tech is not required to expose and
+            // which disappears the moment someone types. A combobox with no
+            // name is announced as "combobox" and nothing else. There is no
+            // visible label to point at — the field sits in an icon-triggered
+            // overlay — so the name is given directly.
+            aria-label="Search products"
             aria-expanded={showPanel}
             aria-controls="search-suggestions"
             aria-autocomplete="list"

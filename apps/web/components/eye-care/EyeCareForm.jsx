@@ -399,11 +399,15 @@ export default function EyeCareForm() {
     );
   }
 
+  // P-03: `min-w-0` so the 560px-wide prescription table in section 03 scrolls
+  // inside its own `overflow-x-auto` container instead of setting this form's
+  // min-content width. Without it the form — and with it the whole page — laid
+  // out at 571px on a 375px screen, and /eye-care scrolled sideways.
   return (
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="relative flex w-full flex-col rounded-[32px] border-t-[0.8px] border-[#F3F4F6] bg-white p-6 shadow-[0px_25px_56px_-12px_rgba(0,0,0,0.25)] lg:p-10 xl:w-[786px]"
+      className="relative flex w-full min-w-0 flex-col rounded-[32px] border-t-[0.8px] border-[#F3F4F6] bg-white p-6 shadow-[0px_25px_56px_-12px_rgba(0,0,0,0.25)] lg:p-10 xl:w-[786px]"
     >
       {/* ── 01 Personal details ─────────────────────────────────────────── */}
       <StepHeader number="01" title="Personal details" subtitle="Who we're seeing today" />
