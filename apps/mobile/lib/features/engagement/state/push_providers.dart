@@ -38,21 +38,21 @@ class PushState {
       (permission == PushPermission.notDetermined ||
           permission == PushPermission.denied);
 
-  bool isMuted(NotificationCategory category) => mutedCategories.contains(category);
+  bool isMuted(NotificationCategory category) =>
+      mutedCategories.contains(category);
 
   PushState copyWith({
     PushPermission? permission,
     Set<NotificationCategory>? mutedCategories,
     bool? promptedBefore,
     String? token,
-  }) =>
-      PushState(
-        available: available,
-        permission: permission ?? this.permission,
-        mutedCategories: mutedCategories ?? this.mutedCategories,
-        promptedBefore: promptedBefore ?? this.promptedBefore,
-        token: token ?? this.token,
-      );
+  }) => PushState(
+    available: available,
+    permission: permission ?? this.permission,
+    mutedCategories: mutedCategories ?? this.mutedCategories,
+    promptedBefore: promptedBefore ?? this.promptedBefore,
+    token: token ?? this.token,
+  );
 }
 
 /// Owns the client half of P0-10.
@@ -66,16 +66,19 @@ class PushController extends AsyncNotifier<PushState> {
   @override
   Future<PushState> build() async {
     final bool available = await _service.start();
-    final PushPermission permission =
-        available ? await _service.currentPermission() : PushPermission.unavailable;
+    final PushPermission permission = available
+        ? await _service.currentPermission()
+        : PushPermission.unavailable;
 
     final PushState initial = PushState(
       available: available,
       permission: permission,
-      mutedCategories:
-          await ref.read(notificationPreferencesProvider).mutedCategories(),
-      promptedBefore:
-          await ref.read(notificationPreferencesProvider).hasPromptedForPermission(),
+      mutedCategories: await ref
+          .read(notificationPreferencesProvider)
+          .mutedCategories(),
+      promptedBefore: await ref
+          .read(notificationPreferencesProvider)
+          .hasPromptedForPermission(),
       token: _service.token,
     );
 
@@ -102,10 +105,10 @@ class PushController extends AsyncNotifier<PushState> {
                 promptedBefore: false,
               ))
           .copyWith(
-        permission: permission,
-        promptedBefore: true,
-        token: _service.token,
-      ),
+            permission: permission,
+            promptedBefore: true,
+            token: _service.token,
+          ),
     );
     return permission;
   }

@@ -7,8 +7,8 @@ import '../domain/branch.dart';
 
 final Provider<BranchesRepository> branchesRepositoryProvider =
     Provider<BranchesRepository>(
-  (Ref ref) => BranchesRepository(ref.watch(apiClientProvider)),
-);
+      (Ref ref) => BranchesRepository(ref.watch(apiClientProvider)),
+    );
 
 /// How the locator currently stands with the device's location.
 ///
@@ -53,12 +53,11 @@ class BranchLocatorState {
     List<BranchDistance>? branches,
     LocationAccess? access,
     bool? locating,
-  }) =>
-      BranchLocatorState(
-        branches: branches ?? this.branches,
-        access: access ?? this.access,
-        locating: locating ?? this.locating,
-      );
+  }) => BranchLocatorState(
+    branches: branches ?? this.branches,
+    access: access ?? this.access,
+    locating: locating ?? this.locating,
+  );
 }
 
 class BranchLocatorController extends AsyncNotifier<BranchLocatorState> {
@@ -117,7 +116,9 @@ class BranchLocatorController extends AsyncNotifier<BranchLocatorState> {
     final BranchLocatorState? current = state.value;
     if (current == null || current.locating) return;
 
-    state = AsyncValue<BranchLocatorState>.data(current.copyWith(locating: true));
+    state = AsyncValue<BranchLocatorState>.data(
+      current.copyWith(locating: true),
+    );
 
     LocationAccess access;
     Position? fix;
@@ -139,7 +140,9 @@ class BranchLocatorController extends AsyncNotifier<BranchLocatorState> {
             access = LocationAccess.serviceDisabled;
           } else {
             fix = await _currentFix();
-            access = fix == null ? LocationAccess.unavailable : LocationAccess.granted;
+            access = fix == null
+                ? LocationAccess.unavailable
+                : LocationAccess.granted;
           }
       }
     } catch (_) {
@@ -147,12 +150,16 @@ class BranchLocatorController extends AsyncNotifier<BranchLocatorState> {
     }
 
     _fix = fix ?? _fix;
-    final List<Branch> branches =
-        current.branches.map((BranchDistance b) => b.branch).toList();
+    final List<Branch> branches = current.branches
+        .map((BranchDistance b) => b.branch)
+        .toList();
 
     state = AsyncValue<BranchLocatorState>.data(
       BranchLocatorState(
-        branches: _sort(branches, access == LocationAccess.granted ? _fix : null),
+        branches: _sort(
+          branches,
+          access == LocationAccess.granted ? _fix : null,
+        ),
         access: access,
         locating: false,
       ),
@@ -227,7 +234,7 @@ class BranchLocatorController extends AsyncNotifier<BranchLocatorState> {
 }
 
 final AsyncNotifierProvider<BranchLocatorController, BranchLocatorState>
-    branchLocatorProvider =
+branchLocatorProvider =
     AsyncNotifierProvider<BranchLocatorController, BranchLocatorState>(
-  BranchLocatorController.new,
-);
+      BranchLocatorController.new,
+    );

@@ -52,8 +52,10 @@ class AsyncSection<T> extends StatelessWidget {
 
     return value.when(
       loading: () => SizedBox(height: tall, child: const AppLoading()),
-      error: (Object error, StackTrace _) =>
-          SizedBox(height: tall, child: AppErrorView(error: error, onRetry: onRetry)),
+      error: (Object error, StackTrace _) => SizedBox(
+        height: tall,
+        child: AppErrorView(error: error, onRetry: onRetry),
+      ),
       data: (T data) => isEmpty(data)
           ? SizedBox(height: tall, child: empty)
           : SizedBox(height: height, child: builder(context, data)),
@@ -64,7 +66,11 @@ class AsyncSection<T> extends StatelessWidget {
 /// A one-line failure notice for a section that is decorative rather than
 /// load-bearing, where a full [AppErrorView] would shout.
 class InlineSectionError extends StatelessWidget {
-  const InlineSectionError({super.key, required this.error, required this.onRetry});
+  const InlineSectionError({
+    super.key,
+    required this.error,
+    required this.onRetry,
+  });
 
   final Object error;
   final VoidCallback onRetry;
@@ -77,10 +83,17 @@ class InlineSectionError extends StatelessWidget {
         : CatalogStrings.loadMoreFailed;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         children: <Widget>[
-          Icon(Icons.error_outline_rounded, size: 18, color: theme.colorScheme.error),
+          Icon(
+            Icons.error_outline_rounded,
+            size: 18,
+            color: theme.colorScheme.error,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
@@ -90,7 +103,10 @@ class InlineSectionError extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
           ),
-          TextButton(onPressed: onRetry, child: const Text(CatalogStrings.retry)),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text(CatalogStrings.retry),
+          ),
         ],
       ),
     );

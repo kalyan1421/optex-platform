@@ -22,42 +22,29 @@ import 'ui/wishlist_screen.dart';
 /// prefixes leave it open, so someone can find a shop before they have an
 /// account.
 List<RouteBase> accountRoutes() => <RouteBase>[
-      GoRoute(
-        path: Routes.login,
-        builder: (_, GoRouterState state) => LoginScreen(
-          // Set by the router's redirect to preserve what the user was
-          // trying to reach. Kept encoded: the redirect decodes it.
-          from: state.uri.queryParameters['from'],
-        ),
-      ),
-      GoRoute(
-        path: Routes.signup,
-        builder: (_, GoRouterState state) => SignupScreen(
-          from: state.uri.queryParameters['from'],
-        ),
-      ),
-      GoRoute(
-        path: Routes.forgotPassword,
-        builder: (_, _) => const ForgotPasswordScreen(),
-      ),
-      GoRoute(
-        path: Routes.account,
-        builder: (_, _) => const AccountHubScreen(),
-      ),
-      GoRoute(
-        path: Routes.profile,
-        builder: (_, _) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: Routes.addresses,
-        builder: (_, _) => const AddressesScreen(),
-      ),
-      GoRoute(
-        path: Routes.wishlist,
-        builder: (_, _) => const WishlistScreen(),
-      ),
-      GoRoute(
-        path: Routes.branches,
-        builder: (_, _) => const BranchLocatorScreen(),
-      ),
-    ];
+  GoRoute(
+    path: Routes.login,
+    builder: (_, GoRouterState state) => LoginScreen(
+      // Set by the router's redirect to preserve what the user was
+      // trying to reach. Kept encoded: the redirect decodes it.
+      from: state.uri.queryParameters['from'],
+    ),
+  ),
+  GoRoute(
+    path: Routes.signup,
+    builder: (_, GoRouterState state) =>
+        SignupScreen(from: state.uri.queryParameters['from']),
+  ),
+  GoRoute(
+    path: Routes.forgotPassword,
+    builder: (_, _) => const ForgotPasswordScreen(),
+  ),
+  GoRoute(path: Routes.account, builder: (_, _) => const AccountHubScreen()),
+  GoRoute(path: Routes.profile, builder: (_, _) => const ProfileScreen()),
+  GoRoute(path: Routes.addresses, builder: (_, _) => const AddressesScreen()),
+  GoRoute(path: Routes.wishlist, builder: (_, _) => const WishlistScreen()),
+  GoRoute(
+    path: Routes.branches,
+    builder: (_, _) => const BranchLocatorScreen(),
+  ),
+];

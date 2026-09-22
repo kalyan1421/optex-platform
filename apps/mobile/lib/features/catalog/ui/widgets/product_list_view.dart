@@ -181,13 +181,17 @@ class _ProductListViewState extends ConsumerState<ProductListView> {
       // A category the screen locked is not a filter the customer applied, so
       // clearing it is not advice worth offering.
       final bool filtered =
-          state.filters.activeCount - (widget.lockedCategorySlug != null ? 1 : 0) > 0;
+          state.filters.activeCount -
+              (widget.lockedCategorySlug != null ? 1 : 0) >
+          0;
       return <Widget>[
         SliverFillRemaining(
           hasScrollBody: false,
           child: AppEmptyState(
             title: filtered ? widget.emptyTitle : widget.unfilteredEmptyTitle,
-            message: filtered ? widget.emptyMessage : widget.unfilteredEmptyMessage,
+            message: filtered
+                ? widget.emptyMessage
+                : widget.unfilteredEmptyMessage,
             icon: widget.emptyIcon,
             action: filtered
                 ? OutlinedButton(
@@ -214,7 +218,8 @@ class _ProductListViewState extends ConsumerState<ProductListView> {
             childAspectRatio: 0.58,
           ),
           delegate: SliverChildBuilderDelegate(
-            (BuildContext context, int index) => ProductCard(product: state.items[index]),
+            (BuildContext context, int index) =>
+                ProductCard(product: state.items[index]),
             childCount: state.items.length,
           ),
         ),
@@ -222,7 +227,8 @@ class _ProductListViewState extends ConsumerState<ProductListView> {
       SliverToBoxAdapter(
         child: _Footer(
           state: state,
-          onRetry: () => unawaited(ref.read(widget.provider.notifier).retryLoadMore()),
+          onRetry: () =>
+              unawaited(ref.read(widget.provider.notifier).retryLoadMore()),
         ),
       ),
     ];
@@ -282,13 +288,15 @@ class _Toolbar extends StatelessWidget {
                 initialValue: state.filters.sort,
                 onSelected: onSort,
                 tooltip: CatalogStrings.sortBy,
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<ProductSortOption>>[
-                  for (final ProductSortOption option in ProductSortOption.values)
-                    PopupMenuItem<ProductSortOption>(
-                      value: option,
-                      child: Text(option.label),
-                    ),
-                ],
+                itemBuilder: (BuildContext context) =>
+                    <PopupMenuEntry<ProductSortOption>>[
+                      for (final ProductSortOption option
+                          in ProductSortOption.values)
+                        PopupMenuItem<ProductSortOption>(
+                          value: option,
+                          child: Text(option.label),
+                        ),
+                    ],
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
@@ -317,7 +325,9 @@ class _Toolbar extends StatelessWidget {
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(
                 CatalogStrings.showingCount(state.items.length, state.total),
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ),
         ],
@@ -382,7 +392,9 @@ class _Footer extends StatelessWidget {
       child: Center(
         child: Text(
           CatalogStrings.endOfList,
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
+          ),
         ),
       ),
     );

@@ -39,7 +39,9 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<Product> product = ref.watch(productBySlugProvider(widget.slug));
+    final AsyncValue<Product> product = ref.watch(
+      productBySlugProvider(widget.slug),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -133,10 +135,15 @@ class _Details extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 product.name,
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              StarRating(average: product.ratingAvg, count: product.ratingCount),
+              StarRating(
+                average: product.ratingAvg,
+                count: product.ratingCount,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 formatKes(product.priceKes),
@@ -150,20 +157,26 @@ class _Details extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 CatalogStrings.description,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 product.description ?? CatalogStrings.noDescription,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: product.description == null ? theme.colorScheme.outline : null,
+                  color: product.description == null
+                      ? theme.colorScheme.outline
+                      : null,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 CatalogStrings.details,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               _Specs(product: product),
@@ -219,8 +232,11 @@ class _GalleryState extends State<_Gallery> {
             controller: _controller,
             itemCount: urls.length,
             onPageChanged: (int i) => setState(() => _index = i),
-            itemBuilder: (BuildContext context, int i) =>
-                ProductImage(url: urls[i], padding: AppSpacing.md, showLabelOnError: true),
+            itemBuilder: (BuildContext context, int i) => ProductImage(
+              url: urls[i],
+              padding: AppSpacing.md,
+              showLabelOnError: true,
+            ),
           ),
           if (widget.product.isOutOfStock)
             const Positioned(
@@ -243,7 +259,10 @@ class _GalleryState extends State<_Gallery> {
                     horizontal: AppSpacing.sm,
                     vertical: AppSpacing.xs,
                   ),
-                  child: Text('${_index + 1}/${urls.length}', style: theme.textTheme.labelSmall),
+                  child: Text(
+                    '${_index + 1}/${urls.length}',
+                    style: theme.textTheme.labelSmall,
+                  ),
                 ),
               ),
             ),
@@ -262,9 +281,12 @@ class _Specs extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<(String, String)> rows = <(String, String)>[
       if (product.brand != null) (CatalogStrings.detailBrand, product.brand!),
-      if (product.frameShape != null) (CatalogStrings.detailShape, product.frameShape!),
-      if (product.frameMaterial != null) (CatalogStrings.detailMaterial, product.frameMaterial!),
-      if (product.gender != null) (CatalogStrings.detailGender, product.gender!),
+      if (product.frameShape != null)
+        (CatalogStrings.detailShape, product.frameShape!),
+      if (product.frameMaterial != null)
+        (CatalogStrings.detailMaterial, product.frameMaterial!),
+      if (product.gender != null)
+        (CatalogStrings.detailGender, product.gender!),
       if (product.sku.isNotEmpty) (CatalogStrings.detailSku, product.sku),
     ];
 
@@ -288,13 +310,17 @@ class _Specs extends StatelessWidget {
                   width: 110,
                   child: Text(
                     label,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Text(
                     value,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -326,7 +352,8 @@ class _Related extends ConsumerWidget {
             icon: Icons.grid_view_rounded,
           ),
           onRetry: () => ref.invalidate(relatedProductsProvider(product.id)),
-          builder: (BuildContext context, List<Product> data) => ProductRail(products: data),
+          builder: (BuildContext context, List<Product> data) =>
+              ProductRail(products: data),
         ),
       ],
     );
@@ -376,7 +403,9 @@ class _PurchaseBar extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.md),
               ],
-              Expanded(child: AddToCartButton(product: product, quantity: quantity)),
+              Expanded(
+                child: AddToCartButton(product: product, quantity: quantity),
+              ),
             ],
           ),
         ),

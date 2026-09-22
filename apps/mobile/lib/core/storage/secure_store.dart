@@ -9,17 +9,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// that launch rather than leaving credentials readable on disk.
 class SecureStore {
   SecureStore([FlutterSecureStorage? storage])
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              // v11 encrypts on Android by default (AES-GCM under an RSA-OAEP
-              // wrapped key, API 23+), so the old `encryptedSharedPreferences`
-              // flag is gone and the defaults are already the strong path.
-              aOptions: AndroidOptions(),
-              // `first_unlock` rather than `unlocked`: a push handler or a
-              // background refresh can run while the device is locked, and
-              // `unlocked` would make the token unreadable exactly then.
-              iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-            );
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            // v11 encrypts on Android by default (AES-GCM under an RSA-OAEP
+            // wrapped key, API 23+), so the old `encryptedSharedPreferences`
+            // flag is gone and the defaults are already the strong path.
+            aOptions: AndroidOptions(),
+            // `first_unlock` rather than `unlocked`: a push handler or a
+            // background refresh can run while the device is locked, and
+            // `unlocked` would make the token unreadable exactly then.
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+          );
 
   final FlutterSecureStorage _storage;
 

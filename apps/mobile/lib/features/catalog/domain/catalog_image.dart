@@ -32,7 +32,8 @@ String? resolveProductImageUrl(String? raw) {
   if (base.isEmpty) return null;
 
   final String suffix = path.startsWith('/') ? path : '/$path';
-  final String url = '$base/storage/v1/object/public/$_productImagesBucket$suffix';
+  final String url =
+      '$base/storage/v1/object/public/$_productImagesBucket$suffix';
   return _withAnonKey(url);
 }
 

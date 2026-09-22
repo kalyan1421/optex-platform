@@ -28,7 +28,8 @@ class VersionGateController extends Notifier<VersionGateDecision?> {
   @override
   VersionGateDecision? build() => null;
 
-  VersionGateRepository get _repository => ref.read(versionGateRepositoryProvider);
+  VersionGateRepository get _repository =>
+      ref.read(versionGateRepositoryProvider);
 
   /// Cold start.
   Future<void> checkOnStart({String? currentLocation}) =>
@@ -96,12 +97,13 @@ class VersionGateController extends Notifier<VersionGateDecision?> {
   /// update is how an abandoned cart happens.
   static bool _isCheckoutLocation(String? location) {
     if (location == null) return false;
-    return location == Routes.checkout || location.startsWith('${Routes.checkout}/');
+    return location == Routes.checkout ||
+        location.startsWith('${Routes.checkout}/');
   }
 }
 
 final NotifierProvider<VersionGateController, VersionGateDecision?>
-    versionGateProvider =
+versionGateProvider =
     NotifierProvider<VersionGateController, VersionGateDecision?>(
-  VersionGateController.new,
-);
+      VersionGateController.new,
+    );

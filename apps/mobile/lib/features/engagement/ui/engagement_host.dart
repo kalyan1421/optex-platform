@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/providers.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -91,9 +92,9 @@ class _EngagementHostState extends ConsumerState<EngagementHost> {
     ref.read(connectivityProvider);
 
     unawaited(
-      ref.read(versionGateProvider.notifier).checkOnStart(
-            currentLocation: _currentLocation(),
-          ),
+      ref
+          .read(versionGateProvider.notifier)
+          .checkOnStart(currentLocation: _currentLocation()),
     );
   }
 
@@ -105,14 +106,16 @@ class _EngagementHostState extends ConsumerState<EngagementHost> {
 
     // P0-14: foreground check, throttled to > 1h idle inside the controller.
     unawaited(
-      ref.read(versionGateProvider.notifier).checkOnForeground(
-            currentLocation: _currentLocation(),
-          ),
+      ref
+          .read(versionGateProvider.notifier)
+          .checkOnForeground(currentLocation: _currentLocation()),
     );
 
     // Housekeeping, so the offline store does not accumulate a tail of
     // documents nobody will read again.
-    unawaited(ref.read(offlineCacheProvider).purgeExpired(const Duration(days: 7)));
+    unawaited(
+      ref.read(offlineCacheProvider).purgeExpired(const Duration(days: 7)),
+    );
   }
 
   /// The current route.
@@ -131,7 +134,8 @@ class _EngagementHostState extends ConsumerState<EngagementHost> {
 
   static bool _isCheckout(String? location) =>
       location != null &&
-      (location == Routes.checkout || location.startsWith('${Routes.checkout}/'));
+      (location == Routes.checkout ||
+          location.startsWith('${Routes.checkout}/'));
 
   @override
   Widget build(BuildContext context) {

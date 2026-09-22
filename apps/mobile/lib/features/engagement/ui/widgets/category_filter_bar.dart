@@ -28,7 +28,8 @@ class CategoryFilterBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         children: <Widget>[
           _chip(context, label: 'All', value: null),
-          for (final NotificationCategory category in NotificationCategory.values)
+          for (final NotificationCategory category
+              in NotificationCategory.values)
             _chip(context, label: category.label, value: category),
         ],
       ),

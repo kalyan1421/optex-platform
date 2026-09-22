@@ -6,7 +6,9 @@ import '../domain/address.dart';
 import '../domain/profile.dart';
 
 final Provider<AccountRepository> accountRepositoryProvider =
-    Provider<AccountRepository>((Ref ref) => AccountRepository(ref.watch(apiClientProvider)));
+    Provider<AccountRepository>(
+      (Ref ref) => AccountRepository(ref.watch(apiClientProvider)),
+    );
 
 /// The signed-in customer's `/me` profile.
 ///
@@ -101,5 +103,7 @@ class AddressesController extends AsyncNotifier<List<Address>> {
   }
 }
 
-final AsyncNotifierProvider<AddressesController, List<Address>> addressesProvider =
-    AsyncNotifierProvider<AddressesController, List<Address>>(AddressesController.new);
+final AsyncNotifierProvider<AddressesController, List<Address>>
+addressesProvider = AsyncNotifierProvider<AddressesController, List<Address>>(
+  AddressesController.new,
+);

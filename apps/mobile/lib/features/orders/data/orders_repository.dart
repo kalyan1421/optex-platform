@@ -23,7 +23,10 @@ class OrdersRepository {
   ///
   /// The API's envelope is `{ data, page, pageSize, total, totalPages }`; the
   /// core [Paginated] parser already accepts `data` alongside `items`.
-  Future<Paginated<OrderSummary>> list({int page = 1, int pageSize = 20}) async {
+  Future<Paginated<OrderSummary>> list({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
       _orders,
       query: <String, dynamic>{'page': page, 'pageSize': pageSize},
@@ -34,22 +37,25 @@ class OrdersRepository {
   /// `GET /orders/:id` — 404s rather than 403s when the order is not the
   /// caller's, so a missing order and someone else's look identical.
   Future<OrderDetail> detail(String orderId) async {
-    final Map<String, dynamic> json =
-        await _api.get<Map<String, dynamic>>('$_orders/$orderId');
+    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
+      '$_orders/$orderId',
+    );
     return OrderDetail.fromJson(json);
   }
 
   /// `GET /orders/:id/tracking` — the server-rendered stage timeline.
   Future<OrderTracking> tracking(String orderId) async {
-    final Map<String, dynamic> json =
-        await _api.get<Map<String, dynamic>>('$_orders/$orderId/tracking');
+    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
+      '$_orders/$orderId/tracking',
+    );
     return OrderTracking.fromJson(json);
   }
 
   /// `GET /orders/:id/cancellation` — eligibility plus the latest request.
   Future<CancellationStatus> cancellationStatus(String orderId) async {
-    final Map<String, dynamic> json =
-        await _api.get<Map<String, dynamic>>('$_orders/$orderId/cancellation');
+    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
+      '$_orders/$orderId/cancellation',
+    );
     return CancellationStatus.fromJson(json);
   }
 
@@ -58,7 +64,10 @@ class OrdersRepository {
   /// The API rejects an ineligible order with 400 and a second pending request
   /// with 409, both carrying customer-safe copy. Those surface as
   /// `ApiException.message` and are shown as-is.
-  Future<CancellationOutcome> requestCancellation(String orderId, {String? reason}) async {
+  Future<CancellationOutcome> requestCancellation(
+    String orderId, {
+    String? reason,
+  }) async {
     final String? trimmed = reason?.trim();
     final Map<String, dynamic> json = await _api.post<Map<String, dynamic>>(
       '$_orders/$orderId/cancellation',

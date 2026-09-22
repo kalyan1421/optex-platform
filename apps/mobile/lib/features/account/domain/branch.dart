@@ -82,8 +82,8 @@ class BranchHours {
   /// All seven days in order, so a closed day renders as "Closed" rather than
   /// disappearing from the list.
   List<(int weekday, DayHours? hours)> get week => <(int, DayHours?)>[
-        for (int d = 1; d <= 7; d++) (d, _byWeekday[d]),
-      ];
+    for (int d = 1; d <= 7; d++) (d, _byWeekday[d]),
+  ];
 
   /// Whether the branch is open at [now]. Null when the day has no hours data
   /// at all — "unknown" and "closed" are different answers and only one of
@@ -140,16 +140,16 @@ class Branch {
   bool get hasCoordinates => lat != null && lng != null;
 
   factory Branch.fromJson(Map<String, dynamic> json) => Branch(
-        id: json['id'] as String,
-        slug: json['slug'] as String? ?? '',
-        name: json['name'] as String? ?? 'Branch',
-        address: json['address'] as String?,
-        phone: json['phone'] as String?,
-        lat: (json['lat'] as num?)?.toDouble(),
-        lng: (json['lng'] as num?)?.toDouble(),
-        hours: BranchHours.fromJson(json['hours'] as Map<String, dynamic>?),
-        isActive: json['is_active'] as bool? ?? true,
-      );
+    id: json['id'] as String,
+    slug: json['slug'] as String? ?? '',
+    name: json['name'] as String? ?? 'Branch',
+    address: json['address'] as String?,
+    phone: json['phone'] as String?,
+    lat: (json['lat'] as num?)?.toDouble(),
+    lng: (json['lng'] as num?)?.toDouble(),
+    hours: BranchHours.fromJson(json['hours'] as Map<String, dynamic>?),
+    isActive: json['is_active'] as bool? ?? true,
+  );
 }
 
 /// A branch paired with how far away it is, in metres. [distanceMetres] is

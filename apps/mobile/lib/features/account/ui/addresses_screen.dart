@@ -25,7 +25,8 @@ class AddressesScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Delivery addresses')),
       floatingActionButton: addresses.hasValue
           ? FloatingActionButton.extended(
-              onPressed: () => _add(context, ref, isFirst: addresses.value!.isEmpty),
+              onPressed: () =>
+                  _add(context, ref, isFirst: addresses.value!.isEmpty),
               icon: const Icon(Icons.add_rounded),
               label: const Text('Add address'),
             )
@@ -63,7 +64,9 @@ class AddressesScreen extends ConsumerWidget {
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
               itemBuilder: (BuildContext context, int index) => _AddressCard(
                 address: items[index],
-                others: items.where((Address a) => a.id != items[index].id).toList(),
+                others: items
+                    .where((Address a) => a.id != items[index].id)
+                    .toList(),
               ),
             ),
           );
@@ -72,9 +75,15 @@ class AddressesScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _add(BuildContext context, WidgetRef ref, {required bool isFirst}) async {
-    final AddressInput? input =
-        await showAddressFormSheet(context, forceDefault: isFirst);
+  Future<void> _add(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isFirst,
+  }) async {
+    final AddressInput? input = await showAddressFormSheet(
+      context,
+      forceDefault: isFirst,
+    );
     if (input == null || !context.mounted) return;
 
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -102,7 +111,10 @@ class _AddressCard extends ConsumerStatefulWidget {
 class _AddressCardState extends ConsumerState<_AddressCard> {
   bool _busy = false;
 
-  Future<void> _run(Future<void> Function() action, String successMessage) async {
+  Future<void> _run(
+    Future<void> Function() action,
+    String successMessage,
+  ) async {
     if (_busy) return;
     setState(() => _busy = true);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -117,8 +129,10 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
   }
 
   Future<void> _edit() async {
-    final AddressInput? input =
-        await showAddressFormSheet(context, existing: widget.address);
+    final AddressInput? input = await showAddressFormSheet(
+      context,
+      existing: widget.address,
+    );
     if (input == null || !mounted) return;
     await _run(
       () => ref.read(addressesProvider.notifier).edit(widget.address.id, input),
@@ -127,9 +141,9 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
   }
 
   Future<void> _setDefault() => _run(
-        () => ref.read(addressesProvider.notifier).setDefault(widget.address.id),
-        'Default address updated',
-      );
+    () => ref.read(addressesProvider.notifier).setDefault(widget.address.id),
+    'Default address updated',
+  );
 
   Future<void> _delete() async {
     final Address address = widget.address;
@@ -149,9 +163,8 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
 
     final String? replacementId = await showDialog<String>(
       context: context,
-      builder: (BuildContext ctx) => _ChooseReplacementDialog(
-        candidates: widget.others,
-      ),
+      builder: (BuildContext ctx) =>
+          _ChooseReplacementDialog(candidates: widget.others),
     );
     if (replacementId == null || !mounted) return;
 
@@ -203,8 +216,9 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
                 Expanded(
                   child: Text(
                     address.title,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -232,13 +246,15 @@ class _AddressCardState extends ConsumerState<_AddressCard> {
             Text(address.name, style: theme.textTheme.bodyMedium),
             Text(
               address.formatted,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
             Text(
               address.phone,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             if (_busy)
@@ -289,7 +305,8 @@ class _ChooseReplacementDialog extends StatefulWidget {
   final List<Address> candidates;
 
   @override
-  State<_ChooseReplacementDialog> createState() => _ChooseReplacementDialogState();
+  State<_ChooseReplacementDialog> createState() =>
+      _ChooseReplacementDialogState();
 }
 
 class _ChooseReplacementDialogState extends State<_ChooseReplacementDialog> {
@@ -310,8 +327,9 @@ class _ChooseReplacementDialogState extends State<_ChooseReplacementDialog> {
             Text(
               'This is your default delivery address. Pick which one takes '
               'over before removing it.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Flexible(
@@ -335,8 +353,9 @@ class _ChooseReplacementDialogState extends State<_ChooseReplacementDialog> {
                         ),
                         subtitle: Text(
                           candidate.formatted,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: theme.colorScheme.outline),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

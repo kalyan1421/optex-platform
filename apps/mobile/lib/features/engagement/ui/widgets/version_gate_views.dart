@@ -51,8 +51,11 @@ class UpdatePromptCard extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Icon(Icons.system_update_rounded,
-                      size: 20, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.system_update_rounded,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -66,8 +69,9 @@ class UpdatePromptCard extends StatelessWidget {
               Text(
                 decision.message ??
                     'Update to get the latest fixes and improvements.',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
@@ -123,8 +127,11 @@ class UnsupportedVersionScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(Icons.system_update_rounded,
-                    size: 56, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.system_update_rounded,
+                  size: 56,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Update required',
@@ -137,8 +144,9 @@ class UnsupportedVersionScreen extends StatelessWidget {
                       'This version of the app is no longer supported. '
                           'Please update to continue.',
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 if (decision.storeUrl != null)
@@ -158,8 +166,9 @@ class UnsupportedVersionScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'Installed version ${decision.installedVersion}',
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ],
             ),

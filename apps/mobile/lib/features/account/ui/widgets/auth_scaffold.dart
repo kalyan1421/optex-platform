@@ -47,14 +47,18 @@ class AuthScaffold extends StatelessWidget {
                   children: <Widget>[
                     const _BrandMark(),
                     const SizedBox(height: AppSpacing.xl),
-                    Text(title, style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    )),
+                    Text(
+                      title,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       subtitle,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: theme.colorScheme.outline),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     ...children,
@@ -85,7 +89,11 @@ class _BrandMark extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           alignment: Alignment.center,
-          child: const Icon(Icons.visibility_outlined, color: Colors.white, size: 22),
+          child: const Icon(
+            Icons.visibility_outlined,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
         const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
         Text(
@@ -121,17 +129,25 @@ class FormErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.4),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.error_outline_rounded, size: 20, color: theme.colorScheme.error),
+          Icon(
+            Icons.error_outline_rounded,
+            size: 20,
+            color: theme.colorScheme.error,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
           ),
         ],

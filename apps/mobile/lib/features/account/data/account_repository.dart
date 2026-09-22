@@ -14,7 +14,9 @@ class AccountRepository {
   // ── Profile ─────────────────────────────────────────────────────────────
 
   Future<MeProfile> getProfile() async {
-    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>('/me');
+    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
+      '/me',
+    );
     return MeProfile.fromJson(json);
   }
 
@@ -31,10 +33,15 @@ class AccountRepository {
   }) async {
     final Map<String, dynamic> body = <String, dynamic>{
       if (fullName != null) 'full_name': fullName.trim(),
-      if (clearPhone) 'phone': null else if (phone != null) 'phone': phone.trim(),
+      if (clearPhone)
+        'phone': null
+      else if (phone != null)
+        'phone': phone.trim(),
     };
-    final Map<String, dynamic> json =
-        await _api.patch<Map<String, dynamic>>('/me', body: body);
+    final Map<String, dynamic> json = await _api.patch<Map<String, dynamic>>(
+      '/me',
+      body: body,
+    );
     return MeProfile.fromJson(json);
   }
 
@@ -65,11 +72,13 @@ class AccountRepository {
     return Address.fromJson(json);
   }
 
-  Future<void> deleteAddress(String id) => _api.delete<dynamic>('/addresses/$id');
+  Future<void> deleteAddress(String id) =>
+      _api.delete<dynamic>('/addresses/$id');
 
   Future<Address> setDefaultAddress(String id) async {
-    final Map<String, dynamic> json =
-        await _api.post<Map<String, dynamic>>('/addresses/$id/default');
+    final Map<String, dynamic> json = await _api.post<Map<String, dynamic>>(
+      '/addresses/$id/default',
+    );
     return Address.fromJson(json);
   }
 }

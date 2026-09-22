@@ -18,31 +18,31 @@ import 'ui/shop_screen.dart';
 ///
 /// Every path comes from `Routes`; none is spelled out here.
 List<RouteBase> catalogRoutes() => <RouteBase>[
-      GoRoute(
-        path: Routes.home,
-        builder: (BuildContext context, GoRouterState state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: Routes.shop,
-        // `?category=<slug>` opens the shop pre-filtered — what a banner
-        // target or a "see all in this category" link needs, without making
-        // it a different screen from /shop.
-        builder: (BuildContext context, GoRouterState state) =>
-            ShopScreen(initialCategorySlug: state.uri.queryParameters['category']),
-      ),
-      GoRoute(
-        path: Routes.search,
-        builder: (BuildContext context, GoRouterState state) =>
-            SearchScreen(initialQuery: state.uri.queryParameters['q']),
-      ),
-      GoRoute(
-        path: Routes.category,
-        builder: (BuildContext context, GoRouterState state) =>
-            CategoryScreen(slug: state.pathParameters['slug'] ?? ''),
-      ),
-      GoRoute(
-        path: Routes.product,
-        builder: (BuildContext context, GoRouterState state) =>
-            ProductScreen(slug: state.pathParameters['slug'] ?? ''),
-      ),
-    ];
+  GoRoute(
+    path: Routes.home,
+    builder: (BuildContext context, GoRouterState state) => const HomeScreen(),
+  ),
+  GoRoute(
+    path: Routes.shop,
+    // `?category=<slug>` opens the shop pre-filtered — what a banner
+    // target or a "see all in this category" link needs, without making
+    // it a different screen from /shop.
+    builder: (BuildContext context, GoRouterState state) =>
+        ShopScreen(initialCategorySlug: state.uri.queryParameters['category']),
+  ),
+  GoRoute(
+    path: Routes.search,
+    builder: (BuildContext context, GoRouterState state) =>
+        SearchScreen(initialQuery: state.uri.queryParameters['q']),
+  ),
+  GoRoute(
+    path: Routes.category,
+    builder: (BuildContext context, GoRouterState state) =>
+        CategoryScreen(slug: state.pathParameters['slug'] ?? ''),
+  ),
+  GoRoute(
+    path: Routes.product,
+    builder: (BuildContext context, GoRouterState state) =>
+        ProductScreen(slug: state.pathParameters['slug'] ?? ''),
+  ),
+];

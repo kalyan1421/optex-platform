@@ -19,14 +19,14 @@ import 'ui/settings_screen.dart';
 /// customer to login and brings them back afterwards — there is nothing to
 /// guard here.
 List<RouteBase> engagementRoutes() => <RouteBase>[
-      GoRoute(
-        path: Routes.notifications,
-        builder: (BuildContext context, GoRouterState state) =>
-            const NotificationsScreen(),
-      ),
-      GoRoute(
-        path: Routes.settings,
-        builder: (BuildContext context, GoRouterState state) =>
-            const SettingsScreen(),
-      ),
-    ];
+  GoRoute(
+    path: Routes.notifications,
+    builder: (BuildContext context, GoRouterState state) =>
+        const NotificationsScreen(),
+  ),
+  GoRoute(
+    path: Routes.settings,
+    builder: (BuildContext context, GoRouterState state) =>
+        const SettingsScreen(),
+  ),
+];

@@ -36,7 +36,9 @@ class OrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<OrderDetail> async = ref.watch(orderDetailProvider(orderId));
+    final AsyncValue<OrderDetail> async = ref.watch(
+      orderDetailProvider(orderId),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -89,8 +91,9 @@ class _Body extends StatelessWidget {
           child: order.items.isEmpty
               ? Text(
                   'No line items were returned for this order.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 )
               : Column(
                   children: <Widget>[
@@ -203,14 +206,16 @@ class _Header extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         order.orderNumber.isEmpty ? 'Order' : order.orderNumber,
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Placed ${formatOrderDateTime(order.createdAt)}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.outline),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
                       ),
                     ],
                   ),
@@ -248,7 +253,8 @@ class _ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final Map<String, dynamic> lens = item.lensOption ?? const <String, dynamic>{};
+    final Map<String, dynamic> lens =
+        item.lensOption ?? const <String, dynamic>{};
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,32 +267,38 @@ class _ItemRow extends StatelessWidget {
             children: <Widget>[
               Text(
                 item.displayName,
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (item.product?.brand != null) ...<Widget>[
                 const SizedBox(height: 2),
                 Text(
                   item.product!.brand!,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ],
               const SizedBox(height: AppSpacing.xs),
               Text(
                 '${item.quantity} × ${formatKes(item.unitPriceKes)}',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
               if (lens.isNotEmpty) ...<Widget>[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   lens.entries
-                      .map((MapEntry<String, dynamic> e) =>
-                          '${humanizeStatus(e.key)}: ${e.value}')
+                      .map(
+                        (MapEntry<String, dynamic> e) =>
+                            '${humanizeStatus(e.key)}: ${e.value}',
+                      )
                       .join(' · '),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ],
             ],
@@ -295,7 +307,9 @@ class _ItemRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Text(
           formatKes(item.lineTotalKes),
-          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
@@ -316,7 +330,9 @@ class _Delivery extends StatelessWidget {
       return Text(
         'No delivery or collection details were recorded for this order. '
         'Please call your branch if you need to check.',
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.outline,
+        ),
       );
     }
 
@@ -326,7 +342,9 @@ class _Delivery extends StatelessWidget {
         if (details.name != null)
           Text(
             details.name!,
-            style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         for (final String line in details.addressLines) ...<Widget>[
           const SizedBox(height: 2),
@@ -336,12 +354,17 @@ class _Delivery extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: <Widget>[
-              Icon(Icons.phone_outlined, size: 16, color: theme.colorScheme.outline),
+              Icon(
+                Icons.phone_outlined,
+                size: 16,
+                color: theme.colorScheme.outline,
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 details.phone!,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ],
           ),

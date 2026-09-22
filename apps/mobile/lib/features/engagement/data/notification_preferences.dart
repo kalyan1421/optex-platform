@@ -27,8 +27,10 @@ class NotificationPreferences {
     try {
       return await SharedPreferences.getInstance();
     } catch (error) {
-      developer.log('Notification preferences unavailable: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Notification preferences unavailable: $error',
+        name: 'optex.engagement',
+      );
       return null;
     }
   }

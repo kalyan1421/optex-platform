@@ -18,15 +18,16 @@ class AppTheme {
   static ThemeData _build(Brightness brightness) {
     final bool isDark = brightness == Brightness.dark;
 
-    final ColorScheme scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.brandBlue,
-      brightness: brightness,
-    ).copyWith(
-      primary: isDark ? const Color(0xFF8A8DE0) : AppColors.brandBlue,
-      secondary: AppColors.brandRed,
-      error: AppColors.brandRed,
-      surface: isDark ? AppColors.darkSurface : AppColors.lightBackground,
-    );
+    final ColorScheme scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.brandBlue,
+          brightness: brightness,
+        ).copyWith(
+          primary: isDark ? const Color(0xFF8A8DE0) : AppColors.brandBlue,
+          secondary: AppColors.brandRed,
+          error: AppColors.brandRed,
+          surface: isDark ? AppColors.darkSurface : AppColors.lightBackground,
+        );
 
     final Color border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final Color muted = isDark ? AppColors.darkMuted : AppColors.lightMuted;
@@ -36,11 +37,14 @@ class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       fontFamily: fontFamily,
-      scaffoldBackgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      scaffoldBackgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       dividerColor: border,
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
         foregroundColor: isDark ? Colors.white : AppColors.brandDark,
         elevation: 0,
         scrolledUnderElevation: 0.5,
@@ -64,7 +68,9 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(AppSpacing.minTapTarget),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           textStyle: const TextStyle(
             fontFamily: fontFamily,
             fontWeight: FontWeight.w600,
@@ -76,7 +82,9 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(AppSpacing.minTapTarget),
           side: BorderSide(color: border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -105,7 +113,9 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
         selectedItemColor: scheme.primary,
         unselectedItemColor: muted,
         type: BottomNavigationBarType.fixed,

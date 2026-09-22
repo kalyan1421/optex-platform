@@ -138,8 +138,10 @@ class OfflineCache {
         ),
       );
     } catch (error) {
-      developer.log('Offline cache read failed for $key: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Offline cache read failed for $key: $error',
+        name: 'optex.engagement',
+      );
       return null;
     }
   }
@@ -153,18 +155,16 @@ class OfflineCache {
     }
 
     try {
-      await db.insert(
-        _table,
-        <String, Object?>{
-          _colKey: key,
-          _colPayload: jsonEncode(value),
-          _colStoredAt: now.millisecondsSinceEpoch,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert(_table, <String, Object?>{
+        _colKey: key,
+        _colPayload: jsonEncode(value),
+        _colStoredAt: now.millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (error) {
-      developer.log('Offline cache write failed for $key: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Offline cache write failed for $key: $error',
+        name: 'optex.engagement',
+      );
     }
   }
 
@@ -190,7 +190,11 @@ class OfflineCache {
       return;
     }
     try {
-      await db.delete(_table, where: '$_colKey LIKE ?', whereArgs: <Object?>['$prefix%']);
+      await db.delete(
+        _table,
+        where: '$_colKey LIKE ?',
+        whereArgs: <Object?>['$prefix%'],
+      );
     } catch (_) {
       // See above.
     }
@@ -212,8 +216,7 @@ class OfflineCache {
   /// Housekeeping: removes everything older than [maxAge]. Returns how many
   /// rows went.
   Future<int> purgeExpired(Duration maxAge) async {
-    final int cutoff =
-        DateTime.now().subtract(maxAge).millisecondsSinceEpoch;
+    final int cutoff = DateTime.now().subtract(maxAge).millisecondsSinceEpoch;
 
     final Database? db = await _database();
     if (db == null) {

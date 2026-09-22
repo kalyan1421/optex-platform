@@ -66,7 +66,8 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       body = _Centered(
         child: AppEmptyState(
           title: 'No orders yet',
-          message: 'When you buy frames or lenses from Optex, your orders and '
+          message:
+              'When you buy frames or lenses from Optex, your orders and '
               'their delivery status show up here.',
           icon: Icons.receipt_long_outlined,
           action: FilledButton.icon(
@@ -103,15 +104,15 @@ class _Centered extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) =>
-            SingleChildScrollView(
+    builder: (BuildContext context, BoxConstraints constraints) =>
+        SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: child,
           ),
         ),
-      );
+  );
 }
 
 class _OrdersList extends StatelessWidget {
@@ -163,8 +164,9 @@ class _Footer extends ConsumerWidget {
                   ? error.message
                   : 'Could not load more orders.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton(
@@ -198,7 +200,9 @@ class _Footer extends ConsumerWidget {
           feed.orders.length == 1
               ? 'That is your only order so far.'
               : 'That is all ${feed.orders.length} of your orders.',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
+          ),
         ),
       ),
     );

@@ -79,6 +79,7 @@ class UnregisteredPushRegistrar implements PushRegistrar {
 
   /// A token is a credential for sending this device notifications, so only
   /// enough of it is logged to correlate two log lines.
-  static String _redact(String token) =>
-      token.length <= 12 ? '***' : '${token.substring(0, 6)}…${token.substring(token.length - 4)}';
+  static String _redact(String token) => token.length <= 12
+      ? '***'
+      : '${token.substring(0, 6)}…${token.substring(token.length - 4)}';
 }

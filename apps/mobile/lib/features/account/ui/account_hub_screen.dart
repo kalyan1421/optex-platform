@@ -26,9 +26,11 @@ class AccountHubScreen extends ConsumerWidget {
     // The profile is the better name source (it reflects an edit made on this
     // device), but the token identity is already in memory, so it carries the
     // header while /me loads rather than leaving a blank bar.
-    final String name = profile.value?.displayName ?? auth.user?.displayName ?? 'Your account';
+    final String name =
+        profile.value?.displayName ?? auth.user?.displayName ?? 'Your account';
     final String? email = profile.value?.email ?? auth.user?.email;
-    final String initials = profile.value?.initials ??
+    final String initials =
+        profile.value?.initials ??
         (name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?');
 
     return Scaffold(
@@ -105,7 +107,11 @@ class AccountHubScreen extends ConsumerWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.name, required this.email, required this.initials});
+  const _Header({
+    required this.name,
+    required this.email,
+    required this.initials,
+  });
 
   final String name;
   final String? email;
@@ -142,15 +148,17 @@ class _Header extends StatelessWidget {
               children: <Widget>[
                 Text(
                   name,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (email != null)
                   Text(
                     email!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
               ],
@@ -213,8 +221,9 @@ class _HubTile extends StatelessWidget {
           ? null
           : Text(
               subtitle!,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
       trailing: const Icon(Icons.chevron_right_rounded),
       onTap: onTap,
@@ -235,7 +244,8 @@ class _SignOutTileState extends ConsumerState<_SignOutTile> {
   bool _busy = false;
 
   Future<void> _confirmAndSignOut() async {
-    final bool confirmed = await showDialog<bool>(
+    final bool confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (BuildContext ctx) => AlertDialog(
             title: const Text('Sign out?'),
@@ -280,7 +290,9 @@ class _SignOutTileState extends ConsumerState<_SignOutTile> {
           : Icon(Icons.logout_rounded, color: theme.colorScheme.error),
       title: Text(
         'Sign out',
-        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.error),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.error,
+        ),
       ),
       onTap: _busy ? null : _confirmAndSignOut,
     );

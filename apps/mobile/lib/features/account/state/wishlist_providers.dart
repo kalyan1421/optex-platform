@@ -6,8 +6,8 @@ import '../domain/wishlist_item.dart';
 
 final Provider<WishlistRepository> wishlistRepositoryProvider =
     Provider<WishlistRepository>(
-  (Ref ref) => WishlistRepository(ref.watch(apiClientProvider)),
-);
+      (Ref ref) => WishlistRepository(ref.watch(apiClientProvider)),
+    );
 
 /// The signed-in customer's saved products, most recently saved first.
 class WishlistController extends AsyncNotifier<List<WishlistItem>> {
@@ -50,7 +50,8 @@ class WishlistController extends AsyncNotifier<List<WishlistItem>> {
   }
 }
 
-final AsyncNotifierProvider<WishlistController, List<WishlistItem>> wishlistProvider =
+final AsyncNotifierProvider<WishlistController, List<WishlistItem>>
+wishlistProvider =
     AsyncNotifierProvider<WishlistController, List<WishlistItem>>(
-  WishlistController.new,
-);
+      WishlistController.new,
+    );

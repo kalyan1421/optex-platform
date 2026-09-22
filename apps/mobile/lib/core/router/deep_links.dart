@@ -24,10 +24,9 @@ String normalizeDeepLink(Uri uri) {
   final String merged = uri.authority.isEmpty ? path : '/${uri.authority}$path';
 
   final String collapsed = merged.replaceAll(RegExp('/+'), '/');
-  final String trimmed =
-      collapsed.length > 1 && collapsed.endsWith('/')
-          ? collapsed.substring(0, collapsed.length - 1)
-          : collapsed;
+  final String trimmed = collapsed.length > 1 && collapsed.endsWith('/')
+      ? collapsed.substring(0, collapsed.length - 1)
+      : collapsed;
 
   return uri.hasQuery ? '$trimmed?${uri.query}' : trimmed;
 }

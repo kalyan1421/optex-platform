@@ -28,7 +28,9 @@ class DeepLinks {
 
     if (uri.scheme == Routes.deepLinkScheme) {
       // optex://orders/123 parses as host `orders`, path `/123`.
-      final String path = uri.host.isEmpty ? uri.path : '/${uri.host}${uri.path}';
+      final String path = uri.host.isEmpty
+          ? uri.path
+          : '/${uri.host}${uri.path}';
       return _withQuery(path, uri.query);
     }
 
@@ -45,9 +47,15 @@ class DeepLinks {
     String? appointmentId,
     String? productSlug,
   }) {
-    if (orderId != null && orderId.isNotEmpty) return Routes.orderDetailOf(orderId);
-    if (appointmentId != null && appointmentId.isNotEmpty) return Routes.appointments;
-    if (productSlug != null && productSlug.isNotEmpty) return Routes.productOf(productSlug);
+    if (orderId != null && orderId.isNotEmpty) {
+      return Routes.orderDetailOf(orderId);
+    }
+    if (appointmentId != null && appointmentId.isNotEmpty) {
+      return Routes.appointments;
+    }
+    if (productSlug != null && productSlug.isNotEmpty) {
+      return Routes.productOf(productSlug);
+    }
     return null;
   }
 

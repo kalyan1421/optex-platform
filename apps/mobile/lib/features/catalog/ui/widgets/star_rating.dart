@@ -31,12 +31,15 @@ class StarRating extends StatelessWidget {
     if (value == null || count <= 0) {
       return Text(
         CatalogStrings.noReviewsYet,
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.outline,
+        ),
       );
     }
 
     return Semantics(
-      label: '${value.toStringAsFixed(1)} out of 5, ${CatalogStrings.reviewCount(count)}',
+      label:
+          '${value.toStringAsFixed(1)} out of 5, ${CatalogStrings.reviewCount(count)}',
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -45,7 +48,9 @@ class StarRating extends StatelessWidget {
             Icon(
               value >= i
                   ? Icons.star_rounded
-                  : (value >= i - 0.5 ? Icons.star_half_rounded : Icons.star_outline_rounded),
+                  : (value >= i - 0.5
+                        ? Icons.star_half_rounded
+                        : Icons.star_outline_rounded),
               size: size,
               color: AppColors.brandRed,
             ),
@@ -53,7 +58,9 @@ class StarRating extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
             Text(
               '${value.toStringAsFixed(1)} ($count)',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
           ],
         ],

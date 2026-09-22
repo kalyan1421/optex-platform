@@ -8,7 +8,8 @@ import '../../state/add_to_cart.dart';
 
 /// Builds the intent for a product. Kept in one place so the card button and
 /// the detail button cannot describe the same tap differently.
-AddToCartIntent intentFor(Product product, {int quantity = 1}) => AddToCartIntent(
+AddToCartIntent intentFor(Product product, {int quantity = 1}) =>
+    AddToCartIntent(
       productId: product.id,
       slug: product.slug,
       name: product.name,
@@ -31,7 +32,9 @@ Future<void> performAddToCart(
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
 
   if (handler == null) {
-    messenger.showSnackBar(const SnackBar(content: Text(CatalogStrings.cartNotWired)));
+    messenger.showSnackBar(
+      const SnackBar(content: Text(CatalogStrings.cartNotWired)),
+    );
     return;
   }
 
@@ -64,7 +67,11 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await performAddToCart(context, ref, intentFor(widget.product, quantity: widget.quantity));
+      await performAddToCart(
+        context,
+        ref,
+        intentFor(widget.product, quantity: widget.quantity),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -84,7 +91,9 @@ class _AddToCartButtonState extends ConsumerState<AddToCartButton> {
             )
           : const Icon(Icons.shopping_bag_outlined),
       label: Text(
-        widget.product.isPurchasable ? CatalogStrings.addToCart : CatalogStrings.outOfStock,
+        widget.product.isPurchasable
+            ? CatalogStrings.addToCart
+            : CatalogStrings.outOfStock,
       ),
     );
   }
@@ -97,7 +106,8 @@ class AddToCartIconButton extends ConsumerStatefulWidget {
   final Product product;
 
   @override
-  ConsumerState<AddToCartIconButton> createState() => _AddToCartIconButtonState();
+  ConsumerState<AddToCartIconButton> createState() =>
+      _AddToCartIconButtonState();
 }
 
 class _AddToCartIconButtonState extends ConsumerState<AddToCartIconButton> {

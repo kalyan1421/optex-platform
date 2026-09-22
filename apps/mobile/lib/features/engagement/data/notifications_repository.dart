@@ -46,9 +46,9 @@ class NotificationsRepository {
     final Object? rawItems = json['data'];
     final List<AppNotification> items = rawItems is List
         ? rawItems
-            .whereType<Map<String, dynamic>>()
-            .map(AppNotification.fromJson)
-            .toList()
+              .whereType<Map<String, dynamic>>()
+              .map(AppNotification.fromJson)
+              .toList()
         : <AppNotification>[];
 
     return NotificationFeed(
@@ -60,21 +60,24 @@ class NotificationsRepository {
   }
 
   Future<int> unreadCount() async {
-    final Map<String, dynamic> json =
-        await _api.get<Map<String, dynamic>>('$_base/unread-count');
+    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
+      '$_base/unread-count',
+    );
     return (json['count'] as num?)?.toInt() ?? 0;
   }
 
   Future<AppNotification> markRead(String id) async {
-    final Map<String, dynamic> json =
-        await _api.patch<Map<String, dynamic>>('$_base/$id/read');
+    final Map<String, dynamic> json = await _api.patch<Map<String, dynamic>>(
+      '$_base/$id/read',
+    );
     return AppNotification.fromJson(json);
   }
 
   /// Returns how many rows actually changed.
   Future<int> markAllRead() async {
-    final Map<String, dynamic> json =
-        await _api.post<Map<String, dynamic>>('$_base/read-all');
+    final Map<String, dynamic> json = await _api.post<Map<String, dynamic>>(
+      '$_base/read-all',
+    );
     return (json['count'] as num?)?.toInt() ?? 0;
   }
 }

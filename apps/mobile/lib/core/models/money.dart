@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 /// which exists because a half-loaded price rendering as "KSh NaN" is worse
 /// than rendering as "KSh 0".
 String formatKes(num? amount, {bool withDecimals = false}) {
-  final num value = (amount == null || (amount is double && amount.isNaN)) ? 0 : amount;
+  final num value = (amount == null || (amount is double && amount.isNaN))
+      ? 0
+      : amount;
   final NumberFormat f = NumberFormat.currency(
     locale: 'en_KE',
     symbol: 'KSh ',

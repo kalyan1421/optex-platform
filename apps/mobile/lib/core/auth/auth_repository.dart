@@ -30,7 +30,10 @@ class AuthRepository {
 
   // ── Email / password ────────────────────────────────────────────────────
 
-  Future<AuthResult> login({required String email, required String password}) async {
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+  }) async {
     final Map<String, dynamic> json = await _api.post<Map<String, dynamic>>(
       '/auth/login',
       body: <String, dynamic>{'email': email.trim(), 'password': password},
@@ -57,10 +60,10 @@ class AuthRepository {
   }
 
   Future<void> requestPasswordReset(String email) => _api.post<dynamic>(
-        '/auth/forgot-password',
-        body: <String, dynamic>{'email': email.trim()},
-        auth: false,
-      );
+    '/auth/forgot-password',
+    body: <String, dynamic>{'email': email.trim()},
+    auth: false,
+  );
 
   // ── Session lifecycle ───────────────────────────────────────────────────
 
@@ -84,7 +87,9 @@ class AuthRepository {
   }
 
   Future<AuthUser> me() async {
-    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>('/auth/me');
+    final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
+      '/auth/me',
+    );
     return AuthUser.fromJson(json);
   }
 
@@ -126,7 +131,9 @@ class AuthRepository {
     if (!_googleInitialized) {
       await google.initialize(
         serverClientId: AppEnv.googleServerClientId,
-        clientId: AppEnv.googleIosClientId.isEmpty ? null : AppEnv.googleIosClientId,
+        clientId: AppEnv.googleIosClientId.isEmpty
+            ? null
+            : AppEnv.googleIosClientId,
       );
       _googleInitialized = true;
     }
@@ -206,12 +213,15 @@ class AuthRepository {
     // onto the profile immediately.
     final String? given = credential.givenName;
     final String? family = credential.familyName;
-    final String full = <String?>[given, family].whereType<String>().join(' ').trim();
+    final String full = <String?>[
+      given,
+      family,
+    ].whereType<String>().join(' ').trim();
     if (full.isNotEmpty) {
       try {
-        await _goTrue.updateUser(sb.UserAttributes(data: <String, dynamic>{
-          'full_name': full,
-        }));
+        await _goTrue.updateUser(
+          sb.UserAttributes(data: <String, dynamic>{'full_name': full}),
+        );
       } catch (_) {
         // Non-fatal: the account exists, it is just nameless.
       }
@@ -223,7 +233,9 @@ class AuthRepository {
   AuthSession _sessionFrom(sb.AuthResponse res, String provider) {
     final sb.Session? session = res.session;
     if (session == null) {
-      throw ApiException(message: '$provider sign-in did not return a session.');
+      throw ApiException(
+        message: '$provider sign-in did not return a session.',
+      );
     }
     return AuthSession(
       accessToken: session.accessToken,
@@ -236,6 +248,9 @@ class AuthRepository {
     const String chars =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
     final Random rng = Random.secure();
-    return List<String>.generate(length, (_) => chars[rng.nextInt(chars.length)]).join();
+    return List<String>.generate(
+      length,
+      (_) => chars[rng.nextInt(chars.length)],
+    ).join();
   }
 }

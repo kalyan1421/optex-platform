@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1040067238863",
+    "project_id": "optex-opticians",
+    "storage_bucket": "optex-opticians.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040067238863:android:62afd04f1f5ff40ccdd0ba",
+        "android_client_info": {
+          "package_name": "ke.co.optex.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRdQKBLwakWf4d6KAa5E_siJk0hgIHyr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

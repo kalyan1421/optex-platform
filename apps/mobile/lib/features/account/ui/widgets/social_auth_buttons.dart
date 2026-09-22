@@ -66,7 +66,9 @@ class _SocialAuthButtonsState extends ConsumerState<SocialAuthButtons> {
       // ones it knows about, and anything left is still not allowed to crash
       // the screen.
       if (mounted) {
-        setState(() => _error = 'Sign-in could not be completed. Please try again.');
+        setState(
+          () => _error = 'Sign-in could not be completed. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = null);
@@ -89,8 +91,9 @@ class _SocialAuthButtonsState extends ConsumerState<SocialAuthButtons> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'or continue with',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ),
             const Expanded(child: Divider()),
@@ -101,7 +104,9 @@ class _SocialAuthButtonsState extends ConsumerState<SocialAuthButtons> {
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -119,8 +124,9 @@ class _SocialAuthButtonsState extends ConsumerState<SocialAuthButtons> {
             'Google sign-in is not available in this build yet. '
             'Use your email and password for now.',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
           ),
         ],
         if (_showApple) ...<Widget>[

@@ -8,40 +8,43 @@ import '../domain/product.dart';
 import '../domain/promo_banner.dart';
 
 /// The catalog slice's single dependency on core: the shared `ApiClient`.
-final Provider<CatalogRepository> catalogRepositoryProvider = Provider<CatalogRepository>(
-  (Ref ref) => CatalogRepository(ref.watch(apiClientProvider)),
-);
+final Provider<CatalogRepository> catalogRepositoryProvider =
+    Provider<CatalogRepository>(
+      (Ref ref) => CatalogRepository(ref.watch(apiClientProvider)),
+    );
 
 /// `GET /categories`. Cached for the session — categories change about as
 /// often as the shop fascia does, and the home screen, the shop filter sheet
 /// and the category screen all want the same list.
-final FutureProvider<List<Category>> categoriesProvider = FutureProvider<List<Category>>(
-  (Ref ref) => ref.watch(catalogRepositoryProvider).categories(),
-);
+final FutureProvider<List<Category>> categoriesProvider =
+    FutureProvider<List<Category>>(
+      (Ref ref) => ref.watch(catalogRepositoryProvider).categories(),
+    );
 
 /// `GET /banners`.
-final FutureProvider<List<PromoBanner>> activeBannersProvider = FutureProvider<List<PromoBanner>>(
-  (Ref ref) => ref.watch(catalogRepositoryProvider).activeBanners(),
-);
+final FutureProvider<List<PromoBanner>> activeBannersProvider =
+    FutureProvider<List<PromoBanner>>(
+      (Ref ref) => ref.watch(catalogRepositoryProvider).activeBanners(),
+    );
 
 /// Homepage "Featured Products" — the curated eight (migration `0041`).
-final FutureProvider<List<Product>> featuredProductsProvider = FutureProvider<List<Product>>(
-  (Ref ref) async {
-    final Paginated<Product> page =
-        await ref.watch(catalogRepositoryProvider).listProducts(featured: true, limit: 8);
-    return page.items;
-  },
-);
+final FutureProvider<List<Product>> featuredProductsProvider =
+    FutureProvider<List<Product>>((Ref ref) async {
+      final Paginated<Product> page = await ref
+          .watch(catalogRepositoryProvider)
+          .listProducts(featured: true, limit: 8);
+      return page.items;
+    });
 
 /// Homepage "Trending Now" — the curated four. Same counts as the storefront
 /// sections these mirror.
-final FutureProvider<List<Product>> trendingProductsProvider = FutureProvider<List<Product>>(
-  (Ref ref) async {
-    final Paginated<Product> page =
-        await ref.watch(catalogRepositoryProvider).listProducts(trending: true, limit: 4);
-    return page.items;
-  },
-);
+final FutureProvider<List<Product>> trendingProductsProvider =
+    FutureProvider<List<Product>>((Ref ref) async {
+      final Paginated<Product> page = await ref
+          .watch(catalogRepositoryProvider)
+          .listProducts(trending: true, limit: 4);
+      return page.items;
+    });
 
 /// `GET /products/:slug`. Auto-disposed: one entry per product the user opens
 /// would otherwise accumulate for the life of the session.
@@ -49,20 +52,23 @@ final FutureProvider<List<Product>> trendingProductsProvider = FutureProvider<Li
 // (they are annotated `@publicInMisc`), so family providers are declared with
 // an inferred type rather than an explicit annotation.
 final productBySlugProvider = FutureProvider.family<Product, String>(
-  (Ref ref, String slug) => ref.watch(catalogRepositoryProvider).productBySlug(slug),
+  (Ref ref, String slug) =>
+      ref.watch(catalogRepositoryProvider).productBySlug(slug),
   isAutoDispose: true,
 );
 
 /// `GET /products/:id/related`. Keyed by product **id** — the route parses a
 /// UUID and rejects a slug.
 final relatedProductsProvider = FutureProvider.family<List<Product>, String>(
-  (Ref ref, String productId) => ref.watch(catalogRepositoryProvider).relatedProducts(productId),
+  (Ref ref, String productId) =>
+      ref.watch(catalogRepositoryProvider).relatedProducts(productId),
   isAutoDispose: true,
 );
 
 /// `GET /categories/:slug`.
 final categoryBySlugProvider = FutureProvider.family<Category, String>(
-  (Ref ref, String slug) => ref.watch(catalogRepositoryProvider).categoryBySlug(slug),
+  (Ref ref, String slug) =>
+      ref.watch(catalogRepositoryProvider).categoryBySlug(slug),
   isAutoDispose: true,
 );
 
@@ -119,21 +125,21 @@ class CatalogFacets {
 /// Maximum `limit` the API accepts (`ProductQueryDto`).
 const int _facetSampleSize = 100;
 
-final FutureProvider<CatalogFacets> catalogFacetsProvider = FutureProvider<CatalogFacets>(
-  (Ref ref) async {
-    final Paginated<Product> page =
-        await ref.watch(catalogRepositoryProvider).listProducts(limit: _facetSampleSize);
+final FutureProvider<CatalogFacets> catalogFacetsProvider =
+    FutureProvider<CatalogFacets>((Ref ref) async {
+      final Paginated<Product> page = await ref
+          .watch(catalogRepositoryProvider)
+          .listProducts(limit: _facetSampleSize);
 
-    return CatalogFacets(
-      brands: _distinct(page.items.map((Product p) => p.brand)),
-      shapes: _distinct(page.items.map((Product p) => p.frameShape)),
-      genders: _distinct(page.items.map((Product p) => p.gender)),
-      materials: _distinct(page.items.map((Product p) => p.frameMaterial)),
-      sampleSize: page.items.length,
-      catalogueTotal: page.total,
-    );
-  },
-);
+      return CatalogFacets(
+        brands: _distinct(page.items.map((Product p) => p.brand)),
+        shapes: _distinct(page.items.map((Product p) => p.frameShape)),
+        genders: _distinct(page.items.map((Product p) => p.gender)),
+        materials: _distinct(page.items.map((Product p) => p.frameMaterial)),
+        sampleSize: page.items.length,
+        catalogueTotal: page.total,
+      );
+    });
 
 /// Distinct, sorted values, grouped case-insensitively.
 ///

@@ -29,40 +29,45 @@ String humanizeStatus(String raw) {
 /// orders even though checkout no longer offers it (CLIENT-ANSWERS E6), so it
 /// has to render properly too.
 String paymentMethodLabel(String? method) => switch (method) {
-      null => 'Not recorded',
-      'mpesa' => 'M-Pesa',
-      'pesapal' => 'Pesapal (card)',
-      'cod' => 'Cash on delivery',
-      final String other => humanizeStatus(other),
-    };
+  null => 'Not recorded',
+  'mpesa' => 'M-Pesa',
+  'pesapal' => 'Pesapal (card)',
+  'cod' => 'Cash on delivery',
+  final String other => humanizeStatus(other),
+};
 
 String formatOrderDate(DateTime? when) =>
     when == null ? 'Date unavailable' : DateFormat('d MMM y').format(when);
 
-String formatOrderDateTime(DateTime? when) =>
-    when == null ? 'Date unavailable' : DateFormat('d MMM y, HH:mm').format(when);
+String formatOrderDateTime(DateTime? when) => when == null
+    ? 'Date unavailable'
+    : DateFormat('d MMM y, HH:mm').format(when);
 
 /// Colour + icon for an `order_status` value.
-({Color color, IconData icon}) orderStatusStyle(String status, ColorScheme scheme) =>
-    switch (status) {
-      'pending_payment' => (color: AppColors.warning, icon: Icons.schedule_rounded),
-      'received' => (color: AppColors.info, icon: Icons.inventory_2_outlined),
-      'processing' => (color: AppColors.info, icon: Icons.autorenew_rounded),
-      'dispatched' => (color: scheme.primary, icon: Icons.local_shipping_outlined),
-      'delivered' => (color: AppColors.success, icon: Icons.task_alt_rounded),
-      'cancelled' => (color: AppColors.danger, icon: Icons.cancel_outlined),
-      _ => (color: scheme.outline, icon: Icons.help_outline_rounded),
-    };
+({Color color, IconData icon}) orderStatusStyle(
+  String status,
+  ColorScheme scheme,
+) => switch (status) {
+  'pending_payment' => (color: AppColors.warning, icon: Icons.schedule_rounded),
+  'received' => (color: AppColors.info, icon: Icons.inventory_2_outlined),
+  'processing' => (color: AppColors.info, icon: Icons.autorenew_rounded),
+  'dispatched' => (color: scheme.primary, icon: Icons.local_shipping_outlined),
+  'delivered' => (color: AppColors.success, icon: Icons.task_alt_rounded),
+  'cancelled' => (color: AppColors.danger, icon: Icons.cancel_outlined),
+  _ => (color: scheme.outline, icon: Icons.help_outline_rounded),
+};
 
 /// Colour + icon for a `payment_status` value.
-({Color color, IconData icon}) paymentStatusStyle(String status, ColorScheme scheme) =>
-    switch (status) {
-      'paid' => (color: AppColors.success, icon: Icons.verified_outlined),
-      'pending' => (color: AppColors.warning, icon: Icons.schedule_rounded),
-      'failed' => (color: AppColors.danger, icon: Icons.error_outline_rounded),
-      'refunded' => (color: AppColors.info, icon: Icons.undo_rounded),
-      _ => (color: scheme.outline, icon: Icons.help_outline_rounded),
-    };
+({Color color, IconData icon}) paymentStatusStyle(
+  String status,
+  ColorScheme scheme,
+) => switch (status) {
+  'paid' => (color: AppColors.success, icon: Icons.verified_outlined),
+  'pending' => (color: AppColors.warning, icon: Icons.schedule_rounded),
+  'failed' => (color: AppColors.danger, icon: Icons.error_outline_rounded),
+  'refunded' => (color: AppColors.info, icon: Icons.undo_rounded),
+  _ => (color: scheme.outline, icon: Icons.help_outline_rounded),
+};
 
 /// A small tinted pill. Kept flat and bordered rather than filled so several
 /// can sit side by side without shouting over the order number.
@@ -82,10 +87,11 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? style = (dense
-            ? Theme.of(context).textTheme.labelSmall
-            : Theme.of(context).textTheme.labelMedium)
-        ?.copyWith(color: color, fontWeight: FontWeight.w600);
+    final TextStyle? style =
+        (dense
+                ? Theme.of(context).textTheme.labelSmall
+                : Theme.of(context).textTheme.labelMedium)
+            ?.copyWith(color: color, fontWeight: FontWeight.w600);
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -120,8 +126,10 @@ class OrderStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ({Color color, IconData icon}) style =
-        orderStatusStyle(status, Theme.of(context).colorScheme);
+    final ({Color color, IconData icon}) style = orderStatusStyle(
+      status,
+      Theme.of(context).colorScheme,
+    );
     return StatusChip(
       label: humanizeStatus(status),
       color: style.color,
@@ -133,15 +141,21 @@ class OrderStatusChip extends StatelessWidget {
 
 /// Chip for the order's payment status.
 class PaymentStatusChip extends StatelessWidget {
-  const PaymentStatusChip({super.key, required this.paymentStatus, this.dense = false});
+  const PaymentStatusChip({
+    super.key,
+    required this.paymentStatus,
+    this.dense = false,
+  });
 
   final String paymentStatus;
   final bool dense;
 
   @override
   Widget build(BuildContext context) {
-    final ({Color color, IconData icon}) style =
-        paymentStatusStyle(paymentStatus, Theme.of(context).colorScheme);
+    final ({Color color, IconData icon}) style = paymentStatusStyle(
+      paymentStatus,
+      Theme.of(context).colorScheme,
+    );
     return StatusChip(
       label: 'Payment: ${humanizeStatus(paymentStatus).toLowerCase()}',
       color: style.color,
@@ -185,7 +199,9 @@ class SectionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 ?trailing,
@@ -220,13 +236,18 @@ class DetailRow extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final TextStyle? labelStyle = emphasised
         ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
-        : theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline);
+        : theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.outline,
+          );
     final TextStyle? valueStyle = emphasised
         ? theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: valueColor ?? theme.colorScheme.primary,
           )
-        : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: valueColor);
+        : theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          );
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -294,7 +315,9 @@ class ProductThumb extends StatelessWidget {
                           child: SizedBox(
                             width: size * 0.3,
                             height: size * 0.3,
-                            child: const CircularProgressIndicator(strokeWidth: 2),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
                           ),
                         ),
                         errorWidget: (BuildContext c, String _, Object _) =>

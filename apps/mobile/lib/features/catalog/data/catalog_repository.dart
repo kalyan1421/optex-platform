@@ -41,7 +41,10 @@ class CatalogRepository {
     bool featured = false,
     bool trending = false,
   }) async {
-    final Map<String, dynamic> query = filters.toQuery(page: page, limit: limit);
+    final Map<String, dynamic> query = filters.toQuery(
+      page: page,
+      limit: limit,
+    );
     if (featured) query['featured'] = true;
     if (trending) query['trending'] = true;
 
@@ -60,8 +63,9 @@ class CatalogRepository {
     int limit = defaultPageSize,
   }) async {
     final String trimmed = term.trim();
-    final String q =
-        trimmed.length > maxSearchLength ? trimmed.substring(0, maxSearchLength) : trimmed;
+    final String q = trimmed.length > maxSearchLength
+        ? trimmed.substring(0, maxSearchLength)
+        : trimmed;
 
     final Map<String, dynamic> json = await _api.get<Map<String, dynamic>>(
       '/products/search',
@@ -94,7 +98,10 @@ class CatalogRepository {
 
   /// `GET /categories`, already ordered by `sort_order`.
   Future<List<Category>> categories() async {
-    final List<dynamic> json = await _api.get<List<dynamic>>('/categories', auth: false);
+    final List<dynamic> json = await _api.get<List<dynamic>>(
+      '/categories',
+      auth: false,
+    );
     return asObjectList(json).map(Category.fromJson).toList(growable: false);
   }
 
@@ -109,7 +116,10 @@ class CatalogRepository {
 
   /// `GET /banners` — active banners inside their date window, sorted.
   Future<List<PromoBanner>> activeBanners() async {
-    final List<dynamic> json = await _api.get<List<dynamic>>('/banners', auth: false);
+    final List<dynamic> json = await _api.get<List<dynamic>>(
+      '/banners',
+      auth: false,
+    );
     return asObjectList(json).map(PromoBanner.fromJson).toList(growable: false);
   }
 }

@@ -48,17 +48,17 @@ class Address {
   }
 
   factory Address.fromJson(Map<String, dynamic> json) => Address(
-        id: json['id'] as String,
-        customerId: json['customer_id'] as String? ?? '',
-        label: json['label'] as String?,
-        name: json['name'] as String? ?? '',
-        phone: json['phone'] as String? ?? '',
-        address: json['address'] as String? ?? '',
-        city: json['city'] as String? ?? '',
-        county: json['county'] as String? ?? '',
-        postal: json['postal'] as String?,
-        isDefault: json['is_default'] as bool? ?? false,
-      );
+    id: json['id'] as String,
+    customerId: json['customer_id'] as String? ?? '',
+    label: json['label'] as String?,
+    name: json['name'] as String? ?? '',
+    phone: json['phone'] as String? ?? '',
+    address: json['address'] as String? ?? '',
+    city: json['city'] as String? ?? '',
+    county: json['county'] as String? ?? '',
+    postal: json['postal'] as String?,
+    isDefault: json['is_default'] as bool? ?? false,
+  );
 }
 
 /// Body for `POST /addresses` and `PATCH /addresses/:id`.
@@ -92,15 +92,15 @@ class AddressInput {
   /// `@IsOptional()` skips validation on null and the service writes it
   /// through, whereas omitting the key leaves the old value in place.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'label': _orNull(label),
-        'name': name.trim(),
-        'phone': phone.trim(),
-        'address': address.trim(),
-        'city': city.trim(),
-        'county': county.trim(),
-        'postal': _orNull(postal),
-        'isDefault': isDefault,
-      };
+    'label': _orNull(label),
+    'name': name.trim(),
+    'phone': phone.trim(),
+    'address': address.trim(),
+    'city': city.trim(),
+    'county': county.trim(),
+    'postal': _orNull(postal),
+    'isDefault': isDefault,
+  };
 
   static String? _orNull(String? value) {
     final String? v = value?.trim();
@@ -108,13 +108,13 @@ class AddressInput {
   }
 
   factory AddressInput.from(Address a) => AddressInput(
-        label: a.label,
-        name: a.name,
-        phone: a.phone,
-        address: a.address,
-        city: a.city,
-        county: a.county,
-        postal: a.postal,
-        isDefault: a.isDefault,
-      );
+    label: a.label,
+    name: a.name,
+    phone: a.phone,
+    address: a.address,
+    city: a.city,
+    county: a.county,
+    postal: a.postal,
+    isDefault: a.isDefault,
+  );
 }

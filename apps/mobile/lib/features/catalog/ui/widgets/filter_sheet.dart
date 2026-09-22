@@ -23,10 +23,8 @@ Future<ProductFilters?> showProductFilterSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (BuildContext context) => _FilterSheet(
-      initial: initial,
-      lockedCategorySlug: lockedCategorySlug,
-    ),
+    builder: (BuildContext context) =>
+        _FilterSheet(initial: initial, lockedCategorySlug: lockedCategorySlug),
   );
 }
 
@@ -53,80 +51,89 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
       expand: false,
       initialChildSize: 0.75,
       maxChildSize: 0.95,
-      builder: (BuildContext context, ScrollController scrollController) => Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    CatalogStrings.filters,
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      builder: (BuildContext context, ScrollController scrollController) =>
+          Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        CatalogStrings.filters,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(
+                        () => _draft = _draft.cleared(
+                          keepCategorySlug: widget.lockedCategorySlug,
+                        ),
+                      ),
+                      child: const Text(CatalogStrings.clearAll),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                  ),
+                  children: <Widget>[
+                    if (widget.lockedCategorySlug == null)
+                      _CategoryFacet(
+                        categories: categories,
+                        selectedSlug: _draft.categorySlug,
+                        onSelected: (String? slug) => setState(
+                          () => _draft = _draft.copyWith(categorySlug: slug),
+                        ),
+                        onRetry: () => ref.invalidate(categoriesProvider),
+                      ),
+                    _FacetBlock<PriceBand>(
+                      title: CatalogStrings.filterPrice,
+                      options: PriceBand.all,
+                      labelOf: (PriceBand b) => b.label,
+                      isSelected: (PriceBand b) =>
+                          _draft.priceBand.label == b.label,
+                      onSelected: (PriceBand b) =>
+                          setState(() => _draft = _draft.withPriceBand(b)),
+                    ),
+                    ..._stringFacets(facets),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      CatalogStrings.facetSampleNote,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(_draft),
+                    child: const Text(CatalogStrings.apply),
                   ),
                 ),
-                TextButton(
-                  onPressed: () => setState(
-                    () => _draft = _draft.cleared(keepCategorySlug: widget.lockedCategorySlug),
-                  ),
-                  child: const Text(CatalogStrings.clearAll),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.lg,
               ),
-              children: <Widget>[
-                if (widget.lockedCategorySlug == null)
-                  _CategoryFacet(
-                    categories: categories,
-                    selectedSlug: _draft.categorySlug,
-                    onSelected: (String? slug) =>
-                        setState(() => _draft = _draft.copyWith(categorySlug: slug)),
-                    onRetry: () => ref.invalidate(categoriesProvider),
-                  ),
-                _FacetBlock<PriceBand>(
-                  title: CatalogStrings.filterPrice,
-                  options: PriceBand.all,
-                  labelOf: (PriceBand b) => b.label,
-                  isSelected: (PriceBand b) => _draft.priceBand.label == b.label,
-                  onSelected: (PriceBand b) =>
-                      setState(() => _draft = _draft.withPriceBand(b)),
-                ),
-                ..._stringFacets(facets),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  CatalogStrings.facetSampleNote,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
-                ),
-              ],
-            ),
+            ],
           ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(_draft),
-                child: const Text(CatalogStrings.apply),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -136,9 +143,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
   /// rule.
   List<Widget> _stringFacets(AsyncValue<CatalogFacets> facets) {
     return facets.when(
-      loading: () => const <Widget>[
-        SizedBox(height: 96, child: AppLoading()),
-      ],
+      loading: () => const <Widget>[SizedBox(height: 96, child: AppLoading())],
       error: (Object error, StackTrace _) => <Widget>[
         SizedBox(
           height: 140,
@@ -156,9 +161,11 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             labelOf: (String v) => v,
             isSelected: (String v) => _draft.brand == v,
             onSelected: (String v) => setState(
-              () => _draft = _draft.copyWith(brand: _draft.brand == v ? null : v),
+              () =>
+                  _draft = _draft.copyWith(brand: _draft.brand == v ? null : v),
             ),
-            onCleared: () => setState(() => _draft = _draft.copyWith(brand: null)),
+            onCleared: () =>
+                setState(() => _draft = _draft.copyWith(brand: null)),
             isAny: _draft.brand == null,
           ),
         if (data.shapes.isNotEmpty)
@@ -168,9 +175,11 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             labelOf: (String v) => v,
             isSelected: (String v) => _draft.shape == v,
             onSelected: (String v) => setState(
-              () => _draft = _draft.copyWith(shape: _draft.shape == v ? null : v),
+              () =>
+                  _draft = _draft.copyWith(shape: _draft.shape == v ? null : v),
             ),
-            onCleared: () => setState(() => _draft = _draft.copyWith(shape: null)),
+            onCleared: () =>
+                setState(() => _draft = _draft.copyWith(shape: null)),
             isAny: _draft.shape == null,
           ),
         if (data.genders.isNotEmpty)
@@ -180,9 +189,12 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             labelOf: (String v) => v,
             isSelected: (String v) => _draft.gender == v,
             onSelected: (String v) => setState(
-              () => _draft = _draft.copyWith(gender: _draft.gender == v ? null : v),
+              () => _draft = _draft.copyWith(
+                gender: _draft.gender == v ? null : v,
+              ),
             ),
-            onCleared: () => setState(() => _draft = _draft.copyWith(gender: null)),
+            onCleared: () =>
+                setState(() => _draft = _draft.copyWith(gender: null)),
             isAny: _draft.gender == null,
           ),
         if (data.materials.isNotEmpty)
@@ -192,9 +204,12 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             labelOf: (String v) => v,
             isSelected: (String v) => _draft.material == v,
             onSelected: (String v) => setState(
-              () => _draft = _draft.copyWith(material: _draft.material == v ? null : v),
+              () => _draft = _draft.copyWith(
+                material: _draft.material == v ? null : v,
+              ),
             ),
-            onCleared: () => setState(() => _draft = _draft.copyWith(material: null)),
+            onCleared: () =>
+                setState(() => _draft = _draft.copyWith(material: null)),
             isAny: _draft.material == null,
           ),
       ],
@@ -219,8 +234,10 @@ class _CategoryFacet extends StatelessWidget {
   Widget build(BuildContext context) {
     return categories.when(
       loading: () => const SizedBox(height: 96, child: AppLoading()),
-      error: (Object error, StackTrace _) =>
-          SizedBox(height: 140, child: AppErrorView(error: error, onRetry: onRetry)),
+      error: (Object error, StackTrace _) => SizedBox(
+        height: 140,
+        child: AppErrorView(error: error, onRetry: onRetry),
+      ),
       data: (List<Category> data) {
         if (data.isEmpty) return const SizedBox.shrink();
         return _FacetBlock<Category>(
@@ -228,7 +245,8 @@ class _CategoryFacet extends StatelessWidget {
           options: data,
           labelOf: (Category c) => c.name,
           isSelected: (Category c) => selectedSlug == c.slug,
-          onSelected: (Category c) => onSelected(selectedSlug == c.slug ? null : c.slug),
+          onSelected: (Category c) =>
+              onSelected(selectedSlug == c.slug ? null : c.slug),
           onCleared: () => onSelected(null),
           isAny: selectedSlug == null,
         );
@@ -270,7 +288,12 @@ class _FacetBlock<T> extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,

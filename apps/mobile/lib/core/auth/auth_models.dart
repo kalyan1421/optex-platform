@@ -28,23 +28,26 @@ class AuthUser {
   /// A display name that never renders as "null". Falls back to the local part
   /// of the email, then to a neutral label.
   String get displayName {
-    if (fullName != null && fullName!.trim().isNotEmpty) return fullName!.trim();
+    if (fullName != null && fullName!.trim().isNotEmpty) {
+      return fullName!.trim();
+    }
     final String? mail = email;
     if (mail != null && mail.contains('@')) return mail.split('@').first;
     return 'There';
   }
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
-        id: json['id'] as String,
-        email: json['email'] as String?,
-        fullName: json['fullName'] as String?,
-        role: json['role'] as String?,
-        branchId: json['branchId'] as String?,
-        permissions: (json['permissions'] as List<dynamic>?)
-                ?.map((dynamic e) => e.toString())
-                .toList() ??
-            const <String>[],
-      );
+    id: json['id'] as String,
+    email: json['email'] as String?,
+    fullName: json['fullName'] as String?,
+    role: json['role'] as String?,
+    branchId: json['branchId'] as String?,
+    permissions:
+        (json['permissions'] as List<dynamic>?)
+            ?.map((dynamic e) => e.toString())
+            .toList() ??
+        const <String>[],
+  );
 }
 
 /// Mirrors `SessionView`.
@@ -60,10 +63,10 @@ class AuthSession {
   final int expiresIn;
 
   factory AuthSession.fromJson(Map<String, dynamic> json) => AuthSession(
-        accessToken: json['accessToken'] as String,
-        refreshToken: json['refreshToken'] as String,
-        expiresIn: (json['expiresIn'] as num?)?.toInt() ?? 3600,
-      );
+    accessToken: json['accessToken'] as String,
+    refreshToken: json['refreshToken'] as String,
+    expiresIn: (json['expiresIn'] as num?)?.toInt() ?? 3600,
+  );
 }
 
 /// Mirrors `AuthResult`.
@@ -79,9 +82,9 @@ class AuthResult {
   bool get needsEmailConfirmation => session == null;
 
   factory AuthResult.fromJson(Map<String, dynamic> json) => AuthResult(
-        user: AuthUser.fromJson(json['user'] as Map<String, dynamic>),
-        session: json['session'] == null
-            ? null
-            : AuthSession.fromJson(json['session'] as Map<String, dynamic>),
-      );
+    user: AuthUser.fromJson(json['user'] as Map<String, dynamic>),
+    session: json['session'] == null
+        ? null
+        : AuthSession.fromJson(json['session'] as Map<String, dynamic>),
+  );
 }

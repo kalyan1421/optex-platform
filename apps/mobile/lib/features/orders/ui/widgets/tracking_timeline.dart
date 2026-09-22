@@ -11,7 +11,11 @@ import '../../domain/order_tracking.dart';
 /// (SPEC-06 / SPEC-11 P0-5) and this widget is its renderer. Add a stage
 /// server-side and it appears here with no app release.
 class TrackingTimeline extends StatelessWidget {
-  const TrackingTimeline({super.key, required this.stages, this.dimmed = false});
+  const TrackingTimeline({
+    super.key,
+    required this.stages,
+    this.dimmed = false,
+  });
 
   final List<TrackingStage> stages;
 
@@ -26,7 +30,9 @@ class TrackingTimeline extends StatelessWidget {
     if (stages.isEmpty) {
       return Text(
         'No tracking stages were returned for this order.',
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.outline,
+        ),
       );
     }
 
@@ -40,7 +46,8 @@ class TrackingTimeline extends StatelessWidget {
             isLast: i == stages.length - 1,
             // The connector below a node belongs to the stage that has been
             // passed, so it only fills once the NEXT stage is reached too.
-            connectorFilled: !dimmed &&
+            connectorFilled:
+                !dimmed &&
                 i < stages.length - 1 &&
                 stages[i].completed &&
                 stages[i + 1].completed,
@@ -90,7 +97,11 @@ class _TimelineRow extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: reached
-                    ? Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.onPrimary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onPrimary,
+                      )
                     : Text(
                         '$position',
                         style: theme.textTheme.labelSmall?.copyWith(

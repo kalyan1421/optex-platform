@@ -31,7 +31,8 @@ class VersionGateRepository {
   /// service.
   static const Duration minimumFetchInterval = Duration(hours: 1);
 
-  static const String _lastSoftPromptKey = 'optex.version_gate.last_soft_prompt';
+  static const String _lastSoftPromptKey =
+      'optex.version_gate.last_soft_prompt';
   static const String _lastCheckKey = 'optex.version_gate.last_check';
 
   /// P0-14: the dismissible prompt is shown at most once per 72h.
@@ -43,8 +44,10 @@ class VersionGateRepository {
       final PackageInfo info = await PackageInfo.fromPlatform();
       return SemanticVersion.tryParse(info.version);
     } catch (error) {
-      developer.log('Could not read installed version: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Could not read installed version: $error',
+        name: 'optex.engagement',
+      );
       return null;
     }
   }
@@ -76,7 +79,9 @@ class VersionGateRepository {
       // Belt and braces: `fetchTimeout` is honoured by the SDK, but a wedged
       // platform channel would not be, and a version check must never be the
       // reason a customer waits.
-      await remote.fetchAndActivate().timeout(fetchTimeout + const Duration(seconds: 2));
+      await remote.fetchAndActivate().timeout(
+        fetchTimeout + const Duration(seconds: 2),
+      );
 
       return VersionGateConfig(
         minSupportedVersion: SemanticVersion.tryParse(
@@ -117,7 +122,9 @@ class VersionGateRepository {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final int? millis = prefs.getInt(key);
-      return millis == null ? null : DateTime.fromMillisecondsSinceEpoch(millis);
+      return millis == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(millis);
     } catch (_) {
       return null;
     }

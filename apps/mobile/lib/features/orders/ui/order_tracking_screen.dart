@@ -39,7 +39,9 @@ class OrderTrackingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<OrderTracking> async = ref.watch(orderTrackingProvider(orderId));
+    final AsyncValue<OrderTracking> async = ref.watch(
+      orderTrackingProvider(orderId),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -90,8 +92,9 @@ class _Body extends StatelessWidget {
               children: <Widget>[
                 Text(
                   tracking.orderNumber.isEmpty ? 'Order' : tracking.orderNumber,
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
@@ -113,7 +116,8 @@ class _Body extends StatelessWidget {
             color: AppColors.danger,
             icon: Icons.cancel_outlined,
             title: 'Order cancelled',
-            body: 'This order was cancelled, so no delivery stages apply. '
+            body:
+                'This order was cancelled, so no delivery stages apply. '
                 'Please contact your branch if you have questions.',
           ),
           const SizedBox(height: AppSpacing.md),
@@ -125,7 +129,8 @@ class _Body extends StatelessWidget {
             color: AppColors.warning,
             icon: Icons.schedule_rounded,
             title: 'Not started yet',
-            body: 'This order is at "${humanizeStatus(tracking.status)}". '
+            body:
+                'This order is at "${humanizeStatus(tracking.status)}". '
                 'The stages below light up once Optex has it in hand.',
           ),
           const SizedBox(height: AppSpacing.md),
@@ -190,8 +195,10 @@ class _Banner extends StatelessWidget {
               children: <Widget>[
                 Text(
                   title,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700, color: color),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(body, style: theme.textTheme.bodyMedium),

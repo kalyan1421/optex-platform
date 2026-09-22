@@ -28,10 +28,7 @@ Future<void> main() async {
   await bootstrapAuth(container);
 
   runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const OptexApp(),
-    ),
+    UncontrolledProviderScope(container: container, child: const OptexApp()),
   );
 }
 

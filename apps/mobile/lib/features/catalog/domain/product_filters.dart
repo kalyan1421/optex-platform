@@ -18,11 +18,11 @@ enum ProductSortOption {
   final String apiValue;
 
   String get label => switch (this) {
-        ProductSortOption.newest => CatalogStrings.sortNewest,
-        ProductSortOption.priceAsc => CatalogStrings.sortPriceAsc,
-        ProductSortOption.priceDesc => CatalogStrings.sortPriceDesc,
-        ProductSortOption.featured => CatalogStrings.sortFeatured,
-      };
+    ProductSortOption.newest => CatalogStrings.sortNewest,
+    ProductSortOption.priceAsc => CatalogStrings.sortPriceAsc,
+    ProductSortOption.priceDesc => CatalogStrings.sortPriceDesc,
+    ProductSortOption.featured => CatalogStrings.sortFeatured,
+  };
 }
 
 /// A selectable price range, expressed as the `minPrice` / `maxPrice` query
@@ -47,17 +47,25 @@ class PriceBand {
   static const List<PriceBand> all = <PriceBand>[
     any,
     PriceBand(label: CatalogStrings.priceUnder10k, maxPrice: 9999),
-    PriceBand(label: CatalogStrings.price10kTo20k, minPrice: 10000, maxPrice: 19999),
-    PriceBand(label: CatalogStrings.price20kTo30k, minPrice: 20000, maxPrice: 29999),
+    PriceBand(
+      label: CatalogStrings.price10kTo20k,
+      minPrice: 10000,
+      maxPrice: 19999,
+    ),
+    PriceBand(
+      label: CatalogStrings.price20kTo30k,
+      minPrice: 20000,
+      maxPrice: 29999,
+    ),
     PriceBand(label: CatalogStrings.priceOver30k, minPrice: 30000),
   ];
 
   /// The band matching a min/max pair, so a restored filter set highlights
   /// the right row.
   static PriceBand resolve(num? min, num? max) => all.firstWhere(
-        (PriceBand b) => b.minPrice == min && b.maxPrice == max,
-        orElse: () => any,
-      );
+    (PriceBand b) => b.minPrice == min && b.maxPrice == max,
+    orElse: () => any,
+  );
 }
 
 /// Every filter the app sends to `GET /products`.
@@ -94,18 +102,19 @@ class ProductFilters {
   /// How many filters are narrowing the list. Sort is not a filter, and a
   /// category the screen has locked is counted by the caller, not here.
   int get activeCount => <Object?>[
-        categorySlug,
-        brand,
-        shape,
-        gender,
-        material,
-        minPrice ?? maxPrice,
-      ].where((Object? v) => v != null).length;
+    categorySlug,
+    brand,
+    shape,
+    gender,
+    material,
+    minPrice ?? maxPrice,
+  ].where((Object? v) => v != null).length;
 
   /// Query parameters for one page. Null values are dropped by `ApiClient`,
   /// so an unset filter is genuinely absent rather than an empty string —
   /// which the API would reject as present-but-invalid.
-  Map<String, dynamic> toQuery({required int page, required int limit}) => <String, dynamic>{
+  Map<String, dynamic> toQuery({required int page, required int limit}) =>
+      <String, dynamic>{
         'page': page,
         'limit': limit,
         'category': categorySlug,
@@ -127,22 +136,21 @@ class ProductFilters {
     Object? minPrice = _unset,
     Object? maxPrice = _unset,
     ProductSortOption? sort,
-  }) =>
-      ProductFilters(
-        categorySlug: identical(categorySlug, _unset) ? this.categorySlug : categorySlug as String?,
-        brand: identical(brand, _unset) ? this.brand : brand as String?,
-        shape: identical(shape, _unset) ? this.shape : shape as String?,
-        gender: identical(gender, _unset) ? this.gender : gender as String?,
-        material: identical(material, _unset) ? this.material : material as String?,
-        minPrice: identical(minPrice, _unset) ? this.minPrice : minPrice as num?,
-        maxPrice: identical(maxPrice, _unset) ? this.maxPrice : maxPrice as num?,
-        sort: sort ?? this.sort,
-      );
+  }) => ProductFilters(
+    categorySlug: identical(categorySlug, _unset)
+        ? this.categorySlug
+        : categorySlug as String?,
+    brand: identical(brand, _unset) ? this.brand : brand as String?,
+    shape: identical(shape, _unset) ? this.shape : shape as String?,
+    gender: identical(gender, _unset) ? this.gender : gender as String?,
+    material: identical(material, _unset) ? this.material : material as String?,
+    minPrice: identical(minPrice, _unset) ? this.minPrice : minPrice as num?,
+    maxPrice: identical(maxPrice, _unset) ? this.maxPrice : maxPrice as num?,
+    sort: sort ?? this.sort,
+  );
 
-  ProductFilters withPriceBand(PriceBand band) => copyWith(
-        minPrice: band.minPrice,
-        maxPrice: band.maxPrice,
-      );
+  ProductFilters withPriceBand(PriceBand band) =>
+      copyWith(minPrice: band.minPrice, maxPrice: band.maxPrice);
 
   /// Clears every filter but keeps the sort and any locked category.
   ProductFilters cleared({String? keepCategorySlug}) =>
@@ -165,6 +173,14 @@ class ProductFilters {
       other.sort == sort;
 
   @override
-  int get hashCode =>
-      Object.hash(categorySlug, brand, shape, gender, material, minPrice, maxPrice, sort);
+  int get hashCode => Object.hash(
+    categorySlug,
+    brand,
+    shape,
+    gender,
+    material,
+    minPrice,
+    maxPrice,
+    sort,
+  );
 }

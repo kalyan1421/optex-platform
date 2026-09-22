@@ -24,13 +24,18 @@ class CategoryShortcuts extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       itemCount: categories.length,
-      separatorBuilder: (BuildContext context, int index) => const SizedBox(width: AppSpacing.sm),
+      separatorBuilder: (BuildContext context, int index) =>
+          const SizedBox(width: AppSpacing.sm),
       itemBuilder: (BuildContext context, int index) {
         final Category category = categories[index];
         return Center(
           child: ActionChip(
             label: Text(category.name),
-            avatar: Icon(Icons.visibility_outlined, size: 18, color: theme.colorScheme.primary),
+            avatar: Icon(
+              Icons.visibility_outlined,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
             onPressed: () => context.push(Routes.categoryOf(category.slug)),
           ),
         );

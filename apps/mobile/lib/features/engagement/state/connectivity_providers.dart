@@ -52,8 +52,10 @@ class ConnectivityController extends Notifier<ConnectivityStatus> {
     try {
       _apply(await connectivity.checkConnectivity());
     } catch (error) {
-      developer.log('Initial connectivity check failed: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Initial connectivity check failed: $error',
+        name: 'optex.engagement',
+      );
     }
   }
 
@@ -64,17 +66,20 @@ class ConnectivityController extends Notifier<ConnectivityStatus> {
     // radio is associated, not that the API answers. Treated as "probably
     // online" — the request itself is still the authority, and `ApiException`
     // already distinguishes a network failure.
-    final bool online = results.isNotEmpty &&
+    final bool online =
+        results.isNotEmpty &&
         results.any((ConnectivityResult r) => r != ConnectivityResult.none);
 
-    final ConnectivityStatus next =
-        online ? ConnectivityStatus.online : ConnectivityStatus.offline;
+    final ConnectivityStatus next = online
+        ? ConnectivityStatus.online
+        : ConnectivityStatus.offline;
     if (next == state) return;
 
     final ConnectivityStatus previous = state;
     state = next;
 
-    if (previous == ConnectivityStatus.offline && next == ConnectivityStatus.online) {
+    if (previous == ConnectivityStatus.offline &&
+        next == ConnectivityStatus.online) {
       unawaited(_onReconnect());
     }
   }
@@ -89,10 +94,10 @@ class ConnectivityController extends Notifier<ConnectivityStatus> {
 }
 
 final NotifierProvider<ConnectivityController, ConnectivityStatus>
-    connectivityProvider =
+connectivityProvider =
     NotifierProvider<ConnectivityController, ConnectivityStatus>(
-  ConnectivityController.new,
-);
+      ConnectivityController.new,
+    );
 
 /// True unless we know we are offline.
 final Provider<bool> isOfflineProvider = Provider<bool>(

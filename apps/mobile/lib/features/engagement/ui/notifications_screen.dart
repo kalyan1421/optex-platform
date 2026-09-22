@@ -25,7 +25,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
@@ -76,7 +77,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // worse answer than leaving the row alone until there is a connection.
     if (notification.isUnread && !ref.read(isOfflineProvider)) {
       try {
-        await ref.read(notificationsFeedProvider.notifier).markRead(notification.id);
+        await ref
+            .read(notificationsFeedProvider.notifier)
+            .markRead(notification.id);
       } on ApiException catch (error) {
         _toast(error.message);
       }
@@ -97,8 +100,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<NotificationFeed> feed = ref.watch(notificationsFeedProvider);
-    final NotificationCategory? selected = ref.watch(notificationFilterProvider);
+    final AsyncValue<NotificationFeed> feed = ref.watch(
+      notificationsFeedProvider,
+    );
+    final NotificationCategory? selected = ref.watch(
+      notificationFilterProvider,
+    );
     final bool offline = ref.watch(isOfflineProvider);
     final bool hasUnread = (ref.watch(unreadCountProvider).value ?? 0) > 0;
 
@@ -162,7 +169,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               title: ref.watch(notificationFilterProvider) == null
                   ? 'Nothing yet'
                   : 'Nothing in this category',
-              message: 'Order updates, appointment reminders and offers will '
+              message:
+                  'Order updates, appointment reminders and offers will '
                   'appear here.',
               icon: Icons.notifications_none_rounded,
               action: FilledButton(
@@ -181,7 +189,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         controller: _scroll,
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: feed.items.length + (feed.servedFromCache ? 1 : 0) + 1,
-        separatorBuilder: (BuildContext context, int index) => const Divider(height: 1),
+        separatorBuilder: (BuildContext context, int index) =>
+            const Divider(height: 1),
         itemBuilder: (BuildContext context, int index) {
           if (feed.servedFromCache && index == 0) {
             return _CacheNotice(age: feed.cacheAge);
@@ -226,7 +235,9 @@ class _CacheNotice extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Text(
         'Saved copy$suffix — reconnect to refresh.',
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.outline,
+        ),
       ),
     );
   }
@@ -258,9 +269,7 @@ class _ListFooter extends StatelessWidget {
         child: Center(
           child: Text(
             "That's everything",
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
+            style: Theme.of(context).textTheme.labelSmall
                 ?.copyWith(color: Theme.of(context).colorScheme.outline),
           ),
         ),

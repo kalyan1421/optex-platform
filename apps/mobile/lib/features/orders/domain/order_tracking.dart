@@ -24,11 +24,11 @@ class TrackingStage {
   final bool current;
 
   factory TrackingStage.fromJson(Map<String, dynamic> json) => TrackingStage(
-        key: json['key'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        completed: json['completed'] as bool? ?? false,
-        current: json['current'] as bool? ?? false,
-      );
+    key: json['key'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    completed: json['completed'] as bool? ?? false,
+    current: json['current'] as bool? ?? false,
+  );
 }
 
 /// Tracking response for one order (`OrderTrackingView`).
@@ -55,14 +55,14 @@ class OrderTracking {
   bool get noStageReached => stages.every((TrackingStage s) => !s.completed);
 
   factory OrderTracking.fromJson(Map<String, dynamic> json) => OrderTracking(
-        orderId: json['orderId'] as String? ?? '',
-        orderNumber: json['orderNumber'] as String? ?? '',
-        status: json['status'] as String? ?? 'unknown',
-        paymentStatus: json['paymentStatus'] as String? ?? 'unknown',
-        cancelled: json['cancelled'] as bool? ?? false,
-        stages: (json['stages'] as List<dynamic>? ?? const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .map(TrackingStage.fromJson)
-            .toList(),
-      );
+    orderId: json['orderId'] as String? ?? '',
+    orderNumber: json['orderNumber'] as String? ?? '',
+    status: json['status'] as String? ?? 'unknown',
+    paymentStatus: json['paymentStatus'] as String? ?? 'unknown',
+    cancelled: json['cancelled'] as bool? ?? false,
+    stages: (json['stages'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(TrackingStage.fromJson)
+        .toList(),
+  );
 }

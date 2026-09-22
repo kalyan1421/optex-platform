@@ -31,7 +31,10 @@ class StockNotice extends StatelessWidget {
         Flexible(
           child: Text(
             text,
-            style: theme.textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -40,10 +43,18 @@ class StockNotice extends StatelessWidget {
 
   (String, Color, IconData) _describe(ThemeData theme) {
     if (!product.isActive) {
-      return (CatalogStrings.unavailableNotice, AppColors.danger, Icons.block_outlined);
+      return (
+        CatalogStrings.unavailableNotice,
+        AppColors.danger,
+        Icons.block_outlined,
+      );
     }
     if (product.isOutOfStock) {
-      return (CatalogStrings.outOfStockNotice, AppColors.danger, Icons.remove_shopping_cart_outlined);
+      return (
+        CatalogStrings.outOfStockNotice,
+        AppColors.danger,
+        Icons.remove_shopping_cart_outlined,
+      );
     }
     if (product.isLowStock) {
       return (
@@ -59,7 +70,11 @@ class StockNotice extends StatelessWidget {
         Icons.info_outline_rounded,
       );
     }
-    return (CatalogStrings.inStockNotice, AppColors.success, Icons.check_circle_outline_rounded);
+    return (
+      CatalogStrings.inStockNotice,
+      AppColors.success,
+      Icons.check_circle_outline_rounded,
+    );
   }
 }
 
@@ -75,10 +90,17 @@ class OutOfStockBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.sm),
       ),
       child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
         child: Text(
           CatalogStrings.outOfStock,
-          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

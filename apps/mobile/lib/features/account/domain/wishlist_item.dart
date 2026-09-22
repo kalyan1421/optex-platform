@@ -14,12 +14,12 @@ class WishlistItem {
   final WishlistProduct product;
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) => WishlistItem(
-        productId: json['productId'] as String,
-        addedAt: DateTime.tryParse(json['addedAt'] as String? ?? ''),
-        product: WishlistProduct.fromJson(
-          (json['product'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
-        ),
-      );
+    productId: json['productId'] as String,
+    addedAt: DateTime.tryParse(json['addedAt'] as String? ?? ''),
+    product: WishlistProduct.fromJson(
+      (json['product'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+    ),
+  );
 }
 
 /// The product summary embedded in a wishlist row.
@@ -46,7 +46,8 @@ class WishlistProduct {
   /// "unavailable" state the screen has to render, and it is never a hole.
   final bool isActive;
 
-  factory WishlistProduct.fromJson(Map<String, dynamic> json) => WishlistProduct(
+  factory WishlistProduct.fromJson(Map<String, dynamic> json) =>
+      WishlistProduct(
         id: json['id'] as String? ?? '',
         slug: json['slug'] as String? ?? '',
         name: json['name'] as String? ?? 'Product',

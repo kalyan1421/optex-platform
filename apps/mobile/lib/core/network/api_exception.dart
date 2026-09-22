@@ -23,7 +23,8 @@ class ApiException implements Exception {
   bool get isNotFound => statusCode == 404;
 
   /// True when retrying might plausibly succeed. Drives "Try again" affordances.
-  bool get isRetryable => isNetwork || (statusCode != null && statusCode! >= 500);
+  bool get isRetryable =>
+      isNetwork || (statusCode != null && statusCode! >= 500);
 
   factory ApiException.fromDio(DioException e) {
     switch (e.type) {
@@ -31,7 +32,8 @@ class ApiException implements Exception {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return const ApiException(
-          message: 'The connection timed out. Check your network and try again.',
+          message:
+              'The connection timed out. Check your network and try again.',
           isNetwork: true,
         );
       case DioExceptionType.connectionError:
@@ -47,7 +49,9 @@ class ApiException implements Exception {
 
     final Response<dynamic>? res = e.response;
     return ApiException(
-      message: _extractMessage(res?.data) ?? 'Something went wrong. Please try again.',
+      message:
+          _extractMessage(res?.data) ??
+          'Something went wrong. Please try again.',
       statusCode: res?.statusCode,
       code: res?.data is Map ? (res!.data as Map)['error'] as String? : null,
     );
@@ -59,9 +63,13 @@ class ApiException implements Exception {
     if (data is Map) {
       final dynamic m = data['message'] ?? data['error'];
       if (m is String && m.trim().isNotEmpty) return m;
-      if (m is List && m.isNotEmpty) return m.map((e) => e.toString()).join('\n');
+      if (m is List && m.isNotEmpty) {
+        return m.map((e) => e.toString()).join('\n');
+      }
     }
-    if (data is String && data.trim().isNotEmpty && data.length < 300) return data;
+    if (data is String && data.trim().isNotEmpty && data.length < 300) {
+      return data;
+    }
     return null;
   }
 

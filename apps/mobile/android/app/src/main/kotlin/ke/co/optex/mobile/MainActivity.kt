@@ -1,4 +1,4 @@
-package ke.co.optex.optex_mobile
+package ke.co.optex.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

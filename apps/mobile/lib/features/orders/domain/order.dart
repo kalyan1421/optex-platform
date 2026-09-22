@@ -21,7 +21,8 @@ class OrderItemProduct {
   final String? brand;
   final String? image;
 
-  factory OrderItemProduct.fromJson(Map<String, dynamic> json) => OrderItemProduct(
+  factory OrderItemProduct.fromJson(Map<String, dynamic> json) =>
+      OrderItemProduct(
         id: json['id'] as String? ?? '',
         slug: json['slug'] as String? ?? '',
         name: json['name'] as String? ?? 'Product',
@@ -59,18 +60,18 @@ class OrderItem {
   String get displayName => product?.name ?? 'Item no longer available';
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-        id: json['id'] as String? ?? '',
-        productId: json['productId'] as String? ?? '',
-        quantity: (json['quantity'] as num?)?.toInt() ?? 0,
-        unitPriceKes: (json['unitPriceKes'] as num?) ?? 0,
-        lineTotalKes: (json['lineTotalKes'] as num?) ?? 0,
-        lensOption: json['lensOption'] is Map<String, dynamic>
-            ? json['lensOption'] as Map<String, dynamic>
-            : null,
-        product: json['product'] is Map<String, dynamic>
-            ? OrderItemProduct.fromJson(json['product'] as Map<String, dynamic>)
-            : null,
-      );
+    id: json['id'] as String? ?? '',
+    productId: json['productId'] as String? ?? '',
+    quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+    unitPriceKes: (json['unitPriceKes'] as num?) ?? 0,
+    lineTotalKes: (json['lineTotalKes'] as num?) ?? 0,
+    lensOption: json['lensOption'] is Map<String, dynamic>
+        ? json['lensOption'] as Map<String, dynamic>
+        : null,
+    product: json['product'] is Map<String, dynamic>
+        ? OrderItemProduct.fromJson(json['product'] as Map<String, dynamic>)
+        : null,
+  );
 }
 
 /// The `shipping` jsonb column, written verbatim from `ShippingAddressDto`.
@@ -95,9 +96,14 @@ class ShippingDetails {
   final String? county;
   final String? postal;
 
-  bool get isEmpty =>
-      <String?>[name, phone, address, city, county, postal]
-          .every((String? v) => v == null || v.trim().isEmpty);
+  bool get isEmpty => <String?>[
+    name,
+    phone,
+    address,
+    city,
+    county,
+    postal,
+  ].every((String? v) => v == null || v.trim().isEmpty);
 
   /// Address lines, blanks dropped, ready to render one per row.
   List<String> get addressLines => <String?>[address, city, county, postal]
@@ -154,16 +160,16 @@ class OrderSummary {
   bool get isCancelled => status == 'cancelled';
 
   factory OrderSummary.fromJson(Map<String, dynamic> json) => OrderSummary(
-        id: json['id'] as String? ?? '',
-        orderNumber: json['orderNumber'] as String? ?? '',
-        status: json['status'] as String? ?? 'unknown',
-        paymentStatus: json['paymentStatus'] as String? ?? 'unknown',
-        paymentMethod: json['paymentMethod'] as String?,
-        totalKes: (json['totalKes'] as num?) ?? 0,
-        discountKes: (json['discountKes'] as num?) ?? 0,
-        itemCount: (json['itemCount'] as num?)?.toInt() ?? 0,
-        createdAt: parseDate(json['createdAt']),
-      );
+    id: json['id'] as String? ?? '',
+    orderNumber: json['orderNumber'] as String? ?? '',
+    status: json['status'] as String? ?? 'unknown',
+    paymentStatus: json['paymentStatus'] as String? ?? 'unknown',
+    paymentMethod: json['paymentMethod'] as String?,
+    totalKes: (json['totalKes'] as num?) ?? 0,
+    discountKes: (json['discountKes'] as num?) ?? 0,
+    itemCount: (json['itemCount'] as num?)?.toInt() ?? 0,
+    createdAt: parseDate(json['createdAt']),
+  );
 
   static DateTime? parseDate(Object? raw) =>
       raw is String ? DateTime.tryParse(raw)?.toLocal() : null;
@@ -199,10 +205,11 @@ class OrderDetail extends OrderSummary {
   final List<OrderItem> items;
 
   factory OrderDetail.fromJson(Map<String, dynamic> json) {
-    final List<OrderItem> items = (json['items'] as List<dynamic>? ?? const <dynamic>[])
-        .whereType<Map<String, dynamic>>()
-        .map(OrderItem.fromJson)
-        .toList();
+    final List<OrderItem> items =
+        (json['items'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(OrderItem.fromJson)
+            .toList();
 
     return OrderDetail(
       id: json['id'] as String? ?? '',

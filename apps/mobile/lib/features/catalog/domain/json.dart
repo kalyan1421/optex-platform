@@ -51,10 +51,7 @@ bool asBool(Object? value, {bool fallback = false}) {
 /// Reads a list of strings, dropping anything that is not a usable string.
 List<String> asStringList(Object? value) {
   if (value is! List) return const <String>[];
-  return value
-      .map(asStringOrNull)
-      .whereType<String>()
-      .toList(growable: false);
+  return value.map(asStringOrNull).whereType<String>().toList(growable: false);
 }
 
 /// Reads a list of JSON objects out of a decoded response body.

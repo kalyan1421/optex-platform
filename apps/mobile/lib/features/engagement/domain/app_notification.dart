@@ -32,11 +32,13 @@ class AppNotification {
   final DateTime? readAt;
   final DateTime createdAt;
 
-  NotificationCategory? get category => NotificationCategory.tryParse(categoryWire);
+  NotificationCategory? get category =>
+      NotificationCategory.tryParse(categoryWire);
 
   bool get isUnread => readAt == null;
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
         id: json['id'] as String? ?? '',
         categoryWire: json['category'] as String? ?? '',
         title: json['title'] as String? ?? '',
@@ -49,24 +51,24 @@ class AppNotification {
   /// Round-trips through the offline cache. Deliberately the same key names as
   /// the API so a cached page and a fresh page parse identically.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'category': categoryWire,
-        'title': title,
-        'body': body,
-        'link': link,
-        'readAt': readAt?.toUtc().toIso8601String(),
-        'createdAt': createdAt.toUtc().toIso8601String(),
-      };
+    'id': id,
+    'category': categoryWire,
+    'title': title,
+    'body': body,
+    'link': link,
+    'readAt': readAt?.toUtc().toIso8601String(),
+    'createdAt': createdAt.toUtc().toIso8601String(),
+  };
 
   AppNotification markedRead(DateTime at) => AppNotification(
-        id: id,
-        categoryWire: categoryWire,
-        title: title,
-        body: body,
-        link: link,
-        readAt: at,
-        createdAt: createdAt,
-      );
+    id: id,
+    categoryWire: categoryWire,
+    title: title,
+    body: body,
+    link: link,
+    readAt: at,
+    createdAt: createdAt,
+  );
 
   static DateTime? _parseDate(Object? value) =>
       value is String ? DateTime.tryParse(value)?.toLocal() : null;
@@ -109,14 +111,13 @@ class NotificationFeed {
     int? total,
     int? page,
     bool? loadingMore,
-  }) =>
-      NotificationFeed(
-        items: items ?? this.items,
-        total: total ?? this.total,
-        page: page ?? this.page,
-        pageSize: pageSize,
-        loadingMore: loadingMore ?? this.loadingMore,
-        servedFromCache: servedFromCache,
-        cacheAge: cacheAge,
-      );
+  }) => NotificationFeed(
+    items: items ?? this.items,
+    total: total ?? this.total,
+    page: page ?? this.page,
+    pageSize: pageSize,
+    loadingMore: loadingMore ?? this.loadingMore,
+    servedFromCache: servedFromCache,
+    cacheAge: cacheAge,
+  );
 }

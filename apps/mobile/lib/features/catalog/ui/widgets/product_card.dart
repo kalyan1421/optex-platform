@@ -17,7 +17,11 @@ import 'stock_notice.dart';
 /// chrome. Wishlist and compare toggles are absent on purpose: both belong to
 /// other slices (P1-1 wishlist; compare has no mobile story at all).
 class ProductCard extends StatelessWidget {
-  const ProductCard({super.key, required this.product, this.showAddToCart = true});
+  const ProductCard({
+    super.key,
+    required this.product,
+    this.showAddToCart = true,
+  });
 
   final Product product;
   final bool showAddToCart;
@@ -82,10 +86,16 @@ class ProductCard extends StatelessWidget {
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  StarRating(average: product.ratingAvg, count: product.ratingCount, size: 13),
+                  StarRating(
+                    average: product.ratingAvg,
+                    count: product.ratingCount,
+                    size: 13,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: <Widget>[
@@ -151,6 +161,8 @@ class ProductRailCard extends StatelessWidget {
   final double width;
 
   @override
-  Widget build(BuildContext context) =>
-      SizedBox(width: width, child: ProductCard(product: product, showAddToCart: false));
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: ProductCard(product: product, showAddToCart: false),
+  );
 }

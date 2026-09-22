@@ -16,9 +16,9 @@ class Category {
   final int sortOrder;
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-        id: asString(json['id']),
-        slug: asString(json['slug']),
-        name: asString(json['name'], fallback: 'Category'),
-        sortOrder: asInt(json['sort_order']),
-      );
+    id: asString(json['id']),
+    slug: asString(json['slug']),
+    name: asString(json['name'], fallback: 'Category'),
+    sortOrder: asInt(json['sort_order']),
+  );
 }

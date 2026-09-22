@@ -66,33 +66,35 @@ class Product {
   final int? availableStock;
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
-        id: asString(json['id']),
-        sku: asString(json['sku']),
-        slug: asString(json['slug']),
-        name: asString(json['name'], fallback: 'Untitled'),
-        categoryId: asStringOrNull(json['category_id']),
-        brand: asStringOrNull(json['brand']),
-        frameMaterial: asStringOrNull(json['frame_material']),
-        frameShape: asStringOrNull(json['frame_shape']),
-        gender: asStringOrNull(json['gender']),
-        description: asStringOrNull(json['description']),
-        priceKes: asNum(json['price_kes']),
-        images: asStringList(json['images']),
-        tryOnImageUrl: asStringOrNull(json['try_on_image_url']),
-        isActive: asBool(json['is_active'], fallback: true),
-        isFeatured: asBool(json['is_featured']),
-        isTrending: asBool(json['is_trending']),
-        ratingAvg: asDoubleOrNull(json['rating_avg']),
-        ratingCount: asInt(json['rating_count']),
-        availableStock: asIntOrNull(json['available_stock']),
-      );
+    id: asString(json['id']),
+    sku: asString(json['sku']),
+    slug: asString(json['slug']),
+    name: asString(json['name'], fallback: 'Untitled'),
+    categoryId: asStringOrNull(json['category_id']),
+    brand: asStringOrNull(json['brand']),
+    frameMaterial: asStringOrNull(json['frame_material']),
+    frameShape: asStringOrNull(json['frame_shape']),
+    gender: asStringOrNull(json['gender']),
+    description: asStringOrNull(json['description']),
+    priceKes: asNum(json['price_kes']),
+    images: asStringList(json['images']),
+    tryOnImageUrl: asStringOrNull(json['try_on_image_url']),
+    isActive: asBool(json['is_active'], fallback: true),
+    isFeatured: asBool(json['is_featured']),
+    isTrending: asBool(json['is_trending']),
+    ratingAvg: asDoubleOrNull(json['rating_avg']),
+    ratingCount: asInt(json['rating_count']),
+    availableStock: asIntOrNull(json['available_stock']),
+  );
 
   /// The first displayable gallery image, or null when there is none.
   String? get primaryImageUrl => galleryUrls.isEmpty ? null : galleryUrls.first;
 
   /// Every gallery image that actually resolves to a loadable URL.
-  List<String> get galleryUrls =>
-      images.map(resolveProductImageUrl).whereType<String>().toList(growable: false);
+  List<String> get galleryUrls => images
+      .map(resolveProductImageUrl)
+      .whereType<String>()
+      .toList(growable: false);
 
   /// True only when stock is known AND exhausted. An unknown stock level is
   /// never presented as unavailable.
@@ -100,7 +102,9 @@ class Product {
 
   /// True when stock is known, positive and scarce enough to say so.
   bool get isLowStock =>
-      availableStock != null && availableStock! > 0 && availableStock! <= lowStockThreshold;
+      availableStock != null &&
+      availableStock! > 0 &&
+      availableStock! <= lowStockThreshold;
 
   /// Whether the app should offer add-to-cart at all. The server re-checks
   /// this at checkout (`0020_checkout_stock_enforcement.sql`); this is only

@@ -25,10 +25,12 @@ class ProductListId {
   const ProductListId.shop() : this._(ProductListSource.catalogue, null);
 
   /// A category landing list, permanently scoped to one category slug.
-  const ProductListId.category(String slug) : this._(ProductListSource.catalogue, slug);
+  const ProductListId.category(String slug)
+    : this._(ProductListSource.catalogue, slug);
 
   /// One search term's results.
-  const ProductListId.search(String term) : this._(ProductListSource.search, term);
+  const ProductListId.search(String term)
+    : this._(ProductListSource.search, term);
 
   final ProductListSource source;
   final String? value;
@@ -37,7 +39,8 @@ class ProductListId {
   String? get lockedCategorySlug =>
       source == ProductListSource.catalogue ? value : null;
 
-  String get searchTerm => source == ProductListSource.search ? (value ?? '') : '';
+  String get searchTerm =>
+      source == ProductListSource.search ? (value ?? '') : '';
 
   @override
   bool operator ==(Object other) =>
@@ -93,19 +96,19 @@ class ProductListState {
     bool? isLoadingMore,
     Object? error = _unset,
     Object? loadMoreError = _unset,
-  }) =>
-      ProductListState(
-        filters: filters ?? this.filters,
-        items: items ?? this.items,
-        page: page ?? this.page,
-        total: total ?? this.total,
-        hasMore: hasMore ?? this.hasMore,
-        isLoadingFirstPage: isLoadingFirstPage ?? this.isLoadingFirstPage,
-        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-        error: identical(error, _unset) ? this.error : error as ApiException?,
-        loadMoreError:
-            identical(loadMoreError, _unset) ? this.loadMoreError : loadMoreError as ApiException?,
-      );
+  }) => ProductListState(
+    filters: filters ?? this.filters,
+    items: items ?? this.items,
+    page: page ?? this.page,
+    total: total ?? this.total,
+    hasMore: hasMore ?? this.hasMore,
+    isLoadingFirstPage: isLoadingFirstPage ?? this.isLoadingFirstPage,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    error: identical(error, _unset) ? this.error : error as ApiException?,
+    loadMoreError: identical(loadMoreError, _unset)
+        ? this.loadMoreError
+        : loadMoreError as ApiException?,
+  );
 
   static const Object _unset = Object();
 }
@@ -131,8 +134,9 @@ class ProductListController extends Notifier<ProductListState> {
   CatalogRepository get _repo => ref.read(catalogRepositoryProvider);
 
   @override
-  ProductListState build() =>
-      ProductListState(filters: ProductFilters(categorySlug: id.lockedCategorySlug));
+  ProductListState build() => ProductListState(
+    filters: ProductFilters(categorySlug: id.lockedCategorySlug),
+  );
 
   /// Loads the first page exactly once. Safe to call from every `initState`.
   Future<void> ensureLoaded() async {
@@ -151,7 +155,9 @@ class ProductListController extends Notifier<ProductListState> {
   /// Appends the next page. A no-op while a load is in flight or at the end.
   Future<void> loadMore() {
     final ProductListState current = state;
-    if (current.isLoadingFirstPage || current.isLoadingMore || !current.hasMore) {
+    if (current.isLoadingFirstPage ||
+        current.isLoadingMore ||
+        !current.hasMore) {
       return Future<void>.value();
     }
     return _fetch(page: current.page + 1, replace: false);
@@ -170,14 +176,17 @@ class ProductListController extends Notifier<ProductListState> {
     unawaited(_fetch(page: 1, replace: true));
   }
 
-  void setSort(ProductSortOption sort) => applyFilters(state.filters.copyWith(sort: sort));
+  void setSort(ProductSortOption sort) =>
+      applyFilters(state.filters.copyWith(sort: sort));
 
   /// Narrows (or widens) the list to one category. Used by `/shop?category=`
   /// so a deep link or a banner can open the shop pre-filtered.
-  void setCategory(String? slug) => applyFilters(state.filters.copyWith(categorySlug: slug));
+  void setCategory(String? slug) =>
+      applyFilters(state.filters.copyWith(categorySlug: slug));
 
-  void clearFilters() =>
-      applyFilters(state.filters.cleared(keepCategorySlug: id.lockedCategorySlug));
+  void clearFilters() => applyFilters(
+    state.filters.cleared(keepCategorySlug: id.lockedCategorySlug),
+  );
 
   Future<void> _fetch({required int page, required bool replace}) async {
     final int token = ++_requestToken;
@@ -197,15 +206,23 @@ class ProductListController extends Notifier<ProductListState> {
     }
 
     state = replace
-        ? state.copyWith(isLoadingFirstPage: true, error: null, loadMoreError: null)
+        ? state.copyWith(
+            isLoadingFirstPage: true,
+            error: null,
+            loadMoreError: null,
+          )
         : state.copyWith(isLoadingMore: true, loadMoreError: null);
 
     try {
       final Paginated<Product> result = switch (id.source) {
-        ProductListSource.search =>
-          await _repo.searchProducts(term: id.searchTerm, page: page),
-        ProductListSource.catalogue =>
-          await _repo.listProducts(filters: state.filters, page: page),
+        ProductListSource.search => await _repo.searchProducts(
+          term: id.searchTerm,
+          page: page,
+        ),
+        ProductListSource.catalogue => await _repo.listProducts(
+          filters: state.filters,
+          page: page,
+        ),
       };
 
       // A stale response, or a provider disposed while the request was in
@@ -213,8 +230,9 @@ class ProductListController extends Notifier<ProductListState> {
       // second), so drop it.
       if (!ref.mounted || token != _requestToken) return;
 
-      final List<Product> items =
-          replace ? result.items : <Product>[...state.items, ...result.items];
+      final List<Product> items = replace
+          ? result.items
+          : <Product>[...state.items, ...result.items];
 
       state = state.copyWith(
         items: items,
@@ -249,9 +267,11 @@ class ProductListController extends Notifier<ProductListState> {
 // NOTE: `NotifierProviderFamily` is not exported by `flutter_riverpod`, so the
 // type here is inferred rather than annotated.
 final browseListProvider =
-    NotifierProvider.family<ProductListController, ProductListState, ProductListId>(
-  ProductListController.new,
-);
+    NotifierProvider.family<
+      ProductListController,
+      ProductListState,
+      ProductListId
+    >(ProductListController.new);
 
 /// Search results, one list per term.
 ///
@@ -259,7 +279,8 @@ final browseListProvider =
 /// key for every term a user settles on, and keeping all of them alive for
 /// the session would be a slow leak.
 final searchListProvider =
-    NotifierProvider.family<ProductListController, ProductListState, ProductListId>(
-  ProductListController.new,
-  isAutoDispose: true,
-);
+    NotifierProvider.family<
+      ProductListController,
+      ProductListState,
+      ProductListId
+    >(ProductListController.new, isAutoDispose: true);

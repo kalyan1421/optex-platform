@@ -56,8 +56,9 @@ class OrderCard extends StatelessWidget {
                                 order.orderNumber.isEmpty
                                     ? 'Order'
                                     : order.orderNumber,
-                                style: theme.textTheme.titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -75,8 +76,9 @@ class OrderCard extends StatelessWidget {
                         Text(
                           '${formatOrderDate(order.createdAt)} · '
                           '${order.itemCount} ${order.itemCount == 1 ? 'item' : 'items'}',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: theme.colorScheme.outline),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Wrap(
@@ -102,8 +104,9 @@ class OrderCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Discount ${formatKes(order.discountKes)}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.outline),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
                       ),
                     )
                   else

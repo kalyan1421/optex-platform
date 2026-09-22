@@ -31,7 +31,8 @@ class CancellationRequest {
   bool get isApproved => status == 'approved';
   bool get isDeclined => status == 'declined';
 
-  factory CancellationRequest.fromJson(Map<String, dynamic> json) => CancellationRequest(
+  factory CancellationRequest.fromJson(Map<String, dynamic> json) =>
+      CancellationRequest(
         id: json['id'] as String? ?? '',
         status: json['status'] as String? ?? 'pending',
         reason: _str(json['reason']),
@@ -63,15 +64,19 @@ class CancellationStatus {
 
   /// Nothing worth drawing: no control to offer, no request to report and no
   /// explanation to give. The panel renders nothing at all in that case.
-  bool get isSilent => !canRequest && request == null && ineligibleReason == null;
+  bool get isSilent =>
+      !canRequest && request == null && ineligibleReason == null;
 
-  factory CancellationStatus.fromJson(Map<String, dynamic> json) => CancellationStatus(
+  factory CancellationStatus.fromJson(Map<String, dynamic> json) =>
+      CancellationStatus(
         orderId: json['orderId'] as String? ?? '',
         canRequest: json['canRequest'] as bool? ?? false,
         windowHours: (json['windowHours'] as num?)?.toInt() ?? 0,
         ineligibleReason: _str(json['ineligibleReason']),
         request: json['request'] is Map<String, dynamic>
-            ? CancellationRequest.fromJson(json['request'] as Map<String, dynamic>)
+            ? CancellationRequest.fromJson(
+                json['request'] as Map<String, dynamic>,
+              )
             : null,
       );
 }
@@ -95,13 +100,16 @@ class CancellationOutcome {
   final String message;
   final DateTime? createdAt;
 
-  factory CancellationOutcome.fromJson(Map<String, dynamic> json) => CancellationOutcome(
-        id: json['id'] as String? ?? '',
-        status: json['status'] as String? ?? 'pending',
-        message: _str(json['message']) ??
-            'Your cancellation request has been received. We will confirm shortly.',
-        createdAt: _date(json['createdAt'] ?? json['created_at']),
-      );
+  factory CancellationOutcome.fromJson(
+    Map<String, dynamic> json,
+  ) => CancellationOutcome(
+    id: json['id'] as String? ?? '',
+    status: json['status'] as String? ?? 'pending',
+    message:
+        _str(json['message']) ??
+        'Your cancellation request has been received. We will confirm shortly.',
+    createdAt: _date(json['createdAt'] ?? json['created_at']),
+  );
 }
 
 String? _str(Object? raw) =>

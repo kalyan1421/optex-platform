@@ -26,7 +26,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -54,7 +55,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      await ref.read(authRepositoryProvider).requestPasswordReset(_email.text.trim());
+      await ref
+          .read(authRepositoryProvider)
+          .requestPasswordReset(_email.text.trim());
       if (mounted) setState(() => _sent = true);
     } on ApiException catch (e) {
       // Only a transport/throttle failure reaches here — the endpoint itself
@@ -72,7 +75,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (_sent) {
       return AuthScaffold(
         title: 'Check your email',
-        subtitle: 'If an account exists for ${_email.text.trim()}, '
+        subtitle:
+            'If an account exists for ${_email.text.trim()}, '
             'a reset link is on its way.',
         children: <Widget>[
           Container(
@@ -84,15 +88,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Icon(Icons.open_in_browser_rounded,
-                    size: 20, color: theme.colorScheme.outline),
+                Icon(
+                  Icons.open_in_browser_rounded,
+                  size: 20,
+                  color: theme.colorScheme.outline,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     'The link opens in your browser. Once you have set a new '
                     'password, come back here and sign in with it.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ),
               ],
@@ -117,7 +125,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     return AuthScaffold(
       title: 'Reset your password',
-      subtitle: 'Enter the email on your account and we will send a reset link.',
+      subtitle:
+          'Enter the email on your account and we will send a reset link.',
       children: <Widget>[
         if (_error != null) FormErrorBanner(message: _error!),
         Form(

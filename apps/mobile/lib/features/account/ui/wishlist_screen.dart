@@ -36,7 +36,8 @@ class WishlistScreen extends ConsumerWidget {
           if (items.isEmpty) {
             return AppEmptyState(
               title: 'Nothing saved yet',
-              message: 'Tap the heart on any pair of frames to keep it here '
+              message:
+                  'Tap the heart on any pair of frames to keep it here '
                   'for later.',
               icon: Icons.favorite_border_rounded,
               action: FilledButton.icon(
@@ -80,7 +81,8 @@ class _WishlistCard extends ConsumerWidget {
             // Safe to fire and forget: `POST /wishlist/:id` is idempotent, so
             // an undo that arrives twice (or after a manual re-save) is a
             // no-op rather than a duplicate row.
-            onPressed: () => ref.read(wishlistProvider.notifier).add(item.productId),
+            onPressed: () =>
+                ref.read(wishlistProvider.notifier).add(item.productId),
           ),
         ),
       );
@@ -122,8 +124,9 @@ class _WishlistCard extends ConsumerWidget {
                       ),
                     Text(
                       product.name,
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -145,7 +148,9 @@ class _WishlistCard extends ConsumerWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.error.withValues(alpha: 0.12),
+                          color: theme.colorScheme.error.withValues(
+                            alpha: 0.12,
+                          ),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -200,7 +205,8 @@ class _Thumbnail extends StatelessWidget {
             width: 84,
             fit: BoxFit.contain,
             placeholder: (BuildContext context, String _) => placeholder,
-            errorWidget: (BuildContext context, String _, Object _) => placeholder,
+            errorWidget: (BuildContext context, String _, Object _) =>
+                placeholder,
           );
 
     return ClipRRect(

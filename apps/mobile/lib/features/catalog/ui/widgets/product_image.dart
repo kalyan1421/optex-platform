@@ -36,7 +36,10 @@ class ProductImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? source = url;
     if (source == null || source.isEmpty) {
-      return _Fallback(showLabel: showLabelOnError, icon: Icons.visibility_outlined);
+      return _Fallback(
+        showLabel: showLabelOnError,
+        icon: Icons.visibility_outlined,
+      );
     }
 
     return CachedNetworkImage(
@@ -45,13 +48,17 @@ class ProductImage extends StatelessWidget {
       // Keeps the crossfade from flashing white over the placeholder.
       fadeInDuration: const Duration(milliseconds: 180),
       fadeOutDuration: const Duration(milliseconds: 120),
-      imageBuilder: (BuildContext context, ImageProvider<Object> image) => Padding(
-        padding: EdgeInsets.all(padding),
-        child: Image(image: image, fit: fit),
-      ),
+      imageBuilder: (BuildContext context, ImageProvider<Object> image) =>
+          Padding(
+            padding: EdgeInsets.all(padding),
+            child: Image(image: image, fit: fit),
+          ),
       placeholder: (BuildContext context, String _) => const _Skeleton(),
       errorWidget: (BuildContext context, String url, Object error) =>
-          _Fallback(showLabel: showLabelOnError, icon: Icons.image_not_supported_outlined),
+          _Fallback(
+            showLabel: showLabelOnError,
+            icon: Icons.image_not_supported_outlined,
+          ),
     );
   }
 }
@@ -96,7 +103,9 @@ class _Fallback extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 CatalogStrings.imageUnavailable,
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ],
           ],

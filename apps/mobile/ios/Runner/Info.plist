@@ -91,7 +91,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>ke.co.optex.optex-mobile</string>
+			<string>ke.co.optex.mobile</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>optex</string>

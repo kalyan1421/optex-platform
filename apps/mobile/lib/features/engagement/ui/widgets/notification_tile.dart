@@ -52,8 +52,9 @@ class NotificationTile extends StatelessWidget {
                         child: Text(
                           notification.title,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight:
-                                unread ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: unread
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -73,14 +74,16 @@ class NotificationTile extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     notification.body,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     formatTimestamp(notification.createdAt),
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ],
               ),
@@ -115,12 +118,18 @@ class _CategoryAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (IconData icon, Color tint) = switch (category) {
-      NotificationCategory.order => (Icons.local_shipping_outlined, AppColors.info),
+      NotificationCategory.order => (
+        Icons.local_shipping_outlined,
+        AppColors.info,
+      ),
       NotificationCategory.appointment => (
-          Icons.event_available_outlined,
-          AppColors.success
-        ),
-      NotificationCategory.offer => (Icons.local_offer_outlined, AppColors.brandRed),
+        Icons.event_available_outlined,
+        AppColors.success,
+      ),
+      NotificationCategory.offer => (
+        Icons.local_offer_outlined,
+        AppColors.brandRed,
+      ),
       // A category this build does not recognise still renders — see
       // NotificationCategory.tryParse.
       null => (Icons.notifications_none_rounded, AppColors.brandBlue),

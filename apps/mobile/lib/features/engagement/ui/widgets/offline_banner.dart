@@ -51,7 +51,11 @@ class _OfflineStrip extends StatelessWidget {
             ),
             child: Row(
               children: <Widget>[
-                const Icon(Icons.wifi_off_rounded, size: 16, color: Colors.white),
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
@@ -89,13 +93,18 @@ class OfflineActionNotice extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Row(
       children: <Widget>[
-        Icon(Icons.cloud_off_rounded, size: 16, color: theme.colorScheme.outline),
+        Icon(
+          Icons.cloud_off_rounded,
+          size: 16,
+          color: theme.colorScheme.outline,
+        ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
             message,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
           ),
         ),
       ],

@@ -19,9 +19,10 @@ import '../domain/order_tracking.dart';
 
 Duration? _noRetry(int retryCount, Object error) => null;
 
-final Provider<OrdersRepository> ordersRepositoryProvider = Provider<OrdersRepository>(
-  (Ref ref) => OrdersRepository(ref.watch(apiClientProvider)),
-);
+final Provider<OrdersRepository> ordersRepositoryProvider =
+    Provider<OrdersRepository>(
+      (Ref ref) => OrdersRepository(ref.watch(apiClientProvider)),
+    );
 
 /// The accumulated order history: every page fetched so far, plus the paging
 /// cursor and a separate "loading the next page" flag.
@@ -63,15 +64,16 @@ class OrdersFeed {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
-  }) =>
-      OrdersFeed(
-        orders: orders ?? this.orders,
-        page: page ?? this.page,
-        pageSize: pageSize ?? this.pageSize,
-        total: total ?? this.total,
-        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-        loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-      );
+  }) => OrdersFeed(
+    orders: orders ?? this.orders,
+    page: page ?? this.page,
+    pageSize: pageSize ?? this.pageSize,
+    total: total ?? this.total,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    loadMoreError: clearLoadMoreError
+        ? null
+        : (loadMoreError ?? this.loadMoreError),
+  );
 }
 
 /// Owns the paginated order history.
@@ -82,7 +84,10 @@ class OrdersFeedController extends AsyncNotifier<OrdersFeed> {
   Future<OrdersFeed> build() => _firstPage(ref.watch(ordersRepositoryProvider));
 
   Future<OrdersFeed> _firstPage(OrdersRepository repo) async {
-    final Paginated<OrderSummary> page = await repo.list(page: 1, pageSize: _pageSize);
+    final Paginated<OrderSummary> page = await repo.list(
+      page: 1,
+      pageSize: _pageSize,
+    );
     return OrdersFeed(
       orders: page.items,
       page: page.page,
@@ -117,7 +122,9 @@ class OrdersFeedController extends AsyncNotifier<OrdersFeed> {
 
       // De-duplicated by id: a new order placed mid-scroll shifts every page
       // boundary down by one, which would otherwise repeat a row.
-      final Set<String> seen = current.orders.map((OrderSummary o) => o.id).toSet();
+      final Set<String> seen = current.orders
+          .map((OrderSummary o) => o.id)
+          .toSet();
       final List<OrderSummary> merged = <OrderSummary>[
         ...current.orders,
         ...next.items.where((OrderSummary o) => seen.add(o.id)),
@@ -146,32 +153,36 @@ class OrdersFeedController extends AsyncNotifier<OrdersFeed> {
   }
 }
 
-final AsyncNotifierProvider<OrdersFeedController, OrdersFeed> ordersFeedProvider =
-    AsyncNotifierProvider<OrdersFeedController, OrdersFeed>(
+final AsyncNotifierProvider<OrdersFeedController, OrdersFeed>
+ordersFeedProvider = AsyncNotifierProvider<OrdersFeedController, OrdersFeed>(
   OrdersFeedController.new,
   retry: _noRetry,
 );
 
 /// One order in full. Auto-disposed: an order the user has walked away from is
 /// not worth holding, and coming back should show current data anyway.
-final orderDetailProvider = FutureProvider.autoDispose.family<OrderDetail, String>(
-  (Ref ref, String orderId) => ref.watch(ordersRepositoryProvider).detail(orderId),
-  retry: _noRetry,
-);
+final orderDetailProvider = FutureProvider.autoDispose
+    .family<OrderDetail, String>(
+      (Ref ref, String orderId) =>
+          ref.watch(ordersRepositoryProvider).detail(orderId),
+      retry: _noRetry,
+    );
 
 /// The server-rendered tracking timeline for one order.
-final orderTrackingProvider = FutureProvider.autoDispose.family<OrderTracking, String>(
-  (Ref ref, String orderId) => ref.watch(ordersRepositoryProvider).tracking(orderId),
-  retry: _noRetry,
-);
+final orderTrackingProvider = FutureProvider.autoDispose
+    .family<OrderTracking, String>(
+      (Ref ref, String orderId) =>
+          ref.watch(ordersRepositoryProvider).tracking(orderId),
+      retry: _noRetry,
+    );
 
 /// Cancellation eligibility + the latest request for one order.
-final cancellationStatusProvider =
-    FutureProvider.autoDispose.family<CancellationStatus, String>(
-  (Ref ref, String orderId) =>
-      ref.watch(ordersRepositoryProvider).cancellationStatus(orderId),
-  retry: _noRetry,
-);
+final cancellationStatusProvider = FutureProvider.autoDispose
+    .family<CancellationStatus, String>(
+      (Ref ref, String orderId) =>
+          ref.watch(ordersRepositoryProvider).cancellationStatus(orderId),
+      retry: _noRetry,
+    );
 
 /// Re-reads everything that a decision about this order could have changed.
 ///

@@ -27,7 +27,10 @@ void main() {
     });
 
     test('handles an authority with no path', () {
-      expect(normalizeDeepLink(Uri.parse('optex://notifications')), '/notifications');
+      expect(
+        normalizeDeepLink(Uri.parse('optex://notifications')),
+        '/notifications',
+      );
     });
 
     test('preserves the query string', () {
@@ -38,7 +41,10 @@ void main() {
     });
 
     test('collapses duplicate slashes and drops a trailing one', () {
-      expect(normalizeDeepLink(Uri.parse('optex:////orders//abc/')), '/orders/abc');
+      expect(
+        normalizeDeepLink(Uri.parse('optex:////orders//abc/')),
+        '/orders/abc',
+      );
     });
   });
 
@@ -48,7 +54,10 @@ void main() {
     });
 
     test('round-trips through the normaliser', () {
-      expect(normalizeDeepLink(Uri.parse(buildDeepLink('/orders/abc'))), '/orders/abc');
+      expect(
+        normalizeDeepLink(Uri.parse(buildDeepLink('/orders/abc'))),
+        '/orders/abc',
+      );
     });
   });
 

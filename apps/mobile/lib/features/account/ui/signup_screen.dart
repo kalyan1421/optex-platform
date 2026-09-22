@@ -61,14 +61,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     });
 
     try {
-      final AuthResult result = await ref.read(authControllerProvider.notifier).signup(
-            _email.text.trim(),
-            _password.text,
-            _name.text.trim(),
-          );
+      final AuthResult result = await ref
+          .read(authControllerProvider.notifier)
+          .signup(_email.text.trim(), _password.text, _name.text.trim());
       if (!mounted) return;
       if (result.needsEmailConfirmation) {
-        setState(() => _confirmationEmail = result.user.email ?? _email.text.trim());
+        setState(
+          () => _confirmationEmail = result.user.email ?? _email.text.trim(),
+        );
       }
       // Otherwise a session was adopted and the router redirect navigates.
     } on ApiException catch (e) {
@@ -80,8 +80,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   void _goToLogin() {
     final String? from = widget.from;
-    final String target =
-        from == null || from.isEmpty ? Routes.login : '${Routes.login}?from=$from';
+    final String target = from == null || from.isEmpty
+        ? Routes.login
+        : '${Routes.login}?from=$from';
     // Replace rather than push: arriving here from login and then pushing
     // login again would build a stack the back button walks in circles.
     if (context.canPop()) {
@@ -209,8 +210,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           children: <Widget>[
             Text(
               'Already have an account?',
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
             TextButton(
               onPressed: busy ? null : _goToLogin,
@@ -250,8 +252,9 @@ class _CheckYourInbox extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Check your inbox',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -259,8 +262,9 @@ class _CheckYourInbox extends StatelessWidget {
                   'Your account is created. We sent a confirmation link to '
                   '$email — open it to finish signing in.',
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 FilledButton(

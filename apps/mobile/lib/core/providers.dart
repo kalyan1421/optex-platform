@@ -13,18 +13,23 @@ import 'storage/secure_store.dart';
 /// SecureStore -> SessionManager -> ApiClient -> AuthRepository, with the
 /// repository's refresh function injected back into the session manager by
 /// [bootstrapAuth].
-final Provider<SecureStore> secureStoreProvider =
-    Provider<SecureStore>((Ref ref) => SecureStore());
+final Provider<SecureStore> secureStoreProvider = Provider<SecureStore>(
+  (Ref ref) => SecureStore(),
+);
 
 final Provider<SessionManager> sessionManagerProvider =
-    Provider<SessionManager>((Ref ref) => SessionManager(ref.watch(secureStoreProvider)));
+    Provider<SessionManager>(
+      (Ref ref) => SessionManager(ref.watch(secureStoreProvider)),
+    );
 
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>(
   (Ref ref) => ApiClient(tokens: ref.watch(sessionManagerProvider)),
 );
 
 final Provider<AuthRepository> authRepositoryProvider =
-    Provider<AuthRepository>((Ref ref) => AuthRepository(ref.watch(apiClientProvider)));
+    Provider<AuthRepository>(
+      (Ref ref) => AuthRepository(ref.watch(apiClientProvider)),
+    );
 
 /// Lets a feature run teardown when the user signs out, without core having to
 /// import that feature.
@@ -69,7 +74,9 @@ class AuthState {
   bool get isResolved => status != AuthStatus.unknown;
 
   static const AuthState unknown = AuthState(status: AuthStatus.unknown);
-  static const AuthState signedOut = AuthState(status: AuthStatus.unauthenticated);
+  static const AuthState signedOut = AuthState(
+    status: AuthStatus.unauthenticated,
+  );
 }
 
 /// Owns sign-in state for the whole app. The router listens to it.
@@ -113,14 +120,24 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<AuthResult> login(String email, String password) async {
-    final AuthResult result = await _repo.login(email: email, password: password);
+    final AuthResult result = await _repo.login(
+      email: email,
+      password: password,
+    );
     if (result.session != null) await _adopt(result.session!);
     return result;
   }
 
-  Future<AuthResult> signup(String email, String password, String fullName) async {
-    final AuthResult result =
-        await _repo.signup(email: email, password: password, fullName: fullName);
+  Future<AuthResult> signup(
+    String email,
+    String password,
+    String fullName,
+  ) async {
+    final AuthResult result = await _repo.signup(
+      email: email,
+      password: password,
+      fullName: fullName,
+    );
     if (result.session != null) await _adopt(result.session!);
     return result;
   }
@@ -190,8 +207,8 @@ Future<void> bootstrapAuth(ProviderContainer container) async {
   final AuthRepository repo = container.read(authRepositoryProvider);
 
   session.refresher = repo.refresh;
-  session.onExpired =
-      () async => container.read(authControllerProvider.notifier).markSignedOut();
+  session.onExpired = () async =>
+      container.read(authControllerProvider.notifier).markSignedOut();
 
   await container.read(apiClientProvider).attachClientVersion();
   await container.read(authControllerProvider.notifier).restore();

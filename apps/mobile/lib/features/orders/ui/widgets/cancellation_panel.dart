@@ -28,8 +28,9 @@ class CancellationPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<CancellationStatus> async =
-        ref.watch(cancellationStatusProvider(orderId));
+    final AsyncValue<CancellationStatus> async = ref.watch(
+      cancellationStatusProvider(orderId),
+    );
     final CancellationStatus? status = async.value;
 
     final Widget content;
@@ -56,7 +57,11 @@ class CancellationPanel extends ConsumerWidget {
     } else {
       content = const Row(
         children: <Widget>[
-          SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
           SizedBox(width: AppSpacing.sm),
           Text('Checking cancellation options…'),
         ],
@@ -88,9 +93,11 @@ class _Loaded extends StatelessWidget {
           tone: _Tone.warning,
           icon: Icons.hourglass_top_rounded,
           title: 'Cancellation requested',
-          body: 'Branch staff are reviewing your request. This order is NOT cancelled '
+          body:
+              'Branch staff are reviewing your request. This order is NOT cancelled '
               'yet — we will confirm by SMS and email once someone has decided.',
-          footnote: 'Requested ${formatOrderDateTime(request.createdAt)}'
+          footnote:
+              'Requested ${formatOrderDateTime(request.createdAt)}'
               '${request.reason == null ? '' : '\nYour reason: ${request.reason}'}',
         ),
       );
@@ -112,8 +119,7 @@ class _Loaded extends StatelessWidget {
           tone: _Tone.neutral,
           icon: Icons.do_not_disturb_on_outlined,
           title: 'Cancellation declined',
-          body: request.declineReason ??
-              'Your cancellation request was declined. Please call your branch to discuss it.',
+          body: request.declineReason ?? 'Your cancellation request was declined. Please call your branch to discuss it.',
           footnote: request.decidedAt == null
               ? null
               : 'Decided ${formatOrderDateTime(request.decidedAt)}',
@@ -126,7 +132,9 @@ class _Loaded extends StatelessWidget {
     // not an `else` on the block above.
     if (status.canRequest) {
       if (blocks.isNotEmpty) blocks.add(const SizedBox(height: AppSpacing.sm));
-      blocks.add(_RequestAction(orderId: orderId, windowHours: status.windowHours));
+      blocks.add(
+        _RequestAction(orderId: orderId, windowHours: status.windowHours),
+      );
     } else if (request == null && status.ineligibleReason != null) {
       blocks.add(
         _Notice(
@@ -140,7 +148,10 @@ class _Loaded extends StatelessWidget {
 
     if (blocks.isEmpty) return const SizedBox.shrink();
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: blocks);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: blocks,
+    );
   }
 }
 
@@ -161,12 +172,14 @@ class _RequestActionState extends ConsumerState<_RequestAction> {
 
   Future<void> _open() async {
     setState(() => _busy = true);
-    final CancellationOutcome? outcome = await showModalBottomSheet<CancellationOutcome>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (BuildContext sheetContext) => _RequestSheet(orderId: widget.orderId),
-    );
+    final CancellationOutcome? outcome =
+        await showModalBottomSheet<CancellationOutcome>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (BuildContext sheetContext) =>
+              _RequestSheet(orderId: widget.orderId),
+        );
 
     if (!mounted) return;
     setState(() => _busy = false);
@@ -199,9 +212,11 @@ class _RequestActionState extends ConsumerState<_RequestAction> {
         Text(
           widget.windowHours > 0
               ? 'Branch staff review every request. Cancellation is only available '
-                  'within ${widget.windowHours} hours of placing an order.'
+                    'within ${widget.windowHours} hours of placing an order.'
               : 'Branch staff review every request.',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
+          ),
         ),
       ],
     );
@@ -275,7 +290,9 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
           Text(
             'This sends a request to your branch — it does not cancel the order. '
             'Staff review it and you will be told the outcome by SMS and email.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           TextField(
@@ -379,8 +396,9 @@ class _Notice extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     footnote!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ],
                 if (action != null) ...<Widget>[

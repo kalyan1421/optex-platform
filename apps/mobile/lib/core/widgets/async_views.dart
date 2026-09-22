@@ -39,7 +39,9 @@ class AppErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ApiException? api = error is ApiException ? error as ApiException : null;
+    final ApiException? api = error is ApiException
+        ? error as ApiException
+        : null;
     final String message =
         api?.message ?? 'Something went wrong. Please try again.';
     final bool canRetry = onRetry != null && (api?.isRetryable ?? true);
@@ -51,7 +53,9 @@ class AppErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Icon(
-              api?.isNetwork == true ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+              api?.isNetwork == true
+                  ? Icons.wifi_off_rounded
+                  : Icons.error_outline_rounded,
               size: 44,
               color: Theme.of(context).colorScheme.error,
             ),
@@ -102,14 +106,19 @@ class AppEmptyState extends StatelessWidget {
           children: <Widget>[
             Icon(icon, size: 48, color: theme.colorScheme.outline),
             const SizedBox(height: AppSpacing.md),
-            Text(title, style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
             if (message != null) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.outline),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ],
             if (action != null) ...<Widget>[

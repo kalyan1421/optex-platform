@@ -27,15 +27,18 @@ class PromoBanner {
   final int sortOrder;
 
   factory PromoBanner.fromJson(Map<String, dynamic> json) => PromoBanner(
-        id: asString(json['id']),
-        imageUrl: resolveBannerImageUrl(asStringOrNull(json['image_url'])),
-        targetUrl: asStringOrNull(json['target_url']),
-        headline: asStringOrNull(json['headline']),
-        sortOrder: asInt(json['sort_order']),
-      );
+    id: asString(json['id']),
+    imageUrl: resolveBannerImageUrl(asStringOrNull(json['image_url'])),
+    targetUrl: asStringOrNull(json['target_url']),
+    headline: asStringOrNull(json['headline']),
+    sortOrder: asInt(json['sort_order']),
+  );
 
   /// Headlines are authored with a literal `\n` escape for the web carousel,
   /// which splits on it to stack lines. Rendered the same way here.
-  List<String> get headlineLines =>
-      (headline ?? '').split(r'\n').map((String l) => l.trim()).where((String l) => l.isNotEmpty).toList();
+  List<String> get headlineLines => (headline ?? '')
+      .split(r'\n')
+      .map((String l) => l.trim())
+      .where((String l) => l.isNotEmpty)
+      .toList();
 }

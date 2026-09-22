@@ -86,7 +86,8 @@ class _BannerCarouselState extends State<BannerCarousel> {
               controller: _controller,
               itemCount: widget.banners.length,
               onPageChanged: (int i) => setState(() => _index = i),
-              itemBuilder: (BuildContext context, int i) => _BannerSlide(banner: widget.banners[i]),
+              itemBuilder: (BuildContext context, int i) =>
+                  _BannerSlide(banner: widget.banners[i]),
             ),
             if (widget.banners.length > 1)
               Positioned(
@@ -167,7 +168,8 @@ class _BannerSlide extends StatelessWidget {
                       line,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                           ),
@@ -198,7 +200,9 @@ class _Dots extends StatelessWidget {
             height: 6,
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
-              color: i == active ? Colors.white : Colors.white.withValues(alpha: 0.55),
+              color: i == active
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(3),
             ),
           ),
@@ -239,14 +243,17 @@ class HeroFallback extends StatelessWidget {
             children: <Widget>[
               Text(
                 CatalogStrings.heroHeadline,
-                style: theme.textTheme.headlineSmall
-                    ?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 CatalogStrings.heroSubtitle,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: Colors.white.withValues(alpha: 0.88)),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.88),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               FilledButton(

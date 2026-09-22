@@ -40,15 +40,16 @@ class PushPayload {
   final String? body;
 
   factory PushPayload.fromData(Map<String, dynamic> data) => PushPayload(
-        category: NotificationCategory.tryParse(_str(data['category'])),
-        link: _str(data['link']),
-        orderId: _str(data['orderId']) ?? _str(data['order_id']),
-        appointmentId: _str(data['appointmentId']) ?? _str(data['appointment_id']),
-        productSlug: _str(data['productSlug']) ?? _str(data['product_slug']),
-        notificationId: _str(data['notificationId']) ?? _str(data['notification_id']),
-        title: _str(data['title']),
-        body: _str(data['body']),
-      );
+    category: NotificationCategory.tryParse(_str(data['category'])),
+    link: _str(data['link']),
+    orderId: _str(data['orderId']) ?? _str(data['order_id']),
+    appointmentId: _str(data['appointmentId']) ?? _str(data['appointment_id']),
+    productSlug: _str(data['productSlug']) ?? _str(data['product_slug']),
+    notificationId:
+        _str(data['notificationId']) ?? _str(data['notification_id']),
+    title: _str(data['title']),
+    body: _str(data['body']),
+  );
 
   /// Re-parses what [encode] wrote. Used when a tap arrives through
   /// `flutter_local_notifications`, which carries a single opaque string.
@@ -65,13 +66,13 @@ class PushPayload {
   }
 
   String encode() => jsonEncode(<String, dynamic>{
-        if (category != null) 'category': category!.wire,
-        if (link != null) 'link': link,
-        if (orderId != null) 'orderId': orderId,
-        if (appointmentId != null) 'appointmentId': appointmentId,
-        if (productSlug != null) 'productSlug': productSlug,
-        if (notificationId != null) 'notificationId': notificationId,
-      });
+    if (category != null) 'category': category!.wire,
+    if (link != null) 'link': link,
+    if (orderId != null) 'orderId': orderId,
+    if (appointmentId != null) 'appointmentId': appointmentId,
+    if (productSlug != null) 'productSlug': productSlug,
+    if (notificationId != null) 'notificationId': notificationId,
+  });
 
   /// Where tapping this notification should land, or null to fall back to the
   /// notification centre.

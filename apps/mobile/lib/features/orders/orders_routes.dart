@@ -33,29 +33,30 @@ import 'ui/orders_screen.dart';
 /// `_protectedPrefixes` redirect sends an unauthenticated caller to
 /// `/login?from=…` and back again.
 List<RouteBase> ordersRoutes() => <RouteBase>[
-      GoRoute(
-        path: Routes.orders,
-        builder: (BuildContext context, GoRouterState state) => const OrdersScreen(),
-      ),
-      GoRoute(
-        path: Routes.orderDetail,
-        builder: (BuildContext context, GoRouterState state) {
-          final String? id = _orderId(state);
-          return id == null
-              ? const _MissingOrder()
-              : OrderDetailScreen(orderId: id);
-        },
-      ),
-      GoRoute(
-        path: Routes.orderTracking,
-        builder: (BuildContext context, GoRouterState state) {
-          final String? id = _orderId(state);
-          return id == null
-              ? const _MissingOrder()
-              : OrderTrackingScreen(orderId: id);
-        },
-      ),
-    ];
+  GoRoute(
+    path: Routes.orders,
+    builder: (BuildContext context, GoRouterState state) =>
+        const OrdersScreen(),
+  ),
+  GoRoute(
+    path: Routes.orderDetail,
+    builder: (BuildContext context, GoRouterState state) {
+      final String? id = _orderId(state);
+      return id == null
+          ? const _MissingOrder()
+          : OrderDetailScreen(orderId: id);
+    },
+  ),
+  GoRoute(
+    path: Routes.orderTracking,
+    builder: (BuildContext context, GoRouterState state) {
+      final String? id = _orderId(state);
+      return id == null
+          ? const _MissingOrder()
+          : OrderTrackingScreen(orderId: id);
+    },
+  ),
+];
 
 /// The `:id` path parameter, or null when it is absent or blank.
 ///
@@ -75,15 +76,15 @@ class _MissingOrder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Order')),
-        body: AppEmptyState(
-          title: 'Order not found',
-          message: 'That link did not include an order reference.',
-          icon: Icons.receipt_long_outlined,
-          action: FilledButton(
-            onPressed: () => context.go(Routes.orders),
-            child: const Text('My orders'),
-          ),
-        ),
-      );
+    appBar: AppBar(title: const Text('Order')),
+    body: AppEmptyState(
+      title: 'Order not found',
+      message: 'That link did not include an order reference.',
+      icon: Icons.receipt_long_outlined,
+      action: FilledButton(
+        onPressed: () => context.go(Routes.orders),
+        child: const Text('My orders'),
+      ),
+    ),
+  );
 }

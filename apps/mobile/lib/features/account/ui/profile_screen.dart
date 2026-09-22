@@ -47,10 +47,12 @@ class _ProfileForm extends ConsumerStatefulWidget {
 
 class _ProfileFormState extends ConsumerState<_ProfileForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  late final TextEditingController _name =
-      TextEditingController(text: widget.profile.fullName ?? '');
-  late final TextEditingController _phone =
-      TextEditingController(text: widget.profile.phone ?? '');
+  late final TextEditingController _name = TextEditingController(
+    text: widget.profile.fullName ?? '',
+  );
+  late final TextEditingController _phone = TextEditingController(
+    text: widget.profile.phone ?? '',
+  );
 
   bool _saving = false;
   String? _error;
@@ -80,17 +82,19 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     // but `UpdateMeDto`'s regex has no room for them, so they come out here.
     final String phone = _phone.text.replaceAll(' ', '').trim();
     try {
-      await ref.read(profileProvider.notifier).save(
+      await ref
+          .read(profileProvider.notifier)
+          .save(
             fullName: _name.text.trim(),
             phone: phone.isEmpty ? null : phone,
             // An emptied field is an explicit "remove my number", which the
             // service only performs when the key is present and null.
-            clearPhone: phone.isEmpty && (widget.profile.phone ?? '').isNotEmpty,
+            clearPhone:
+                phone.isEmpty && (widget.profile.phone ?? '').isNotEmpty,
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Profile updated')));
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -122,8 +126,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             child: Text(
               'Finish setting up your profile so we can reach you about '
               'orders and appointments.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
           ),
         _ReadOnlyField(
@@ -164,7 +169,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                 decoration: const InputDecoration(
                   labelText: 'Phone (optional)',
                   hintText: '0712345678',
-                  helperText: 'Kenyan mobile number. Used for delivery and '
+                  helperText:
+                      'Kenyan mobile number. Used for delivery and '
                       'appointment reminders.',
                   helperMaxLines: 2,
                   prefixIcon: Icon(Icons.phone_outlined),
@@ -196,11 +202,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 }
 
 class _ReadOnlyField extends StatelessWidget {
-  const _ReadOnlyField({
-    required this.label,
-    required this.value,
-    this.helper,
-  });
+  const _ReadOnlyField({required this.label, required this.value, this.helper});
 
   final String label;
   final String value;
@@ -219,7 +221,9 @@ class _ReadOnlyField extends StatelessWidget {
       ),
       child: Text(
         value,
-        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.outline),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.outline,
+        ),
       ),
     );
   }

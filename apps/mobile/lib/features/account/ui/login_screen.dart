@@ -72,7 +72,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _goToSignup() {
     final String? from = widget.from;
     context.push(
-      from == null || from.isEmpty ? Routes.signup : '${Routes.signup}?from=$from',
+      from == null || from.isEmpty
+          ? Routes.signup
+          : '${Routes.signup}?from=$from',
     );
   }
 
@@ -83,7 +85,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return AuthScaffold(
       title: 'Welcome back',
-      subtitle: 'Sign in to track orders, save prescriptions and book eye tests.',
+      subtitle:
+          'Sign in to track orders, save prescriptions and book eye tests.',
       children: <Widget>[
         if (_error != null) FormErrorBanner(message: _error!),
         Form(
@@ -133,7 +136,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: busy ? null : () => context.push(Routes.forgotPassword),
+                  onPressed: busy
+                      ? null
+                      : () => context.push(Routes.forgotPassword),
                   child: const Text('Forgot password?'),
                 ),
               ),
@@ -166,8 +171,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: <Widget>[
             Text(
               'New to OPTEX?',
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
             TextButton(
               onPressed: busy ? null : _goToSignup,

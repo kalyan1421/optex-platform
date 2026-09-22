@@ -50,10 +50,14 @@ class AuthInterceptor extends QueuedInterceptor {
   }
 
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     final RequestOptions request = err.requestOptions;
 
-    final bool shouldAttempt = err.response?.statusCode == 401 &&
+    final bool shouldAttempt =
+        err.response?.statusCode == 401 &&
         request.extra['skipAuth'] != true &&
         request.extra['didRetry'] != true;
 
@@ -101,10 +105,32 @@ class AuthInterceptor extends QueuedInterceptor {
   Future<Response<dynamic>> _replay(RequestOptions request, String token) {
     return _retryClient.fetch<dynamic>(
       request.copyWith(
-        headers: <String, dynamic>{...request.headers, 'Authorization': 'Bearer $token'},
+        data: _replayableBody(request.data),
+        headers: <String, dynamic>{
+          ...request.headers,
+          'Authorization': 'Bearer $token',
+        },
         extra: <String, dynamic>{...request.extra, 'didRetry': true},
       ),
     );
+  }
+
+  /// Returns a body that can be sent a second time.
+  ///
+  /// A `FormData` finalises its multipart stream when it is sent, so replaying
+  /// the same instance throws `StateError` instead of retrying — which would
+  /// turn a routine token refresh into a failed prescription upload, on the one
+  /// screen where the customer has just spent a minute photographing a
+  /// document. `clone()` rebuilds the parts from their sources.
+  ///
+  /// A file part backed by a stream rather than a path cannot be re-read, so
+  /// clone() is not a universal guarantee; uploads in this app are file- and
+  /// bytes-backed, which clone handles.
+  static dynamic _replayableBody(dynamic data) {
+    if (data is FormData) {
+      return data.isFinalized ? data.clone() : data;
+    }
+    return data;
   }
 
   static String? _stripBearer(dynamic header) {

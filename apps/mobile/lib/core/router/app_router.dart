@@ -21,10 +21,15 @@ const List<String> _protectedPrefixes = <String>[
   Routes.prescriptions,
   Routes.appointments,
   Routes.notifications,
+  // Both /eye-records endpoints require a JWT. Without this an anonymous
+  // visitor fills four steps of the intake form and only meets the 401 on
+  // submit, losing the lot.
+  Routes.eyeCare,
 ];
 
-bool _requiresAuth(String location) =>
-    _protectedPrefixes.any((String p) => location == p || location.startsWith('$p/'));
+bool _requiresAuth(String location) => _protectedPrefixes.any(
+  (String p) => location == p || location.startsWith('$p/'),
+);
 
 /// Bridges a Riverpod [AuthState] into something GoRouter will listen to.
 class _AuthRefresh extends ChangeNotifier {
@@ -53,7 +58,8 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
       // session loads.
       if (!auth.isResolved) return null;
 
-      final bool onAuthScreen = location == Routes.login ||
+      final bool onAuthScreen =
+          location == Routes.login ||
           location == Routes.signup ||
           location == Routes.forgotPassword;
 
@@ -65,14 +71,14 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
 
       if (auth.isAuthenticated && onAuthScreen) {
         final String? from = state.uri.queryParameters['from'];
-        return (from != null && from.isNotEmpty) ? Uri.decodeComponent(from) : Routes.home;
+        return (from != null && from.isNotEmpty)
+            ? Uri.decodeComponent(from)
+            : Routes.home;
       }
 
       return null;
     },
-    routes: <RouteBase>[
-      ...featureRoutes(),
-    ],
+    routes: <RouteBase>[...featureRoutes()],
     errorBuilder: (BuildContext context, GoRouterState state) => Scaffold(
       appBar: AppBar(title: const Text('Not found')),
       body: AppEmptyState(

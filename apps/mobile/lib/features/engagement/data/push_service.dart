@@ -120,7 +120,9 @@ class PushService {
       );
 
       _foregroundSub = FirebaseMessaging.onMessage.listen(_onForegroundMessage);
-      _openedSub = FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
+      _openedSub = FirebaseMessaging.onMessageOpenedApp.listen(
+        _onMessageOpened,
+      );
       _tokenSub = messaging.onTokenRefresh.listen(_onTokenRefresh);
 
       await _captureColdStartTap(messaging);
@@ -128,8 +130,10 @@ class PushService {
       _started = true;
       return true;
     } catch (error) {
-      developer.log('Push start failed; continuing without push: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Push start failed; continuing without push: $error',
+        name: 'optex.engagement',
+      );
       return false;
     }
   }
@@ -152,12 +156,13 @@ class PushService {
       if (defaultTargetPlatform == TargetPlatform.android) {
         await _local
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.requestNotificationsPermission();
       }
 
-      final NotificationSettings settings =
-          await FirebaseMessaging.instance.requestPermission();
+      final NotificationSettings settings = await FirebaseMessaging.instance
+          .requestPermission();
 
       final PushPermission permission = _map(settings.authorizationStatus);
       if (permission == PushPermission.granted ||
@@ -167,7 +172,10 @@ class PushService {
       }
       return permission;
     } catch (error) {
-      developer.log('Permission request failed: $error', name: 'optex.engagement');
+      developer.log(
+        'Permission request failed: $error',
+        name: 'optex.engagement',
+      );
       return PushPermission.unavailable;
     }
   }
@@ -178,8 +186,8 @@ class PushService {
       return PushPermission.unavailable;
     }
     try {
-      final NotificationSettings settings =
-          await FirebaseMessaging.instance.getNotificationSettings();
+      final NotificationSettings settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
       return _map(settings.authorizationStatus);
     } catch (_) {
       return PushPermission.unavailable;
@@ -268,7 +276,8 @@ class PushService {
 
     final AndroidFlutterLocalNotificationsPlugin? android = _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android == null) return;
 
     // One channel per category, so the system settings screen offers the same
@@ -305,11 +314,12 @@ class PushService {
 
     // And a tap on a notification *we* posted (foreground display) that was
     // still in the tray when the app was killed and relaunched.
-    final NotificationAppLaunchDetails? launch =
-        await _local.getNotificationAppLaunchDetails();
+    final NotificationAppLaunchDetails? launch = await _local
+        .getNotificationAppLaunchDetails();
     if (launch?.didNotificationLaunchApp ?? false) {
-      final String? route =
-          PushPayload.decode(launch?.notificationResponse?.payload)?.route;
+      final String? route = PushPayload.decode(
+        launch?.notificationResponse?.payload,
+      )?.route;
       if (route != null) {
         _pendingRoute = route;
         _onDeepLink(route);
@@ -356,8 +366,10 @@ class PushService {
         payload: payload.encode(),
       );
     } catch (error) {
-      developer.log('Foreground notification display failed: $error',
-          name: 'optex.engagement');
+      developer.log(
+        'Foreground notification display failed: $error',
+        name: 'optex.engagement',
+      );
     }
   }
 
@@ -385,17 +397,16 @@ class PushService {
   }
 
   static PushPermission _map(AuthorizationStatus status) => switch (status) {
-        AuthorizationStatus.authorized => PushPermission.granted,
-        AuthorizationStatus.provisional => PushPermission.provisional,
-        AuthorizationStatus.denied => PushPermission.denied,
-        AuthorizationStatus.deniedPermanently => PushPermission.permanentlyDenied,
-        AuthorizationStatus.notDetermined => PushPermission.notDetermined,
-      };
+    AuthorizationStatus.authorized => PushPermission.granted,
+    AuthorizationStatus.provisional => PushPermission.provisional,
+    AuthorizationStatus.denied => PushPermission.denied,
+    AuthorizationStatus.deniedPermanently => PushPermission.permanentlyDenied,
+    AuthorizationStatus.notDetermined => PushPermission.notDetermined,
+  };
 
   /// Android notification ids are 32-bit; a message id hashes into range.
   static int _notificationId(RemoteMessage message) =>
-      (message.messageId ?? '${DateTime.now().microsecondsSinceEpoch}')
-          .hashCode
+      (message.messageId ?? '${DateTime.now().microsecondsSinceEpoch}').hashCode
           .abs()
           .remainder(2147483647);
 
@@ -406,7 +417,8 @@ class PushService {
 
   static String _channelDescriptionFor(NotificationCategory? category) =>
       switch (category) {
-        NotificationCategory.order => 'Order confirmations and delivery updates.',
+        NotificationCategory.order =>
+          'Order confirmations and delivery updates.',
         NotificationCategory.appointment =>
           'Appointment confirmations and reminders.',
         NotificationCategory.offer => 'Offers and promotions from Optex.',

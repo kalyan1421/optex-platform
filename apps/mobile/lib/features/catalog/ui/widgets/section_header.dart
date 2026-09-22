@@ -36,21 +36,27 @@ class SectionHeader extends StatelessWidget {
               children: <Widget>[
                 Text(
                   title,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (subtitle != null) ...<Widget>[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     subtitle!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ],
               ],
             ),
           ),
           if (onSeeAll != null)
-            TextButton(onPressed: onSeeAll, child: const Text(CatalogStrings.seeAll)),
+            TextButton(
+              onPressed: onSeeAll,
+              child: const Text(CatalogStrings.seeAll),
+            ),
         ],
       ),
     );

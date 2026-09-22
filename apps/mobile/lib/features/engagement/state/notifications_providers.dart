@@ -18,10 +18,10 @@ class NotificationFilterController extends Notifier<NotificationCategory?> {
 }
 
 final NotifierProvider<NotificationFilterController, NotificationCategory?>
-    notificationFilterProvider =
+notificationFilterProvider =
     NotifierProvider<NotificationFilterController, NotificationCategory?>(
-  NotificationFilterController.new,
-);
+      NotificationFilterController.new,
+    );
 
 /// The notification centre's feed (SPEC-11 P0-11).
 ///
@@ -36,19 +36,24 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
   /// is cached here, so this age never reaches checkout.
   static const Duration cacheMaxAge = Duration(minutes: 15);
 
-  NotificationsRepository get _repository => ref.read(notificationsRepositoryProvider);
+  NotificationsRepository get _repository =>
+      ref.read(notificationsRepositoryProvider);
   OfflineCache get _cache => ref.read(offlineCacheProvider);
 
   @override
   Future<NotificationFeed> build() async {
-    final NotificationCategory? category = ref.watch(notificationFilterProvider);
+    final NotificationCategory? category = ref.watch(
+      notificationFilterProvider,
+    );
     return _loadFirstPage(category);
   }
 
   static String cacheKeyFor(NotificationCategory? category) =>
       'notifications:v1:${category?.wire ?? 'all'}:page1';
 
-  Future<NotificationFeed> _loadFirstPage(NotificationCategory? category) async {
+  Future<NotificationFeed> _loadFirstPage(
+    NotificationCategory? category,
+  ) async {
     try {
       final NotificationFeed feed = await _repository.list(
         category: category,
@@ -61,11 +66,14 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
 
       // Offline. A saved copy, labelled as such, beats an error screen on a
       // list the customer has already read once.
-      final CachedDocument? cached = await _cache.readStale(cacheKeyFor(category));
+      final CachedDocument? cached = await _cache.readStale(
+        cacheKeyFor(category),
+      );
       if (cached == null) rethrow;
 
-      final NotificationFeed feed =
-          NotificationsRepository.feedFromJson(cached.value);
+      final NotificationFeed feed = NotificationsRepository.feedFromJson(
+        cached.value,
+      );
       return NotificationFeed(
         items: feed.items,
         total: feed.total,
@@ -78,11 +86,11 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
   }
 
   Map<String, dynamic> _encode(NotificationFeed feed) => <String, dynamic>{
-        'data': feed.items.map((AppNotification n) => n.toJson()).toList(),
-        'total': feed.total,
-        'page': feed.page,
-        'pageSize': feed.pageSize,
-      };
+    'data': feed.items.map((AppNotification n) => n.toJson()).toList(),
+    'total': feed.total,
+    'page': feed.page,
+    'pageSize': feed.pageSize,
+  };
 
   Future<void> refresh() async {
     final NotificationCategory? category = ref.read(notificationFilterProvider);
@@ -95,9 +103,13 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
   Future<void> loadMore() async {
     final NotificationFeed? current = state.value;
     if (current == null) return;
-    if (current.loadingMore || !current.hasMore || current.servedFromCache) return;
+    if (current.loadingMore || !current.hasMore || current.servedFromCache) {
+      return;
+    }
 
-    state = AsyncValue<NotificationFeed>.data(current.copyWith(loadingMore: true));
+    state = AsyncValue<NotificationFeed>.data(
+      current.copyWith(loadingMore: true),
+    );
 
     try {
       final NotificationFeed next = await _repository.list(
@@ -116,7 +128,9 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
     } on ApiException {
       // Keep what is on screen; the row the customer was reading does not
       // vanish because page 3 failed.
-      state = AsyncValue<NotificationFeed>.data(current.copyWith(loadingMore: false));
+      state = AsyncValue<NotificationFeed>.data(
+        current.copyWith(loadingMore: false),
+      );
       rethrow;
     }
   }
@@ -127,8 +141,9 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
     final NotificationFeed? current = state.value;
     if (current == null) return;
 
-    final AppNotification? target =
-        current.items.where((AppNotification n) => n.id == id).firstOrNull;
+    final AppNotification? target = current.items
+        .where((AppNotification n) => n.id == id)
+        .firstOrNull;
     if (target == null || !target.isUnread) return;
 
     _replace(current, id, target.markedRead(DateTime.now()));
@@ -155,7 +170,9 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
         .map((AppNotification n) => n.isUnread ? n.markedRead(now) : n)
         .toList();
 
-    state = AsyncValue<NotificationFeed>.data(current.copyWith(items: optimistic));
+    state = AsyncValue<NotificationFeed>.data(
+      current.copyWith(items: optimistic),
+    );
     ref.read(unreadCountProvider.notifier).setCount(0);
 
     try {
@@ -183,15 +200,16 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
 }
 
 final AsyncNotifierProvider<NotificationsFeedController, NotificationFeed>
-    notificationsFeedProvider =
+notificationsFeedProvider =
     AsyncNotifierProvider<NotificationsFeedController, NotificationFeed>(
-  NotificationsFeedController.new,
-);
+      NotificationsFeedController.new,
+    );
 
 /// The badge count, from `GET /notifications/unread-count`.
 class UnreadCountController extends AsyncNotifier<int> {
   @override
-  Future<int> build() => ref.watch(notificationsRepositoryProvider).unreadCount();
+  Future<int> build() =>
+      ref.watch(notificationsRepositoryProvider).unreadCount();
 
   /// Refetches. Called on foreground (P0-11) and after a reconnect.
   Future<void> reload() async {
@@ -213,4 +231,6 @@ class UnreadCountController extends AsyncNotifier<int> {
 }
 
 final AsyncNotifierProvider<UnreadCountController, int> unreadCountProvider =
-    AsyncNotifierProvider<UnreadCountController, int>(UnreadCountController.new);
+    AsyncNotifierProvider<UnreadCountController, int>(
+      UnreadCountController.new,
+    );

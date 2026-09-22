@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/account/account_routes.dart';
 import '../../features/catalog/catalog_routes.dart';
+import '../../features/clinical/clinical_routes.dart';
+import '../../features/commerce/commerce_routes.dart';
 import '../../features/engagement/engagement_routes.dart';
 import '../../features/orders/orders_routes.dart';
 
@@ -12,8 +14,10 @@ import '../../features/orders/orders_routes.dart';
 /// registry separate from `app_router.dart` is what lets several features be
 /// built in parallel without every one of them editing the router.
 List<RouteBase> featureRoutes() => <RouteBase>[
-      ...accountRoutes(),
-      ...catalogRoutes(),
-      ...engagementRoutes(),
-      ...ordersRoutes(),
-    ];
+  ...accountRoutes(),
+  ...catalogRoutes(),
+  ...clinicalRoutes(),
+  ...commerceRoutes(),
+  ...engagementRoutes(),
+  ...ordersRoutes(),
+];

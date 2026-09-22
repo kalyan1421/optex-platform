@@ -20,7 +20,9 @@ class WishlistRepository {
         .toList(growable: false);
   }
 
-  Future<void> add(String productId) => _api.post<dynamic>('/wishlist/$productId');
+  Future<void> add(String productId) =>
+      _api.post<dynamic>('/wishlist/$productId');
 
-  Future<void> remove(String productId) => _api.delete<dynamic>('/wishlist/$productId');
+  Future<void> remove(String productId) =>
+      _api.delete<dynamic>('/wishlist/$productId');
 }

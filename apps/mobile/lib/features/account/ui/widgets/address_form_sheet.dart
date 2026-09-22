@@ -21,10 +21,8 @@ Future<AddressInput?> showAddressFormSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (BuildContext ctx) => _AddressFormSheet(
-      existing: existing,
-      forceDefault: forceDefault,
-    ),
+    builder: (BuildContext ctx) =>
+        _AddressFormSheet(existing: existing, forceDefault: forceDefault),
   );
 }
 
@@ -45,21 +43,28 @@ class _AddressFormSheet extends StatefulWidget {
 class _AddressFormSheetState extends State<_AddressFormSheet> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController _label =
-      TextEditingController(text: widget.existing?.label ?? '');
-  late final TextEditingController _name =
-      TextEditingController(text: widget.existing?.name ?? '');
-  late final TextEditingController _phone =
-      TextEditingController(text: widget.existing?.phone ?? '');
-  late final TextEditingController _address =
-      TextEditingController(text: widget.existing?.address ?? '');
-  late final TextEditingController _city =
-      TextEditingController(text: widget.existing?.city ?? '');
-  late final TextEditingController _postal =
-      TextEditingController(text: widget.existing?.postal ?? '');
+  late final TextEditingController _label = TextEditingController(
+    text: widget.existing?.label ?? '',
+  );
+  late final TextEditingController _name = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
+  late final TextEditingController _phone = TextEditingController(
+    text: widget.existing?.phone ?? '',
+  );
+  late final TextEditingController _address = TextEditingController(
+    text: widget.existing?.address ?? '',
+  );
+  late final TextEditingController _city = TextEditingController(
+    text: widget.existing?.city ?? '',
+  );
+  late final TextEditingController _postal = TextEditingController(
+    text: widget.existing?.postal ?? '',
+  );
 
   late String? _county = _initialCounty;
-  late bool _isDefault = widget.forceDefault || (widget.existing?.isDefault ?? false);
+  late bool _isDefault =
+      widget.forceDefault || (widget.existing?.isDefault ?? false);
 
   /// A county saved before this list existed (or typed on the web) may not be
   /// in it. Leaving the picker unset is better than silently rewriting the
@@ -133,8 +138,9 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                     Expanded(
                       child: Text(
                         editing ? 'Edit address' : 'Add an address',
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -178,7 +184,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                           labelText: 'Recipient name',
                           prefixIcon: Icon(Icons.person_outline_rounded),
                         ),
-                        validator: Validators.required('a recipient name', max: 120),
+                        validator: Validators.required(
+                          'a recipient name',
+                          max: 120,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(
@@ -204,7 +213,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                           hintText: 'Moi Avenue, Bruce House, 4th Floor',
                           prefixIcon: Icon(Icons.home_outlined),
                         ),
-                        validator: Validators.required('a street address', min: 3),
+                        validator: Validators.required(
+                          'a street address',
+                          min: 3,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(
@@ -215,7 +227,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                           labelText: 'City / town',
                           prefixIcon: Icon(Icons.location_city_outlined),
                         ),
-                        validator: Validators.required('a city or town', max: 120),
+                        validator: Validators.required(
+                          'a city or town',
+                          max: 120,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       DropdownButtonFormField<String>(
@@ -229,12 +244,18 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                           for (final String county in kenyaCounties)
                             DropdownMenuItem<String>(
                               value: county,
-                              child: Text(county, overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                county,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
-                        onChanged: (String? value) => setState(() => _county = value),
+                        onChanged: (String? value) =>
+                            setState(() => _county = value),
                         validator: (String? value) =>
-                            (value == null || value.isEmpty) ? 'Choose a county' : null,
+                            (value == null || value.isEmpty)
+                            ? 'Choose a county'
+                            : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(
@@ -255,15 +276,17 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                         value: _isDefault,
                         onChanged: widget.forceDefault
                             ? null
-                            : (bool value) => setState(() => _isDefault = value),
+                            : (bool value) =>
+                                  setState(() => _isDefault = value),
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Use as my default address'),
                         subtitle: Text(
                           widget.forceDefault
                               ? 'Your first address is always the default.'
                               : 'Pre-filled at checkout.',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: theme.colorScheme.outline),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),

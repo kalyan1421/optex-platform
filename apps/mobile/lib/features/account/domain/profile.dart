@@ -43,12 +43,12 @@ class MeProfile {
   }
 
   factory MeProfile.fromJson(Map<String, dynamic> json) => MeProfile(
-        id: json['id'] as String,
-        email: json['email'] as String?,
-        fullName: json['full_name'] as String?,
-        phone: json['phone'] as String?,
-        hasProfile: json['has_profile'] as bool? ?? false,
-      );
+    id: json['id'] as String,
+    email: json['email'] as String?,
+    fullName: json['full_name'] as String?,
+    phone: json['phone'] as String?,
+    hasProfile: json['has_profile'] as bool? ?? false,
+  );
 }
 
 extension on String {

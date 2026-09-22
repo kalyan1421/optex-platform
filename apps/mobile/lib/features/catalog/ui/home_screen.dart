@@ -107,7 +107,9 @@ class _HeroSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<List<PromoBanner>> banners = ref.watch(activeBannersProvider);
+    final AsyncValue<List<PromoBanner>> banners = ref.watch(
+      activeBannersProvider,
+    );
 
     return banners.when(
       loading: () => const SizedBox(height: heroHeight, child: AppLoading()),
@@ -144,7 +146,8 @@ class _CategorySection extends ConsumerWidget {
         icon: Icons.category_outlined,
       ),
       onRetry: () => ref.invalidate(categoriesProvider),
-      builder: (BuildContext context, List<Category> data) => CategoryShortcuts(categories: data),
+      builder: (BuildContext context, List<Category> data) =>
+          CategoryShortcuts(categories: data),
     );
   }
 }
@@ -176,7 +179,8 @@ class _CuratedRail extends ConsumerWidget {
         icon: Icons.inventory_2_outlined,
       ),
       onRetry: () => ref.invalidate(provider),
-      builder: (BuildContext context, List<Product> data) => ProductRail(products: data),
+      builder: (BuildContext context, List<Product> data) =>
+          ProductRail(products: data),
     );
   }
 }

@@ -32,8 +32,9 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   static const Duration _debounceDelay = Duration(milliseconds: 350);
 
-  late final TextEditingController _input =
-      TextEditingController(text: widget.initialQuery?.trim() ?? '');
+  late final TextEditingController _input = TextEditingController(
+    text: widget.initialQuery?.trim() ?? '',
+  );
 
   Timer? _debounce;
 
@@ -120,7 +121,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               emptyTitle: CatalogStrings.searchNoResults,
               emptyMessage: CatalogStrings.searchNoResultsBody(_committed),
               unfilteredEmptyTitle: CatalogStrings.searchNoResults,
-              unfilteredEmptyMessage: CatalogStrings.searchNoResultsBody(_committed),
+              unfilteredEmptyMessage: CatalogStrings.searchNoResultsBody(
+                _committed,
+              ),
               emptyIcon: Icons.search_off_rounded,
             ),
     );

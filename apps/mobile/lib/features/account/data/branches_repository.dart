@@ -14,7 +14,9 @@ class BranchesRepository {
   Future<List<Branch>> list({String? query}) async {
     final List<dynamic> json = await _api.get<List<dynamic>>(
       '/branches',
-      query: <String, dynamic>{'q': query?.trim().isEmpty ?? true ? null : query!.trim()},
+      query: <String, dynamic>{
+        'q': query?.trim().isEmpty ?? true ? null : query!.trim(),
+      },
       auth: false,
     );
     return json

@@ -22,7 +22,8 @@ class Paginated<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) itemFromJson,
   ) {
-    final dynamic rawItems = json['items'] ?? json['data'] ?? json['results'] ?? const [];
+    final dynamic rawItems =
+        json['items'] ?? json['data'] ?? json['results'] ?? const [];
     final List<T> items = (rawItems as List<dynamic>)
         .whereType<Map<String, dynamic>>()
         .map(itemFromJson)
@@ -32,7 +33,8 @@ class Paginated<T> {
       items: items,
       total: (json['total'] as num?)?.toInt() ?? items.length,
       page: (json['page'] as num?)?.toInt() ?? 1,
-      pageSize: (json['pageSize'] as num?)?.toInt() ??
+      pageSize:
+          (json['pageSize'] as num?)?.toInt() ??
           (json['limit'] as num?)?.toInt() ??
           items.length,
     );

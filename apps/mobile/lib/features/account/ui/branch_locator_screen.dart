@@ -21,7 +21,9 @@ class BranchLocatorScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<BranchLocatorState> locator = ref.watch(branchLocatorProvider);
+    final AsyncValue<BranchLocatorState> locator = ref.watch(
+      branchLocatorProvider,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Our branches')),
@@ -35,11 +37,13 @@ class BranchLocatorScreen extends ConsumerWidget {
           if (state.branches.isEmpty) {
             return AppEmptyState(
               title: 'No branches listed',
-              message: 'We could not find any open branches right now. '
+              message:
+                  'We could not find any open branches right now. '
                   'Please try again shortly.',
               icon: Icons.storefront_outlined,
               action: OutlinedButton.icon(
-                onPressed: () => ref.read(branchLocatorProvider.notifier).refresh(),
+                onPressed: () =>
+                    ref.read(branchLocatorProvider.notifier).refresh(),
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Try again'),
               ),
@@ -81,48 +85,53 @@ class _LocationBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
-    final BranchLocatorController controller =
-        ref.read(branchLocatorProvider.notifier);
+    final BranchLocatorController controller = ref.read(
+      branchLocatorProvider.notifier,
+    );
 
-    final (IconData icon, String message, String? actionLabel, VoidCallback? action) =
-        switch (state.access) {
+    final (
+      IconData icon,
+      String message,
+      String? actionLabel,
+      VoidCallback? action,
+    ) = switch (state.access) {
       LocationAccess.granted => (
-          Icons.near_me_rounded,
-          'Sorted by distance from you.',
-          null,
-          null,
-        ),
+        Icons.near_me_rounded,
+        'Sorted by distance from you.',
+        null,
+        null,
+      ),
       LocationAccess.notAsked => (
-          Icons.sort_by_alpha_rounded,
-          'Listed A–Z. Share your location to see the nearest branch first.',
-          'Sort by nearest',
-          controller.requestLocation,
-        ),
+        Icons.sort_by_alpha_rounded,
+        'Listed A–Z. Share your location to see the nearest branch first.',
+        'Sort by nearest',
+        controller.requestLocation,
+      ),
       LocationAccess.denied => (
-          Icons.sort_by_alpha_rounded,
-          'Listed A–Z. You can still call or get directions to any branch.',
-          'Try location again',
-          controller.requestLocation,
-        ),
+        Icons.sort_by_alpha_rounded,
+        'Listed A–Z. You can still call or get directions to any branch.',
+        'Try location again',
+        controller.requestLocation,
+      ),
       LocationAccess.deniedForever => (
-          Icons.sort_by_alpha_rounded,
-          'Listed A–Z. Location is turned off for OPTEX in your device '
-              'settings.',
-          'Open settings',
-          () => controller.openSettings(locationServices: false),
-        ),
+        Icons.sort_by_alpha_rounded,
+        'Listed A–Z. Location is turned off for OPTEX in your device '
+            'settings.',
+        'Open settings',
+        () => controller.openSettings(locationServices: false),
+      ),
       LocationAccess.serviceDisabled => (
-          Icons.location_disabled_rounded,
-          'Listed A–Z. Location services are switched off on this device.',
-          'Turn on location',
-          () => controller.openSettings(locationServices: true),
-        ),
+        Icons.location_disabled_rounded,
+        'Listed A–Z. Location services are switched off on this device.',
+        'Turn on location',
+        () => controller.openSettings(locationServices: true),
+      ),
       LocationAccess.unavailable => (
-          Icons.sort_by_alpha_rounded,
-          'Listed A–Z. We could not get a location fix just now.',
-          'Try again',
-          controller.requestLocation,
-        ),
+        Icons.sort_by_alpha_rounded,
+        'Listed A–Z. We could not get a location fix just now.',
+        'Try again',
+        controller.requestLocation,
+      ),
     };
 
     return Container(
@@ -142,14 +151,17 @@ class _LocationBanner extends ConsumerWidget {
               children: <Widget>[
                 Text(
                   message,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
                 if (actionLabel != null) ...<Widget>[
                   const SizedBox(height: AppSpacing.xs),
                   state.locating
                       ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.sm,
+                          ),
                           child: SizedBox(
                             height: 18,
                             width: 18,
@@ -191,7 +203,8 @@ class _BranchCardState extends State<_BranchCard> {
 
   void _report(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// `canLaunchUrl` is deliberately not consulted. On Android 11+ it needs a
@@ -210,7 +223,10 @@ class _BranchCardState extends State<_BranchCard> {
   Future<void> _dial() async {
     final String? phone = _branch.phone;
     if (phone == null || phone.trim().isEmpty) return;
-    final Uri uri = Uri(scheme: 'tel', path: phone.replaceAll(RegExp(r'[\s()-]'), ''));
+    final Uri uri = Uri(
+      scheme: 'tel',
+      path: phone.replaceAll(RegExp(r'[\s()-]'), ''),
+    );
     if (!await _tryLaunch(uri)) {
       _report('No dialler available. The number is $phone.');
     }
@@ -228,9 +244,13 @@ class _BranchCardState extends State<_BranchCard> {
     final List<Uri> candidates = <Uri>[
       if (_branch.hasCoordinates)
         if (!kIsWeb && Platform.isIOS)
-          Uri.parse('https://maps.apple.com/?ll=${_branch.lat},${_branch.lng}&q=$encoded')
+          Uri.parse(
+            'https://maps.apple.com/?ll=${_branch.lat},${_branch.lng}&q=$encoded',
+          )
         else
-          Uri.parse('geo:${_branch.lat},${_branch.lng}?q=${_branch.lat},${_branch.lng}($encoded)'),
+          Uri.parse(
+            'geo:${_branch.lat},${_branch.lng}?q=${_branch.lat},${_branch.lng}($encoded)',
+          ),
       Uri.parse(
         _branch.hasCoordinates
             ? 'https://www.google.com/maps/search/?api=1&query=${_branch.lat},${_branch.lng}'
@@ -266,8 +286,9 @@ class _BranchCardState extends State<_BranchCard> {
                 Expanded(
                   child: Text(
                     branch.name,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 if (openNow != null) _OpenChip(open: openNow),
@@ -277,8 +298,11 @@ class _BranchCardState extends State<_BranchCard> {
               const SizedBox(height: AppSpacing.xs),
               Row(
                 children: <Widget>[
-                  Icon(Icons.near_me_outlined,
-                      size: 14, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.near_me_outlined,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
                     distance,
@@ -300,8 +324,11 @@ class _BranchCardState extends State<_BranchCard> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Icon(Icons.place_outlined,
-                          size: 18, color: theme.colorScheme.outline),
+                      Icon(
+                        Icons.place_outlined,
+                        size: 18,
+                        color: theme.colorScheme.outline,
+                      ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
@@ -309,8 +336,11 @@ class _BranchCardState extends State<_BranchCard> {
                           style: theme.textTheme.bodyMedium,
                         ),
                       ),
-                      Icon(Icons.open_in_new_rounded,
-                          size: 16, color: theme.colorScheme.outline),
+                      Icon(
+                        Icons.open_in_new_rounded,
+                        size: 16,
+                        color: theme.colorScheme.outline,
+                      ),
                     ],
                   ),
                 ),
@@ -324,8 +354,11 @@ class _BranchCardState extends State<_BranchCard> {
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                   child: Row(
                     children: <Widget>[
-                      Icon(Icons.phone_outlined,
-                          size: 18, color: theme.colorScheme.outline),
+                      Icon(
+                        Icons.phone_outlined,
+                        size: 18,
+                        color: theme.colorScheme.outline,
+                      ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
@@ -336,8 +369,11 @@ class _BranchCardState extends State<_BranchCard> {
                           ),
                         ),
                       ),
-                      Icon(Icons.call_made_rounded,
-                          size: 16, color: theme.colorScheme.outline),
+                      Icon(
+                        Icons.call_made_rounded,
+                        size: 16,
+                        color: theme.colorScheme.outline,
+                      ),
                     ],
                   ),
                 ),
@@ -347,13 +383,17 @@ class _BranchCardState extends State<_BranchCard> {
             if (branch.hours.isEmpty)
               Row(
                 children: <Widget>[
-                  Icon(Icons.schedule_outlined,
-                      size: 18, color: theme.colorScheme.outline),
+                  Icon(
+                    Icons.schedule_outlined,
+                    size: 18,
+                    color: theme.colorScheme.outline,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Call for opening hours',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ],
               )
@@ -362,7 +402,8 @@ class _BranchCardState extends State<_BranchCard> {
                 hours: branch.hours,
                 today: today,
                 expanded: _hoursExpanded,
-                onToggle: () => setState(() => _hoursExpanded = !_hoursExpanded),
+                onToggle: () =>
+                    setState(() => _hoursExpanded = !_hoursExpanded),
               ),
           ],
         ),
@@ -379,7 +420,9 @@ class _OpenChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final Color color = open ? theme.colorScheme.primary : theme.colorScheme.error;
+    final Color color = open
+        ? theme.colorScheme.primary
+        : theme.colorScheme.error;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -391,8 +434,10 @@ class _OpenChip extends StatelessWidget {
       ),
       child: Text(
         open ? 'Open now' : 'Closed',
-        style: theme.textTheme.labelSmall
-            ?.copyWith(color: color, fontWeight: FontWeight.w700),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -426,8 +471,11 @@ class _HoursSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             child: Row(
               children: <Widget>[
-                Icon(Icons.schedule_outlined,
-                    size: 18, color: theme.colorScheme.outline),
+                Icon(
+                  Icons.schedule_outlined,
+                  size: 18,
+                  color: theme.colorScheme.outline,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
@@ -436,7 +484,9 @@ class _HoursSection extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  expanded
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
                   size: 20,
                   color: theme.colorScheme.outline,
                 ),
@@ -459,8 +509,9 @@ class _HoursSection extends StatelessWidget {
                           child: Text(
                             BranchHours.labelFor(day),
                             style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight:
-                                  day == weekday ? FontWeight.w700 : FontWeight.w400,
+                              fontWeight: day == weekday
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                               color: theme.colorScheme.outline,
                             ),
                           ),
@@ -469,8 +520,9 @@ class _HoursSection extends StatelessWidget {
                           child: Text(
                             dayHours?.display ?? 'Closed',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight:
-                                  day == weekday ? FontWeight.w700 : FontWeight.w400,
+                              fontWeight: day == weekday
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                             ),
                           ),
                         ),
