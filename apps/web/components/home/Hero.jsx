@@ -53,18 +53,14 @@ export default async function Hero() {
             className="w-full text-[36px] font-bold uppercase text-white drop-shadow-md"
             style={{ fontFamily: 'Poppins, sans-serif' }}
           >
-            <span className="block">UWAZI WA</span>
-            <span className="block">MAONO,</span>
-            <span className="block">UREMBO WA</span>
-            <span className="block">MTINDO</span>
+            <span className="block">See Better.</span>
+            <span className="block">Look Better.</span>
           </h1>
           <p
             className="text-center font-normal text-white"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            Crafted for bold vision and timeless Kenyan style.
-            <br />
-            Step into clarity. Step into confidence.
+            Precision eyewear designed for clarity, comfort, and confidence.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
@@ -101,18 +97,14 @@ export default async function Hero() {
               className="w-full text-left text-[76.67px] font-bold uppercase leading-[0.97] tracking-[-0.01em]"
               style={{ fontFamily: 'Poppins, sans-serif' }}
             >
-              <span className="block text-[#E53935]">UWAZI WA</span>
-              <span className="block text-[#E53935]">MAONO,</span>
-              <span className="block text-[#1A1A2E]">UREMBO WA</span>
-              <span className="block text-[#1A1A2E]">MTINDO</span>
+              <span className="block whitespace-nowrap text-[#E53935]">See Better.</span>
+              <span className="block whitespace-nowrap text-[#1A1A2E]">Look Better.</span>
             </h1>
             <p
               className="w-[523px] text-left text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1A1A2E]"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
-              Crafted for bold vision and timeless Kenyan style.
-              <br />
-              Step into clarity. Step into confidence.
+              Precision eyewear designed for clarity, comfort, and confidence.
             </p>
           </div>
           <div className="flex h-[43px] w-[359px] items-center gap-[12px]">
