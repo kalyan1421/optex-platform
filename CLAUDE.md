@@ -17,7 +17,7 @@ Repo siblings at the root:
 - `packages/db/` — Hand-derived Supabase types, browser/server/service client factories, query helpers for the Next.js-direct-read paths. **Service client throws if imported on the client.**
 - `packages/api-client/` — Typed client for `apps/web`/`apps/admin` to call `apps/api`.
 - `packages/validators/` — Shared zod (or similar) validation schemas.
-- `packages/config/` — Tailwind preset with brand tokens (`brand.blue #2A3182`, `brand.red #E53935`, `brand.dark #1A1A2E`) + Montserrat font + CSS-variable theme tokens.
+- `packages/config/` — Tailwind preset with brand tokens (`brand.blue #2E3192`, `brand.red #E53935`, `brand.dark #1A1A2E`) + Montserrat font + CSS-variable theme tokens. **The blue was `#2A3182` here until the preset was corrected to match the Figma swatch; the storefront was not migrated with it, so 47 files still hardcode the old navy against 36 on the new one.** `packages/config/tailwind.preset.js` is the authority — see [docs/DESIGN-STATUS.md §6](docs/DESIGN-STATUS.md).
 - `Backend/supabase/` — Schema, RLS, storage migrations (`0001` through `0040`), seed. See [Backend/README.md](Backend/README.md).
 - `docker-compose.yml` + `docker/` — Full local dev stack (Supabase Postgres/Auth/REST/Storage/Kong + the API), see "Local dev" below.
 - `docs/CI-SECRETS.md` — Every GitHub Actions secret and variable: what it is for, Secrets vs Variables and why, and what breaks without it. **That doc's "nothing is set today" framing is stale.** As of 2026-09-07 the secret `DEPLOY_WEBHOOK_URL` and the three `NEXT_PUBLIC_*` repository variables are all set, and deployment is live end to end — see "Deployment" below.

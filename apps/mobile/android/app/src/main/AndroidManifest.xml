@@ -2,6 +2,23 @@
     <!-- SPEC-11 P0-13. Every permission here is requested in context at the
          point of use, never at cold start, and each feature degrades rather
          than dead-ends when denied. -->
+    <!-- Android 11+ (API 30) package visibility. Without these, canLaunchUrl()
+         returns false for tel: and geo: even though the launch itself would
+         succeed — so the branch locator would hide a working "Call" button. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="geo"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- P0-10: runtime-requested on Android 13+ (API 33). -->

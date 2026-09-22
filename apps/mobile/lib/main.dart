@@ -7,6 +7,7 @@ import 'core/env/app_env.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/engagement/ui/engagement_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,11 @@ class OptexApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       routerConfig: router,
+      // Wraps every screen: offline banner, foreground badge refresh and the
+      // version gate. Mounted here rather than per-screen so nothing can ship
+      // a route that quietly opts out of them.
+      builder: (BuildContext context, Widget? child) =>
+          EngagementHost(child: child ?? const SizedBox.shrink()),
     );
   }
 }

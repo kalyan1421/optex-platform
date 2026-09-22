@@ -77,6 +77,14 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>OPTEX uses your location to show which branch is nearest to you. You can browse all branches without sharing it.</string>
 	<!-- Deep links from push payloads and shared product links. -->
+	<!-- iOS equivalent of Android's <queries>: canOpenURL returns false for
+	     undeclared schemes, which would hide a working "Call" button. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>maps</string>
+		<string>comgooglemaps</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

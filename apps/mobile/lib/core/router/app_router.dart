@@ -72,18 +72,6 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
     },
     routes: <RouteBase>[
       ...featureRoutes(),
-      // Fallback shells for routes whose feature module has not landed yet.
-      // Removed as each feature is integrated.
-      GoRoute(
-        path: Routes.home,
-        builder: (BuildContext c, GoRouterState s) =>
-            const _Pending(title: 'OPTEX', feature: 'catalog'),
-      ),
-      GoRoute(
-        path: Routes.login,
-        builder: (BuildContext c, GoRouterState s) =>
-            const _Pending(title: 'Sign in', feature: 'auth UI'),
-      ),
     ],
     errorBuilder: (BuildContext context, GoRouterState state) => Scaffold(
       appBar: AppBar(title: const Text('Not found')),
@@ -99,21 +87,3 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
     ),
   );
 });
-
-/// Placeholder shown for a route whose feature module is still being built.
-class _Pending extends StatelessWidget {
-  const _Pending({required this.title, required this.feature});
-
-  final String title;
-  final String feature;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(title)),
-        body: AppEmptyState(
-          title: 'Coming together',
-          message: 'The $feature module is not wired up yet.',
-          icon: Icons.construction_rounded,
-        ),
-      );
-}

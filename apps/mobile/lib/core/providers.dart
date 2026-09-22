@@ -26,6 +26,33 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>(
 final Provider<AuthRepository> authRepositoryProvider =
     Provider<AuthRepository>((Ref ref) => AuthRepository(ref.watch(apiClientProvider)));
 
+/// Lets a feature run teardown when the user signs out, without core having to
+/// import that feature.
+///
+/// Cached documents, notification tokens and the like are per-customer, and on
+/// a shared handset leaving them behind is a real leak rather than an untidiness.
+/// Features register here; [AuthController.logout] runs them.
+class SessionCleanupRegistry {
+  final List<Future<void> Function()> _callbacks = <Future<void> Function()>[];
+
+  void register(Future<void> Function() callback) => _callbacks.add(callback);
+
+  /// Runs every hook, isolating failures. One feature's broken teardown must
+  /// not leave the user signed in.
+  Future<void> runAll() async {
+    for (final Future<void> Function() cb in _callbacks) {
+      try {
+        await cb();
+      } catch (_) {
+        // Deliberately swallowed — see above.
+      }
+    }
+  }
+}
+
+final Provider<SessionCleanupRegistry> sessionCleanupProvider =
+    Provider<SessionCleanupRegistry>((Ref ref) => SessionCleanupRegistry());
+
 /// Where the app is in its sign-in lifecycle.
 ///
 /// [unknown] exists so the router can hold on a splash instead of flashing the
@@ -116,9 +143,35 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await _repo.logout();
+    await ref.read(sessionCleanupProvider).runAll();
     await _session.clear();
     state = AuthState.signedOut;
   }
+
+  /// Re-fetches the profile into [AuthState].
+  ///
+  /// Needed because a name edited on the profile screen otherwise never reaches
+  /// the rest of the app — `AuthState.user` would keep serving the value loaded
+  /// at sign-in. Deliberately silent on failure: a stale name is a far better
+  /// outcome than signing someone out because a refresh call timed out.
+  Future<void> refreshUser() async {
+    if (!state.isAuthenticated) return;
+    try {
+      final AuthUser user = await _repo.me();
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (_) {
+      // Keep the existing state.
+    }
+  }
+
+  /// Requests a password-reset email.
+  ///
+  /// NOTE: the reset link always points at the **web** app. `resetRedirectUrl`
+  /// in `auth-flow.service.ts` builds it from the server-side `WEB_APP_URL` and
+  /// deliberately refuses a client-supplied value (an open-redirect guard), so
+  /// a mobile user finishes the reset in a browser. Tracked as B-6 in SPEC-11.
+  Future<void> requestPasswordReset(String email) =>
+      _repo.requestPasswordReset(email);
 
   /// Called by the interceptor when a refresh is rejected.
   void markSignedOut() => state = AuthState.signedOut;
