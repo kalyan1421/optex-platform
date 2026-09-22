@@ -6,8 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/env/app_env.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
+import 'core/router/deep_links.dart';
 import 'core/theme/app_theme.dart';
+import 'features/catalog/state/add_to_cart.dart';
 import 'features/engagement/ui/engagement_host.dart';
+import 'integration/cart_bridge.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +27,20 @@ Future<void> main() async {
     );
   }
 
-  final ProviderContainer container = ProviderContainer();
+  final ProviderContainer container = ProviderContainer(
+    overrides: [
+      // Connects the catalog's add-to-cart button to the commerce cart.
+      addToCartHandlerProvider.overrideWith(buildAddToCartHandler),
+    ],
+  );
+  // Registered before the first routerProvider read, so this observer sees a
+  // platform link before go_router's own does. See DeepLinkObserver.
+  WidgetsBinding.instance.addObserver(
+    DeepLinkObserver(
+      (String route) => container.read(routerProvider).go(route),
+    ),
+  );
+
   await bootstrapAuth(container);
 
   runApp(
@@ -48,8 +64,9 @@ class OptexApp extends ConsumerWidget {
       // Wraps every screen: offline banner, foreground badge refresh and the
       // version gate. Mounted here rather than per-screen so nothing can ship
       // a route that quietly opts out of them.
-      builder: (BuildContext context, Widget? child) =>
-          EngagementHost(child: child ?? const SizedBox.shrink()),
+      builder: (BuildContext context, Widget? child) => CartBridge(
+        child: EngagementHost(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

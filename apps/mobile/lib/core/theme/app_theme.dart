@@ -67,7 +67,12 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(AppSpacing.minTapTarget),
+          // Height floor only. `Size.fromHeight` looks like it says "at least
+          // this tall", but it is Size(double.infinity, h) — so any button
+          // placed in a Row demands infinite width and the whole subtree fails
+          // to lay out. Screens that want a full-width CTA stretch it
+          // themselves; the theme has no business deciding that globally.
+          minimumSize: const Size(64, AppSpacing.minTapTarget),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -80,7 +85,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(AppSpacing.minTapTarget),
+          minimumSize: const Size(64, AppSpacing.minTapTarget),
           side: BorderSide(color: border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers.dart';
 import '../widgets/async_views.dart';
+import 'deep_links.dart';
 import 'feature_routes.dart';
 import 'routes.dart';
 
@@ -47,7 +48,11 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: Routes.home,
+    initialLocation:
+        initialRouteFromLaunch(
+          WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+        ) ??
+        Routes.home,
     refreshListenable: refresh,
     redirect: (BuildContext context, GoRouterState state) {
       final AuthState auth = ref.read(authControllerProvider);

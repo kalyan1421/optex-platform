@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'routes.dart';
 
 /// Normalises an incoming deep link into a path go_router can match.
@@ -58,4 +60,49 @@ String? routeForDeepLink(String? raw) {
 
   final String route = normalizeDeepLink(uri);
   return route == '/' ? null : route;
+}
+
+/// Intercepts platform deep links before go_router normalises them.
+///
+/// go_router matches on `uri.path` alone, which silently discards the
+/// authority — so `optex://orders/123` arrives as `/123` and `optex://cart` as
+/// the empty path, landing on home. [normalizeDeepLink] repairs that, but it
+/// only helps if something applies it to the *incoming* link, which is what
+/// this observer does.
+///
+/// It must be registered **before** the router creates its own observer,
+/// because Flutter dispatches `didPushRouteInformation` in registration order
+/// and stops at the first observer that returns true. Registering it in `main`,
+/// ahead of the first `routerProvider` read, is what guarantees that.
+class DeepLinkObserver with WidgetsBindingObserver {
+  DeepLinkObserver(this._navigate);
+
+  final void Function(String route) _navigate;
+
+  @override
+  Future<bool> didPushRouteInformation(
+    RouteInformation routeInformation,
+  ) async {
+    final Uri uri = routeInformation.uri;
+
+    // Only claim our own scheme. Plain paths and https links are left for
+    // go_router and anything else that wants them.
+    if (uri.scheme != Routes.deepLinkScheme) return false;
+
+    final String? route = routeForDeepLink(uri.toString());
+    if (route == null) return false;
+
+    _navigate(route);
+    return true;
+  }
+}
+
+/// The route a cold start should open, from the launch URI.
+///
+/// `didPushRouteInformation` never fires for the link that launched the
+/// process, so the cold-start case has to be read separately.
+String? initialRouteFromLaunch(String defaultRouteName) {
+  final Uri? uri = Uri.tryParse(defaultRouteName);
+  if (uri == null || uri.scheme != Routes.deepLinkScheme) return null;
+  return routeForDeepLink(defaultRouteName);
 }
