@@ -117,14 +117,39 @@ class AppTheme {
         side: BorderSide(color: border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      // Material 3's NavigationBar, not Material 2's BottomNavigationBar.
+      // With `useMaterial3: true` the older widget is never built, so
+      // BottomNavigationBarThemeData — which this previously set — was dead
+      // configuration that anyone styling the shell would have found silently
+      // ignored.
+      navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isDark
             ? AppColors.darkBackground
             : AppColors.lightBackground,
-        selectedItemColor: scheme.primary,
-        unselectedItemColor: muted,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.24 : 0.12),
+        elevation: 3,
+        height: 68,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+          Set<WidgetState> states,
+        ) {
+          final bool on = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 12,
+            fontWeight: on ? FontWeight.w600 : FontWeight.w500,
+            color: on ? scheme.primary : muted,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
+          (Set<WidgetState> states) => IconThemeData(
+            size: 24,
+            color: states.contains(WidgetState.selected)
+                ? scheme.primary
+                : muted,
+          ),
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

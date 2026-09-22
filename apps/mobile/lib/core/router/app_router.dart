@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers.dart';
 import '../widgets/async_views.dart';
 import 'deep_links.dart';
+import 'app_shell.dart';
 import 'feature_routes.dart';
 import 'routes.dart';
 
@@ -83,7 +84,24 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
 
       return null;
     },
-    routes: <RouteBase>[...featureRoutes()],
+    routes: <RouteBase>[
+      ...topLevelRoutes(),
+      // One Navigator per branch, so each tab keeps its own back stack and
+      // scroll position. `indexedStack` keeps all five alive rather than
+      // rebuilding on every switch — which is what makes the catalog slice's
+      // non-auto-disposed list provider actually pay off.
+      StatefulShellRoute.indexedStack(
+        builder: (
+          BuildContext context,
+          GoRouterState state,
+          StatefulNavigationShell shell,
+        ) => AppShell(shell: shell),
+        branches: <StatefulShellBranch>[
+          for (final List<RouteBase> branch in shellBranches())
+            StatefulShellBranch(routes: branch),
+        ],
+      ),
+    ],
     errorBuilder: (BuildContext context, GoRouterState state) => Scaffold(
       appBar: AppBar(title: const Text('Not found')),
       body: AppEmptyState(

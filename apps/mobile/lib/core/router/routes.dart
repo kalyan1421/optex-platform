@@ -9,6 +9,7 @@ class Routes {
   // Shell tabs
   static const String home = '/';
   static const String shop = '/shop';
+  static const String care = '/care';
   static const String cart = '/cart';
   static const String account = '/account';
 

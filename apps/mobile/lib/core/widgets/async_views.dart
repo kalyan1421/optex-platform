@@ -47,7 +47,12 @@ class AppErrorView extends StatelessWidget {
     final bool canRetry = onRetry != null && (api?.isRetryable ?? true);
 
     return Center(
-      child: Padding(
+      // Scrollable, not Padding: this is not always given a full screen. The
+      // catalog drops it into fixed-height horizontal rails, where the icon,
+      // message and retry button together overflow. Fixing the shared widget
+      // is the right depth — the alternative is every caller remembering a
+      // compact variant, and the one that forgets ships yellow stripes.
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -99,7 +104,7 @@ class AppEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
