@@ -55,7 +55,7 @@ export default function FeaturedProductsGrid({ products }) {
             <div className="flex w-full flex-col lg:h-[72px] lg:w-[265px]">
               <Link href={`/product/${product.slug}`}>
                 <h3
-                  className="truncate text-[#000000] transition-colors group-hover:text-[#2E3192] lg:h-[30px] lg:w-[265px]"
+                  className="group-hover:text-brand-blue truncate text-[#000000] transition-colors lg:h-[30px] lg:w-[265px]"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
@@ -83,7 +83,7 @@ export default function FeaturedProductsGrid({ products }) {
 
             <div className="flex w-full items-center justify-between lg:h-[37px] lg:w-[265px]">
               <span
-                className="whitespace-nowrap text-[#2E3192]"
+                className="text-brand-blue whitespace-nowrap"
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   fontWeight: 700,

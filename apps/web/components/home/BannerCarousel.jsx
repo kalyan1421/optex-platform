@@ -109,7 +109,7 @@ export default function BannerCarousel({ banners }) {
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <Link
                   href={b.target_url}
-                  className="flex items-center justify-center rounded-[36px] bg-[#2E3192] px-[20px] py-[10px] font-bold capitalize text-white transition-colors hover:bg-blue-800"
+                  className="bg-brand-blue flex items-center justify-center rounded-[36px] px-[20px] py-[10px] font-bold capitalize text-white transition-colors hover:bg-blue-800"
                   style={{ fontFamily: 'Poppins, sans-serif' }}
                 >
                   Shop Now
@@ -142,7 +142,7 @@ export default function BannerCarousel({ banners }) {
                 <div className="flex h-[43px] items-center gap-[12px]">
                   <Link
                     href={b.target_url}
-                    className="flex h-[43px] min-w-[135px] items-center justify-center rounded-[36px] bg-[#2E3192] px-[20px] py-[10px] transition-colors hover:bg-blue-800"
+                    className="bg-brand-blue flex h-[43px] min-w-[135px] items-center justify-center rounded-[36px] px-[20px] py-[10px] transition-colors hover:bg-blue-800"
                   >
                     <span
                       className="whitespace-nowrap text-[18.97px] font-bold capitalize leading-[1.2] tracking-[-0.01em] text-[#FFFFFF]"
@@ -189,7 +189,7 @@ export default function BannerCarousel({ banners }) {
               aria-label={`Go to banner ${i + 1}`}
               aria-current={i === current ? 'true' : undefined}
               className={`rounded-full transition-all duration-300 ${
-                i === current ? 'h-3 w-7 bg-[#2E3192]' : 'h-3 w-3 bg-white/70 hover:bg-white'
+                i === current ? 'bg-brand-blue h-3 w-7' : 'h-3 w-3 bg-white/70 hover:bg-white'
               }`}
             />
           ))}

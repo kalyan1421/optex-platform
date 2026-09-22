@@ -19,7 +19,7 @@ export default function ReturnsPage() {
       {/* Content */}
       <div className="mx-auto max-w-4xl space-y-10 px-4 py-12">
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">No general refunds</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">No general refunds</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             Online orders are not eligible for general refunds or change-of-mind returns. Please
             confirm your frame, lens and prescription choices before payment. If an item arrives
@@ -29,32 +29,32 @@ export default function ReturnsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">When to contact us</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">When to contact us</h2>
           <p className="mb-4 text-[15px] leading-relaxed text-gray-700">
             Contact us as soon as possible if any of the following applies:
           </p>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               The delivered item is damaged or materially different from the order
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               The wrong frame, size, or prescription configuration was supplied
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>A
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>A
               manufacturing defect is present
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               You need help with a warranty or fitting issue
             </li>
           </ul>
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Prescription Eyewear</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Prescription Eyewear</h2>
           <div className="space-y-3 rounded-[20px] border border-amber-200 bg-amber-50 p-6 text-[15px] leading-relaxed text-gray-700">
             <p className="font-bold text-amber-800">
               Please note the following exceptions for prescription eyewear:
@@ -79,11 +79,11 @@ export default function ReturnsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">How to Return</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">How to Return</h2>
           <div className="space-y-4 rounded-[20px] bg-[#f8f9fa] p-6 text-[15px] text-gray-700">
             <div className="space-y-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#2A3182] text-[13px] font-bold text-white">
+                <div className="bg-brand-blue flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -102,7 +102,7 @@ export default function ReturnsPage() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#2A3182] text-[13px] font-bold text-white">
+                <div className="bg-brand-blue flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -116,7 +116,7 @@ export default function ReturnsPage() {
                   <p className="font-bold text-gray-900">Contact Support</p>
                   <p className="text-gray-600">
                     Email us at{' '}
-                    <span className="font-semibold text-[#2A3182]">
+                    <span className="text-brand-blue font-semibold">
                       returns@optexopticians.co.ke
                     </span>{' '}
                     with your order number. We will arrange collection or guide you through the
@@ -129,7 +129,7 @@ export default function ReturnsPage() {
         </section>
 
         <section className="rounded-[20px] border border-blue-100 bg-blue-50 p-6">
-          <h2 className="mb-2 text-[22px] font-black text-[#2A3182]">Resolution process</h2>
+          <h2 className="text-brand-blue mb-2 text-[22px] font-black">Resolution process</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             Our support team will review the order, photos, and any relevant prescription or
             warranty information. If the issue is confirmed, we will explain the available repair,
@@ -140,11 +140,11 @@ export default function ReturnsPage() {
         <section className="border-t border-gray-100 pt-8">
           <p className="text-[14px] text-gray-500">
             Need help with a return?{' '}
-            <Link href="/contact" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/contact" className="text-brand-blue font-bold hover:underline">
               Contact our support team
             </Link>{' '}
             or visit us at any{' '}
-            <Link href="/branch-locator" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/branch-locator" className="text-brand-blue font-bold hover:underline">
               Optex branch
             </Link>
             .

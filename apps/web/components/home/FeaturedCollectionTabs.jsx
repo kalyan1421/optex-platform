@@ -66,7 +66,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               onClick={() => setActiveCategory(cat.id)}
               data-aos="fade-up"
               data-aos-delay={index * 100}
-              className={`relative flex max-w-[370px] flex-1 cursor-pointer flex-col overflow-hidden rounded-[32px] bg-white p-0 text-left transition-all duration-300 lg:h-[144px] ${isActive ? 'border-2 border-[#2E3192]' : 'border border-[#D4D4D4]'} `}
+              className={`relative flex max-w-[370px] flex-1 cursor-pointer flex-col overflow-hidden rounded-[32px] bg-white p-0 text-left transition-all duration-300 lg:h-[144px] ${isActive ? 'border-brand-blue border-2' : 'border border-[#D4D4D4]'} `}
             >
               {/* Inner image area — fills full card */}
               <div className="relative aspect-square w-full overflow-hidden rounded-[28px] lg:aspect-auto lg:w-auto lg:flex-1">
@@ -105,7 +105,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
               key={product.id}
               data-aos="fade-up"
               data-aos-delay={index * 100}
-              className="group flex flex-col gap-3 bg-[#FFFFFF] p-3 transition-colors transition-transform duration-500 hover:-translate-y-1 hover:border-[#2E3192]/50 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
+              className="hover:border-brand-blue/50 group flex flex-col gap-3 bg-[#FFFFFF] p-3 transition-colors transition-transform duration-500 hover:-translate-y-1 lg:h-[377px] lg:w-[267.75px] lg:gap-[16px] lg:px-[13px] lg:pb-[1px] lg:pt-[13px]"
               style={{
                 borderRadius: '32px',
                 border: '1px solid #D4D4D4',
@@ -124,7 +124,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                 >
                   <div className="flex items-baseline gap-[2px]">
                     <span
-                      className="text-[#2E3192]"
+                      className="text-brand-blue"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
                         fontWeight: 700,
@@ -134,7 +134,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                       KSH.
                     </span>
                     <span
-                      className="text-[#2E3192]"
+                      className="text-brand-blue"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
                         fontWeight: 700,
@@ -181,7 +181,7 @@ export default function FeaturedCollectionTabs({ products, categories }) {
                   {product.brand || '—'}
                 </p>
                 <h3
-                  className="truncate text-[#000000] transition-colors group-hover:text-[#2E3192]"
+                  className="group-hover:text-brand-blue truncate text-[#000000] transition-colors"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,

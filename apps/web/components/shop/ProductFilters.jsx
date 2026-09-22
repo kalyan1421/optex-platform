@@ -117,7 +117,7 @@ export function FacetBlock({ title, options, active, onSelect, counts }) {
                 onClick={() => onSelect(opt)}
                 className={`flex h-11 w-full items-center px-[16px] text-left capitalize transition-colors lg:w-[250px] lg:rounded-[10px] ${
                   isActive
-                    ? 'bg-[#2E3192] text-white'
+                    ? 'bg-brand-blue text-white'
                     : isEmpty
                       ? 'cursor-not-allowed text-[#C7C5D4]'
                       : 'cursor-pointer text-[#717182] hover:bg-gray-50'
@@ -299,7 +299,7 @@ export function ProductFilterSidebar({
           <FilterIcon />
           Filters
           {activeFilters > 0 && (
-            <span className="rounded-full bg-[#2E3192] px-2 py-0.5 text-[12px] font-semibold text-white">
+            <span className="bg-brand-blue rounded-full px-2 py-0.5 text-[12px] font-semibold text-white">
               {activeFilters}
             </span>
           )}
@@ -362,7 +362,7 @@ export function ProductFilterSidebar({
           <button
             type="button"
             onClick={clearFilters}
-            className="font-inter mt-[8px] flex h-11 w-full items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] text-[15px] text-[#2E3192] transition-colors hover:bg-gray-50 lg:w-[250px]"
+            className="font-inter text-brand-blue mt-[8px] flex h-11 w-full items-center justify-center rounded-[10px] border-[0.8px] border-[#D4D4D4] text-[15px] transition-colors hover:bg-gray-50 lg:w-[250px]"
           >
             Clear all filters ({activeFilters})
           </button>
@@ -381,7 +381,7 @@ export function SortSelect({ value, onChange }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="font-inter h-11 cursor-pointer rounded-[10px] border-[0.8px] border-[#D4D4D4] bg-white px-[12px] text-[15px] text-[#0A0A0A] focus:border-[#2E3192] focus:outline-none"
+        className="font-inter focus:border-brand-blue h-11 cursor-pointer rounded-[10px] border-[0.8px] border-[#D4D4D4] bg-white px-[12px] text-[15px] text-[#0A0A0A] focus:outline-none"
       >
         {SORT_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>
@@ -418,7 +418,7 @@ export function Pagination({ page, pageCount, onChange }) {
           aria-current={n === page ? 'page' : undefined}
           className={`font-inter flex h-11 w-11 items-center justify-center rounded-[10px] text-[15px] transition-colors ${
             n === page
-              ? 'bg-[#2E3192] text-white'
+              ? 'bg-brand-blue text-white'
               : 'border-[0.8px] border-[#D4D4D4] text-[#0A0A0A] hover:bg-gray-50'
           }`}
         >

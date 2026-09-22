@@ -1199,7 +1199,7 @@ export default function Page() {
                             )}
                           </div>
                           <p
-                            className="whitespace-nowrap text-[#2E3192]"
+                            className="text-brand-blue whitespace-nowrap"
                             style={{
                               fontFamily: 'Poppins, sans-serif',
                               fontWeight: 700,

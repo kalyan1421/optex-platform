@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
+import '../../../core/widgets/optex_logo.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/async_views.dart';
 import '../catalog_strings.dart';
@@ -49,7 +50,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(CatalogStrings.homeTitle),
+        title: const OptexLogo(height: 30),
         actions: <Widget>[
           IconButton(
             onPressed: () => context.push(Routes.search),

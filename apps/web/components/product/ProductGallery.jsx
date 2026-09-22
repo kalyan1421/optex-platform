@@ -32,7 +32,7 @@ export default function ProductGallery({ product }) {
             onClick={() => setSelectedIndex(index)}
             aria-label={`View product image ${index + 1}`}
             aria-pressed={selectedIndex === index}
-            className={`relative h-[102.9px] w-[102.9px] flex-shrink-0 snap-center rounded-[16px] border-[0.8px] bg-[#F5F5F5] p-[0.8px] transition-opacity ${selectedIndex === index ? 'border-[#2E3192] opacity-100' : 'border-[#D4D4D4] opacity-60 hover:opacity-100'}`}
+            className={`relative h-[102.9px] w-[102.9px] flex-shrink-0 snap-center rounded-[16px] border-[0.8px] bg-[#F5F5F5] p-[0.8px] transition-opacity ${selectedIndex === index ? 'border-brand-blue opacity-100' : 'border-[#D4D4D4] opacity-60 hover:opacity-100'}`}
           >
             <Image
               src={resolveImageUrl(image)}

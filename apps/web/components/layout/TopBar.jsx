@@ -18,7 +18,7 @@ const PhoneIcon = () => (
 
 export default function TopBar() {
   return (
-    <div className="flex h-9 w-full items-center justify-center bg-[#2E3192] px-4 sm:px-6 lg:px-[100px]">
+    <div className="bg-brand-blue flex h-9 w-full items-center justify-center px-4 sm:px-6 lg:px-[100px]">
       <div className="flex h-6 w-full max-w-[1240px] flex-row items-center justify-center gap-3 lg:justify-between">
         {/* Left: Email — desktop/laptop only, no room for it below lg */}
         <div className="hidden flex-shrink-0 flex-row items-center gap-2 lg:flex lg:w-[197px]">

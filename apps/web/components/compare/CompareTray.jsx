@@ -55,7 +55,7 @@ export default function CompareTray() {
           </button>
           <Link
             href="/compare"
-            className="flex h-10 items-center justify-center rounded-full bg-[#2A3182] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#1e2361]"
+            className="bg-brand-blue flex h-10 items-center justify-center rounded-full px-5 text-sm font-semibold text-white transition-colors hover:bg-[#1e2361]"
           >
             Compare
           </Link>

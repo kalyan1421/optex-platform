@@ -78,6 +78,14 @@
 }
 
 @theme inline {
+  /* OPTEX brand tokens. Mirrors apps/web/app/globals.css so the two apps
+     share one vocabulary — before this, admin had only semantic tokens and
+     its three auth screens hardcoded the navy as a Tailwind arbitrary value,
+     which is how they drifted onto the old #2A3182. */
+  --color-brand-blue: #2e3192;
+  --color-brand-red: #e53935;
+  --color-brand-dark: #1a1a2e;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/optex_logo.dart';
+
 import '../../../../core/theme/app_spacing.dart';
 
 /// Shared chrome for the three auth screens.
@@ -78,36 +79,7 @@ class _BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Row(
-      children: <Widget>[
-        Container(
-          height: 40,
-          width: 40,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.visibility_outlined,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
-        Text(
-          'OPTEX',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white
-                : AppColors.brandDark,
-          ),
-        ),
-      ],
-    );
+    return const OptexLogo(height: 44);
   }
 }
 

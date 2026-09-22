@@ -92,7 +92,7 @@ export default function ShopBrowser({ products, categories }) {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="font-inter flex h-[44px] items-center justify-center rounded-[26843500px] bg-[#2E3192] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
+                  className="font-inter bg-brand-blue flex h-[44px] items-center justify-center rounded-[26843500px] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
                 >
                   Clear all filters
                 </button>
@@ -146,7 +146,7 @@ export default function ShopBrowser({ products, categories }) {
                   eyeglass frame "Sunglasses". */}
                     {product.frame_shape && (
                       <div className="absolute right-[16px] top-[16px] z-10 flex items-center justify-center rounded-[20px] bg-white px-[12px] py-[6px] shadow-sm">
-                        <span className="font-inter text-[12px] font-medium capitalize text-[#2E3192]">
+                        <span className="font-inter text-brand-blue text-[12px] font-medium capitalize">
                           {product.frame_shape}
                         </span>
                       </div>
@@ -185,12 +185,12 @@ export default function ShopBrowser({ products, categories }) {
                     <div className="flex items-start justify-between gap-2 lg:h-[27px] lg:w-[240.4px]">
                       <h3
                         title={product.name}
-                        className="font-poppins min-w-0 flex-1 truncate font-semibold text-[#000000] transition-colors group-hover:text-[#2E3192] lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]"
+                        className="font-poppins group-hover:text-brand-blue min-w-0 flex-1 truncate font-semibold text-[#000000] transition-colors lg:text-[18px] lg:leading-[27px] lg:tracking-[-0.2px]"
                       >
                         {product.name}
                       </h3>
                       <span
-                        className="shrink-0 truncate text-right uppercase text-[#2E3192] lg:h-[21px] lg:w-[57px]"
+                        className="text-brand-blue shrink-0 truncate text-right uppercase lg:h-[21px] lg:w-[57px]"
                         style={{
                           fontFamily: 'Arimo, sans-serif',
                           fontSize: '14px',
@@ -224,7 +224,7 @@ export default function ShopBrowser({ products, categories }) {
                     {/* Row 3: Price & Action */}
                     <div className="mt-4 flex items-center justify-between lg:mt-[24px] lg:h-[41px] lg:w-[240.4px]">
                       {/* Price Block */}
-                      <div className="flex items-baseline gap-[4px] text-[#2E3192] lg:mt-[0.8px] lg:h-[33px] lg:w-[101px]">
+                      <div className="text-brand-blue flex items-baseline gap-[4px] lg:mt-[0.8px] lg:h-[33px] lg:w-[101px]">
                         <span
                           className="text-[12px] font-bold uppercase"
                           style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '33px' }}
@@ -252,7 +252,7 @@ export default function ShopBrowser({ products, categories }) {
                         {qtyInCart > 0 && (
                           <span
                             aria-hidden="true"
-                            className="absolute -right-2 -top-2 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2E3192] px-1 text-[11px] font-bold text-white shadow-sm"
+                            className="bg-brand-blue absolute -right-2 -top-2 z-10 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold text-white shadow-sm"
                           >
                             {qtyInCart}
                           </span>

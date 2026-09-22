@@ -66,7 +66,7 @@ const XCircleIcon = () => (
 
 const LocationIcon = () => (
   <svg
-    className="h-4 w-4 text-[#2A3182]"
+    className="text-brand-blue h-4 w-4"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -210,7 +210,7 @@ export default function OrderTrackingPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pb-16 pt-[15px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#2A3182] border-t-transparent" />
+          <div className="border-brand-blue h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
           <p className="text-[14px] font-medium text-gray-500">Loading order details…</p>
         </div>
       </div>
@@ -234,14 +234,14 @@ export default function OrderTrackingPage() {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+              className="bg-brand-blue inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
             >
               Try again
             </button>
           ) : (
             <Link
               href="/profile"
-              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+              className="bg-brand-blue inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
             >
               <BackArrowIcon />
               Back to Profile
@@ -267,7 +267,7 @@ export default function OrderTrackingPage() {
         <div className="mb-6">
           <Link
             href="/profile"
-            className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-widest text-gray-400 transition-colors hover:text-[#2A3182]"
+            className="hover:text-brand-blue inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-widest text-gray-400 transition-colors"
           >
             <BackArrowIcon />
             Back to Profile
@@ -282,13 +282,13 @@ export default function OrderTrackingPage() {
 
           <div className="mb-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#2A3182] px-3 py-1 text-white">
+              <div className="bg-brand-blue mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-white">
                 <PackageIcon />
                 <span className="text-[10px] font-bold uppercase tracking-widest">
                   Order Tracking
                 </span>
               </div>
-              <h1 className="text-[28px] font-black leading-tight text-[#2A3182] sm:text-[36px]">
+              <h1 className="text-brand-blue text-[28px] font-black leading-tight sm:text-[36px]">
                 Order #{order.order_number}
               </h1>
             </div>
@@ -325,7 +325,7 @@ export default function OrderTrackingPage() {
             <div className="ml-auto flex items-center gap-1">
               <span className="text-[11px] font-bold uppercase text-gray-400">Total:</span>
               <span className="mr-1 text-[11px] font-bold uppercase text-gray-400">KSH.</span>
-              <span className="text-[20px] font-black text-[#2A3182]">
+              <span className="text-brand-blue text-[20px] font-black">
                 {formatKesNumber(order.total_kes)}
               </span>
             </div>
@@ -376,7 +376,7 @@ export default function OrderTrackingPage() {
                     <div
                       key={i}
                       className={`mx-2 h-[3px] flex-1 rounded-full transition-colors duration-300 ${
-                        lineActive ? 'bg-[#2A3182]' : 'bg-gray-200'
+                        lineActive ? 'bg-brand-blue' : 'bg-gray-200'
                       }`}
                     />
                   );
@@ -391,7 +391,7 @@ export default function OrderTrackingPage() {
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ${
                         reached
-                          ? 'border-[#2A3182] bg-[#2A3182] text-white shadow-md shadow-[#2A3182]/30'
+                          ? 'border-brand-blue bg-brand-blue shadow-brand-blue/30 text-white shadow-md'
                           : 'border-gray-200 bg-white text-gray-300'
                       } ${isActive && order.status === 'delivered' ? 'border-green-500 bg-green-500 shadow-green-500/30' : ''}`}
                     >
@@ -403,7 +403,7 @@ export default function OrderTrackingPage() {
                     </div>
                     <span
                       className={`text-center text-[11px] font-bold uppercase leading-tight tracking-wide ${
-                        reached ? 'text-[#2A3182]' : 'text-gray-300'
+                        reached ? 'text-brand-blue' : 'text-gray-300'
                       } ${isActive && order.status === 'delivered' ? 'text-green-600' : ''}`}
                     >
                       {stage.label}
@@ -425,7 +425,7 @@ export default function OrderTrackingPage() {
                       <div
                         className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
                           reached
-                            ? 'border-[#2A3182] bg-[#2A3182] text-white shadow-md shadow-[#2A3182]/20'
+                            ? 'border-brand-blue bg-brand-blue shadow-brand-blue/20 text-white shadow-md'
                             : 'border-gray-200 bg-white text-gray-300'
                         } ${order.status === 'delivered' && reached ? 'border-green-500 bg-green-500 shadow-green-500/20' : ''}`}
                       >
@@ -437,14 +437,14 @@ export default function OrderTrackingPage() {
                       </div>
                       {!isLast && (
                         <div
-                          className={`mt-1 h-8 w-[3px] rounded-full ${lineActive ? 'bg-[#2A3182]' : 'bg-gray-200'}`}
+                          className={`mt-1 h-8 w-[3px] rounded-full ${lineActive ? 'bg-brand-blue' : 'bg-gray-200'}`}
                         />
                       )}
                     </div>
                     <div className={`pb-6 pt-2 ${isLast ? 'pb-0' : ''}`}>
                       <span
                         className={`text-[13px] font-bold uppercase tracking-wide ${
-                          reached ? 'text-[#2A3182]' : 'text-gray-300'
+                          reached ? 'text-brand-blue' : 'text-gray-300'
                         } ${order.status === 'delivered' && reached ? 'text-green-600' : ''}`}
                       >
                         {stage.label}
@@ -458,7 +458,7 @@ export default function OrderTrackingPage() {
             {/* Estimated delivery note */}
             <div className="mt-8 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4">
               <TruckIcon />
-              <p className="text-[13px] font-medium text-[#2A3182]">
+              <p className="text-brand-blue text-[13px] font-medium">
                 Delivery within <strong>2-3 business days</strong> within Nairobi
               </p>
             </div>
@@ -514,7 +514,7 @@ export default function OrderTrackingPage() {
                           </div>
                         </td>
                         <td className="px-6 py-5 text-center">
-                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#f4f6f8] text-[13px] font-black text-[#2A3182]">
+                          <span className="text-brand-blue inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#f4f6f8] text-[13px] font-black">
                             {item.quantity}
                           </span>
                         </td>
@@ -538,7 +538,7 @@ export default function OrderTrackingPage() {
                         <span className="mr-1 text-[11px] font-bold uppercase text-gray-400">
                           KSH.
                         </span>
-                        <span className="text-[20px] font-black text-[#2A3182]">
+                        <span className="text-brand-blue text-[20px] font-black">
                           {formatKesNumber(order.total_kes)}
                         </span>
                       </td>
@@ -585,7 +585,7 @@ export default function OrderTrackingPage() {
         <div className="mt-8 text-center">
           <Link
             href="/shop"
-            className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-8 py-4 text-[14px] font-bold text-white shadow-lg shadow-[#2A3182]/20 transition-colors hover:bg-[#1e2461]"
+            className="bg-brand-blue shadow-brand-blue/20 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[14px] font-bold text-white shadow-lg transition-colors hover:bg-[#1e2461]"
           >
             Continue Shopping
           </Link>

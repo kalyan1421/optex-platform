@@ -35,7 +35,7 @@ export default function SimilarProducts({ products }) {
               />
               <div className="absolute right-[16px] top-[16px] flex h-[26px] items-center justify-center rounded-[26843500px] bg-[#FFFFFFE5] px-[12px]">
                 <span
-                  className="capitalize text-[#2E3192]"
+                  className="text-brand-blue capitalize"
                   style={{
                     fontFamily: 'Arimo, sans-serif',
                     fontSize: '12px',
@@ -65,7 +65,7 @@ export default function SimilarProducts({ products }) {
                 </h3>
               </Link>
               <span
-                className="uppercase text-[#2E3192]"
+                className="text-brand-blue uppercase"
                 style={{
                   fontFamily: 'Arimo, sans-serif',
                   fontSize: '14px',
@@ -89,7 +89,7 @@ export default function SimilarProducts({ products }) {
                 `Premium quality ${p.frame_shape?.toLowerCase() || 'eyewear'} designed for maximum comfort and style.`}
             </p>
             <div className="mt-[24px] flex h-[41px] items-center justify-between">
-              <p className="flex items-baseline gap-[4px] text-[#2E3192]">
+              <p className="text-brand-blue flex items-baseline gap-[4px]">
                 <span
                   style={{
                     fontFamily: 'Poppins, sans-serif',

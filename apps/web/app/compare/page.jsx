@@ -60,7 +60,7 @@ export default function ComparePage() {
           </p>
           <Link
             href="/shop"
-            className="font-inter flex h-[44px] items-center justify-center rounded-[26843500px] bg-[#2E3192] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
+            className="font-inter bg-brand-blue flex h-[44px] items-center justify-center rounded-[26843500px] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
           >
             Browse the shop
           </Link>
@@ -93,7 +93,7 @@ export default function ComparePage() {
                       </div>
                       <Link
                         href={`/product/${item.slug}`}
-                        className="font-poppins block text-[16px] font-semibold text-[#0A0A0A] hover:text-[#2E3192]"
+                        className="font-poppins hover:text-brand-blue block text-[16px] font-semibold text-[#0A0A0A]"
                       >
                         {item.name}
                       </Link>

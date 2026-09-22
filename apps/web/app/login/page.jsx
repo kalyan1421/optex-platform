@@ -187,7 +187,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-full w-full border-[1.13px] border-[#E8E8EA] bg-[#F9F9FC] pl-[49.5px] pr-[18px] text-[#1A1C1E] outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue h-full w-full border-[1.13px] border-[#E8E8EA] bg-[#F9F9FC] pl-[49.5px] pr-[18px] text-[#1A1C1E] outline-none transition-colors focus:bg-white"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
                   fontSize: '18px',
@@ -237,7 +237,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-full w-full border-[1.13px] border-[#E8E8EA] bg-[#F9F9FC] pl-[49.5px] pr-[49.5px] text-[#1A1C1E] outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue h-full w-full border-[1.13px] border-[#E8E8EA] bg-[#F9F9FC] pl-[49.5px] pr-[49.5px] text-[#1A1C1E] outline-none transition-colors focus:bg-white"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
                   fontSize: '18px',
@@ -259,7 +259,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex h-[55.125px] w-full items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors hover:bg-[#2A3182] disabled:cursor-not-allowed disabled:opacity-60"
+            className="hover:bg-brand-blue flex h-[55.125px] w-full items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               fontFamily: 'Manrope, sans-serif',
               fontSize: '15.75px',

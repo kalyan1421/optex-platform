@@ -184,14 +184,14 @@ export default function MfaSetupPage() {
                 onChange={(e) => setCode(e.target.value)}
                 required
                 maxLength={6}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-center text-lg tracking-[0.5em] text-gray-900 outline-none transition-colors placeholder:tracking-normal placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-center text-lg tracking-[0.5em] text-gray-900 outline-none transition-colors placeholder:tracking-normal placeholder:text-gray-400 focus:bg-white"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full rounded-xl bg-[#2A3182] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
+              className="bg-brand-blue mt-2 w-full rounded-xl py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Confirming…' : 'Confirm & Enable'}
             </button>

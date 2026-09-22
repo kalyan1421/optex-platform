@@ -69,6 +69,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -80,6 +81,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/branding/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -111,3 +115,18 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Generates the Android mipmaps and the iOS AppIcon set from one square source.
+# Run after changing anything in assets/branding/:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/icon.png
+  # Adaptive icons are masked to a circle of roughly 66% diameter, so the
+  # foreground is drawn at 58% coverage and the background is flat white —
+  # the mark's navy wordmark would vanish on a navy plate.
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/branding/icon_foreground.png
+  # The App Store rejects icons with an alpha channel.
+  remove_alpha_ios: true

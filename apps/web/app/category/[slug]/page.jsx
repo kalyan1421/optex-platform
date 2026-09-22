@@ -112,11 +112,11 @@ export default async function CategoryPage(props) {
       {/* Breadcrumb */}
       <div className="page-container">
         <div className="flex items-center border-b border-gray-100 py-5 text-[13px]">
-          <Link href="/" className="text-gray-400 transition-colors hover:text-[#2A3182]">
+          <Link href="/" className="hover:text-brand-blue text-gray-400 transition-colors">
             Home
           </Link>
           <span className="mx-2 text-gray-300">/</span>
-          <Link href="/shop" className="text-gray-400 transition-colors hover:text-[#2A3182]">
+          <Link href="/shop" className="hover:text-brand-blue text-gray-400 transition-colors">
             Shop
           </Link>
           <span className="mx-2 text-gray-300">/</span>
@@ -136,7 +136,7 @@ export default async function CategoryPage(props) {
           </div>
           <Link
             href="/shop"
-            className="flex items-center gap-1 self-start text-[13px] font-bold text-[#2A3182] hover:underline sm:self-auto"
+            className="text-brand-blue flex items-center gap-1 self-start text-[13px] font-bold hover:underline sm:self-auto"
           >
             View all products
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,7 +159,7 @@ export default async function CategoryPage(props) {
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2361]"
+              className="bg-brand-blue inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2361]"
             >
               Browse all products
             </Link>
@@ -191,7 +191,7 @@ export default async function CategoryPage(props) {
                 <Link
                   key={cat.slug}
                   href={`/category/${cat.slug}`}
-                  className="rounded-full border border-gray-200 bg-white px-5 py-2.5 text-[13px] font-bold text-gray-700 transition-all hover:border-[#2A3182] hover:text-[#2A3182] hover:shadow-sm"
+                  className="hover:border-brand-blue hover:text-brand-blue rounded-full border border-gray-200 bg-white px-5 py-2.5 text-[13px] font-bold text-gray-700 transition-all hover:shadow-sm"
                 >
                   {cat.name}
                 </Link>
@@ -215,7 +215,7 @@ function ProductCard({ product }) {
           {/* Badge */}
           <div className="absolute right-2.5 top-2.5 z-10">
             <div className="rounded-full border border-[#ddd] bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
-              <span className="text-[9px] font-black uppercase tracking-tighter text-[#2A3182]">
+              <span className="text-brand-blue text-[9px] font-black uppercase tracking-tighter">
                 {product.frame_shape ?? product.brand ?? 'Optex'}
               </span>
             </div>
@@ -237,13 +237,13 @@ function ProductCard({ product }) {
           </p>
         )}
         <Link href={`/product/${product.slug}`}>
-          <h3 className="mb-2 line-clamp-2 text-[14px] font-bold leading-tight text-gray-900 transition-colors group-hover:text-[#2A3182]">
+          <h3 className="group-hover:text-brand-blue mb-2 line-clamp-2 text-[14px] font-bold leading-tight text-gray-900 transition-colors">
             {product.name}
           </h3>
         </Link>
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#ddd] pt-2.5">
-          <p className="text-[16px] font-black tracking-tight text-[#2A3182]">
+          <p className="text-brand-blue text-[16px] font-black tracking-tight">
             {formatKes(Number(product.price_kes))}
           </p>
           <Link

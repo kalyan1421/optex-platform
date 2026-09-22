@@ -59,7 +59,7 @@ const ListIcon = () => (
 
 const LocationIcon = () => (
   <svg
-    className="h-4 w-4 text-[#2A3182]"
+    className="text-brand-blue h-4 w-4"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -201,7 +201,7 @@ export default function Page() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-24">
         <div className="flex flex-col items-center gap-4">
-          <svg className="h-10 w-10 animate-spin text-[#2A3182]" fill="none" viewBox="0 0 24 24">
+          <svg className="text-brand-blue h-10 w-10 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
               cx="12"
@@ -228,14 +228,14 @@ export default function Page() {
       <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-24">
         <div className="mx-4 w-full max-w-md rounded-[24px] border border-gray-100 bg-white p-10 text-center shadow-sm sm:rounded-[32px]">
           <div className="mb-4 text-6xl">🔍</div>
-          <h2 className="mb-2 text-[24px] font-black text-[#2A3182]">Order Not Found</h2>
+          <h2 className="text-brand-blue mb-2 text-[24px] font-black">Order Not Found</h2>
           <p className="mb-8 text-[14px] text-gray-500">
             We couldn't find an order matching this link. It may have been removed or the link may
             be incorrect.
           </p>
           <button
             onClick={() => router.push('/profile')}
-            className="rounded-full bg-[#2A3182] px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
+            className="bg-brand-blue rounded-full px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
           >
             View Order History
           </button>
@@ -248,14 +248,14 @@ export default function Page() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] pt-24">
         <div className="mx-4 w-full max-w-md rounded-[24px] border border-gray-100 bg-white p-10 text-center shadow-sm">
-          <h2 className="mb-2 text-[24px] font-black text-[#2A3182]">
+          <h2 className="text-brand-blue mb-2 text-[24px] font-black">
             We could not load your order
           </h2>
           <p className="mb-8 text-[14px] text-gray-500">{loadError}</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="rounded-full bg-[#2A3182] px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
+            className="bg-brand-blue rounded-full px-8 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
           >
             Try again
           </button>
@@ -285,7 +285,7 @@ export default function Page() {
         {/* ── Confirmation Card ── */}
         <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm sm:rounded-[32px]">
           {/* Header strip */}
-          <div className="bg-[#2A3182] px-6 py-5 sm:px-10 sm:py-7">
+          <div className="bg-brand-blue px-6 py-5 sm:px-10 sm:py-7">
             <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-blue-200">
               Optex Opticians
             </p>
@@ -297,7 +297,7 @@ export default function Page() {
             {/* Green checkmark + heading */}
             <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
               <CheckCircleIcon />
-              <h1 className="mt-4 text-[28px] font-black leading-tight text-[#2A3182] sm:text-[34px]">
+              <h1 className="text-brand-blue mt-4 text-[28px] font-black leading-tight sm:text-[34px]">
                 Order Confirmed!
               </h1>
               <p className="mt-2 text-[14px] font-medium text-gray-500 sm:text-[15px]">
@@ -312,7 +312,7 @@ export default function Page() {
                 <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
                   Order
                 </span>
-                <span className="text-[16px] font-black text-[#2A3182]">{order.order_number}</span>
+                <span className="text-brand-blue text-[16px] font-black">{order.order_number}</span>
               </div>
             </div>
 
@@ -391,12 +391,12 @@ export default function Page() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-bold leading-tight text-[#2A3182]">
+                        <p className="text-brand-blue truncate text-[14px] font-bold leading-tight">
                           {product.name ?? 'Product'}
                         </p>
                         <p className="mt-0.5 text-[12px] text-gray-400">Qty: {item.quantity}</p>
                       </div>
-                      <p className="flex-shrink-0 text-[14px] font-bold text-[#2A3182]">
+                      <p className="text-brand-blue flex-shrink-0 text-[14px] font-bold">
                         {formatKes(Number(item.unit_price_kes) * item.quantity)}
                       </p>
                     </div>
@@ -409,7 +409,7 @@ export default function Page() {
             <div className="mb-8 space-y-3 rounded-2xl border border-gray-100 bg-[#f8fafc] p-5 sm:p-6">
               <div className="flex items-center justify-between text-[13px]">
                 <span className="font-medium text-gray-500">Subtotal</span>
-                <span className="font-medium text-[#2A3182]">{formatKes(subtotal)}</span>
+                <span className="text-brand-blue font-medium">{formatKes(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="font-medium text-gray-500">Shipping</span>
@@ -419,15 +419,15 @@ export default function Page() {
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="font-medium text-gray-500">VAT (16%)</span>
-                <span className="font-medium text-[#2A3182]">{formatKes(vat)}</span>
+                <span className="text-brand-blue font-medium">{formatKes(vat)}</span>
               </div>
               <div className="flex items-end justify-between border-t border-gray-200 pt-3">
-                <span className="text-[16px] font-bold text-[#2A3182]">Total</span>
+                <span className="text-brand-blue text-[16px] font-bold">Total</span>
                 <div className="flex items-center gap-1">
                   <span className="mb-0.5 text-[11px] font-bold uppercase tracking-tight text-gray-500">
                     KSH.
                   </span>
-                  <span className="text-[22px] font-black text-[#2A3182]">
+                  <span className="text-brand-blue text-[22px] font-black">
                     {formatKesNumber(total)}
                   </span>
                 </div>
@@ -444,7 +444,7 @@ export default function Page() {
                   </h3>
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-[#f8fafc] px-5 py-4 text-[14px] leading-relaxed text-gray-700">
-                  {shipping.name && <p className="font-bold text-[#2A3182]">{shipping.name}</p>}
+                  {shipping.name && <p className="text-brand-blue font-bold">{shipping.name}</p>}
                   {shipping.address && <p>{shipping.address}</p>}
                   {(shipping.city || shipping.county) && (
                     <p>{[shipping.city, shipping.county].filter(Boolean).join(', ')}</p>
@@ -467,7 +467,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={() => router.push('/profile')}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#2A3182] py-4 text-[14px] font-bold text-[#2A3182] transition-colors hover:bg-blue-50"
+                className="border-brand-blue text-brand-blue flex flex-1 items-center justify-center gap-2 rounded-full border-2 py-4 text-[14px] font-bold transition-colors hover:bg-blue-50"
               >
                 <ListIcon />
                 View Order History

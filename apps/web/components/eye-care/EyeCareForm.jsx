@@ -75,13 +75,13 @@ const FIELD_IDS = {
 };
 
 const FIELD =
-  'font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] px-[16px] py-[12px] text-[16px] font-normal transition-colors focus:border-[#2E3192] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E3192]/40';
+  'font-inter h-[44px] w-full rounded-[14px] border-[0.8px] border-[#E5E7EB] px-[16px] py-[12px] text-[16px] font-normal transition-colors focus:border-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40';
 const LABEL = 'font-poppins text-[14px] font-semibold leading-[21px] text-[#0F0F0F]';
 
 function StepHeader({ number, title, subtitle }) {
   return (
     <div className="flex items-center gap-[12px]">
-      <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-[26px] border-[2px] border-[#2E3192] bg-[#2E3192]">
+      <div className="border-brand-blue bg-brand-blue flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-[26px] border-[2px]">
         <span className="font-outfit text-center text-[18px] font-extrabold leading-[100%] text-white">
           {number}
         </span>
@@ -363,7 +363,7 @@ export default function EyeCareForm() {
         role="status"
         className="flex w-full flex-col items-center rounded-[32px] border-t-[0.8px] border-[#F3F4F6] bg-white p-8 text-center shadow-[0px_25px_56px_-12px_rgba(0,0,0,0.25)] lg:p-10 xl:w-[786px]"
       >
-        <div className="flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#2E3192]">
+        <div className="bg-brand-blue flex h-[64px] w-[64px] items-center justify-center rounded-full">
           <svg width="30" height="30" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M11.6663 3.5L5.24967 9.91667L2.33301 7" stroke="#FFFFFF" strokeWidth="1.6" />
           </svg>
@@ -384,13 +384,13 @@ export default function EyeCareForm() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <a
             href="/profile"
-            className="font-poppins inline-flex h-[48px] items-center justify-center rounded-full bg-[#2E3192] px-8 text-[16px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
+            className="font-poppins bg-brand-blue inline-flex h-[48px] items-center justify-center rounded-full px-8 text-[16px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
           >
             View my appointments
           </a>
           <a
             href="/shop"
-            className="font-poppins inline-flex h-[48px] items-center justify-center rounded-full border-2 border-[#2E3192] px-8 text-[16px] font-semibold text-[#2E3192] transition-colors hover:bg-[#2E3192]/5"
+            className="font-poppins border-brand-blue text-brand-blue hover:bg-brand-blue/5 inline-flex h-[48px] items-center justify-center rounded-full border-2 px-8 text-[16px] font-semibold transition-colors"
           >
             Browse frames
           </a>
@@ -533,15 +533,15 @@ export default function EyeCareForm() {
               return (
                 <label
                   key={label}
-                  className={`flex h-[44px] w-fit cursor-pointer items-center gap-[10px] rounded-[14px] border-[0.8px] px-[20px] py-[12px] transition-colors focus-within:ring-2 focus-within:ring-[#2E3192]/40 ${
-                    checked ? 'border-[#2E3192] bg-[#EEF0FF]' : 'border-[#E5E7EB] bg-[#FBFBFF]'
+                  className={`focus-within:ring-brand-blue/40 flex h-[44px] w-fit cursor-pointer items-center gap-[10px] rounded-[14px] border-[0.8px] px-[20px] py-[12px] transition-colors focus-within:ring-2 ${
+                    checked ? 'border-brand-blue bg-[#EEF0FF]' : 'border-[#E5E7EB] bg-[#FBFBFF]'
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleCondition(label)}
-                    className="h-[19px] w-[19px] cursor-pointer rounded-[4px] border-[0.8px] border-[#E5E7EB] bg-white accent-[#2E3192]"
+                    className="accent-brand-blue h-[19px] w-[19px] cursor-pointer rounded-[4px] border-[0.8px] border-[#E5E7EB] bg-white"
                   />
                   <span className="font-inter whitespace-nowrap text-[16px] font-normal leading-[100%] text-[#0A0A0A]">
                     {label}
@@ -564,7 +564,7 @@ export default function EyeCareForm() {
             value={historyNotes}
             onChange={(e) => setHistoryNotes(e.target.value)}
             placeholder="e.g. last tested in 2024"
-            className="font-inter h-[76px] w-full resize-none rounded-[14px] border-[0.8px] border-[#E5E7EB] bg-[#FBFBFF] px-[20px] py-[12px] text-[16px] font-normal transition-colors placeholder:text-[#0A0A0A]/50 focus:border-[#2E3192] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E3192]/40"
+            className="font-inter focus:border-brand-blue focus-visible:ring-brand-blue/40 h-[76px] w-full resize-none rounded-[14px] border-[0.8px] border-[#E5E7EB] bg-[#FBFBFF] px-[20px] py-[12px] text-[16px] font-normal transition-colors placeholder:text-[#0A0A0A]/50 focus-visible:outline-none focus-visible:ring-2"
           />
         </div>
       </div>
@@ -630,7 +630,7 @@ export default function EyeCareForm() {
                         value={rx[eye.key][c.key]}
                         onChange={(ev) => setRxValue(eye.key, c.key, ev.target.value)}
                         placeholder={c.placeholder}
-                        className="font-inter h-[38px] w-[76px] rounded-[8px] border-[0.8px] border-[#E5E7EB] bg-white px-[12px] text-[16px] font-normal transition-colors focus:border-[#2E3192] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E3192]/40"
+                        className="font-inter focus:border-brand-blue focus-visible:ring-brand-blue/40 h-[38px] w-[76px] rounded-[8px] border-[0.8px] border-[#E5E7EB] bg-white px-[12px] text-[16px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-2"
                       />
                     </td>
                   ))}

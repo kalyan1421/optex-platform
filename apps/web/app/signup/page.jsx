@@ -279,7 +279,7 @@ const Signup = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[18px] text-[#1A1C1E] outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[18px] text-[#1A1C1E] outline-none transition-colors focus:bg-white"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
                   fontSize: '18px',
@@ -315,7 +315,7 @@ const Signup = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[18px] text-[#1A1C1E] outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[18px] text-[#1A1C1E] outline-none transition-colors focus:bg-white"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
                   fontSize: '18px',
@@ -352,7 +352,7 @@ const Signup = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[54px] tracking-widest text-[#1A1C1E] outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[54px] tracking-widest text-[#1A1C1E] outline-none transition-colors focus:bg-white"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
                   fontSize: '18px',
@@ -396,7 +396,7 @@ const Signup = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[54px] tracking-widest text-[#1A1C1E] outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue h-full w-full rounded-[11248px] border-[1.13px] border-[#C7C5D4] bg-[#F9F9FC] pl-[54px] pr-[54px] tracking-widest text-[#1A1C1E] outline-none transition-colors focus:bg-white"
                 style={{
                   fontFamily: 'Manrope, sans-serif',
                   fontSize: '18px',
@@ -456,7 +456,7 @@ const Signup = () => {
           <button
             type="submit"
             disabled={loading || !!success}
-            className="flex h-[55.125px] w-full items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors hover:bg-[#2A3182] disabled:cursor-not-allowed disabled:opacity-60"
+            className="hover:bg-brand-blue flex h-[55.125px] w-full items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               fontFamily: 'Manrope, sans-serif',
               fontSize: '15.75px',

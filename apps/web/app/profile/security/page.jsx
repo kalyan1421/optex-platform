@@ -14,7 +14,7 @@ const BackArrowIcon = () => (
 
 const LockIcon = () => (
   <svg
-    className="h-6 w-6 text-[#2A3182]"
+    className="text-brand-blue h-6 w-6"
     fill="none"
     stroke="currentColor"
     strokeWidth="1.6"
@@ -50,12 +50,12 @@ function PasswordField({ id, label, value, onChange, autoComplete, hint }) {
           onChange={onChange}
           autoComplete={autoComplete}
           required
-          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-16 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white focus:outline-none"
+          className="focus:border-brand-blue w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-16 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:bg-white focus:outline-none"
         />
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 hover:text-[#2A3182]"
+          className="hover:text-brand-blue absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400"
         >
           {visible ? 'Hide' : 'Show'}
         </button>
@@ -135,7 +135,7 @@ export default function SecurityPage() {
       <div className="site-container max-w-[560px]">
         <Link
           href="/profile"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-[#2A3182]"
+          className="hover:text-brand-blue mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500"
         >
           <BackArrowIcon />
           Back to Account
@@ -202,7 +202,7 @@ export default function SecurityPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#2A3182] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
+                className="bg-brand-blue w-full rounded-xl py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Updating…' : 'Update Password'}
               </button>

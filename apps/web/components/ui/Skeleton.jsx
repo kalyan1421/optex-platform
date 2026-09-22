@@ -128,7 +128,7 @@ export function CategoryHeroSkeleton() {
 /** The /search banner: the solid brand-blue band with eyebrow + query line. */
 export function SearchHeroSkeleton() {
   return (
-    <section aria-hidden="true" className="bg-[#2A3182] py-12 sm:py-16">
+    <section aria-hidden="true" className="bg-brand-blue py-12 sm:py-16">
       <div className="site-container">
         <Skeleton className="h-3 w-28 bg-white/20" />
         <Skeleton className="mt-4 h-[42px] w-[460px] max-w-full bg-white/25" />

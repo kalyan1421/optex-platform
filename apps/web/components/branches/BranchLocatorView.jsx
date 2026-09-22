@@ -45,15 +45,15 @@ function BranchCard({ branch, isSelected, onClick }) {
       onClick={onClick}
       className={`w-full rounded-[18px] border p-5 text-left transition-all duration-200 focus:outline-none ${
         isSelected
-          ? 'border-[#2A3182] bg-blue-50 shadow-md'
-          : 'border-[#e5e7eb] bg-white hover:border-[#2A3182]/40 hover:shadow-sm'
+          ? 'border-brand-blue bg-blue-50 shadow-md'
+          : 'hover:border-brand-blue/40 border-[#e5e7eb] bg-white hover:shadow-sm'
       }`}
     >
       {/* Branch name */}
       <div className="mb-3 flex items-start justify-between gap-2">
         <h3 className="text-[15px] font-bold leading-tight text-gray-900">{branch.name}</h3>
         {isSelected && (
-          <span className="mt-0.5 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#2A3182]">
+          <span className="bg-brand-blue mt-0.5 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full">
             <svg
               className="h-3 w-3 text-white"
               fill="none"
@@ -102,7 +102,7 @@ function BranchCard({ branch, isSelected, onClick }) {
           <a
             href={`tel:${branch.phone}`}
             onClick={(e) => e.stopPropagation()}
-            className="font-semibold text-[#2A3182] hover:underline"
+            className="text-brand-blue font-semibold hover:underline"
           >
             {branch.phone}
           </a>
@@ -131,7 +131,7 @@ function BranchCard({ branch, isSelected, onClick }) {
       <Link
         href={`/appointments?branch=${branch.id}`}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[#2A3182] px-5 py-2 text-[12px] font-bold text-white shadow transition-all hover:bg-[#1e2361] hover:shadow-md active:scale-95"
+        className="bg-brand-blue inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[12px] font-bold text-white shadow transition-all hover:bg-[#1e2361] hover:shadow-md active:scale-95"
       >
         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -185,7 +185,7 @@ export default function BranchLocatorView({ branches = [] }) {
       {/* ── Hero ──────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-[#1A1A2E] py-16 sm:py-20">
         {/* Decorative circles */}
-        <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-[#2A3182]/30 blur-3xl" />
+        <div className="bg-brand-blue/30 pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full blur-3xl" />
         <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-[#E53935]/20 blur-3xl" />
 
         <div className="relative mx-auto max-w-screen-xl px-4 text-center sm:px-8">
@@ -214,7 +214,7 @@ export default function BranchLocatorView({ branches = [] }) {
             </p>
           </div>
           {selectedBranch && !loading && (
-            <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-4 py-1.5 text-[12px] font-semibold text-[#2A3182]">
+            <div className="text-brand-blue flex items-center gap-1.5 rounded-full bg-blue-50 px-4 py-1.5 text-[12px] font-semibold">
               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -312,7 +312,7 @@ export default function BranchLocatorView({ branches = [] }) {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto flex-shrink-0 rounded-full bg-[#2A3182] px-4 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e2361]"
+                    className="bg-brand-blue ml-auto flex-shrink-0 rounded-full px-4 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e2361]"
                   >
                     Open in Maps
                   </a>
@@ -361,7 +361,7 @@ export default function BranchLocatorView({ branches = [] }) {
               <button
                 type="button"
                 onClick={() => setSelectedBranch(null)}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-[14px] border border-[#e5e7eb] py-2.5 text-[12.5px] font-semibold text-gray-500 transition-all hover:border-[#2A3182] hover:text-[#2A3182]"
+                className="hover:border-brand-blue hover:text-brand-blue mt-3 flex w-full items-center justify-center gap-1.5 rounded-[14px] border border-[#e5e7eb] py-2.5 text-[12.5px] font-semibold text-gray-500 transition-all"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path

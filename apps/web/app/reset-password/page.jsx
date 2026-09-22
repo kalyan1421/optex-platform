@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-gray-500">Redirecting you to sign in…</p>
               <Link
                 href="/login"
-                className="mt-2 inline-block text-sm font-semibold text-[#2A3182] hover:underline"
+                className="text-brand-blue mt-2 inline-block text-sm font-semibold hover:underline"
               >
                 Sign In now
               </Link>
@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
                   required
                   minLength={6}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white focus:outline-none"
+                  className="focus:border-brand-blue w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:bg-white focus:outline-none"
                 />
               </div>
 
@@ -142,14 +142,14 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setConfirmPw(e.target.value)}
                   required
                   placeholder="Repeat your new password"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white focus:outline-none"
+                  className="focus:border-brand-blue w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:bg-white focus:outline-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading || !sessionReady}
-                className="w-full rounded-xl bg-[#2A3182] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
+                className="bg-brand-blue w-full rounded-xl py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Updating…' : 'Set New Password'}
               </button>

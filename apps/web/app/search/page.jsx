@@ -17,7 +17,7 @@ const SearchIcon = () => (
 
 const GridIcon = () => (
   <svg
-    className="h-5 w-5 text-[#2A3182]"
+    className="text-brand-blue h-5 w-5"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -78,7 +78,7 @@ export default async function SearchPage(props) {
   return (
     <div className="min-h-screen bg-[#f4f6f8] pb-16 sm:pb-24">
       {/* Hero search banner */}
-      <section className="bg-[#2A3182] py-12 sm:py-16">
+      <section className="bg-brand-blue py-12 sm:py-16">
         <div className="site-container">
           <div className="mb-4 flex items-center gap-3">
             <GridIcon />
@@ -116,7 +116,7 @@ export default async function SearchPage(props) {
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white shadow-md shadow-[#2A3182]/20 transition-colors hover:bg-[#1e2461]"
+              className="bg-brand-blue shadow-brand-blue/20 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13px] font-bold text-white shadow-md transition-colors hover:bg-[#1e2461]"
             >
               Browse All Products
               <ArrowRightIcon />

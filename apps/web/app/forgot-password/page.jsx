@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 href="/login"
-                className="mt-4 inline-block text-sm font-semibold text-[#2A3182] hover:underline"
+                className="text-brand-blue mt-4 inline-block text-sm font-semibold hover:underline"
               >
                 Back to Sign In
               </Link>
@@ -90,21 +90,21 @@ export default function ForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white focus:outline-none"
+                  className="focus:border-brand-blue w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:bg-white focus:outline-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-[#2A3182] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
+                className="bg-brand-blue w-full rounded-xl py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a1a5c] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Sending…' : 'Send Reset Link'}
               </button>
 
               <p className="text-center text-sm text-gray-500">
                 Remember your password?{' '}
-                <Link href="/login" className="font-semibold text-[#2A3182] hover:underline">
+                <Link href="/login" className="text-brand-blue font-semibold hover:underline">
                   Sign In
                 </Link>
               </p>
