@@ -50,7 +50,13 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const OptexLogo(height: 30),
+        // The mark is a stacked lockup (wordmark over glasses), not a
+        // horizontal one, so it needs height to stay legible — the storefront
+        // navbar gives it up to 72px. 44 in a 64dp bar is the mobile
+        // equivalent; at the default 56dp bar it shrinks to an unreadable
+        // badge.
+        toolbarHeight: 64,
+        title: const OptexLogo(height: 44),
         actions: <Widget>[
           IconButton(
             onPressed: () => context.push(Routes.search),
