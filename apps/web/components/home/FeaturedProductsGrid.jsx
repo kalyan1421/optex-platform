@@ -21,7 +21,7 @@ export default function FeaturedProductsGrid({ products }) {
           key={product.id}
           data-aos="fade-up"
           data-aos-delay={index * 50}
-          className="group flex w-full cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:h-[378.2px] lg:w-[291px] lg:gap-[10px]"
+          className="group flex w-full cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:w-[291px] lg:gap-[10px]"
           style={{
             borderRadius: '32px',
             border: '0.8px solid #D4D4D4',
