@@ -86,7 +86,13 @@ class ConnectivityController extends Notifier<ConnectivityStatus> {
 
   Future<void> _onReconnect() async {
     if (_disposed) return;
-    await ref.read(offlineCacheProvider).clear();
+    // Deliberately NOT clear(). On the flaky connectivity this cache exists
+    // for, brief drops are constant, and wiping everything on each recovery
+    // meant it never accumulated anything useful. It was redundant too:
+    // OfflineCache.read takes a mandatory maxAge and drops expired entries as
+    // it reads, and the invalidations below already force fresh fetches. This
+    // is housekeeping only.
+    await ref.read(offlineCacheProvider).purgeExpired(const Duration(days: 7));
     if (_disposed) return;
     ref.invalidate(notificationsFeedProvider);
     ref.invalidate(unreadCountProvider);

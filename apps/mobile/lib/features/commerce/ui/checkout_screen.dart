@@ -143,8 +143,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
       ),
     );
     if (confirmed != true || !mounted) return;
+    // startOver() resets the payment attempt too — see CheckoutController.
     ref.read(checkoutControllerProvider.notifier).startOver();
-    ref.read(paymentControllerProvider.notifier).reset();
     ref.read(cartControllerProvider.notifier).refresh();
   }
 
@@ -197,8 +197,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
   void _onPaid(String orderId) {
     Future<void>.delayed(const Duration(milliseconds: 900), () {
       if (!mounted) return;
+      // completed() resets the payment attempt too.
       ref.read(checkoutControllerProvider.notifier).completed();
-      ref.read(paymentControllerProvider.notifier).reset();
       ref.read(cartControllerProvider.notifier).refresh();
       context.go(Routes.orderConfirmationOf(orderId));
     });

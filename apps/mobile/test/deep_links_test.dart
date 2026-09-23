@@ -61,6 +61,8 @@ void main() {
     });
   });
 
+  _portAndUserinfo();
+
   group('routeForDeepLink', () {
     test('ignores a foreign scheme', () {
       expect(routeForDeepLink('https://example.com/orders/abc'), isNull);
@@ -77,6 +79,25 @@ void main() {
     test('returns null for junk', () {
       expect(routeForDeepLink(''), isNull);
       expect(routeForDeepLink(null), isNull);
+    });
+  });
+}
+
+// Regression: `authority` carries port and userinfo, `host` does not.
+void _portAndUserinfo() {
+  group('normalizeDeepLink with a port or userinfo', () {
+    test('ignores a port on the authority', () {
+      expect(
+        normalizeDeepLink(Uri.parse('optex://orders:8080/123')),
+        '/orders/123',
+      );
+    });
+
+    test('ignores userinfo on the authority', () {
+      expect(
+        normalizeDeepLink(Uri.parse('optex://user:pw@orders/123')),
+        '/orders/123',
+      );
     });
   });
 }

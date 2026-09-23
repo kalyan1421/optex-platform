@@ -117,10 +117,19 @@ class NotificationsFeedController extends AsyncNotifier<NotificationFeed> {
         page: current.page + 1,
         pageSize: current.pageSize,
       );
+      final List<AppNotification> merged = <AppNotification>[
+        ...current.items,
+        ...next.items,
+      ];
       state = AsyncValue<NotificationFeed>.data(
         current.copyWith(
-          items: <AppNotification>[...current.items, ...next.items],
-          total: next.total,
+          items: merged,
+          // A page that comes back empty ends the feed, whatever `total`
+          // claims. `hasMore` is `items.length < total`, so trusting a stale
+          // or over-counted total against an empty page leaves the list
+          // asking for page N+1 forever behind a footer spinner. The orders
+          // and catalog feeds already clamp this; this one did not.
+          total: next.items.isEmpty ? merged.length : next.total,
           page: next.page,
           loadingMore: false,
         ),

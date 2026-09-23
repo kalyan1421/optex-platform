@@ -8,6 +8,7 @@ import '../data/checkout_repository.dart';
 import '../domain/checkout_draft.dart';
 import '../domain/order.dart';
 import 'cart_providers.dart';
+import 'payment_providers.dart';
 
 final Provider<CheckoutRepository> checkoutRepositoryProvider =
     Provider<CheckoutRepository>(
@@ -219,10 +220,27 @@ class CheckoutController extends Notifier<CheckoutState> {
   /// new order"), never automatically: the order still exists server-side as
   /// an unpaid `pending_payment` row, and walking away from one silently is
   /// how a customer ends up with two.
-  void startOver() => state = const CheckoutState();
+  void startOver() => _clear();
 
   /// Clears everything after a successful payment.
-  void completed() => state = const CheckoutState();
+  void completed() => _clear();
+
+  /// Drops the order **and** the payment attempt together.
+  ///
+  /// These two must move as one. `PaymentController._alreadyPaid` queries
+  /// whatever `checkoutRequestId` / `orderTrackingId` sit in its state, and
+  /// those belong to the order being abandoned here. Left behind, the next
+  /// order's first payment attempt asks the provider about the *previous*
+  /// order's id, is told it was paid, and marks a new and entirely unpaid
+  /// order as successful.
+  ///
+  /// This used to be two calls every caller had to remember to pair. The one
+  /// that eventually forgot would have shipped that bug, so the pairing lives
+  /// here instead.
+  void _clear() {
+    ref.read(paymentControllerProvider.notifier).reset();
+    state = const CheckoutState();
+  }
 }
 
 final NotifierProvider<CheckoutController, CheckoutState>

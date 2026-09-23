@@ -1,10 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/network/api_exception.dart';
 import '../core/providers.dart';
 import '../core/router/app_router.dart';
 import '../core/router/routes.dart';
+import '../core/widgets/app_messenger.dart';
 import '../features/catalog/state/add_to_cart.dart';
 import '../features/commerce/state/cart_providers.dart';
 
@@ -43,11 +45,22 @@ AddToCartHandler buildAddToCartHandler(Ref ref) {
     final AuthState auth = ref.read(authControllerProvider);
 
     if (!auth.isAuthenticated) {
-      // Park the intent and send them to sign-in. `from` returns them to the
-      // product they were looking at, and the replay below finishes the job.
+      // Park the intent and send them to sign-in; the replay below finishes
+      // the job once auth lands.
       ref.read(pendingAddToCartProvider.notifier).park(intent);
-      final String from = Uri.encodeComponent(Routes.productOf(intent.slug));
-      ref.read(routerProvider).go('${Routes.login}?from=$from');
+
+      // Where they actually are, which is often a list rather than the
+      // product page. Sending everyone to the PDP discarded the scroll and
+      // filter state the catalog keeps alive precisely so a return trip lands
+      // where it left off.
+      final GoRouter router = ref.read(routerProvider);
+      final String current = router.routeInformationProvider.value.uri
+          .toString();
+      final String target = current.isEmpty || current == '/'
+          ? Routes.productOf(intent.slug)
+          : current;
+
+      router.go('${Routes.login}?from=${Uri.encodeComponent(target)}');
       return;
     }
 
@@ -74,10 +87,9 @@ Future<void> _add(CartController cart, AddToCartIntent intent) async {
 
 /// Replays a parked add once the customer signs in.
 ///
-/// Mounted once, above the router. Failures are swallowed deliberately: the
-/// customer has just signed in and is looking at a product page, and an error
-/// toast about an add they made a minute ago would be noise. The cart badge
-/// simply will not move, which is legible on its own.
+/// Mounted once, above the router. A failed replay is reported rather than
+/// swallowed — someone who created an account specifically to add a frame
+/// deserves to know when it did not go in.
 class CartBridge extends ConsumerStatefulWidget {
   const CartBridge({super.key, required this.child});
 
@@ -100,10 +112,19 @@ class _CartBridgeState extends ConsumerState<CartBridge> {
       if (pending == null) return;
 
       ref.read(pendingAddToCartProvider.notifier).park(null);
-      _add(
-        ref.read(cartControllerProvider.notifier),
-        pending,
-      ).catchError((Object _) {});
+      // Reported, not swallowed. Someone who signed up specifically to add a
+      // frame that then sold out would otherwise land back on the product
+      // page with an empty cart and no explanation.
+      _add(ref.read(cartControllerProvider.notifier), pending).catchError((
+        Object error,
+      ) {
+        showAppMessage(
+          error is ApiException
+              ? error.message
+              : 'We could not add that to your cart. Please try again.',
+          isError: true,
+        );
+      });
     });
 
     return widget.child;

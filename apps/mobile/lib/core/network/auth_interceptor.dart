@@ -73,10 +73,19 @@ class AuthInterceptor extends QueuedInterceptor {
     final String? current = _tokens.accessToken;
 
     String? freshToken;
-    if (current != null && current.isNotEmpty && current != usedToken) {
-      freshToken = current;
-    } else {
-      freshToken = await _refreshOnce();
+    try {
+      if (current != null && current.isNotEmpty && current != usedToken) {
+        freshToken = current;
+      } else {
+        freshToken = await _refreshOnce();
+      }
+    } catch (_) {
+      // A throw here would escape `onError` without ever calling the handler,
+      // and Dio's QueuedInterceptor would leave this request's future
+      // unresolved forever — the caller's await never returns and everything
+      // queued behind it stalls, with no error to show. Treat any failure as
+      // "could not refresh" and fall through to the sign-out path below.
+      freshToken = null;
     }
 
     if (freshToken == null || freshToken.isEmpty) {

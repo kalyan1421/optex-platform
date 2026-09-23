@@ -8,6 +8,7 @@ import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/router/deep_links.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_messenger.dart';
 import 'features/catalog/state/add_to_cart.dart';
 import 'features/engagement/ui/engagement_host.dart';
 import 'integration/cart_bridge.dart';
@@ -56,6 +57,8 @@ class OptexApp extends ConsumerWidget {
     final GoRouter router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'OPTEX Opticians',
+      // Lets work with no screen of its own report back — see showAppMessage.
+      scaffoldMessengerKey: appMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

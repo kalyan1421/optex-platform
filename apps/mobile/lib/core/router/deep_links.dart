@@ -23,7 +23,11 @@ String normalizeDeepLink(Uri uri) {
   final String path = uri.path.startsWith('/') ? uri.path : '/${uri.path}';
 
   // Fold a non-empty authority back onto the front of the path.
-  final String merged = uri.authority.isEmpty ? path : '/${uri.authority}$path';
+  // `host`, not `authority`: authority carries any port or userinfo, so
+  // `optex://orders:8080/123` would fold to `/orders:8080/123` and match
+  // nothing. The app never mints that shape, but a server-generated push
+  // payload is not under the client's control.
+  final String merged = uri.host.isEmpty ? path : '/${uri.host}$path';
 
   final String collapsed = merged.replaceAll(RegExp('/+'), '/');
   final String trimmed = collapsed.length > 1 && collapsed.endsWith('/')

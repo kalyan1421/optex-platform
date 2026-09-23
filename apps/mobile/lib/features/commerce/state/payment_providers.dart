@@ -37,6 +37,16 @@ class PaymentController extends Notifier<PaymentAttempt> {
   /// loops writing conflicting phases into the same state.
   int _generation = 0;
 
+  /// When the current STK attempt stops being worth waiting for.
+  ///
+  /// Held here rather than derived per poll loop so that resuming the app, or
+  /// tapping "check again", continues the original window instead of starting
+  /// a new one. Cleared whenever the attempt reaches a terminal phase.
+  DateTime? _mpesaDeadline;
+
+  bool get _mpesaWindowClosed =>
+      _mpesaDeadline != null && DateTime.now().isAfter(_mpesaDeadline!);
+
   PaymentsRepository get _repo => ref.read(paymentsRepositoryProvider);
 
   /// Gaps between M-Pesa status queries. Front-loaded because most pushes
@@ -80,8 +90,16 @@ class PaymentController extends Notifier<PaymentAttempt> {
     required String orderId,
     required String phone,
   }) async {
-    if (await _alreadyPaid()) return;
-    _generation++;
+    // Claimed BEFORE the first await, and re-checked after every one. Without
+    // this, a customer who taps M-Pesa and then switches to Pesapal gets the
+    // in-flight STK response landing on top of the newer card attempt: both
+    // rails end up live server-side, the UI tracks only the loser, and the
+    // card payment is never reconciled while they are prompted to pay again.
+    final int generation = ++_generation;
+
+    if (await _alreadyPaid(generation)) return;
+    if (generation != _generation) return;
+
     state = PaymentAttempt(
       phase: PaymentPhase.initiating,
       method: PaymentMethodOption.mpesa,
@@ -97,9 +115,17 @@ class PaymentController extends Notifier<PaymentAttempt> {
     try {
       push = await _repo.startStkPush(orderId: orderId, phone: phone);
     } on ApiException catch (e) {
+      if (generation != _generation) return;
       await _initiationFailed(e);
       return;
     }
+
+    if (generation != _generation) return;
+
+    // The window starts when the prompt is actually sent, and is held on the
+    // controller so a later recheck resumes the same window instead of
+    // granting a fresh 90 seconds (see _pollMpesa).
+    _mpesaDeadline = DateTime.now().add(_mpesaWindow);
 
     state = state.copyWith(
       phase: PaymentPhase.pending,
@@ -117,7 +143,12 @@ class PaymentController extends Notifier<PaymentAttempt> {
     bool immediate = false,
   }) async {
     final int generation = ++_generation;
-    final DateTime deadline = DateTime.now().add(_mpesaWindow);
+    // The deadline belongs to the attempt, not to this loop. Recomputing it
+    // here meant every resume-triggered recheck restarted the 90 seconds, so
+    // a customer flicking to their SMS app and back kept the attempt alive
+    // forever and never saw the recovery copy.
+    final DateTime deadline =
+        _mpesaDeadline ?? DateTime.now().add(_mpesaWindow);
     int attempt = 0;
 
     while (generation == _generation && DateTime.now().isBefore(deadline)) {
@@ -167,8 +198,11 @@ class PaymentController extends Notifier<PaymentAttempt> {
   /// Starts a Pesapal payment and returns the URL to open in the in-app
   /// webview, or null if initiation failed.
   Future<String?> startPesapal(String orderId) async {
-    if (await _alreadyPaid()) return null;
-    _generation++;
+    final int generation = ++_generation;
+
+    if (await _alreadyPaid(generation)) return null;
+    if (generation != _generation) return null;
+
     state = PaymentAttempt(
       phase: PaymentPhase.initiating,
       method: PaymentMethodOption.pesapal,
@@ -179,6 +213,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
 
     try {
       final PesapalInitiation init = await _repo.startPesapal(orderId);
+      if (generation != _generation) return null;
       state = state.copyWith(
         phase: PaymentPhase.pending,
         orderTrackingId: init.orderTrackingId,
@@ -189,6 +224,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
       );
       return init.redirectUrl;
     } on ApiException catch (e) {
+      if (generation != _generation) return null;
       await _initiationFailed(e);
       return null;
     }
@@ -255,9 +291,10 @@ class PaymentController extends Notifier<PaymentAttempt> {
       case PaymentMethodOption.mpesa:
         final String? id = state.checkoutRequestId;
         if (id == null) return;
-        if (state.phase == PaymentPhase.pending) {
+        if (state.phase == PaymentPhase.pending && !_mpesaWindowClosed) {
           // Restart the loop with an immediate query rather than adding a
-          // second one alongside it.
+          // second one alongside it. Only while the window is still open —
+          // past it the loop would exit instantly without ever asking.
           await _pollMpesa(id, immediate: true);
         } else {
           await _singleCheck(() async {
@@ -275,6 +312,14 @@ class PaymentController extends Notifier<PaymentAttempt> {
       case PaymentMethodOption.pesapal:
         final String? id = state.orderTrackingId;
         if (id == null) return;
+        if (state.phase == PaymentPhase.pending) {
+          // Mirrors the M-Pesa branch. Falling through to _singleCheck here
+          // used to kill the confirmPesapal loop via ++_generation and then,
+          // on a network error, restore `pending` with nothing polling —
+          // leaving a spinner that could never resolve.
+          await confirmPesapal();
+          return;
+        }
         await _singleCheck(() async {
           final PesapalStatus status = await _repo.queryPesapal(id);
           if (status.paid) {
@@ -321,7 +366,16 @@ class PaymentController extends Notifier<PaymentAttempt> {
       );
     } on ApiException catch (e) {
       if (generation != _generation) return;
-      state = state.copyWith(phase: previous, busy: false, message: e.message);
+      // Never restore `pending`: this method has already superseded whatever
+      // loop was running, so `pending` would promise a poller that no longer
+      // exists. `timedOut` is the honest phase — unresolved, and recoverable.
+      state = state.copyWith(
+        phase: previous == PaymentPhase.pending
+            ? PaymentPhase.timedOut
+            : previous,
+        busy: false,
+        message: e.message,
+      );
     }
   }
 
@@ -334,6 +388,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
   /// [_alreadyPaid] check the abandoned attempt before the new one starts.
   void reselect() {
     _generation++;
+    _mpesaDeadline = null;
     state = state.copyWith(
       phase: PaymentPhase.idle,
       busy: false,
@@ -345,6 +400,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
   /// Drops the attempt entirely. Used when the order is done with.
   void reset() {
     _generation++;
+    _mpesaDeadline = null;
     state = PaymentAttempt.idle;
   }
 
@@ -383,7 +439,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
   /// check is not treated as "not paid" — it just lets the retry through,
   /// because refusing to let someone pay on a flaky network is its own way of
   /// losing the order.
-  Future<bool> _alreadyPaid() async {
+  Future<bool> _alreadyPaid(int generation) async {
     final String? mpesaId = state.checkoutRequestId;
     final String? pesapalId = state.orderTrackingId;
     if (mpesaId == null && pesapalId == null) return false;
@@ -393,6 +449,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
     try {
       if (mpesaId != null) {
         final MpesaStatus status = await _repo.queryMpesa(mpesaId);
+        if (generation != _generation) return false;
         if (status.paid) {
           _succeed(
             status.resultDesc ?? 'That payment had already gone through.',
@@ -402,6 +459,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
       }
       if (pesapalId != null) {
         final PesapalStatus status = await _repo.queryPesapal(pesapalId);
+        if (generation != _generation) return false;
         if (status.paid) {
           _succeed(
             status.description ?? 'That payment had already gone through.',
@@ -412,6 +470,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
     } on ApiException {
       // Unknown, not negative. Fall through and let the customer pay.
     }
+    if (generation != _generation) return false;
     state = state.copyWith(busy: false);
     return false;
   }
@@ -439,6 +498,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
 
   void _succeed(String detail) {
     _generation++;
+    _mpesaDeadline = null;
     state = state.copyWith(
       phase: PaymentPhase.success,
       busy: false,
@@ -448,6 +508,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
 
   void _fail(String detail) {
     _generation++;
+    _mpesaDeadline = null;
     state = state.copyWith(
       phase: PaymentPhase.failed,
       busy: false,
@@ -457,6 +518,7 @@ class PaymentController extends Notifier<PaymentAttempt> {
 
   void _timeOut(String detail) {
     _generation++;
+    _mpesaDeadline = null;
     state = state.copyWith(
       phase: PaymentPhase.timedOut,
       busy: false,
