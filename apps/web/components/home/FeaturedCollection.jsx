@@ -11,7 +11,7 @@ import FeaturedCollectionTabs from '@/components/home/FeaturedCollectionTabs';
 export default async function FeaturedCollection() {
   const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
   const [{ items: products }, categories] = await Promise.all([
-    api.catalog.listProducts({ limit: 100 }).catch((err) => {
+    api.catalog.listProducts({ limit: 100, sort: 'featured' }).catch((err) => {
       console.error('[home] FeaturedCollection products fetch failed:', err);
       return { items: [] };
     }),
@@ -46,7 +46,7 @@ export default async function FeaturedCollection() {
             className="flex items-center gap-[4px] transition-opacity hover:opacity-80 lg:h-[24px] lg:w-[168.46px]"
           >
             <span
-              className="whitespace-nowrap capitalize text-[#2E3192] underline decoration-solid"
+              className="text-brand-blue whitespace-nowrap capitalize underline decoration-solid"
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 600,
@@ -56,7 +56,7 @@ export default async function FeaturedCollection() {
             >
               View Full Catalog
             </span>
-            <div className="flex h-[20px] w-[20px] items-center justify-center text-[#2E3192] lg:h-[20px] lg:w-[20px]">
+            <div className="text-brand-blue flex h-[20px] w-[20px] items-center justify-center lg:h-[20px] lg:w-[20px]">
               <svg
                 className="h-full w-full"
                 viewBox="0 0 20 20"

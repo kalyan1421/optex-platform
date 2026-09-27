@@ -15,10 +15,12 @@ const BADGES = ['BEST SELLER', 'TRENDING', 'NEW ARRIVAL', 'HOT'];
  */
 export default async function TrendingNow() {
   const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
-  const { items: products } = await api.catalog.listProducts({ limit: 4 }).catch((err) => {
-    console.error('[home] TrendingNow fetch failed:', err);
-    return { items: [] };
-  });
+  const { items: products } = await api.catalog
+    .listProducts({ trending: true, limit: 4 })
+    .catch((err) => {
+      console.error('[home] TrendingNow fetch failed:', err);
+      return { items: [] };
+    });
 
   return (
     <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 lg:px-[100px]">
@@ -60,7 +62,7 @@ export default async function TrendingNow() {
               style={{ borderBottom: '2px solid #2E3192' }}
             >
               <span
-                className="text-[#2E3192]"
+                className="text-brand-blue"
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   fontWeight: 600,
@@ -149,7 +151,7 @@ export default async function TrendingNow() {
                   </h3>
                   <div className="flex items-baseline lg:mt-[8px]">
                     <span
-                      className="text-[#2E3192]"
+                      className="text-brand-blue"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
                         fontWeight: 700,

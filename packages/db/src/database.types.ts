@@ -1159,8 +1159,11 @@ export type Database = {
           frame_shape: string | null
           gender: string | null
           id: string
+          homepage_sort: number | null
           images: string[]
           is_active: boolean
+          is_featured: boolean
+          is_trending: boolean
           name: string
           price_kes: number
           rating_avg: number | null
@@ -1180,8 +1183,11 @@ export type Database = {
           frame_shape?: string | null
           gender?: string | null
           id?: string
+          homepage_sort?: number | null
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          is_trending?: boolean
           name: string
           price_kes: number
           rating_avg?: number | null
@@ -1201,8 +1207,11 @@ export type Database = {
           frame_shape?: string | null
           gender?: string | null
           id?: string
+          homepage_sort?: number | null
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          is_trending?: boolean
           name?: string
           price_kes?: number
           rating_avg?: number | null

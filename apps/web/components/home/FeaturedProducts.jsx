@@ -10,10 +10,12 @@ import FeaturedProductsGrid from '@/components/home/FeaturedProductsGrid';
  */
 export default async function FeaturedProducts() {
   const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
-  const { items: products } = await api.catalog.listProducts({ limit: 8 }).catch((err) => {
-    console.error('[home] FeaturedProducts fetch failed:', err);
-    return { items: [] };
-  });
+  const { items: products } = await api.catalog
+    .listProducts({ featured: true, limit: 8 })
+    .catch((err) => {
+      console.error('[home] FeaturedProducts fetch failed:', err);
+      return { items: [] };
+    });
 
   return (
     <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 lg:px-[100px] lg:pb-[80px] lg:pt-[80px]">
@@ -54,7 +56,7 @@ export default async function FeaturedProducts() {
               className="flex items-center transition-opacity hover:opacity-80 lg:h-[24px] lg:w-[96.95px]"
             >
               <span
-                className="text-center capitalize text-[#2E3192] underline"
+                className="text-brand-blue text-center capitalize underline"
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   fontWeight: 600,
@@ -65,7 +67,7 @@ export default async function FeaturedProducts() {
               >
                 See More
               </span>
-              <div className="flex items-center justify-center text-[#2E3192] lg:h-[24px] lg:w-[24px]">
+              <div className="text-brand-blue flex items-center justify-center lg:h-[24px] lg:w-[24px]">
                 <svg
                   width="6"
                   height="12"
