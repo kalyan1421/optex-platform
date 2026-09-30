@@ -850,6 +850,7 @@ export type Database = {
           promo_code: string | null
           shipping: Json | null
           shipping_kes: number
+          source: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_kes: number
           total_kes: number
@@ -871,6 +872,7 @@ export type Database = {
           promo_code?: string | null
           shipping?: Json | null
           shipping_kes?: number
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_kes: number
           total_kes: number
@@ -892,6 +894,7 @@ export type Database = {
           promo_code?: string | null
           shipping?: Json | null
           shipping_kes?: number
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_kes?: number
           total_kes?: number
@@ -1985,6 +1988,7 @@ export type Database = {
           promo_code: string | null
           shipping: Json | null
           shipping_kes: number
+          source: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_kes: number
           total_kes: number

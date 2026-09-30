@@ -1,9 +1,24 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../env/app_env.dart';
 import 'api_exception.dart';
 import 'auth_interceptor.dart';
+
+/// The channel this build reports in `X-Optex-Client`: `ios`, `android`, or
+/// `other` for anything else (a desktop dev run).
+///
+/// The API attributes an order to this (SPEC-11 B-2 — it is how "share of
+/// orders placed in-app" is measured), and recognises exactly `ios` and
+/// `android`; everything else is counted as web. It names the platform rather
+/// than the framework because the framework cannot tell the two stores apart.
+String clientChannelFor(TargetPlatform platform) => switch (platform) {
+  TargetPlatform.iOS => 'ios',
+  TargetPlatform.android => 'android',
+  _ => 'other',
+};
 
 /// The single HTTP entry point to the OPTEX API.
 ///
@@ -20,7 +35,13 @@ class ApiClient {
       sendTimeout: const Duration(
         seconds: 60,
       ), // generous: prescription uploads
-      headers: <String, dynamic>{'Accept': 'application/json'},
+      headers: <String, dynamic>{
+        'Accept': 'application/json',
+        // Set here rather than in [attachClientVersion]: the platform is known
+        // synchronously, and order attribution must not depend on a version
+        // lookup that can fail.
+        'X-Optex-Client': clientChannelFor(defaultTargetPlatform),
+      },
       // Let non-2xx through to the interceptor chain rather than throwing
       // before AuthInterceptor gets a chance to refresh on 401.
       validateStatus: (int? status) => status != null && status < 400,
@@ -38,15 +59,18 @@ class ApiClient {
 
   /// Stamps every request with the client version, per SPEC-11 §9.
   ///
-  /// This is what makes a future breaking change surviveable: we can read the
-  /// live version spread from API logs *before* deciding whether to force an
-  /// upgrade, rather than guessing. Called once at startup.
+  /// This is what makes a future breaking change surviveable: the API logs it
+  /// as `clientVersion`, so the live version spread is readable *before*
+  /// deciding whether to force an upgrade, rather than guessed. Called once at
+  /// startup.
+  ///
+  /// Only the version is attached here. `X-Optex-Client` (the channel) is
+  /// already on every request from construction.
   Future<void> attachClientVersion() async {
     try {
       final PackageInfo info = await PackageInfo.fromPlatform();
       final String header = '${info.version}+${info.buildNumber}';
       for (final Dio client in <Dio>[_dio, _retryClient]) {
-        client.options.headers['X-Optex-Client'] = 'flutter';
         client.options.headers['X-Optex-Client-Version'] = header;
       }
     } catch (_) {

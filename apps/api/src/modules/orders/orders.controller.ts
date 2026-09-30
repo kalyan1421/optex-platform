@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
+import { type ClientInfo, RequestClient } from '../../common/client-info';
 import { CheckoutDto } from './dto/checkout.dto';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import {
@@ -38,8 +39,9 @@ export class OrdersController {
   checkout(
     @CurrentUser('id') authUserId: string,
     @Body() dto: CheckoutDto,
+    @RequestClient() client: ClientInfo,
   ): Promise<CheckoutResultView> {
-    return this.orders.checkout(authUserId, dto);
+    return this.orders.checkout(authUserId, dto, client.channel);
   }
 
   @Get('orders')

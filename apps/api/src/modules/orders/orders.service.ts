@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
+import type { ClientChannel } from '../../common/client-info';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
@@ -152,7 +153,11 @@ export class OrdersService {
    * client supplies only the payment method, shipping address, delivery option,
    * and an optional promo code.
    */
-  async checkout(authUserId: string, dto: CheckoutDto): Promise<CheckoutResultView> {
+  async checkout(
+    authUserId: string,
+    dto: CheckoutDto,
+    channel: ClientChannel = 'web',
+  ): Promise<CheckoutResultView> {
     // Cash on delivery was withdrawn by the client (CLIENT-ANSWERS E6). It is
     // already absent from CheckoutPaymentMethod, so @IsEnum rejects it before
     // we get here — this is the server-side backstop the client asked for, and
@@ -203,6 +208,10 @@ export class OrdersService {
     }
     const orderId = placedRow.id;
 
+    // Attribution (SPEC-11 B-2). `web` is the column default, so only a mobile
+    // checkout needs a write — the storefront's path is exactly what it was.
+    if (channel !== 'web') await this.recordSource(orderId, channel);
+
     // Re-read the full detail for a consistent response shape (also enforces
     // ownership, though we just created it).
     const detail = await this.getOrderDetail(authUserId, orderId);
@@ -231,6 +240,24 @@ export class OrdersService {
     );
 
     return { order: detail, payment };
+  }
+
+  /**
+   * Stamps the channel on a freshly placed order.
+   *
+   * Best-effort by design. `place_order` has already committed, so a failure
+   * here must not turn a placed order into an error response — the customer
+   * would retry and place it twice. The order simply keeps the column default
+   * (`web`), which under-counts the app by one rather than corrupting anything.
+   */
+  private async recordSource(orderId: string, source: ClientChannel): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('orders')
+      .update({ source })
+      .eq('id', orderId);
+    if (error) {
+      this.logger.warn(`Could not record source=${source} on order ${orderId}: ${error.message}`);
+    }
   }
 
   /**
