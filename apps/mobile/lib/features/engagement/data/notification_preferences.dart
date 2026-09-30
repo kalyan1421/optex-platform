@@ -4,19 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/notification_category.dart';
 
-/// Per-category push opt-out, stored on the device.
+/// Per-category push opt-out, stored on the device and sent to the server.
 ///
-/// TODO(B-1): SPEC-11 P0-10 requires the opt-out to be "honoured server-side",
-/// which needs the preference to travel with the device token — there is no
-/// endpoint to send it to yet (no `device_tokens` table, no register route).
-/// Until B-1 lands this is enforced purely client-side: a muted category is
-/// still *delivered* by FCM but is not displayed, which is the most a client
-/// can do on its own. `PushRegistrar.register` already takes the muted set, so
-/// wiring the server side is a change in one place.
+/// **Honoured server-side** (SPEC-11 P0-10): the mute set travels with the FCM
+/// token in `POST /devices`, and the API never sends a muted category to this
+/// device. It is also applied locally, so a foreground message for a muted
+/// category is dropped at once — before a preference change has round-tripped.
 ///
-/// Note these are push-display preferences only. They deliberately do **not**
-/// filter the in-app notification centre: a customer who silenced offer pushes
-/// has not asked for their offer history to disappear.
+/// Note these are push preferences only. They deliberately do **not** filter the
+/// in-app notification centre: a customer who silenced offer pushes has not
+/// asked for their offer history to disappear.
 class NotificationPreferences {
   NotificationPreferences();
 

@@ -417,6 +417,50 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          customer_id: string
+          disabled_at: string | null
+          id: string
+          last_seen_at: string
+          muted_categories: string[]
+          platform: string
+          token: string
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          customer_id: string
+          disabled_at?: string | null
+          id?: string
+          last_seen_at?: string
+          muted_categories?: string[]
+          platform: string
+          token: string
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          customer_id?: string
+          disabled_at?: string | null
+          id?: string
+          last_seen_at?: string
+          muted_categories?: string[]
+          platform?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eye_records: {
         Row: {
           add_od: number | null
@@ -2058,7 +2102,7 @@ export type Database = {
       cancellation_status: "pending" | "approved" | "declined"
       discount_kind: "percent" | "fixed"
       eye_record_status: "submitted" | "reviewed" | "archived"
-      notification_channel: "sms" | "email"
+      notification_channel: "sms" | "email" | "push"
       notification_status: "pending" | "sent" | "failed" | "abandoned"
       order_status:
         | "pending_payment"
@@ -2209,7 +2253,7 @@ export const Constants = {
       cancellation_status: ["pending", "approved", "declined"],
       discount_kind: ["percent", "fixed"],
       eye_record_status: ["submitted", "reviewed", "archived"],
-      notification_channel: ["sms", "email"],
+      notification_channel: ["sms", "email", "push"],
       notification_status: ["pending", "sent", "failed", "abandoned"],
       order_status: [
         "pending_payment",

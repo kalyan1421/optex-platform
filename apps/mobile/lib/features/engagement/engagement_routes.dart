@@ -7,12 +7,6 @@ import 'ui/settings_screen.dart';
 
 /// Routes contributed by the engagement slice.
 ///
-/// TODO(core): add `...engagementRoutes()` to `featureRoutes()` in
-/// `lib/core/router/feature_routes.dart`, and wrap the app with
-/// `EngagementHost` (see `ui/engagement_host.dart`) via
-/// `MaterialApp.router(builder:)` — without the host there is no offline
-/// banner, no foreground badge refresh and no version gate.
-///
 /// Merged into the app by `lib/core/router/feature_routes.dart`. Both paths are
 /// under `Routes`' protected prefixes (`/notifications` directly, `/account`
 /// for settings), so `app_router.dart`'s redirect already sends a signed-out

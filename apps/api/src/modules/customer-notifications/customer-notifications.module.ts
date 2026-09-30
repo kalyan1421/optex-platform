@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { PushModule } from '../push/push.module';
 import { CustomerNotificationsController } from './customer-notifications.controller';
 import { CustomerNotificationsService } from './customer-notifications.service';
 
@@ -14,9 +15,14 @@ import { CustomerNotificationsService } from './customer-notifications.service';
  * `notify()`/`notifyAllCustomers()` at the same points they already send
  * an SMS/email, with no local import needed in any of them. Relies on the
  * global `SupabaseModule` (service-role client) and global auth guards.
+ *
+ * Imports `PushModule` so those same calls also reach a customer's phone
+ * (SPEC-11 B-1) — the feed is the one place every order, appointment and offer
+ * event already passes through.
  */
 @Global()
 @Module({
+  imports: [PushModule],
   controllers: [CustomerNotificationsController],
   providers: [CustomerNotificationsService],
   exports: [CustomerNotificationsService],

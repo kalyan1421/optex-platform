@@ -1,22 +1,16 @@
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_exception.dart';
 import '../domain/notification_category.dart';
 
-/// The seam where device-token registration will plug in.
-///
-/// **There is no server to call.** A grep for `fcm`, `apns`, `device_token` and
-/// `firebase` across `apps/api/src`, all 41 migrations and `packages/` returns
-/// zero hits: no `device_tokens` table, no register/deregister route, no sender
-/// service. That is SPEC-11 §8 item **B-1**, and it is backend work, not
-/// something this slice can fix.
-///
-/// So this is an interface with a no-op implementation rather than a call to an
-/// invented endpoint. A plausible-looking `POST /devices` against a route that
-/// does not exist would compile, pass review, and fail silently in production
-/// against a 404 — which is strictly worse than an obvious stub, because it
-/// looks finished.
+/// Tells the server which handset to send this customer's notifications to.
 abstract class PushRegistrar {
-  /// Called after a token is minted and on every rotation.
+  /// Called after a token is minted, on every rotation, and whenever the mute
+  /// set changes. Idempotent on the server, so calling it again is always safe.
   Future<void> register({
     required String token,
     required Set<NotificationCategory> mutedCategories,
@@ -27,10 +21,39 @@ abstract class PushRegistrar {
   Future<void> deregister({required String token});
 }
 
-/// The implementation in force today: records the token locally so the settings
-/// screen can prove the client half works, and calls nothing.
-class UnregisteredPushRegistrar implements PushRegistrar {
-  UnregisteredPushRegistrar();
+/// The real registrar: `POST /devices` and `POST /devices/deregister`
+/// (SPEC-11 B-1, `apps/api/src/modules/push`).
+///
+/// **The mute set travels with the token.** That is what makes the opt-out
+/// "honoured server-side" (P0-10): the API never sends a muted category to this
+/// device, rather than sending it and relying on the app to hide it.
+///
+/// **A failure never propagates.** Push is an optimisation over the SMS that
+/// goes out alongside every notification, so a registration that could not reach
+/// the server costs nothing worse than a missed push. The next cold start, the
+/// next sign-in and the next preference change all register again.
+///
+/// **Signed out means silent.** Registering is an authenticated call and a token
+/// belongs to whoever is signed in, so with no session there is nothing to say —
+/// the sign-in path registers instead (`PushController` rebuilds on it). Calling
+/// the API anyway would just be a 401 that tries to refresh a session that is not
+/// there.
+class ApiPushRegistrar implements PushRegistrar {
+  ApiPushRegistrar({
+    required this._api,
+    required this._isSignedIn,
+    String? Function()? platform,
+    Future<String?> Function()? appVersion,
+  }) : _platform = platform ?? _devicePlatform,
+       _appVersion = appVersion ?? _packageVersion;
+
+  final ApiClient _api;
+  final bool Function() _isSignedIn;
+
+  /// `ios`, `android`, or null where there is nothing to push to (a desktop dev
+  /// run). Injectable so a test does not depend on the host it runs on.
+  final String? Function() _platform;
+  final Future<String?> Function() _appVersion;
 
   String? _lastToken;
   Set<NotificationCategory> _lastMuted = <NotificationCategory>{};
@@ -48,38 +71,71 @@ class UnregisteredPushRegistrar implements PushRegistrar {
     _lastToken = token;
     _lastMuted = mutedCategories;
 
-    // TODO(B-1): replace this log with the real call once the backend lands.
-    // Expected to become roughly:
-    //     await _api.post<void>('/devices', body: {
-    //       'token': token,
-    //       'platform': Platform.isIOS ? 'ios' : 'android',
-    //       'mutedCategories': mutedCategories.map((c) => c.wire).toList(),
-    //     });
-    // Do not write that call until the route exists — see SPEC-11 §8 B-1.
-    developer.log(
-      'Push token acquired but not registered: no backend endpoint exists '
-      '(SPEC-11 §8, B-1). token=${_redact(token)} '
-      'muted=${mutedCategories.map((NotificationCategory c) => c.wire).toList()}',
-      name: 'optex.engagement',
-    );
+    final String? platform = _platform();
+    if (platform == null || !_isSignedIn()) return;
+
+    try {
+      final String? version = await _appVersion();
+      await _api.post<dynamic>(
+        '/devices',
+        body: <String, dynamic>{
+          'token': token,
+          'platform': platform,
+          'appVersion': ?version,
+          // In enum order, so the same set always serialises the same way.
+          'mutedCategories': <String>[
+            for (final NotificationCategory c in NotificationCategory.values)
+              if (mutedCategories.contains(c)) c.wire,
+          ],
+        },
+      );
+    } on ApiException catch (error) {
+      developer.log(
+        'Push registration failed (will retry on next start, sign-in or '
+        'preference change): ${error.message}',
+        name: 'optex.engagement',
+      );
+    }
   }
 
   @override
   Future<void> deregister({required String token}) async {
     _lastToken = null;
 
-    // TODO(B-1): becomes `await _api.delete<void>('/devices/$token')` — or
-    // whatever shape B-1 settles on — once the route exists.
-    developer.log(
-      'Push token discarded locally; nothing to deregister server-side '
-      '(SPEC-11 §8, B-1). token=${_redact(token)}',
-      name: 'optex.engagement',
-    );
+    if (_platform() == null || !_isSignedIn()) return;
+
+    try {
+      // A POST with the token in the body rather than a DELETE with it in the
+      // path: request URLs end up in access logs, and a token is a credential
+      // for notifying this handset.
+      await _api.post<dynamic>(
+        '/devices/deregister',
+        body: <String, dynamic>{'token': token},
+      );
+    } on ApiException catch (error) {
+      // The FCM token is also deleted locally by `PushService.disable`, which
+      // kills it at Google's end too — so a deregister that could not land does
+      // not leave a live token behind, only a row the server will disable the
+      // first time it tries to send to it.
+      developer.log(
+        'Push deregistration failed: ${error.message}',
+        name: 'optex.engagement',
+      );
+    }
   }
 
-  /// A token is a credential for sending this device notifications, so only
-  /// enough of it is logged to correlate two log lines.
-  static String _redact(String token) => token.length <= 12
-      ? '***'
-      : '${token.substring(0, 6)}…${token.substring(token.length - 4)}';
+  static String? _devicePlatform() {
+    final String channel = clientChannelFor(defaultTargetPlatform);
+    return channel == 'other' ? null : channel;
+  }
+
+  static Future<String?> _packageVersion() async {
+    try {
+      final PackageInfo info = await PackageInfo.fromPlatform();
+      return '${info.version}+${info.buildNumber}';
+    } catch (_) {
+      // Informational only — never a reason not to register.
+      return null;
+    }
+  }
 }

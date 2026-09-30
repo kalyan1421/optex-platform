@@ -149,11 +149,60 @@ export class NotificationLogService {
     }
   }
 
-  /** Notifications whose backoff has elapsed, oldest first. */
+  /**
+   * Records a push attempt — one notification to one customer's devices, or one
+   * broadcast — for delivery accounting (SPEC-11 B-1, migration 0044).
+   *
+   * Written straight to a TERMINAL status, never `pending` or `failed`, so the
+   * retry sweep cannot pick it up: it re-sends anything in those two states as
+   * SMS or email, and a late duplicate of a reminder is worse than the SMS that
+   * goes out alongside it. `abandoned` means "gave up", which for a push that is
+   * never retried is simply "did not deliver".
+   *
+   * Never throws — an accounting failure must not turn a delivered push into an
+   * error.
+   */
+  async recordPush(input: {
+    /** `customer:<id>` for one customer, `broadcast:<category>` for a fan-out. */
+    recipient: string;
+    subject: string;
+    body: string;
+    /** How many devices it was sent to. */
+    attempted: number;
+    /** How many of those FCM accepted. */
+    delivered: number;
+    error?: string | null;
+  }): Promise<void> {
+    const delivered = input.delivered > 0;
+    const { error } = await this.db.from('notification_log').insert({
+      channel: 'push',
+      recipient: input.recipient,
+      subject: input.subject,
+      body: input.body,
+      status: delivered ? 'sent' : 'abandoned',
+      attempts: input.attempted,
+      last_error: delivered && !input.error ? null : (input.error ?? 'no device accepted it'),
+      sent_at: delivered ? new Date().toISOString() : null,
+      next_retry_at: null,
+    });
+    if (error) {
+      this.logger.error(`Could not record push attempt: ${error.message}`);
+    }
+  }
+
+  /**
+   * Notifications whose backoff has elapsed, oldest first.
+   *
+   * SMS and email ONLY. The channel filter is belt and braces beside the status
+   * predicate: the retry job dispatches on `channel === 'sms'` and treats
+   * everything else as email, so a push row that ever slipped through would be
+   * sent to someone as an email.
+   */
   async claimDue(limit = 50): Promise<PendingNotification[]> {
     const { data, error } = await this.db
       .from('notification_log')
       .select('id, channel, recipient, subject, body, attempts')
+      .in('channel', ['sms', 'email'])
       .in('status', ['pending', 'failed'])
       .lte('next_retry_at', new Date().toISOString())
       .order('next_retry_at', { ascending: true })

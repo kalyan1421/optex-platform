@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { PushService } from '../push/push.service';
 import type { NotificationCategory, NotificationQueryDto } from './dto/notification-query.dto';
 
 /** A `customer_notifications` row, as returned to the storefront. */
@@ -48,7 +49,10 @@ interface NotificationRow {
 export class CustomerNotificationsService {
   private readonly logger = new Logger(CustomerNotificationsService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly push: PushService,
+  ) {}
 
   async notify(
     customerId: string,
@@ -57,17 +61,37 @@ export class CustomerNotificationsService {
     body: string,
     link?: string,
   ): Promise<void> {
-    const { error } = await this.supabase.client.from('customer_notifications').insert({
-      customer_id: customerId,
-      category,
-      title,
-      body,
-      link: link ?? null,
-    });
+    const { data, error } = await this.supabase.client
+      .from('customer_notifications')
+      .insert({
+        customer_id: customerId,
+        category,
+        title,
+        body,
+        link: link ?? null,
+      })
+      .select('id')
+      .single<{ id: string }>();
     if (error) {
       this.logger.error(
         `Failed to write notification (${category} for ${customerId}): ${error.message}`,
       );
+    }
+
+    // Push (SPEC-11 B-1) goes out whether or not the feed write landed: it is a
+    // second channel for the same event, not something that depends on the first.
+    // `PushService` never throws, but this contract is "never throws" too, so a
+    // future change to it must not be able to break that.
+    try {
+      await this.push.pushToCustomer(customerId, {
+        category,
+        title,
+        body,
+        link: link ?? null,
+        notificationId: data?.id ?? null,
+      });
+    } catch (err) {
+      this.logger.error(`Push for ${category} to ${customerId} failed: ${(err as Error).message}`);
     }
   }
 
@@ -86,6 +110,14 @@ export class CustomerNotificationsService {
     });
     if (error) {
       this.logger.error(`Failed to fan out '${category}' notification: ${error.message}`);
+    }
+
+    // The feed rows above are one SQL statement; the phones are one FCM request
+    // each, so this can take a while. Callers already fire it without awaiting.
+    try {
+      await this.push.broadcast({ category, title, body, link: link ?? null });
+    } catch (err) {
+      this.logger.error(`Push broadcast of '${category}' failed: ${(err as Error).message}`);
     }
   }
 

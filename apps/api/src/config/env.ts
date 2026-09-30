@@ -104,6 +104,17 @@ export const envSchema = z
     AT_API_KEY: z.string().optional(),
     AT_SENDER_ID: z.string().optional(),
 
+    // --- Firebase Cloud Messaging (mobile push) — optional (SPEC-11 B-1) ---
+    // A Google service-account key with the "Firebase Cloud Messaging API Admin"
+    // role for the Firebase project the app is registered in. Either the key
+    // file's JSON or that JSON base64-encoded (a multi-line secret is awkward in
+    // some hosting dashboards). Unset means push is off and everything else —
+    // including the SMS that goes out alongside every notification — carries on;
+    // a value that is set but unusable is logged once at start-up, not fatal.
+    FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
+    // Only needed to override the `project_id` inside the key file.
+    FCM_PROJECT_ID: z.string().optional(),
+
     // --- Resend (transactional email) — optional ---
     RESEND_API_KEY: z.string().optional(),
     // Sender identity for Resend, e.g. `Optex <noreply@optexopticians.com>`.

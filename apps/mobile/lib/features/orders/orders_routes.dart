@@ -15,22 +15,11 @@ import 'ui/orders_screen.dart';
 /// The screens compensate by checking `context.canPop()` and falling back to
 /// `Routes.orders`, so a cold deep link never lands on a dead-end back button.
 ///
-/// TODO(core): `optex://orders/{id}` does not reach these routes today.
-/// The Android intent filter (`android:scheme="optex"`, no host) and the iOS
-/// `CFBundleURLSchemes` entry are both in place, but in that URI `orders` is
-/// the *authority*, not a path segment — `Uri.parse('optex://orders/abc').path`
-/// is `/abc`. go_router's `RouteConfiguration.normalizeUri` keeps only
-/// `uri.path`, so the incoming link resolves to `/abc` and falls through to the
-/// router's `errorBuilder`. Two ways to close it, both in `lib/core/` and so
-/// outside this slice:
-///   * normalise the incoming URI before it reaches go_router (an `app_links`
-///     listener, or a custom `RouteInformationParser`) by folding a non-empty
-///     authority back onto the front of the path; or
-///   * emit links with an empty authority — `optex:///orders/{id}` — which
-///     parses to path `/orders/{id}` and already resolves correctly here.
-/// The path-parameter half of P0-5 works either way: `/orders/{id}` and
-/// `/orders/{id}/tracking` both resolve, and the router's existing
-/// `_protectedPrefixes` redirect sends an unauthenticated caller to
+/// `optex://orders/{id}` reaches these routes: in that URI `orders` is the
+/// *authority*, not a path segment, which go_router would drop — so
+/// `lib/core/router/deep_links.dart` folds it back onto the path before the
+/// router sees it (covered by `test/deep_links_test.dart`). The router's
+/// `_protectedPrefixes` redirect then sends an unauthenticated caller to
 /// `/login?from=…` and back again.
 List<RouteBase> ordersRoutes() => <RouteBase>[
   GoRoute(

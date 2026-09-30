@@ -37,19 +37,35 @@ final Provider<AuthRepository> authRepositoryProvider =
 /// Cached documents, notification tokens and the like are per-customer, and on
 /// a shared handset leaving them behind is a real leak rather than an untidiness.
 /// Features register here; [AuthController.logout] runs them.
+///
+/// These run BEFORE the server session is revoked, while the customer can still
+/// authenticate — teardown that has to tell the API something (deregistering this
+/// handset from push) cannot do it afterwards. Whether an access token outlives
+/// `POST /auth/logout` depends on the auth server's version, so the ordering is
+/// the only thing that is safe either way.
 class SessionCleanupRegistry {
+  SessionCleanupRegistry({this.timeout = const Duration(seconds: 5)});
+
+  /// The longest any single hook may hold up sign-out.
+  ///
+  /// A hook that talks to the network inherits the API client's timeouts (15s to
+  /// connect, 30s to receive), which is far too long to leave someone staring at
+  /// a sign-out button. A hook that runs out of time is abandoned — signing out
+  /// matters more than tidying up.
+  final Duration timeout;
+
   final List<Future<void> Function()> _callbacks = <Future<void> Function()>[];
 
   void register(Future<void> Function() callback) => _callbacks.add(callback);
 
-  /// Runs every hook, isolating failures. One feature's broken teardown must
-  /// not leave the user signed in.
+  /// Runs every hook, isolating failures and slowness. One feature's broken or
+  /// hanging teardown must not leave the user signed in.
   Future<void> runAll() async {
     for (final Future<void> Function() cb in _callbacks) {
       try {
-        await cb();
+        await cb().timeout(timeout);
       } catch (_) {
-        // Deliberately swallowed — see above.
+        // Deliberately swallowed — see above. Includes TimeoutException.
       }
     }
   }
@@ -159,8 +175,10 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await _repo.logout();
+    // Teardown first, while the session is still good: deregistering this
+    // handset from push is an authenticated call. See [SessionCleanupRegistry].
     await ref.read(sessionCleanupProvider).runAll();
+    await _repo.logout();
     await _session.clear();
     state = AuthState.signedOut;
   }

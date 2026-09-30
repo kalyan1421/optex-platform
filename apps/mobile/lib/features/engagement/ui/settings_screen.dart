@@ -224,8 +224,8 @@ class _StatusCardState extends ConsumerState<_StatusCard> {
                   FirebaseBootstrap.lastError != null) ...<Widget>[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  // Diagnostics, not an apology. Whoever picks up B-1 wants to
-                  // see this rather than guess.
+                  // Diagnostics, not an apology. Whoever is setting up Firebase
+                  // for a build wants to see this rather than guess.
                   'Reason: ${FirebaseBootstrap.lastError}',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.outline,

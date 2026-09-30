@@ -5,19 +5,22 @@ import 'notification_category.dart';
 
 /// The data block the app expects on an FCM message.
 ///
-/// TODO(B-1): this shape is the *client's* proposal, not an agreed contract.
-/// There is no sender yet — no `device_tokens` table, no FCM sender service, no
-/// fan-out (SPEC-11 §8, B-1). When the backend lands, reconcile these keys with
-/// what it actually sends; every one of them is optional here precisely so a
-/// mismatch degrades to "opens the notification centre" rather than crashing.
+/// **This is an agreed contract, pinned from both sides.** The API builds these
+/// exact keys in `apps/api/src/modules/push/fcm-message.ts` (`buildFcmMessage`,
+/// asserted by `test/unit/fcm-message.spec.ts`), and
+/// `test/push_payload_contract_test.dart` here feeds this class that same data
+/// block — so a key renamed on either side fails a test instead of quietly
+/// degrading every tap to "opens the notification centre". Every field is still
+/// optional on purpose: an unrecognised message must degrade, not crash.
 ///
-/// Proposed keys, all string-valued (FCM data payloads are string-to-string):
-///   category       one of `order` | `appointment` | `offer`
+/// All values are strings (FCM data payloads are string-to-string). What the
+/// server sends today:
+///   category       `order` | `appointment` | `offer`   (always)
 ///   link           an in-app path, e.g. `/orders/{id}/tracking`
-///   orderId        uuid, when the subject is an order
-///   appointmentId  uuid, when the subject is an appointment
-///   productSlug    slug, when the subject is a product
 ///   notificationId the `customer_notifications.id` this push mirrors
+///
+/// The remaining keys are not sent yet but are understood if they ever are:
+///   orderId, appointmentId, productSlug  — when the sender gives ids, not a link
 class PushPayload {
   const PushPayload({
     this.category,

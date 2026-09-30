@@ -212,11 +212,9 @@ class PushService {
     }
   }
 
-  /// Pushes the current mute set to the registrar.
-  ///
-  /// TODO(B-1): today this reaches a no-op registrar, so muting is enforced
-  /// only by [_shouldDisplay] on this device. Once B-1 exists the same call
-  /// becomes the server-side opt-out P0-10 asks for.
+  /// Pushes the current mute set to the registrar, which carries it to the
+  /// server: that is what makes the opt-out server-side (SPEC-11 P0-10) rather
+  /// than a display filter on this device.
   Future<void> syncPreferences() async {
     final String? token = _token;
     if (token == null) return;

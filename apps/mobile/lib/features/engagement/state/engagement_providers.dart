@@ -17,13 +17,11 @@ import '../data/push_service.dart';
 
 /// The slice-local offline store (SPEC-11 P0-12).
 ///
-/// Lives here rather than in core only because core is the integrator's to
-/// change; it has no dependency on anything in this slice and can be promoted
-/// as-is.
+/// Lives here rather than in core only because it has no dependency on anything
+/// in this slice and can be promoted as-is.
 ///
-/// TODO(core): cached documents are per-customer, so sign-out should call
-/// `clear()` on this. The hook belongs in `AuthController.logout()`
-/// (`lib/core/providers.dart`), which this slice must not edit.
+/// Cached documents are per-customer, so sign-out clears it: `EngagementHost`
+/// registers that teardown with core's `sessionCleanupProvider`.
 final Provider<OfflineCache> offlineCacheProvider = Provider<OfflineCache>((
   Ref ref,
 ) {
@@ -40,13 +38,17 @@ final Provider<NotificationsRepository> notificationsRepositoryProvider =
       (Ref ref) => NotificationsRepository(ref.watch(apiClientProvider)),
     );
 
-/// Today's registrar: records the token locally and calls nothing, because
-/// there is no endpoint to call (SPEC-11 §8, B-1). Typed concretely so the
-/// settings screen can read `lastToken` for its diagnostics row; swap the
-/// return for a real implementation and every caller keeps working.
-final Provider<UnregisteredPushRegistrar> pushRegistrarProvider =
-    Provider<UnregisteredPushRegistrar>(
-      (Ref ref) => UnregisteredPushRegistrar(),
+/// Registers this handset with the API so it receives push (SPEC-11 B-1).
+///
+/// Typed concretely so the settings screen's diagnostics can read `lastToken`.
+/// Whether anyone is signed in is read at call time, not captured: the registrar
+/// outlives sign-ins, and a token belongs to whoever is signed in when it is sent.
+final Provider<ApiPushRegistrar> pushRegistrarProvider =
+    Provider<ApiPushRegistrar>(
+      (Ref ref) => ApiPushRegistrar(
+        api: ref.watch(apiClientProvider),
+        isSignedIn: () => ref.read(authControllerProvider).isAuthenticated,
+      ),
     );
 
 /// Routes a notification tap into the app.

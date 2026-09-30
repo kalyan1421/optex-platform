@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers.dart';
 import '../data/push_service.dart';
 import '../domain/notification_category.dart';
 import 'engagement_providers.dart';
@@ -65,6 +66,15 @@ class PushController extends AsyncNotifier<PushState> {
 
   @override
   Future<PushState> build() async {
+    // Registration is an authenticated call and a token belongs to whoever is
+    // signed in, so this rebuilds on every sign-in and sign-out. That is what
+    // registers the handset for a customer who signs in AFTER launch — without
+    // it, the token minted while signed out would never reach the server until
+    // the next cold start — and what stops registering once they leave.
+    ref.watch(
+      authControllerProvider.select((AuthState s) => s.isAuthenticated),
+    );
+
     final bool available = await _service.start();
     final PushPermission permission = available
         ? await _service.currentPermission()
@@ -115,12 +125,11 @@ class PushController extends AsyncNotifier<PushState> {
 
   /// Per-category opt-out.
   ///
-  /// TODO(B-1): [PushService.syncPreferences] hands the new set to the
-  /// registrar, which currently discards it — there is no endpoint to carry it
-  /// to the server, so "honoured server-side" (P0-10) is not satisfied yet.
-  /// On this device muting takes effect immediately: a muted category is not
-  /// displayed in the foreground and its Android channel can be silenced from
-  /// system settings too.
+  /// Honoured server-side (SPEC-11 P0-10): [PushService.syncPreferences] sends
+  /// the new set to the API, which then never sends a muted category to this
+  /// device. It is also applied here at once, so a foreground message for a
+  /// muted category is dropped even before the round trip lands, and the Android
+  /// channel can still be silenced from system settings.
   Future<void> setMuted(NotificationCategory category, bool muted) async {
     final PushState? current = state.value;
     if (current == null) return;
@@ -141,13 +150,11 @@ class PushController extends AsyncNotifier<PushState> {
   }
 
   /// Called on sign-out so the handset stops receiving the previous customer's
-  /// notifications.
+  /// notifications: deregisters the token and deletes it at Google's end.
   ///
-  /// TODO(core): nothing calls this yet. `AuthController.logout()` in
-  /// `lib/core/providers.dart` is the right place, but that file belongs to the
-  /// integrator. Until it is wired, a sign-out leaves the FCM token live on the
-  /// device — harmless today because nothing sends to it (B-1), and a real leak
-  /// on a shared handset once something does.
+  /// Wired through core's `sessionCleanupProvider` by `EngagementHost`, which
+  /// runs it BEFORE the server session is revoked — deregistering is an
+  /// authenticated call.
   Future<void> disable() async {
     await _service.disable();
     ref.invalidateSelf();
