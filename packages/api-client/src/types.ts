@@ -491,7 +491,15 @@ export interface MpesaStkPushInput {
   phone: string;
 }
 
-/** Result of initiating an M-Pesa STK push (`MpesaStkPushResult`). */
+/**
+ * Result of initiating an M-Pesa STK push (`MpesaStkPushResult`).
+ *
+ * An order has at most one live payment attempt at a time. Asking again for the
+ * SAME number while a prompt is still live returns that prompt's
+ * `checkoutRequestId` rather than sending another, so this call is safe to retry.
+ * A different number, or the other payment method, gets a 409 whose `message`
+ * says where the live attempt is and how long to wait.
+ */
 export interface MpesaStkPushResult {
   checkoutRequestId: string;
   merchantRequestId: string | null;

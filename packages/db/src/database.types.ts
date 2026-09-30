@@ -915,6 +915,29 @@ export type Database = {
           },
         ]
       }
+      payment_attempt_claims: {
+        Row: {
+          claimed_at: string
+          order_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          order_id: string
+        }
+        Update: {
+          claimed_at?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempt_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string
@@ -1870,6 +1893,10 @@ export type Database = {
           status: Database["public"]["Enums"]["appt_status"]
         }[]
       }
+      claim_payment_attempt: {
+        Args: { p_order_id: string; p_window_seconds?: number }
+        Returns: Json
+      }
       current_customer_id: { Args: never; Returns: string }
       deduct_stock_fifo: {
         Args: {
@@ -2002,6 +2029,10 @@ export type Database = {
       }
       refresh_product_rating: {
         Args: { p_product_id: string }
+        Returns: undefined
+      }
+      release_payment_attempt: {
+        Args: { p_order_id: string }
         Returns: undefined
       }
       restock_cancelled_order: {

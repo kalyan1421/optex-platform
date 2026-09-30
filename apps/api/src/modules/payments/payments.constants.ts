@@ -98,3 +98,46 @@ export function normalizeKenyanMsisdn(raw: string): string | null {
  * ring arbitrary handsets.
  */
 export const MAX_STK_DESTINATIONS_PER_ORDER = 3;
+
+// ── Concurrent-attempt guard (SPEC-11 B-7, migration 0042) ───────────────────
+
+/**
+ * How long one payment attempt holds an order against a second (SPEC-11 B-7).
+ *
+ * Roughly a minute is how long Safaricom keeps an STK prompt answerable on the
+ * handset, so 90s covers it with margin. The same number bounds an UNRECORDED
+ * claim — one whose process died mid-call simply expires after this long.
+ *
+ * Passed to `claim_payment_attempt`, whose own default is the same 90.
+ */
+export const PAYMENT_ATTEMPT_WINDOW_SECONDS = 90;
+
+/**
+ * Hard ceilings on the provider calls made while an order is claimed.
+ *
+ * These exist to hold one invariant: a request must never outlive its own
+ * claim. `fetch` has no overall timeout by default, so a hung provider call
+ * could otherwise finish AFTER the claim expired and a second request had
+ * pushed — exactly the double prompt the claim is there to prevent.
+ *
+ * Deliberately generous for the submit call. Cutting a slow-but-successful STK
+ * push short is worse than waiting for it: the prompt still reaches the handset,
+ * the customer pays, and the callback then names a CheckoutRequestID we never
+ * recorded. The sum (35s) stays well inside `PAYMENT_ATTEMPT_WINDOW_SECONDS`;
+ * a unit test asserts it.
+ */
+export const PROVIDER_AUTH_TIMEOUT_MS = 10_000;
+export const PROVIDER_SUBMIT_TIMEOUT_MS = 25_000;
+
+/**
+ * How long a second request waits for a first one that is still talking to the
+ * provider, before giving up with a 409.
+ *
+ * Waiting rather than refusing is what makes concurrent duplicates idempotent:
+ * a double tap, or an app retry after its own timeout while the server is still
+ * working, ends with both callers holding the SAME CheckoutRequestID instead of
+ * one of them holding an error for a payment that is in fact live. Kept short —
+ * mobile clients time a request out at 30s.
+ */
+export const ATTEMPT_WAIT_MS = 8_000;
+export const ATTEMPT_POLL_MS = 600;

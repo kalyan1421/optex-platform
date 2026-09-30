@@ -20,6 +20,13 @@ class PaymentsRepository {
   /// Server-side limits worth knowing, because their messages surface as-is:
   /// initiation is throttled to 5/minute, and an order may only be pushed to
   /// [kMaxStkDestinations] distinct numbers.
+  ///
+  /// An order also has one live attempt at a time (SPEC-11 B-7). Asking again
+  /// for the same number while its prompt is live is not an error: the server
+  /// answers with that prompt's `checkoutRequestId` instead of sending another,
+  /// so a retry after a timeout never doubles the prompt. A different number, or
+  /// starting card while an M-Pesa prompt is live, is a 409 whose message says
+  /// where the live attempt is and when to try again.
   Future<MpesaPush> startStkPush({
     required String orderId,
     required String phone,
