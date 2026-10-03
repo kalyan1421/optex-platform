@@ -691,6 +691,12 @@ export function Products() {
    * rather than a silent strip — we therefore pick fields explicitly instead
    * of spreading. And the form uses `null` for "empty", while the DTO types
    * optionals as `string | undefined`, so nulls are normalised to undefined.
+   *
+   * `homepage_sort` is the exception: `null` there is a value, not "empty" —
+   * it means "no pinned position", and is how staff take a product back off a
+   * position it already holds. JSON drops `undefined`, so normalising it would
+   * make the PATCH skip the field and leave the old position in place. Only an
+   * `undefined` (field not in the form state at all) is omitted.
    */
   function toProductInput(data: Partial<AdminProduct>): UpdateProductInput {
     const orUndefined = (v: string | null | undefined) => (v == null || v === '' ? undefined : v);
@@ -709,7 +715,7 @@ export function Products() {
       is_active: data.is_active ?? undefined,
       is_featured: data.is_featured ?? undefined,
       is_trending: data.is_trending ?? undefined,
-      homepage_sort: data.homepage_sort ?? undefined,
+      homepage_sort: data.homepage_sort,
     };
   }
 
