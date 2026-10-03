@@ -146,15 +146,22 @@ export class ProductsService {
 
       if (error) throw new BadRequestException(error.message);
 
-      if ((data ?? []).length > 0) {
+      // `count` is the number of pinned products across EVERY page (PostgREST
+      // reports it even when the requested page is empty), so it — not this
+      // page's length — says whether the section has anything pinned. Keying
+      // the fallback on the page length handed page 2 of a fully pinned
+      // section the uncurated catalogue: `featured&limit=4&page=2` with
+      // exactly four pinned products returned unrelated, partly duplicate
+      // products instead of an empty page.
+      if ((count ?? 0) > 0 || (data ?? []).length > 0) {
         return {
-          items: await this.withAvailability(data as ProductRow[]),
+          items: await this.withAvailability((data ?? []) as ProductRow[]),
           total: count ?? 0,
           page,
           limit,
         };
       }
-      // Nothing pinned for this section — fall through to newest-first.
+      // Nothing pinned for this section at all — fall through to newest-first.
     }
 
     const builder = this.buildListQuery(query, categoryId);
