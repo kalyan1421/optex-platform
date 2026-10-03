@@ -1,0 +1,72 @@
+name: Keep Supabase awake
+
+# A free-tier Supabase project is paused after a week with no activity, and a
+# paused project takes the whole platform down: the API's every read and write
+# fails with "fetch failed", and so do the storefront's server-rendered pages.
+# This runs a real query against the production database every third day, well
+# inside that window, and doubles as an alarm: if the project is paused,
+# deleted or unreachable the run fails, and GitHub emails the failure.
+#
+# Scheduled workflows only run from the default branch, so this file does
+# nothing until it is on `main`. `workflow_dispatch` is there to run it by hand.
+
+on:
+  schedule:
+    # Every third day. `*/3` counts from the 1st of each month, so the gap is
+    # 3 days (and 1 day across a 31-day month boundary), never longer, which
+    # leaves a missed run or two inside the one-week window. Off the hour on
+    # purpose: runs queued at :00 are the ones GitHub delays or drops when its
+    # scheduler is busy.
+    - cron: '17 4 */3 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Query production database
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      # Repository variables, not secrets: the same three values that CD hands
+      # to the frontends. The anon key is public by design; the service-role
+      # key must never be wired into this workflow.
+      SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+    steps:
+      - name: Query Postgres through Supabase directly
+        # A PostgREST select executes a real query, which is activity a bare
+        # health check or an auth ping is not. Asserting a non-empty array
+        # (rather than just a 200) also notices a project restored without data.
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_URL:?NEXT_PUBLIC_SUPABASE_URL variable is not set}"
+          : "${SUPABASE_ANON_KEY:?NEXT_PUBLIC_SUPABASE_ANON_KEY variable is not set}"
+          body=$(curl --fail-with-body --silent --show-error \
+            --max-time 30 --retry 3 --retry-delay 10 --retry-all-errors \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/branches?select=id&limit=1")
+          echo "$body" | jq -e 'type == "array" and length > 0' > /dev/null \
+            || { echo "::error::branches returned no rows: $body"; exit 1; }
+          echo "Supabase answered with a row from branches."
+
+      - name: Query Postgres through the API
+        # Covers what the step above cannot: the API's own path to Supabase
+        # (service-role client, its own SUPABASE_URL). It is also what wakes
+        # the API host if it has spun down, so the generous retry budget is
+        # for a cold start, not for a flaky endpoint.
+        run: |
+          set -euo pipefail
+          : "${API_URL:?NEXT_PUBLIC_API_URL variable is not set}"
+          body=$(curl --fail-with-body --silent --show-error \
+            --max-time 90 --retry 5 --retry-delay 20 --retry-all-errors \
+            "${API_URL}/api/branches")
+          echo "$body" | jq -e 'type == "array" and length > 0' > /dev/null \
+            || { echo "::error::/api/branches returned no rows: $body"; exit 1; }
+          echo "API answered with branches read from Supabase."
