@@ -1,6 +1,18 @@
 'use client';
 import { useState, useEffect, useRef, type ChangeEvent } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, AlertTriangle, Upload } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  AlertTriangle,
+  Upload,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -74,14 +86,14 @@ async function fetchAllProducts(): Promise<AdminProduct[]> {
  * naming the problem instead.
  */
 function ProductImageStrip({ images }: { images: string[] }) {
-  const [broken, setBroken] = useState<Record<number, boolean>>({});
+  const [broken, setBroken] = useState<Record<string, boolean>>({});
   if (images.length === 0) {
     return <p className="text-muted-foreground text-sm">No images yet.</p>;
   }
   return (
     <div className="flex flex-wrap gap-2">
       {images.map((src, i) =>
-        broken[i] ? (
+        broken[src] ? (
           <div
             key={`${src}-${i}`}
             title={src}
@@ -97,11 +109,121 @@ function ProductImageStrip({ images }: { images: string[] }) {
             src={src}
             alt=""
             title={src}
-            onError={() => setBroken((b) => ({ ...b, [i]: true }))}
+            onError={() => setBroken((b) => ({ ...b, [src]: true }))}
             className="h-14 w-14 rounded-md border object-cover"
           />
         ),
       )}
+    </div>
+  );
+}
+
+/**
+ * Editable gallery: reorder, choose the primary image, and remove.
+ *
+ * `images[0]` is what every product card on the storefront renders, so
+ * "primary" is not decorative — without a way to change it, a bad first
+ * upload was previously unfixable from the admin panel.
+ *
+ * Reorder and removal mutate local state only and persist with "Save
+ * Changes", unlike upload, which the API appends server-side the moment the
+ * file lands. The caller renders a note saying so, because the two halves of
+ * this control otherwise look like they commit at the same time.
+ */
+function ProductGalleryEditor({
+  images,
+  onChange,
+  disabled,
+}: {
+  images: string[];
+  onChange: (next: string[]) => void;
+  disabled?: boolean;
+}) {
+  // Keyed by URL rather than index: reordering shifts every index, which would
+  // move the "Missing" marker onto whichever image happened to take that slot.
+  const [broken, setBroken] = useState<Record<string, boolean>>({});
+
+  if (images.length === 0) {
+    return <p className="text-muted-foreground text-sm">No images yet.</p>;
+  }
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= images.length) return;
+    const next = [...images];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  }
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {images.map((src, i) => (
+        <div key={`${src}-${i}`} className="w-20">
+          <div className="relative">
+            {broken[src] ? (
+              <div
+                title={src}
+                className="flex h-20 w-20 flex-col items-center justify-center rounded-md border border-dashed bg-gray-50 px-1 text-center"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                <span className="mt-0.5 text-[9px] leading-tight text-gray-500">Missing</span>
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={src}
+                alt=""
+                title={src}
+                onError={() => setBroken((b) => ({ ...b, [src]: true }))}
+                className="h-20 w-20 rounded-md border object-cover"
+              />
+            )}
+            <button
+              type="button"
+              aria-label={`Remove image ${i + 1}`}
+              disabled={disabled}
+              onClick={() => onChange(images.filter((_, j) => j !== i))}
+              className="absolute -right-1.5 -top-1.5 rounded-full border bg-white p-0.5 text-gray-500 shadow-sm hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+            >
+              <X className="h-3 w-3" />
+            </button>
+            {i === 0 && (
+              <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-[#141776]/85 py-0.5 text-center text-[9px] font-medium text-white">
+                Primary
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex items-center justify-center gap-0.5">
+            <button
+              type="button"
+              aria-label={`Move image ${i + 1} earlier`}
+              disabled={disabled || i === 0}
+              onClick={() => move(i, i - 1)}
+              className="rounded p-0.5 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Make image ${i + 1} the primary image`}
+              disabled={disabled || i === 0}
+              onClick={() => move(i, 0)}
+              className="rounded p-0.5 text-gray-500 hover:bg-amber-50 hover:text-amber-600 disabled:opacity-30"
+            >
+              <Star className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Move image ${i + 1} later`}
+              disabled={disabled || i === images.length - 1}
+              onClick={() => move(i, i + 1)}
+              className="rounded p-0.5 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -229,7 +351,17 @@ function ProductFormDialog({
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [tryOnUrl, setTryOnUrl] = useState(product?.try_on_image_url ?? '');
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
+  const [isFeatured, setIsFeatured] = useState(product?.is_featured ?? false);
+  const [isTrending, setIsTrending] = useState(product?.is_trending ?? false);
+  // Empty means "no opinion" and is sent as null, which sorts last. Storing
+  // '' rather than '0' keeps that distinct: 0 is a real, first-place position.
+  const [homepageSort, setHomepageSort] = useState(
+    product?.homepage_sort != null ? String(product.homepage_sort) : '',
+  );
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(
+    null,
+  );
   const [uploadError, setUploadError] = useState('');
   /**
    * ProductFormDialog is reused across products (only the `product` prop
@@ -252,8 +384,12 @@ function ProductFormDialog({
     setImages(product?.images ?? []);
     setTryOnUrl(product?.try_on_image_url ?? '');
     setIsActive(product?.is_active ?? true);
+    setIsFeatured(product?.is_featured ?? false);
+    setIsTrending(product?.is_trending ?? false);
+    setHomepageSort(product?.homepage_sort != null ? String(product.homepage_sort) : '');
     setUploadError('');
     setUploading(false);
+    setUploadProgress(null);
     uploadTokenRef.current += 1;
   }, [product]);
 
@@ -261,24 +397,46 @@ function ProductFormDialog({
    * `addImage` persists the append server-side immediately — independent of
    * whether "Save Changes" is ever clicked — so this reloads `images` from
    * its response rather than guessing the new array client-side.
+   *
+   * Files upload ONE AT A TIME rather than in parallel or in a single
+   * multi-file request. The endpoint appends to `products.images`, so
+   * concurrent uploads race on the same array and the last response wins,
+   * silently dropping the others. Sequential keeps the order the admin
+   * picked and lets a mid-batch failure report which file broke while
+   * keeping the ones already stored.
    */
   async function handleFileSelected(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!file || !product) return;
+    if (files.length === 0 || !product) return;
     const token = uploadTokenRef.current;
     setUploading(true);
     setUploadError('');
+    let done = 0;
     try {
-      const result = await api.admin.products.uploadImage(product.id, file);
-      if (uploadTokenRef.current !== token) return;
-      setImages(result.product.images ?? []);
+      for (const file of files) {
+        const result = await api.admin.products.uploadImage(product.id, file);
+        if (uploadTokenRef.current !== token) return;
+        setImages(result.product.images ?? []);
+        done += 1;
+        setUploadProgress({ done, total: files.length });
+      }
       onImageUploaded?.();
     } catch (err) {
       if (uploadTokenRef.current !== token) return;
-      setUploadError((err as Error)?.message ?? 'Could not upload the image.');
+      const base = (err as Error)?.message ?? 'Could not upload the image.';
+      setUploadError(
+        files.length > 1
+          ? `${base} (${done} of ${files.length} uploaded before this failed)`
+          : base,
+      );
+      // Anything already stored is real and server-side, so surface it.
+      if (done > 0) onImageUploaded?.();
     } finally {
-      if (uploadTokenRef.current === token) setUploading(false);
+      if (uploadTokenRef.current === token) {
+        setUploading(false);
+        setUploadProgress(null);
+      }
     }
   }
 
@@ -371,21 +529,32 @@ function ProductFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Images</Label>
-            {images.length > 0 && <ProductImageStrip images={images} />}
+            <ProductGalleryEditor images={images} onChange={setImages} disabled={uploading} />
             {isEdit ? (
               <>
                 <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
                   <Upload className="h-4 w-4" />
-                  {uploading ? 'Uploading...' : 'Upload image'}
+                  {uploading
+                    ? uploadProgress
+                      ? `Uploading ${uploadProgress.done} of ${uploadProgress.total}...`
+                      : 'Uploading...'
+                    : 'Upload images'}
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     disabled={uploading}
                     onChange={handleFileSelected}
                   />
                 </label>
                 {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
+                {images.length > 0 && (
+                  <p className="text-xs text-gray-500">
+                    The first image is what product cards show. Uploads save immediately; reordering
+                    and removals apply when you save.
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-sm text-gray-500">
@@ -401,6 +570,46 @@ function ProductFormDialog({
               onChange={(e) => setTryOnUrl(e.target.value)}
               placeholder="Transparent PNG for virtual try-on"
             />
+          </div>
+          <div className="space-y-2 border-t pt-3">
+            <Label>Homepage placement</Label>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="pfeatured"
+                  checked={isFeatured}
+                  onCheckedChange={(v) => setIsFeatured(v)}
+                />
+                <Label htmlFor="pfeatured">Featured Products</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="ptrending"
+                  checked={isTrending}
+                  onCheckedChange={(v) => setIsTrending(v)}
+                />
+                <Label htmlFor="ptrending">Trending Now</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="psort" className="whitespace-nowrap">
+                  Order
+                </Label>
+                <Input
+                  id="psort"
+                  type="number"
+                  value={homepageSort}
+                  onChange={(e) => setHomepageSort(e.target.value)}
+                  placeholder="auto"
+                  className="w-24"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              Lower numbers appear first; leave Order blank to let a product fall to the end. While
+              no product is pinned to a section, that section keeps showing the newest products, so
+              turning every switch off restores the previous behaviour rather than emptying the
+              homepage.
+            </p>
           </div>
           <div className="flex items-center justify-between border-t pt-2">
             <div className="flex items-center gap-2">
@@ -426,6 +635,10 @@ function ProductFormDialog({
                     images,
                     try_on_image_url: tryOnUrl || null,
                     is_active: isActive,
+                    is_featured: isFeatured,
+                    is_trending: isTrending,
+                    homepage_sort:
+                      homepageSort.trim() === '' ? null : Number.parseInt(homepageSort, 10),
                   })
                 }
               >
@@ -478,6 +691,12 @@ export function Products() {
    * rather than a silent strip — we therefore pick fields explicitly instead
    * of spreading. And the form uses `null` for "empty", while the DTO types
    * optionals as `string | undefined`, so nulls are normalised to undefined.
+   *
+   * `homepage_sort` is the exception: `null` there is a value, not "empty" —
+   * it means "no pinned position", and is how staff take a product back off a
+   * position it already holds. JSON drops `undefined`, so normalising it would
+   * make the PATCH skip the field and leave the old position in place. Only an
+   * `undefined` (field not in the form state at all) is omitted.
    */
   function toProductInput(data: Partial<AdminProduct>): UpdateProductInput {
     const orUndefined = (v: string | null | undefined) => (v == null || v === '' ? undefined : v);
@@ -494,6 +713,9 @@ export function Products() {
       images: data.images ?? undefined,
       try_on_image_url: orUndefined(data.try_on_image_url),
       is_active: data.is_active ?? undefined,
+      is_featured: data.is_featured ?? undefined,
+      is_trending: data.is_trending ?? undefined,
+      homepage_sort: data.homepage_sort,
     };
   }
 

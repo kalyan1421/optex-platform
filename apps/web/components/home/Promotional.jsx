@@ -49,7 +49,7 @@ const CARDS = [
     scrimDesktop:
       'linear-gradient(90deg, rgba(46,49,146,0.97) 0%, rgba(46,49,146,0.95) 72%, rgba(46,49,146,0.50) 88%, rgba(46,49,146,0) 100%)',
     badge: 'New Collection',
-    badgeClass: 'bg-[#FFFFFF] text-[#2E3192]',
+    badgeClass: 'bg-[#FFFFFF] text-brand-blue',
     title: (
       <>
         Up to 30% Off <br /> Designer Frames

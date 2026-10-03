@@ -6,20 +6,31 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
 import { EmailService } from '../notifications/email.service';
 import { SmsService } from '../notifications/sms.service';
-import { MpesaService } from './mpesa.service';
+import { MpesaPushOutcomeUnknownException, MpesaService } from './mpesa.service';
 import { PesapalService } from './pesapal.service';
 import {
+  ATTEMPT_POLL_MS,
+  ATTEMPT_WAIT_MS,
   FINAL_TX_STATUSES,
   MAX_STK_DESTINATIONS_PER_ORDER,
+  PAYMENT_ATTEMPT_WINDOW_SECONDS,
   TX_STATUS,
   normalizeKenyanMsisdn,
 } from './payments.constants';
+import {
+  type AttemptClaim,
+  classifyMpesaAttempt,
+  classifyPesapalAttempt,
+  inFlightMessage,
+  parseAttemptClaim,
+} from './payment-attempt';
 import {
   AdminListPaymentsQueryDto,
   PaymentProviderFilter,
@@ -42,6 +53,15 @@ import {
  * `:`, the characters PostgREST's filter grammar is built from.
  */
 const MPESA_CHECKOUT_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
+/**
+ * PostgREST answers a call to a function it cannot find — never migrated, or
+ * called with arguments that match no signature — with a 404 and `PGRST202`; a
+ * direct Postgres connection raises `42883` instead.
+ */
+function isMissingFunction(error: { code?: string }): boolean {
+  return error.code === 'PGRST202' || error.code === '42883';
+}
 
 /** Minimal `orders` row shape needed across the payment flows. */
 interface OrderRow {
@@ -134,13 +154,22 @@ export class PaymentsService {
   /**
    * Initiate an STK push for one of the caller's pending-payment orders.
    *
-   * IDEMPOTENCY: `mpesa_transactions` has a single unique key (`mpesa_ref`). No
+   * ROW KEYING: `mpesa_transactions` has a single unique key (`mpesa_ref`). No
    * CheckoutRequestID column exists, so until a real M-Pesa receipt arrives we
    * use the CheckoutRequestID AS the `mpesa_ref` placeholder (also stored in
    * `raw.CheckoutRequestID`/`raw.MerchantRequestID`). The callback later swaps
    * `mpesa_ref` to the real MpesaReceiptNumber. Lookups by CheckoutRequestID
-   * therefore hit the unique index. A second STK attempt for the same order
-   * simply inserts a new pending row keyed by a new CheckoutRequestID.
+   * therefore hit the unique index.
+   *
+   * CONCURRENCY (SPEC-11 B-7): an order has at most one live attempt at a time.
+   * The order is CLAIMED before Daraja is called — the pending row is only
+   * written after it answers, so a check-then-insert would let two requests
+   * that arrive together both find nothing and both push. A repeat request to
+   * the same number is answered with the live prompt's CheckoutRequestID
+   * instead of sending another; a different number, or the other rail, is a 409.
+   * The claim is released once the attempt is recorded (the `pending` row then
+   * carries the guard) or once Daraja has plainly refused — but NOT when the
+   * outcome is unknown, since a prompt may be on the handset.
    */
   async initiateMpesaStkPush(
     authUserId: string,
@@ -158,12 +187,34 @@ export class PaymentsService {
     this.assertPayable(order);
     await this.assertDestinationAllowed(order, customer, phone);
 
-    const push = await this.mpesa.stkPush({
-      amount: order.total_kes,
-      phone,
-      accountReference: order.order_number,
-      transactionDesc: `Order ${order.order_number}`.slice(0, 13),
-    });
+    const claim = await this.acquireAttempt(order.id);
+    if (!claim.claimed) {
+      if (claim.reason === 'in_flight') {
+        throw new ConflictException(inFlightMessage(claim.retryAfterSeconds));
+      }
+      const outcome = classifyMpesaAttempt(claim, phone);
+      if (outcome.kind === 'conflict') throw new ConflictException(outcome.message);
+      this.logger.log(`Answered a repeat STK request for order ${order.id} with its live prompt`);
+      return outcome.result;
+    }
+
+    let push: Awaited<ReturnType<MpesaService['stkPush']>>;
+    try {
+      push = await this.mpesa.stkPush({
+        amount: order.total_kes,
+        phone,
+        accountReference: order.order_number,
+        transactionDesc: `Order ${order.order_number}`.slice(0, 13),
+      });
+    } catch (err) {
+      // Anything but "outcome unknown" happened before the push left, or after
+      // Daraja said no — nothing is on a handset, so free the order for an
+      // immediate retry. An unknown outcome leaves the claim to expire.
+      if (!(err instanceof MpesaPushOutcomeUnknownException)) {
+        await this.releaseAttempt(order.id);
+      }
+      throw err;
+    }
 
     // Persist the pending transaction keyed by CheckoutRequestID.
     const { error } = await this.db.from('mpesa_transactions').insert({
@@ -185,10 +236,17 @@ export class PaymentsService {
       // Unique violation = a row for this CheckoutRequestID already exists
       // (Daraja replayed the same id). Treat as already-initiated, not fatal.
       if (error.code !== '23505') {
+        // The prompt is on a handset and we hold no record of it. The claim is
+        // deliberately kept: releasing it would invite a retry, and with it a
+        // second prompt on top of one we cannot see. It expires by itself.
         this.logger.error(`Failed to persist M-Pesa transaction: ${error.message}`);
         throw new InternalServerErrorException('Could not record the payment attempt.');
       }
     }
+
+    // Recorded, so the `pending` row now carries the guard. Release only AFTER
+    // the row is committed — the claim query in migration 0042 depends on it.
+    await this.releaseAttempt(order.id);
 
     return {
       checkoutRequestId: push.CheckoutRequestID,
@@ -459,51 +517,80 @@ export class PaymentsService {
 
   // ───────────────────────── Pesapal ─────────────────────────────────────
 
-  /** Initiate a Pesapal payment for one of the caller's pending orders. */
+  /**
+   * Initiate a Pesapal payment for one of the caller's pending orders.
+   *
+   * CONCURRENCY (SPEC-11 B-7): the same guard as the STK push — one live attempt
+   * per order across both rails. A repeat request is answered with the open
+   * session's redirect URL rather than a second session (which also overwrote
+   * `orders.pesapal_id`).
+   *
+   * The one difference is when the claim is freed: ALWAYS, on any exit. A
+   * session the customer was never handed a URL for cannot be paid, so unlike an
+   * STK prompt — which reaches the handset whatever we hear back — a failed or
+   * unrecorded submit leaves nothing live to protect against.
+   */
   async initiatePesapal(authUserId: string, orderId: string): Promise<PesapalInitiateResult> {
     const { order, customer } = await this.resolveOwnedOrder(authUserId, orderId);
     this.assertPayable(order);
 
-    const [firstName, ...rest] = (customer?.full_name ?? '').trim().split(' ');
-    const submitted = await this.pesapal.submitOrder({
-      merchantReference: order.order_number,
-      amount: order.total_kes,
-      description: `Optex order ${order.order_number}`,
-      billing: {
-        email_address: customer?.email ?? undefined,
-        phone_number: customer?.phone ?? undefined,
-        first_name: firstName || undefined,
-        last_name: rest.join(' ') || undefined,
-      },
-    });
-
-    const { error } = await this.db.from('pesapal_transactions').insert({
-      pesapal_order_id: submitted.order_tracking_id,
-      amount_kes: order.total_kes,
-      order_id: order.id,
-      status: TX_STATUS.PENDING,
-      raw: {
-        stage: 'submit',
-        merchant_reference: submitted.merchant_reference,
-        redirect_url: submitted.redirect_url,
-      },
-    });
-    if (error && error.code !== '23505') {
-      this.logger.error(`Failed to persist Pesapal transaction: ${error.message}`);
-      throw new InternalServerErrorException('Could not record the payment attempt.');
+    const claim = await this.acquireAttempt(order.id);
+    if (!claim.claimed) {
+      if (claim.reason === 'in_flight') {
+        throw new ConflictException(inFlightMessage(claim.retryAfterSeconds));
+      }
+      const outcome = classifyPesapalAttempt(claim);
+      if (outcome.kind === 'conflict') throw new ConflictException(outcome.message);
+      this.logger.log(`Answered a repeat card request for order ${order.id} with its open session`);
+      return outcome.result;
     }
 
-    // Record the tracking id on the order for cross-reference (best-effort).
-    await this.db
-      .from('orders')
-      .update({ pesapal_id: submitted.order_tracking_id })
-      .eq('id', order.id);
+    try {
+      const [firstName, ...rest] = (customer?.full_name ?? '').trim().split(' ');
+      const submitted = await this.pesapal.submitOrder({
+        merchantReference: order.order_number,
+        amount: order.total_kes,
+        description: `Optex order ${order.order_number}`,
+        billing: {
+          email_address: customer?.email ?? undefined,
+          phone_number: customer?.phone ?? undefined,
+          first_name: firstName || undefined,
+          last_name: rest.join(' ') || undefined,
+        },
+      });
 
-    return {
-      orderTrackingId: submitted.order_tracking_id,
-      redirectUrl: submitted.redirect_url,
-      message: 'Redirect the customer to complete payment.',
-    };
+      const { error } = await this.db.from('pesapal_transactions').insert({
+        pesapal_order_id: submitted.order_tracking_id,
+        amount_kes: order.total_kes,
+        order_id: order.id,
+        status: TX_STATUS.PENDING,
+        raw: {
+          stage: 'submit',
+          merchant_reference: submitted.merchant_reference,
+          redirect_url: submitted.redirect_url,
+        },
+      });
+      if (error && error.code !== '23505') {
+        this.logger.error(`Failed to persist Pesapal transaction: ${error.message}`);
+        throw new InternalServerErrorException('Could not record the payment attempt.');
+      }
+
+      // Record the tracking id on the order for cross-reference (best-effort).
+      await this.db
+        .from('orders')
+        .update({ pesapal_id: submitted.order_tracking_id })
+        .eq('id', order.id);
+
+      return {
+        orderTrackingId: submitted.order_tracking_id,
+        redirectUrl: submitted.redirect_url,
+        message: 'Redirect the customer to complete payment.',
+      };
+    } finally {
+      // After the row is committed on the success path, so the `pending` row is
+      // what guards the order from here on.
+      await this.releaseAttempt(order.id);
+    }
   }
 
   /** Query + reconcile a Pesapal transaction (authed; ownership checked). */
@@ -994,6 +1081,82 @@ export class PaymentsService {
   }
 
   // ───────────────────────── Shared helpers ──────────────────────────────
+
+  /**
+   * Reserves the order for one payment attempt, waiting briefly for a request
+   * that is still talking to the provider (SPEC-11 B-7, migration 0042).
+   *
+   * Returns a claim that was WON, or the reason it was refused. A refusal
+   * because another request is mid-call is retried for up to `ATTEMPT_WAIT_MS`,
+   * which is what makes concurrent duplicates idempotent: the first request
+   * records its attempt, the next poll sees it as `live_attempt`, and both
+   * callers end up holding the same CheckoutRequestID. If the first request
+   * instead fails cleanly it releases the claim, and the poll wins it.
+   */
+  private async acquireAttempt(orderId: string): Promise<AttemptClaim> {
+    const deadline = Date.now() + ATTEMPT_WAIT_MS;
+    for (;;) {
+      const claim = await this.claimAttemptOnce(orderId);
+      if (claim.claimed || claim.reason !== 'in_flight') return claim;
+
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) return claim;
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, Math.min(ATTEMPT_POLL_MS, remaining)),
+      );
+    }
+  }
+
+  private async claimAttemptOnce(orderId: string): Promise<AttemptClaim> {
+    const { data, error } = await this.db.rpc('claim_payment_attempt', {
+      p_order_id: orderId,
+      p_window_seconds: PAYMENT_ATTEMPT_WINDOW_SECONDS,
+    });
+
+    if (error) {
+      if (isMissingFunction(error)) {
+        // Deploy order: the API can ship before migration 0042 reaches the
+        // database. Refusing every payment until it does would trade a rare
+        // double-debit for a certain outage, so this one case proceeds
+        // unguarded — loudly. Any OTHER failure below fails closed.
+        this.logger.error(
+          'claim_payment_attempt is missing — migration 0042 has not been applied. ' +
+            'Payment attempts are NOT guarded against concurrency until it is.',
+        );
+        return { claimed: true };
+      }
+      this.logger.error(`Could not claim a payment attempt for order ${orderId}: ${error.message}`);
+      throw new ServiceUnavailableException(
+        'We could not start your payment just now. Please try again in a moment.',
+      );
+    }
+
+    const claim = parseAttemptClaim(data);
+    if (!claim) {
+      // Never read an unrecognised payload as "claimed".
+      this.logger.error(
+        `claim_payment_attempt returned an unrecognised payload: ${JSON.stringify(data)?.slice(0, 200)}`,
+      );
+      throw new ServiceUnavailableException(
+        'We could not start your payment just now. Please try again in a moment.',
+      );
+    }
+    return claim;
+  }
+
+  /**
+   * Frees the order. Best-effort by design: a failed release is not a failed
+   * payment, because the claim expires on its own — the worst case is the order
+   * being closed to a retry for the remainder of the window.
+   */
+  private async releaseAttempt(orderId: string): Promise<void> {
+    const { error } = await this.db.rpc('release_payment_attempt', { p_order_id: orderId });
+    if (error && !isMissingFunction(error)) {
+      this.logger.warn(
+        `Could not release the payment claim for order ${orderId}: ${error.message}`,
+      );
+    }
+  }
 
   /**
    * Limits how many DISTINCT phone numbers one order may push to.

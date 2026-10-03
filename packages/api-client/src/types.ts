@@ -68,6 +68,11 @@ export interface Product {
   images: string[];
   try_on_image_url: string | null;
   is_active: boolean;
+  /** Homepage curation (migration 0041). */
+  is_featured: boolean;
+  is_trending: boolean;
+  /** Position within a curated homepage section; ascending with NULLS LAST. NULL = unpositioned. */
+  homepage_sort: number | null;
   /**
    * Mean of approved review ratings, one decimal, or null when there are none.
    *
@@ -104,6 +109,13 @@ export interface ProductQuery {
   minPrice?: number;
   maxPrice?: number;
   sort?: ProductSort;
+  /**
+   * Homepage curation (migration 0041). An OVERRIDE, not a filter: when no
+   * product carries the flag the API returns the newest-first list rather
+   * than an empty one, so an uncurated catalogue still fills the homepage.
+   */
+  featured?: boolean;
+  trending?: boolean;
 }
 
 /** Query for `GET /products/search`. `q` is required. */
@@ -128,6 +140,9 @@ export interface CreateProductInput {
   images?: string[];
   try_on_image_url?: string;
   is_active?: boolean;
+  is_featured?: boolean;
+  is_trending?: boolean;
+  homepage_sort?: number | null;
 }
 
 /** Body for `PATCH /products/:id` (admin). Mirrors `UpdateProductDto`. */
@@ -476,7 +491,15 @@ export interface MpesaStkPushInput {
   phone: string;
 }
 
-/** Result of initiating an M-Pesa STK push (`MpesaStkPushResult`). */
+/**
+ * Result of initiating an M-Pesa STK push (`MpesaStkPushResult`).
+ *
+ * An order has at most one live payment attempt at a time. Asking again for the
+ * SAME number while a prompt is still live returns that prompt's
+ * `checkoutRequestId` rather than sending another, so this call is safe to retry.
+ * A different number, or the other payment method, gets a 409 whose `message`
+ * says where the live attempt is and how long to wait.
+ */
 export interface MpesaStkPushResult {
   checkoutRequestId: string;
   merchantRequestId: string | null;

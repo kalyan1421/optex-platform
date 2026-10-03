@@ -1,7 +1,12 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
-import { PESAPAL_BASE_URL, isProd } from './payments.constants';
+import {
+  PESAPAL_BASE_URL,
+  PROVIDER_AUTH_TIMEOUT_MS,
+  PROVIDER_SUBMIT_TIMEOUT_MS,
+  isProd,
+} from './payments.constants';
 
 /** Cached Pesapal bearer token + absolute expiry (epoch ms). */
 interface CachedToken {
@@ -110,6 +115,8 @@ export class PesapalService {
           consumer_key: consumerKey,
           consumer_secret: consumerSecret,
         }),
+        // Bounded so a payment request cannot outlive its claim (SPEC-11 B-7).
+        signal: AbortSignal.timeout(PROVIDER_AUTH_TIMEOUT_MS),
       });
     } catch (e) {
       this.logger.error(`Pesapal auth request threw: ${(e as Error).message}`);
@@ -178,6 +185,7 @@ export class PesapalService {
           Accept: 'application/json',
         },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(PROVIDER_SUBMIT_TIMEOUT_MS),
       });
     } catch (e) {
       this.logger.error(`Pesapal submit threw: ${(e as Error).message}`);

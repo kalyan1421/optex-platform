@@ -1,7 +1,37 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
-import { MPESA_BASE_URL, darajaTimestamp, isProd } from './payments.constants';
+import {
+  MPESA_BASE_URL,
+  PROVIDER_AUTH_TIMEOUT_MS,
+  PROVIDER_SUBMIT_TIMEOUT_MS,
+  darajaTimestamp,
+  isProd,
+} from './payments.constants';
+
+/**
+ * The STK push may have reached the handset even though we never got a clean
+ * answer: the request timed out or the connection dropped, Daraja's gateway
+ * returned a 5xx, or a 2xx came back with nothing we can read.
+ *
+ * Distinct from every other failure here, all of which happen BEFORE the push
+ * leaves (missing credentials, a failed token fetch) or after Daraja has said no
+ * in so many words (a 4xx, or a non-zero `ResponseCode`), and so prove that
+ * nothing was sent. That distinction decides whether `PaymentsService` may free
+ * the order for an immediate retry or must leave it claimed until the claim
+ * expires — releasing here would let a customer who has a live prompt ask for a
+ * second (SPEC-11 B-7).
+ *
+ * The message is the customer's: it tells them the truth and the way out.
+ */
+export class MpesaPushOutcomeUnknownException extends ServiceUnavailableException {
+  constructor() {
+    super(
+      "We couldn't confirm that the M-Pesa prompt was sent. If it appears on your phone, " +
+        'enter your M-Pesa PIN to complete payment; otherwise please try again in a minute.',
+    );
+  }
+}
 
 /** Cached Daraja OAuth token + its absolute expiry (epoch ms). */
 interface CachedToken {
@@ -150,6 +180,8 @@ export class MpesaService {
           Authorization: `Basic ${basic}`,
           Accept: 'application/json',
         },
+        // Bounded so a payment request cannot outlive its claim (SPEC-11 B-7).
+        signal: AbortSignal.timeout(PROVIDER_AUTH_TIMEOUT_MS),
       });
     } catch (e) {
       this.logger.error(`Daraja OAuth request threw: ${(e as Error).message}`);
@@ -228,10 +260,14 @@ export class MpesaService {
           Accept: 'application/json',
         },
         body: JSON.stringify(payload),
+        // Generous, but bounded: see PROVIDER_SUBMIT_TIMEOUT_MS.
+        signal: AbortSignal.timeout(PROVIDER_SUBMIT_TIMEOUT_MS),
       });
     } catch (e) {
+      // A timeout or a dropped connection says nothing about whether Daraja
+      // accepted the request — the prompt may be on the handset already.
       this.logger.error(`Daraja STK push threw: ${(e as Error).message}`);
-      throw new ServiceUnavailableException('M-Pesa STK push failed');
+      throw new MpesaPushOutcomeUnknownException();
     }
 
     const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
@@ -242,6 +278,14 @@ export class MpesaService {
         (body.ResponseDescription as string) ??
         `HTTP ${response.status}`;
       this.logger.error(`Daraja STK push rejected: ${desc}`);
+
+      // Only an answer we actually understood proves nothing was sent. A 5xx
+      // is a gateway failing, not Daraja declining; a 2xx with no ResponseCode
+      // at all is a body we cannot read. Either may hide an accepted push.
+      const mayHaveLanded =
+        response.status >= 500 || (response.ok && body.ResponseCode === undefined);
+      if (mayHaveLanded) throw new MpesaPushOutcomeUnknownException();
+
       throw new ServiceUnavailableException(`M-Pesa STK push failed: ${desc}`);
     }
 

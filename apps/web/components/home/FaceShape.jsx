@@ -144,7 +144,7 @@ const FaceShape = () => {
                 </p>
                 <a
                   href={`#shop-${shape.id}`}
-                  className="mt-2 text-center text-[#2E3192] transition-colors hover:border-[#E53935] hover:text-[#E53935]"
+                  className="text-brand-blue mt-2 text-center transition-colors hover:border-[#E53935] hover:text-[#E53935]"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 700,

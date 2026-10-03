@@ -1,7 +1,9 @@
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -91,4 +93,31 @@ export class CreateProductDto {
   @IsBoolean()
   @IsOptional()
   is_active?: boolean;
+
+  /** Homepage curation (migration 0041). */
+  @ApiPropertyOptional({
+    description: 'Pin to the homepage "Featured Products" section',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  is_featured?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Pin to the homepage "Trending Now" section',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  is_trending?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Position within a curated homepage section; ascending, ties broken by newest first',
+    default: 0,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  homepage_sort?: number | null;
 }

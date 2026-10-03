@@ -424,7 +424,7 @@ const Cart = () => {
                     <button
                       onClick={applyPromo}
                       disabled={promoLoading}
-                      className="box-border flex h-[56.25px] w-full shrink-0 items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors hover:bg-[#2A3182] disabled:opacity-60 sm:w-[122.56px]"
+                      className="hover:bg-brand-blue box-border flex h-[56.25px] w-full shrink-0 items-center justify-center rounded-[11248px] bg-[#141776] text-white transition-colors disabled:opacity-60 sm:w-[122.56px]"
                       style={{
                         fontFamily: 'Manrope, sans-serif',
                         fontSize: '18px',

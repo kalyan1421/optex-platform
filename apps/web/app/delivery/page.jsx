@@ -19,12 +19,12 @@ export default function DeliveryPage() {
       {/* Content */}
       <div className="mx-auto max-w-4xl space-y-10 px-4 py-12">
         <section>
-          <h2 className="mb-6 text-[22px] font-black text-[#2A3182]">Delivery Options & Rates</h2>
+          <h2 className="text-brand-blue mb-6 text-[22px] font-black">Delivery Options & Rates</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {/* Nairobi */}
-            <div className="space-y-3 rounded-[24px] border-2 border-[#2A3182]/20 bg-[#f8f9fa] p-6">
+            <div className="border-brand-blue/20 space-y-3 rounded-[24px] border-2 bg-[#f8f9fa] p-6">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2A3182]">
+                <div className="bg-brand-blue flex h-10 w-10 items-center justify-center rounded-full">
                   <svg
                     className="h-5 w-5 text-white"
                     fill="none"
@@ -47,7 +47,7 @@ export default function DeliveryPage() {
                 </div>
                 <h3 className="text-[17px] font-black text-gray-900">Nairobi</h3>
               </div>
-              <p className="text-[28px] font-black text-[#2A3182]">KES 300</p>
+              <p className="text-brand-blue text-[28px] font-black">KES 300</p>
               <p className="text-[14px] text-gray-600">
                 <strong>1–2 business days</strong> after order confirmation
               </p>
@@ -89,7 +89,7 @@ export default function DeliveryPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">
             Current online delivery rule
           </h2>
           <div className="flex items-start gap-4 rounded-[20px] border border-green-200 bg-green-50 p-6">
@@ -121,28 +121,28 @@ export default function DeliveryPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Order Tracking</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Order Tracking</h2>
           <p className="mb-4 text-[15px] leading-relaxed text-gray-700">
             Once your order is dispatched, you will receive an <strong>SMS confirmation</strong> on
             the phone number linked to your account. The message will include:
           </p>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               Your order reference number
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               The name of our courier partner handling your delivery
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               Estimated delivery date and a tracking link where available
             </li>
           </ul>
           <p className="mt-4 text-[14px] text-gray-500">
             You can also check your delivery status any time from your{' '}
-            <Link href="/profile" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/profile" className="text-brand-blue font-bold hover:underline">
               profile page
             </Link>
             .
@@ -150,7 +150,7 @@ export default function DeliveryPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Delivery Partners</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Delivery Partners</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             We work with trusted Kenya-based courier partners to ensure your eyewear arrives safely
             and on time. For Nairobi same-day and next-day orders, we use dedicated in-house
@@ -160,7 +160,7 @@ export default function DeliveryPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Important Notes</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Important Notes</h2>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#E53935]"></span>
@@ -187,10 +187,10 @@ export default function DeliveryPage() {
         <section className="border-t border-gray-100 pt-8">
           <p className="text-[14px] text-gray-500">
             Questions about your delivery?{' '}
-            <Link href="/contact" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/contact" className="text-brand-blue font-bold hover:underline">
               Contact our support team
             </Link>{' '}
-            or call us at <span className="font-semibold text-[#2A3182]">+254 700 897 007</span>.
+            or call us at <span className="text-brand-blue font-semibold">+254 700 897 007</span>.
           </p>
         </section>
       </div>

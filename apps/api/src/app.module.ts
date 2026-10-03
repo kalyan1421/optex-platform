@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { PermissionsGuard } from './auth/permissions.guard';
 import { SupabaseAuthGuard } from './auth/supabase-auth.guard';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { parseClientInfo } from './common/client-info';
 import { CommonModule } from './common/common.module';
 import { PostgresThrottlerStorage } from './common/postgres-throttler.storage';
 import { UserAwareThrottlerGuard } from './common/user-aware-throttler.guard';
@@ -54,6 +55,16 @@ import { SupabaseService } from './supabase/supabase.service';
         genReqId: (req: IncomingMessage) =>
           (req.headers['x-request-id'] as string | undefined) ?? randomUUID(),
         autoLogging: true,
+        // First-class `client` / `clientVersion` fields on every request line
+        // (SPEC-11 §9), so "which app versions are in the wild" is a filter
+        // rather than a hunt through raw headers. Sanitised: a header is a
+        // caller-controlled string on its way into a log.
+        customProps: (req: IncomingMessage) => {
+          const { client, version } = parseClientInfo(req.headers);
+          // Only what was sent: the storefront sends neither, and a `null` on
+          // every one of its log lines would be noise.
+          return { ...(client && { client }), ...(version && { clientVersion: version }) };
+        },
         level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
         // Pretty logs in dev; structured JSON in prod.
         transport:

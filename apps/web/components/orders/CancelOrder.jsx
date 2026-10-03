@@ -166,7 +166,7 @@ export default function CancelOrder({ orderId, variant = 'block', onChanged }) {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Ordered the wrong frame size"
-              className="mb-4 w-full rounded-[12px] border border-[#C7C5D4] px-3 py-2 text-[15px] outline-none focus:border-[#2A3182]"
+              className="focus:border-brand-blue mb-4 w-full rounded-[12px] border border-[#C7C5D4] px-3 py-2 text-[15px] outline-none"
             />
 
             {error && (
@@ -190,7 +190,7 @@ export default function CancelOrder({ orderId, variant = 'block', onChanged }) {
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="rounded-full bg-[#141776] px-5 py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#2A3182] disabled:opacity-60"
+                className="hover:bg-brand-blue rounded-full bg-[#141776] px-5 py-2.5 text-[13px] font-bold text-white transition-colors disabled:opacity-60"
               >
                 {submitting ? 'Sending…' : 'Send request'}
               </button>

@@ -101,7 +101,7 @@ export const CompareProvider = ({ children }) => {
       {notice && (
         <div
           role="alert"
-          className="fixed bottom-4 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 items-center gap-3 rounded-lg bg-[#2A3182] px-4 py-3 text-sm text-white shadow-lg"
+          className="bg-brand-blue fixed bottom-4 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 items-center gap-3 rounded-lg px-4 py-3 text-sm text-white shadow-lg"
         >
           <span>{notice}</span>
           <button

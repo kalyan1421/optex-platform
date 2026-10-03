@@ -13,7 +13,7 @@ const CATEGORIES = [
 ];
 
 const CATEGORY_ICON_BG = {
-  order: 'bg-[#2A3182]/10 text-[#2A3182]',
+  order: 'bg-brand-blue/10 text-brand-blue',
   appointment: 'bg-emerald-50 text-emerald-600',
   offer: 'bg-[#E53935]/10 text-[#E53935]',
 };
@@ -175,7 +175,7 @@ export default function NotificationsPage() {
             type="button"
             onClick={handleMarkAllRead}
             disabled={markingAll}
-            className="font-inter shrink-0 rounded-full border border-[#E5E7EB] px-5 py-2.5 text-[13px] font-bold text-[#2A3182] transition-colors hover:border-[#2A3182] disabled:opacity-50"
+            className="font-inter text-brand-blue hover:border-brand-blue shrink-0 rounded-full border border-[#E5E7EB] px-5 py-2.5 text-[13px] font-bold transition-colors disabled:opacity-50"
           >
             {markingAll ? 'Marking…' : 'Mark all as read'}
           </button>
@@ -189,7 +189,7 @@ export default function NotificationsPage() {
           </p>
           <Link
             href={`/login?redirect=${encodeURIComponent('/notifications')}`}
-            className="font-inter flex h-[44px] items-center justify-center rounded-[26843500px] bg-[#2A3182] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
+            className="font-inter bg-brand-blue flex h-[44px] items-center justify-center rounded-[26843500px] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
           >
             Sign in
           </Link>
@@ -205,8 +205,8 @@ export default function NotificationsPage() {
               onClick={() => setCategory(c.key)}
               className={`font-inter shrink-0 rounded-full px-4 py-2 text-[13px] font-bold transition-colors ${
                 category === c.key
-                  ? 'bg-[#2A3182] text-white'
-                  : 'border border-[#E5E7EB] text-[#717182] hover:border-[#2A3182]'
+                  ? 'bg-brand-blue text-white'
+                  : 'hover:border-brand-blue border border-[#E5E7EB] text-[#717182]'
               }`}
             >
               {c.label}
@@ -261,7 +261,7 @@ export default function NotificationsPage() {
             const content = (
               <div
                 className={`flex gap-4 rounded-[20px] border p-4 transition-colors ${
-                  unread ? 'border-[#2A3182]/20 bg-[#2A3182]/5' : 'border-[#E5E7EB] bg-white'
+                  unread ? 'border-brand-blue/20 bg-brand-blue/5' : 'border-[#E5E7EB] bg-white'
                 }`}
               >
                 <div
@@ -317,7 +317,7 @@ export default function NotificationsPage() {
             type="button"
             onClick={() => load(page + 1, category)}
             disabled={loadingMore}
-            className="font-inter rounded-full border border-[#E5E7EB] px-6 py-2.5 text-[13px] font-bold text-[#2A3182] transition-colors hover:border-[#2A3182] disabled:opacity-50"
+            className="font-inter text-brand-blue hover:border-brand-blue rounded-full border border-[#E5E7EB] px-6 py-2.5 text-[13px] font-bold transition-colors disabled:opacity-50"
           >
             {loadingMore ? 'Loading…' : 'Load more'}
           </button>

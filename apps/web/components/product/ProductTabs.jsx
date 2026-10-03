@@ -28,7 +28,7 @@ export default function ProductTabs({ product }) {
             aria-selected={activeTab === tab}
             aria-controls={`product-tabpanel-${tab.toLowerCase()}`}
             onClick={() => setActiveTab(tab)}
-            className={`flex h-[50px] items-center justify-center pb-[4px] transition-all ${activeTab === tab ? 'border-b-[4px] border-[#2E3192] text-[#2E3192]' : 'text-[#717182] hover:text-black'}`}
+            className={`flex h-[50px] items-center justify-center pb-[4px] transition-all ${activeTab === tab ? 'border-brand-blue text-brand-blue border-b-[4px]' : 'text-[#717182] hover:text-black'}`}
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontSize: '20px',

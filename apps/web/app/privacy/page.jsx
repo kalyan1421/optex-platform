@@ -29,40 +29,40 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Data We Collect</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Data We Collect</h2>
           <p className="mb-4 text-[15px] text-gray-700">
             We collect personal data you provide directly and data generated through your use of our
             services:
           </p>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               <span>
                 <strong>Identity data:</strong> Full name, date of birth
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               <span>
                 <strong>Contact data:</strong> Email address, phone number, delivery address
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               <span>
                 <strong>Transaction data:</strong> Purchase history, order details, payment method
                 (we do not store full card numbers)
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               <span>
                 <strong>Health data:</strong> Eye prescription details and clinical notes uploaded
                 for lens orders (treated as sensitive data under DPA 2019)
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               <span>
                 <strong>Technical data:</strong> IP address, browser type, device information, and
                 cookies
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">How We Use Your Data</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">How We Use Your Data</h2>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#E53935]"></span>
@@ -104,7 +104,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">
             Prescription Data & Secure Storage
           </h2>
           <div className="space-y-3 rounded-[20px] bg-[#f8f9fa] p-6 text-[15px] leading-relaxed text-gray-700">
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">
             Kenya Data Protection Act 2019
           </h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Your Rights</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Your Rights</h2>
           <p className="mb-4 text-[15px] text-gray-700">
             Under the DPA 2019, you have the right to:
           </p>
@@ -190,17 +190,17 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">
             Contact Our Data Protection Officer
           </h2>
-          <div className="space-y-2 rounded-[20px] border border-[#2A3182]/20 bg-[#2A3182]/5 p-6 text-[15px] text-gray-700">
+          <div className="border-brand-blue/20 bg-brand-blue/5 space-y-2 rounded-[20px] border p-6 text-[15px] text-gray-700">
             <p>
               To exercise any of your rights, or if you have questions about this policy, contact
               our Data Protection Officer:
             </p>
-            <p className="font-bold text-[#2A3182]">DPO — Optex Opticians</p>
+            <p className="text-brand-blue font-bold">DPO — Optex Opticians</p>
             <p>
-              Email: <span className="font-semibold text-[#2A3182]">dpo@optexopticians.co.ke</span>
+              Email: <span className="text-brand-blue font-semibold">dpo@optexopticians.co.ke</span>
             </p>
             <p>Address: Optex Opticians, Nairobi CBD, Kenya</p>
             <p className="mt-2 text-[13px] text-gray-500">
@@ -211,7 +211,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Cookies</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Cookies</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             We use essential cookies to maintain your session and shopping cart. We may use
             analytics cookies (with your consent) to understand how visitors use our site. You can
@@ -221,7 +221,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Changes to This Policy</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Changes to This Policy</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             We may update this Privacy Policy from time to time. We will notify you of significant
             changes by email or via a notice on our website. The "last updated" date at the top of
@@ -232,19 +232,19 @@ export default function PrivacyPage() {
         <section className="border-t border-gray-100 pt-8">
           <p className="text-[14px] text-gray-500">
             See also:{' '}
-            <Link href="/terms" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/terms" className="text-brand-blue font-bold hover:underline">
               Terms of Service
             </Link>{' '}
             ·{' '}
-            <Link href="/returns" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/returns" className="text-brand-blue font-bold hover:underline">
               Returns Policy
             </Link>{' '}
             ·{' '}
-            <Link href="/delivery" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/delivery" className="text-brand-blue font-bold hover:underline">
               Delivery Policy
             </Link>{' '}
             ·{' '}
-            <Link href="/warranty" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/warranty" className="text-brand-blue font-bold hover:underline">
               Warranty Policy
             </Link>
           </p>

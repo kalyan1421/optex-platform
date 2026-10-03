@@ -1,6 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 /** Allowed sort orders for the product list. */
 export enum ProductSort {
@@ -90,4 +99,31 @@ export class ProductQueryDto {
   @IsEnum(ProductSort)
   @IsOptional()
   sort: ProductSort = ProductSort.Newest;
+
+  /**
+   * Homepage curation (migration 0041). These are an OVERRIDE, not an ordinary
+   * filter: when no product carries the flag the service returns the
+   * newest-first list instead of an empty one, so an uncurated catalogue still
+   * renders a populated homepage. See `ProductsService.list`.
+   *
+   * `Transform` is needed because query strings arrive as `'true'`/`'false'`
+   * text; `@Type(() => Boolean)` would coerce the string `'false'` to `true`.
+   */
+  @ApiPropertyOptional({
+    description:
+      'Only products pinned to the homepage "Featured Products" section. Falls back to newest-first when none are pinned.',
+  })
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  @IsOptional()
+  featured?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Only products pinned to the homepage "Trending Now" section. Falls back to newest-first when none are pinned.',
+  })
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  @IsOptional()
+  trending?: boolean;
 }

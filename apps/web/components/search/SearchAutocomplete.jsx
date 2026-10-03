@@ -150,7 +150,7 @@ export default function SearchAutocomplete({
           goToSearch(value);
         }}
       >
-        <div className="flex items-center overflow-hidden rounded-xl border border-gray-200 bg-[#f4f6f8] transition-colors focus-within:border-[#2A3182]">
+        <div className="focus-within:border-brand-blue flex items-center overflow-hidden rounded-xl border border-gray-200 bg-[#f4f6f8] transition-colors">
           <div className="flex-shrink-0 pl-4 pr-2 text-gray-400">
             <SearchGlyph />
           </div>
@@ -229,7 +229,7 @@ export default function SearchAutocomplete({
                         </span>
                       )}
                     </span>
-                    <span className="flex-shrink-0 text-[14px] font-bold text-[#2A3182]">
+                    <span className="text-brand-blue flex-shrink-0 text-[14px] font-bold">
                       {formatKes(Number(product.price_kes))}
                     </span>
                   </button>
@@ -241,7 +241,7 @@ export default function SearchAutocomplete({
           <button
             type="button"
             onClick={() => goToSearch(value)}
-            className="w-full border-t border-gray-100 px-4 py-3 text-left text-[13px] font-bold text-[#2A3182] transition-colors hover:bg-[#f4f6f8]"
+            className="text-brand-blue w-full border-t border-gray-100 px-4 py-3 text-left text-[13px] font-bold transition-colors hover:bg-[#f4f6f8]"
           >
             See all results for “{query}”
           </button>

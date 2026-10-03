@@ -81,7 +81,7 @@ export default function ReviewForm({ productId }) {
       ) : !user ? (
         <div className="flex items-center gap-3 rounded-[14px] bg-[#f8f9fa] px-5 py-4">
           <svg
-            className="h-5 w-5 flex-shrink-0 text-[#2A3182]"
+            className="text-brand-blue h-5 w-5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -94,7 +94,7 @@ export default function ReviewForm({ productId }) {
             />
           </svg>
           <p className="text-[14px] font-medium text-gray-600">
-            <Link href="/login" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/login" className="text-brand-blue font-bold hover:underline">
               Login
             </Link>{' '}
             to write a review for this product.
@@ -103,7 +103,7 @@ export default function ReviewForm({ productId }) {
       ) : alreadyReviewed ? (
         <div className="flex items-center gap-3 rounded-[14px] border border-blue-100 bg-blue-50 px-5 py-4">
           <svg
-            className="h-5 w-5 flex-shrink-0 text-[#2A3182]"
+            className="text-brand-blue h-5 w-5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -115,7 +115,7 @@ export default function ReviewForm({ productId }) {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-[14px] font-semibold text-[#2A3182]">
+          <p className="text-brand-blue text-[14px] font-semibold">
             You've already reviewed this product.
           </p>
         </div>
@@ -180,7 +180,7 @@ export default function ReviewForm({ productId }) {
               aria-describedby="review-body-count"
               placeholder="Share your thoughts about this product (min. 10 characters)…"
               disabled={submitting}
-              className="w-full resize-none rounded-[14px] border border-gray-200 bg-[#fdfdfd] px-4 py-3 text-[14px] text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 focus:border-[#2A3182] focus:shadow-sm disabled:opacity-60"
+              className="focus:border-brand-blue w-full resize-none rounded-[14px] border border-gray-200 bg-[#fdfdfd] px-4 py-3 text-[14px] text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 focus:shadow-sm disabled:opacity-60"
             />
             <p id="review-body-count" className="mt-1 text-right text-[11px] text-gray-400">
               {body.length} chars — 10 minimum
@@ -189,7 +189,7 @@ export default function ReviewForm({ productId }) {
           <button
             type="submit"
             disabled={submitting}
-            className="flex items-center gap-2 rounded-full bg-[#2A3182] px-7 py-3 text-[14px] font-bold text-white shadow-lg transition-all hover:bg-[#1e2361] hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-brand-blue flex items-center gap-2 rounded-full px-7 py-3 text-[14px] font-bold text-white shadow-lg transition-all hover:bg-[#1e2361] hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? (
               <>

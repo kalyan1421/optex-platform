@@ -108,7 +108,7 @@ export default function WishlistPage() {
           </p>
           <Link
             href={`/login?redirect=${encodeURIComponent('/wishlist')}`}
-            className="font-inter flex h-[44px] items-center justify-center rounded-[26843500px] bg-[#2E3192] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
+            className="font-inter bg-brand-blue flex h-[44px] items-center justify-center rounded-[26843500px] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
           >
             Sign in
           </Link>
@@ -146,7 +146,7 @@ export default function WishlistPage() {
           </p>
           <Link
             href="/shop"
-            className="font-inter flex h-[44px] items-center justify-center rounded-[26843500px] bg-[#2E3192] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
+            className="font-inter bg-brand-blue flex h-[44px] items-center justify-center rounded-[26843500px] px-[28px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e2361]"
           >
             Browse the shop
           </Link>
@@ -191,11 +191,11 @@ export default function WishlistPage() {
                   )}
                   <Link
                     href={`/product/${item.product.slug}`}
-                    className="font-poppins mb-2 text-[15px] font-bold text-[#0A0A0A] hover:text-[#2A3182]"
+                    className="font-poppins hover:text-brand-blue mb-2 text-[15px] font-bold text-[#0A0A0A]"
                   >
                     {item.product.name}
                   </Link>
-                  <p className="font-poppins mb-5 text-[16px] font-black text-[#2A3182]">
+                  <p className="font-poppins text-brand-blue mb-5 text-[16px] font-black">
                     KSH. {formatKesNumber(item.product.priceKes)}
                   </p>
 
@@ -204,7 +204,7 @@ export default function WishlistPage() {
                       type="button"
                       onClick={() => handleMoveToCart(item)}
                       disabled={unavailable || busy}
-                      className="font-inter rounded-full bg-[#2A3182] px-4 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="font-inter bg-brand-blue rounded-full px-4 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {unavailable ? 'No longer available' : 'Move to Cart'}
                     </button>

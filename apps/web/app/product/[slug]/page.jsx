@@ -169,7 +169,7 @@ export default async function Page(props) {
         <div className="mx-auto mb-[38px] flex w-full max-w-[1240px] items-center gap-[8px]">
           <Link
             href="/"
-            className="text-[#717182] hover:text-[#2A3182]"
+            className="hover:text-brand-blue text-[#717182]"
             style={{
               fontFamily: 'Arimo, sans-serif',
               fontSize: '14px',
@@ -192,7 +192,7 @@ export default async function Page(props) {
           </span>
           <Link
             href="/shop"
-            className="text-[#717182] hover:text-[#2A3182]"
+            className="hover:text-brand-blue text-[#717182]"
             style={{
               fontFamily: 'Arimo, sans-serif',
               fontSize: '14px',
@@ -301,7 +301,7 @@ export default async function Page(props) {
 
             <div className="mb-[32px]">
               <span
-                className="text-[#2E3192]"
+                className="text-brand-blue"
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   fontSize: '32px',
@@ -514,7 +514,7 @@ export default async function Page(props) {
                 >
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2A3182] text-[13px] font-bold text-white">
+                      <div className="bg-brand-blue flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-bold text-white">
                         C
                       </div>
                       <div>
@@ -559,8 +559,8 @@ export default async function Page(props) {
                       rendered it — a customer's review could be replied to
                       and the reply would exist only in the database. */}
                   {review.admin_reply && (
-                    <div className="mt-3 rounded-[14px] border-l-[3px] border-[#2A3182] bg-[#f8f9fa] px-4 py-3">
-                      <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#2A3182]">
+                    <div className="border-brand-blue mt-3 rounded-[14px] border-l-[3px] bg-[#f8f9fa] px-4 py-3">
+                      <p className="text-brand-blue mb-1 text-[11px] font-bold uppercase tracking-wide">
                         Response from Optex Opticians
                       </p>
                       <p className="text-[13px] leading-relaxed text-gray-600">
@@ -606,7 +606,7 @@ export default async function Page(props) {
             </div>
             <Link
               href="/shop"
-              className="mb-[12px] flex items-center gap-[7px] text-[#2E3192]"
+              className="text-brand-blue mb-[12px] flex items-center gap-[7px]"
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontSize: '16px',

@@ -174,7 +174,7 @@ const Contact = () => {
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="mt-2 text-[13px] font-semibold text-[#2E3192] hover:underline"
+                  className="text-brand-blue mt-2 text-[13px] font-semibold hover:underline"
                 >
                   Send another message
                 </button>
@@ -213,7 +213,7 @@ const Contact = () => {
                       onChange={(e) => updateField('name', e.target.value)}
                       placeholder="Enter your name"
                       required
-                      className="w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] focus:border-[#2A3182] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
+                      className="focus:border-brand-blue w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
                       style={{
                         borderRadius: '14px',
                         border: '0.8px solid #E5E7EB',
@@ -243,7 +243,7 @@ const Contact = () => {
                       onChange={(e) => updateField('email', e.target.value)}
                       placeholder="Enter your email"
                       required
-                      className="w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] focus:border-[#2A3182] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
+                      className="focus:border-brand-blue w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
                       style={{
                         borderRadius: '14px',
                         border: '0.8px solid #E5E7EB',
@@ -276,7 +276,7 @@ const Contact = () => {
                       value={form.phone}
                       onChange={(e) => updateField('phone', e.target.value)}
                       placeholder="Enter your phone"
-                      className="w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] focus:border-[#2A3182] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
+                      className="focus:border-brand-blue w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
                       style={{
                         borderRadius: '14px',
                         border: '0.8px solid #E5E7EB',
@@ -305,7 +305,7 @@ const Contact = () => {
                       value={form.subject}
                       onChange={(e) => updateField('subject', e.target.value)}
                       placeholder="Enter subject"
-                      className="w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] focus:border-[#2A3182] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
+                      className="focus:border-brand-blue w-full bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] lg:h-[49.6px] lg:px-[16px] lg:py-[12px]"
                       style={{
                         borderRadius: '14px',
                         border: '0.8px solid #E5E7EB',
@@ -336,7 +336,7 @@ const Contact = () => {
                     onChange={(e) => updateField('message', e.target.value)}
                     placeholder="Your message here..."
                     required
-                    className="w-full resize-none bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] focus:border-[#2A3182] lg:h-[145.6px] lg:px-[16px] lg:py-[12px]"
+                    className="focus:border-brand-blue w-full resize-none bg-white outline-none transition-colors placeholder:text-[#0A0A0A80] lg:h-[145.6px] lg:px-[16px] lg:py-[12px]"
                     style={{
                       borderRadius: '14px',
                       border: '0.8px solid #E5E7EB',
@@ -350,7 +350,7 @@ const Contact = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex shrink-0 items-center justify-center bg-[#2E3192] text-white transition-opacity hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 lg:h-[59px] lg:w-[436px] lg:py-[16px]"
+                  className="bg-brand-blue flex shrink-0 items-center justify-center text-white transition-opacity hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 lg:h-[59px] lg:w-[436px] lg:py-[16px]"
                   style={{ borderRadius: '14px' }}
                 >
                   <span

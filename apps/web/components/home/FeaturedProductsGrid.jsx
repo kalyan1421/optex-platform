@@ -21,7 +21,7 @@ export default function FeaturedProductsGrid({ products }) {
           key={product.id}
           data-aos="fade-up"
           data-aos-delay={index * 50}
-          className="group flex w-full cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:h-[378.2px] lg:w-[291px] lg:gap-[10px]"
+          className="group flex w-full cursor-pointer flex-col items-center bg-[#FFFFFF] p-[1px] transition-transform duration-500 hover:-translate-y-1 lg:w-[291px] lg:gap-[10px]"
           style={{
             borderRadius: '32px',
             border: '0.8px solid #D4D4D4',
@@ -55,7 +55,7 @@ export default function FeaturedProductsGrid({ products }) {
             <div className="flex w-full flex-col lg:h-[72px] lg:w-[265px]">
               <Link href={`/product/${product.slug}`}>
                 <h3
-                  className="truncate text-[#000000] transition-colors group-hover:text-[#2E3192] lg:h-[30px] lg:w-[265px]"
+                  className="group-hover:text-brand-blue truncate text-[#000000] transition-colors lg:h-[30px] lg:w-[265px]"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
@@ -83,7 +83,7 @@ export default function FeaturedProductsGrid({ products }) {
 
             <div className="flex w-full items-center justify-between lg:h-[37px] lg:w-[265px]">
               <span
-                className="whitespace-nowrap text-[#2E3192]"
+                className="text-brand-blue whitespace-nowrap"
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   fontWeight: 700,

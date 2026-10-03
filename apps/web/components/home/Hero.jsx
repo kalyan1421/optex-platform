@@ -66,7 +66,7 @@ export default async function Hero() {
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/shop"
-            className="flex items-center justify-center rounded-[36px] bg-[#2E3192] px-[20px] py-[10px] transition-colors hover:bg-blue-800"
+            className="bg-brand-blue flex items-center justify-center rounded-[36px] px-[20px] py-[10px] transition-colors hover:bg-blue-800"
           >
             <span
               className="font-bold capitalize text-white"
@@ -110,7 +110,7 @@ export default async function Hero() {
           <div className="flex h-[43px] w-[359px] items-center gap-[12px]">
             <Link
               href="/shop"
-              className="flex h-[43px] w-[135px] items-center justify-center rounded-[36px] bg-[#2E3192] px-[20px] py-[10px] transition-colors hover:bg-blue-800"
+              className="bg-brand-blue flex h-[43px] w-[135px] items-center justify-center rounded-[36px] px-[20px] py-[10px] transition-colors hover:bg-blue-800"
             >
               <span
                 className="whitespace-nowrap text-[18.97px] font-bold capitalize leading-[1.2] tracking-[-0.01em] text-[#FFFFFF]"

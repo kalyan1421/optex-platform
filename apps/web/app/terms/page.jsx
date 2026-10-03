@@ -29,20 +29,22 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Eligibility & Your Account</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">
+            Eligibility & Your Account
+          </h2>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               You must be at least 18 years old, or using the Services under the supervision of a
               parent or guardian, to create an account or place an order.
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               You are responsible for keeping your account credentials confidential and for all
               activity that occurs under your account.
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#2A3182]"></span>
+              <span className="bg-brand-blue mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"></span>
               You agree to provide accurate, current information — for your account, delivery
               address, and any prescription details you upload.
             </li>
@@ -50,7 +52,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Orders & Pricing</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Orders & Pricing</h2>
           <ul className="space-y-3 text-[15px] leading-relaxed text-gray-700">
             <li className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#E53935]"></span>
@@ -73,7 +75,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Payment</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Payment</h2>
           <p className="mb-4 text-[15px] leading-relaxed text-gray-700">
             We accept payment via <strong>M-Pesa</strong> and{' '}
             <strong>card/mobile payment through Pesapal</strong>. We do not currently offer cash on
@@ -88,7 +90,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Prescription Accuracy</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Prescription Accuracy</h2>
           <div className="space-y-3 rounded-[20px] bg-[#f8f9fa] p-6 text-[15px] leading-relaxed text-gray-700">
             <p>
               When you order prescription lenses, you are responsible for the accuracy of the
@@ -99,7 +101,7 @@ export default function TermsPage() {
             <p>
               We fabricate lenses to the prescription supplied. If you are unsure about any value,
               please book an eye test at one of our branches rather than guess — see{' '}
-              <Link href="/appointments" className="font-semibold text-[#2A3182] hover:underline">
+              <Link href="/appointments" className="text-brand-blue font-semibold hover:underline">
                 Book an Appointment
               </Link>
               .
@@ -108,21 +110,21 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">
             Delivery, Returns & Warranty
           </h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             Delivery timelines, our return policy, and our product warranty are set out in full on
             their own pages, which form part of these Terms:{' '}
-            <Link href="/delivery" className="font-semibold text-[#2A3182] hover:underline">
+            <Link href="/delivery" className="text-brand-blue font-semibold hover:underline">
               Delivery Policy
             </Link>
             ,{' '}
-            <Link href="/returns" className="font-semibold text-[#2A3182] hover:underline">
+            <Link href="/returns" className="text-brand-blue font-semibold hover:underline">
               Returns Policy
             </Link>
             , and{' '}
-            <Link href="/warranty" className="font-semibold text-[#2A3182] hover:underline">
+            <Link href="/warranty" className="text-brand-blue font-semibold hover:underline">
               Warranty Policy
             </Link>
             .
@@ -130,7 +132,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Reviews & User Content</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Reviews & User Content</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             If you submit a product review or other content, you confirm it is your own genuine
             experience, is not misleading, defamatory, or unlawful, and you grant us a non-exclusive
@@ -140,7 +142,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Intellectual Property</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Intellectual Property</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             The Optex Opticians name, logo, website design, and content are our property or that of
             our licensors, and are protected by Kenyan and international intellectual property law.
@@ -150,7 +152,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Limitation of Liability</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Limitation of Liability</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             To the fullest extent permitted by Kenyan law, Optex Opticians is not liable for
             indirect or consequential loss arising from your use of the Services. Nothing in these
@@ -160,7 +162,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Governing Law</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Governing Law</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             These Terms are governed by the laws of Kenya. Any dispute arising from these Terms or
             your use of the Services is subject to the exclusive jurisdiction of the courts of
@@ -169,7 +171,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Changes to These Terms</h2>
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Changes to These Terms</h2>
           <p className="text-[15px] leading-relaxed text-gray-700">
             We may update these Terms from time to time. We will notify you of significant changes
             by email or via a notice on our website. The "last updated" date at the top of this page
@@ -179,12 +181,12 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-[22px] font-black text-[#2A3182]">Contact Us</h2>
-          <div className="space-y-2 rounded-[20px] border border-[#2A3182]/20 bg-[#2A3182]/5 p-6 text-[15px] text-gray-700">
+          <h2 className="text-brand-blue mb-4 text-[22px] font-black">Contact Us</h2>
+          <div className="border-brand-blue/20 bg-brand-blue/5 space-y-2 rounded-[20px] border p-6 text-[15px] text-gray-700">
             <p>Questions about these Terms? Reach us at:</p>
-            <p className="font-bold text-[#2A3182]">Optex Opticians</p>
+            <p className="text-brand-blue font-bold">Optex Opticians</p>
             <p>
-              Email: <span className="font-semibold text-[#2A3182]">optexopticals@gmail.com</span>
+              Email: <span className="text-brand-blue font-semibold">optexopticals@gmail.com</span>
             </p>
             <p>Phone: +254 700 897 007</p>
             <p>Address: Nairobi CBD, Kenya</p>
@@ -194,19 +196,19 @@ export default function TermsPage() {
         <section className="border-t border-gray-100 pt-8">
           <p className="text-[14px] text-gray-500">
             See also:{' '}
-            <Link href="/privacy" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/privacy" className="text-brand-blue font-bold hover:underline">
               Privacy Policy
             </Link>{' '}
             ·{' '}
-            <Link href="/returns" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/returns" className="text-brand-blue font-bold hover:underline">
               Returns Policy
             </Link>{' '}
             ·{' '}
-            <Link href="/delivery" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/delivery" className="text-brand-blue font-bold hover:underline">
               Delivery Policy
             </Link>{' '}
             ·{' '}
-            <Link href="/warranty" className="font-bold text-[#2A3182] hover:underline">
+            <Link href="/warranty" className="text-brand-blue font-bold hover:underline">
               Warranty Policy
             </Link>
           </p>

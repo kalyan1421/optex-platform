@@ -82,11 +82,25 @@ export class ProductsService {
     };
   }
 
-  async list(query: ProductQueryDto): Promise<Paginated<ProductRow>> {
-    const { page, limit } = query;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
+  /**
+   * Builds the filtered, active-only base query for the public catalogue.
+   * Returns `null` when a category slug was supplied that resolves to nothing,
+   * which the caller must surface as an empty page rather than an unfiltered
+   * one.
+   *
+   * Extracted because `list` may need the query twice: a curated homepage
+   * request runs the pinned-products query first and, when nothing is pinned,
+   * falls back to the uncurated list. A PostgREST builder cannot be reused
+   * after it has been awaited, so each attempt needs a fresh one.
+   *
+   * Deliberately NOT async, and it takes an already-resolved `categoryId`.
+   * PostgREST builders are thenables, so `await someAsyncFn()` returning one
+   * executes the query instead of handing back the builder — which is exactly
+   * how the first draft of this broke. Keeping it synchronous makes that
+   * mistake unrepresentable, and resolving the category once in the caller
+   * avoids a second lookup on the fallback path.
+   */
+  private buildListQuery(query: ProductQueryDto, categoryId: string | null) {
     let builder = this.supabase.client
       .from('products')
       .select('*', { count: 'exact' })
@@ -98,22 +112,76 @@ export class ProductsService {
     if (query.material) builder = builder.eq('frame_material', query.material);
     if (query.minPrice !== undefined) builder = builder.gte('price_kes', query.minPrice);
     if (query.maxPrice !== undefined) builder = builder.lte('price_kes', query.maxPrice);
+    if (categoryId) builder = builder.eq('category_id', categoryId);
 
+    return builder;
+  }
+
+  async list(query: ProductQueryDto): Promise<Paginated<ProductRow>> {
+    const { page, limit } = query;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    const empty = { items: [], total: 0, page, limit };
+
+    let categoryId: string | null = null;
     if (query.category) {
-      const categoryId = await this.resolveCategoryId(query.category);
-      if (!categoryId) {
-        return { items: [], total: 0, page, limit };
-      }
-      builder = builder.eq('category_id', categoryId);
+      categoryId = await this.resolveCategoryId(query.category);
+      if (!categoryId) return empty;
     }
 
-    // `featured` has no dedicated column yet, so it falls back to newest-first.
+    // Homepage curation (migration 0041). `featured`/`trending` are an
+    // OVERRIDE rather than an ordinary filter: a catalogue where nobody has
+    // flagged anything yet must still render a populated homepage, so an
+    // empty curated result falls through to the uncurated list below. That
+    // also makes un-flagging every product a safe way back, rather than a way
+    // to blank three sections of a live site.
+    const curationColumn = query.featured ? 'is_featured' : query.trending ? 'is_trending' : null;
+
+    if (curationColumn) {
+      const { data, error, count } = await this.buildListQuery(query, categoryId)
+        .eq(curationColumn, true)
+        .order('homepage_sort', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw new BadRequestException(error.message);
+
+      // `count` is the number of pinned products across EVERY page (PostgREST
+      // reports it even when the requested page is empty), so it — not this
+      // page's length — says whether the section has anything pinned. Keying
+      // the fallback on the page length handed page 2 of a fully pinned
+      // section the uncurated catalogue: `featured&limit=4&page=2` with
+      // exactly four pinned products returned unrelated, partly duplicate
+      // products instead of an empty page.
+      if ((count ?? 0) > 0 || (data ?? []).length > 0) {
+        return {
+          items: await this.withAvailability((data ?? []) as ProductRow[]),
+          total: count ?? 0,
+          page,
+          limit,
+        };
+      }
+      // Nothing pinned for this section at all — fall through to newest-first.
+    }
+
+    const builder = this.buildListQuery(query, categoryId);
+
+    // `ProductSort.Featured` had sat in the DTO enum unimplemented, silently
+    // behaving as Newest. Migration 0041 gives it a column to mean something:
+    // staff-chosen order first, newest-first within ties. It orders without
+    // filtering, which is what the category-tabbed "Featured Collection"
+    // needs — admin influence over what surfaces first in each tab, without
+    // hiding the rest of the category.
     const sorted =
       query.sort === ProductSort.PriceAsc
         ? builder.order('price_kes', { ascending: true })
         : query.sort === ProductSort.PriceDesc
           ? builder.order('price_kes', { ascending: false })
-          : builder.order('created_at', { ascending: false });
+          : query.sort === ProductSort.Featured
+            ? builder
+                .order('homepage_sort', { ascending: true, nullsFirst: false })
+                .order('created_at', { ascending: false })
+            : builder.order('created_at', { ascending: false });
 
     const { data, error, count } = await sorted.range(from, to);
     if (error) throw new BadRequestException(error.message);

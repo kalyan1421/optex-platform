@@ -199,7 +199,7 @@ function ProgressBar({ step }) {
           <React.Fragment key={num}>
             <div className="flex flex-col items-center gap-1.5">
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-bold transition-colors ${done ? 'bg-green-500 text-white' : active ? 'bg-[#2A3182] text-white' : 'border border-gray-200 bg-gray-100 text-gray-400'}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-bold transition-colors ${done ? 'bg-green-500 text-white' : active ? 'bg-brand-blue text-white' : 'border border-gray-200 bg-gray-100 text-gray-400'}`}
               >
                 {done ? (
                   <svg
@@ -216,7 +216,7 @@ function ProgressBar({ step }) {
                 )}
               </div>
               <span
-                className={`text-[10px] font-bold uppercase tracking-wider ${active ? 'text-[#2A3182]' : done ? 'text-green-600' : 'text-gray-400'}`}
+                className={`text-[10px] font-bold uppercase tracking-wider ${active ? 'text-brand-blue' : done ? 'text-green-600' : 'text-gray-400'}`}
               >
                 {label}
               </span>
@@ -472,7 +472,7 @@ export default function Page() {
             <div className="mb-4 flex justify-center">
               <CheckCircleIcon />
             </div>
-            <h1 className="mb-2 text-[28px] font-black leading-tight text-[#2A3182] sm:text-[34px]">
+            <h1 className="text-brand-blue mb-2 text-[28px] font-black leading-tight sm:text-[34px]">
               Appointment Requested!
             </h1>
             <p className="mb-8 text-[14px] text-gray-500">We'll confirm via SMS within 2 hours.</p>
@@ -484,7 +484,7 @@ export default function Page() {
                   <p className="mb-0.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
                     Branch
                   </p>
-                  <p className="text-[14px] font-bold text-[#2A3182]">{bookedData.branchName}</p>
+                  <p className="text-brand-blue text-[14px] font-bold">{bookedData.branchName}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -493,7 +493,7 @@ export default function Page() {
                   <p className="mb-0.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
                     Type
                   </p>
-                  <p className="text-[14px] font-bold text-[#2A3182]">{bookedData.type}</p>
+                  <p className="text-brand-blue text-[14px] font-bold">{bookedData.type}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -502,7 +502,7 @@ export default function Page() {
                   <p className="mb-0.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
                     Date & Time
                   </p>
-                  <p className="text-[14px] font-bold text-[#2A3182]">{bookedData.datetime}</p>
+                  <p className="text-brand-blue text-[14px] font-bold">{bookedData.datetime}</p>
                 </div>
               </div>
             </div>
@@ -510,14 +510,14 @@ export default function Page() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={resetWizard}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#2A3182] py-4 text-[14px] font-bold text-[#2A3182] transition-colors hover:bg-blue-50"
+                className="border-brand-blue text-brand-blue flex flex-1 items-center justify-center gap-2 rounded-full border-2 py-4 text-[14px] font-bold transition-colors hover:bg-blue-50"
               >
                 <RefreshIcon />
                 Book Another
               </button>
               <button
                 onClick={() => router.push('/')}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#2A3182] py-4 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
+                className="bg-brand-blue flex flex-1 items-center justify-center gap-2 rounded-full py-4 text-[14px] font-bold text-white transition-colors hover:bg-blue-900"
               >
                 <HomeIcon />
                 Go Home
@@ -535,7 +535,7 @@ export default function Page() {
       <div className="site-container mx-auto max-w-2xl px-4">
         {/* Page header */}
         <div className="mb-8 text-center sm:mb-10">
-          <h1 className="mb-1 text-[28px] font-black leading-tight text-[#2A3182] sm:text-[36px]">
+          <h1 className="text-brand-blue mb-1 text-[28px] font-black leading-tight sm:text-[36px]">
             Book an Appointment
           </h1>
           <p className="text-[14px] font-medium text-gray-500 sm:text-[15px]">
@@ -556,7 +556,7 @@ export default function Page() {
             {branchLoading ? (
               <div className="flex items-center justify-center py-16">
                 <svg
-                  className="h-10 w-10 animate-spin text-[#2A3182]"
+                  className="text-brand-blue h-10 w-10 animate-spin"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
@@ -595,17 +595,17 @@ export default function Page() {
                       }}
                       className={`rounded-2xl border-2 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md sm:p-6 ${
                         isSelected
-                          ? 'border-[#2A3182] shadow-[0_0_0_3px_rgba(42,49,130,0.12)]'
-                          : 'border-gray-100 hover:border-[#2A3182]/40'
+                          ? 'border-brand-blue shadow-[0_0_0_3px_rgba(46,49,146,0.12)]'
+                          : 'hover:border-brand-blue/40 border-gray-100'
                       }`}
                     >
                       {/* Branch name */}
                       <div className="mb-3 flex items-start justify-between">
-                        <h3 className="pr-2 text-[16px] font-black leading-tight text-[#2A3182]">
+                        <h3 className="text-brand-blue pr-2 text-[16px] font-black leading-tight">
                           {branch.name}
                         </h3>
                         {isSelected && (
-                          <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#2A3182]">
+                          <div className="bg-brand-blue flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full">
                             <svg
                               className="h-3 w-3 text-white"
                               fill="none"
@@ -669,11 +669,11 @@ export default function Page() {
                   <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
                     Selected Branch
                   </p>
-                  <p className="text-[14px] font-bold text-[#2A3182]">{selectedBranch.name}</p>
+                  <p className="text-brand-blue text-[14px] font-bold">{selectedBranch.name}</p>
                 </div>
                 <button
                   onClick={() => setStep(1)}
-                  className="ml-auto text-[12px] font-bold text-[#2A3182] hover:underline"
+                  className="text-brand-blue ml-auto text-[12px] font-bold hover:underline"
                 >
                   Change
                 </button>
@@ -682,7 +682,7 @@ export default function Page() {
 
             {/* Appointment type */}
             <div className="mb-6">
-              <p className="mb-3 block text-[13px] font-bold uppercase tracking-widest text-[#2A3182]">
+              <p className="text-brand-blue mb-3 block text-[13px] font-bold uppercase tracking-widest">
                 Appointment Type
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -695,16 +695,16 @@ export default function Page() {
                       onClick={() => setApptType(value)}
                       className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-5 text-center transition-all ${
                         active
-                          ? 'border-[#2A3182] bg-blue-50/40 shadow-[0_0_0_3px_rgba(42,49,130,0.10)]'
-                          : 'border-gray-200 bg-white hover:border-[#2A3182]/40'
+                          ? 'border-brand-blue bg-blue-50/40 shadow-[0_0_0_3px_rgba(46,49,146,0.10)]'
+                          : 'hover:border-brand-blue/40 border-gray-200 bg-white'
                       }`}
                     >
-                      <span className={active ? 'text-[#2A3182]' : 'text-gray-400'}>
+                      <span className={active ? 'text-brand-blue' : 'text-gray-400'}>
                         <Icon />
                       </span>
                       <div>
                         <p
-                          className={`text-[14px] font-bold ${active ? 'text-[#2A3182]' : 'text-gray-700'}`}
+                          className={`text-[14px] font-bold ${active ? 'text-brand-blue' : 'text-gray-700'}`}
                         >
                           {label}
                         </p>
@@ -721,7 +721,7 @@ export default function Page() {
               <div>
                 <label
                   htmlFor="appointment-date"
-                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                  className="text-brand-blue mb-1.5 block text-[13px] font-medium"
                 >
                   Preferred Date
                 </label>
@@ -731,13 +731,13 @@ export default function Page() {
                   min={todayString()}
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors focus:border-[#2A3182] focus:bg-white"
+                  className="focus:border-brand-blue w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors focus:bg-white"
                 />
               </div>
               <div>
                 <label
                   htmlFor="appointment-time"
-                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                  className="text-brand-blue mb-1.5 block text-[13px] font-medium"
                 >
                   Available Time
                 </label>
@@ -746,7 +746,7 @@ export default function Page() {
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   disabled={!date || slotsLoading || slots.length === 0}
-                  className="w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors focus:border-[#2A3182] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="focus:border-brand-blue w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {!date && <option value="">Select a date first</option>}
                   {date && slotsLoading && <option value="">Loading available times…</option>}
@@ -777,7 +777,7 @@ export default function Page() {
             <div className="mb-8">
               <label
                 htmlFor="appointment-step-notes"
-                className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                className="text-brand-blue mb-1.5 block text-[13px] font-medium"
               >
                 Notes <span className="font-normal text-gray-400">(optional)</span>
               </label>
@@ -787,7 +787,7 @@ export default function Page() {
                 placeholder="Any specific concerns or requests…"
                 value={stepNotes}
                 onChange={(e) => setStepNotes(e.target.value)}
-                className="w-full resize-none rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white"
+                className="focus:border-brand-blue w-full resize-none rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:bg-white"
               />
             </div>
 
@@ -832,16 +832,16 @@ export default function Page() {
             {/* Summary pills */}
             <div className="mb-6 flex flex-wrap gap-2">
               {selectedBranch && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-[#2A3182]">
+                <span className="text-brand-blue inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold">
                   <MapPinIcon />
                   {selectedBranch.name}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-[#2A3182]">
+              <span className="text-brand-blue inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold">
                 {APPT_TYPES.find((t) => t.value === apptType)?.label}
               </span>
               {date && time && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-[#2A3182]">
+                <span className="text-brand-blue inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold">
                   <ClockIcon />
                   {formatApptDate(date, time)}
                 </span>
@@ -852,7 +852,7 @@ export default function Page() {
               <div className="mb-4 sm:mb-6">
                 <label
                   htmlFor="appointment-contact-name"
-                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                  className="text-brand-blue mb-1.5 block text-[13px] font-medium"
                 >
                   Contact Name <span className="text-red-500">*</span>
                 </label>
@@ -863,14 +863,14 @@ export default function Page() {
                   placeholder="Jane Mwangi"
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
-                  className="w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white"
+                  className="focus:border-brand-blue w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:bg-white"
                 />
               </div>
 
               <div className="mb-4 sm:mb-6">
                 <label
                   htmlFor="appointment-contact-phone"
-                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                  className="text-brand-blue mb-1.5 block text-[13px] font-medium"
                 >
                   Contact Phone <span className="text-red-500">*</span>
                 </label>
@@ -881,7 +881,7 @@ export default function Page() {
                   placeholder="07XXXXXXXX"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
-                  className="w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white"
+                  className="focus:border-brand-blue w-full rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:bg-white"
                 />
                 <p className="mt-1.5 text-[12px] text-gray-400">
                   Kenyan format: 07XXXXXXXX or +2547XXXXXXXX
@@ -891,7 +891,7 @@ export default function Page() {
               <div className="mb-8">
                 <label
                   htmlFor="appointment-notes"
-                  className="mb-1.5 block text-[13px] font-medium text-[#2A3182]"
+                  className="text-brand-blue mb-1.5 block text-[13px] font-medium"
                 >
                   Additional Notes <span className="font-normal text-gray-400">(optional)</span>
                 </label>
@@ -901,7 +901,7 @@ export default function Page() {
                   placeholder="Any additional information for the branch…"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full resize-none rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-[#2A3182] focus:bg-white"
+                  className="focus:border-brand-blue w-full resize-none rounded-xl border border-transparent bg-[#f3f4f6] px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:bg-white"
                 />
               </div>
 

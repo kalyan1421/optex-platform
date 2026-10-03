@@ -219,7 +219,7 @@ export default function Navbar() {
                             key={cat.slug}
                             href={`/category/${cat.slug}`}
                             onClick={() => setIsCatOpen(false)}
-                            className={`flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[#2A3182]/5 hover:text-[#2A3182] ${pathname === `/category/${cat.slug}` ? 'text-[#2A3182]' : 'text-gray-700'}`}
+                            className={`hover:bg-brand-blue/5 hover:text-brand-blue flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors ${pathname === `/category/${cat.slug}` ? 'text-brand-blue' : 'text-gray-700'}`}
                           >
                             <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#E53935]"></span>
                             {cat.name}
@@ -229,7 +229,7 @@ export default function Navbar() {
                         <Link
                           href="/shop"
                           onClick={() => setIsCatOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-bold text-[#2A3182] transition-colors hover:bg-[#2A3182]/5"
+                          className="text-brand-blue hover:bg-brand-blue/5 flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-bold transition-colors"
                         >
                           View All Products →
                         </Link>
@@ -261,14 +261,14 @@ export default function Navbar() {
           <button
             aria-label="Search"
             onClick={openSearch}
-            className="flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+            className="text-brand-blue flex p-1.5 transition-opacity hover:opacity-70"
           >
             <SearchNavIcon />
           </button>
           <Link
             href="/cart"
             aria-label="Cart"
-            className="relative flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+            className="text-brand-blue relative flex p-1.5 transition-opacity hover:opacity-70"
           >
             <CartIcon />
             {cartCount > 0 && (
@@ -281,7 +281,7 @@ export default function Navbar() {
             <Link
               href="/notifications"
               aria-label="Notifications"
-              className="relative flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+              className="text-brand-blue relative flex p-1.5 transition-opacity hover:opacity-70"
             >
               <BellIcon />
               {unreadCount > 0 && (
@@ -294,7 +294,7 @@ export default function Navbar() {
           <Link
             href="/profile"
             aria-label="Profile"
-            className="flex p-1.5 text-[#2E3192] transition-opacity hover:opacity-70"
+            className="text-brand-blue flex p-1.5 transition-opacity hover:opacity-70"
           >
             <UserIcon />
           </Link>
@@ -336,7 +336,7 @@ export default function Navbar() {
                   key={cat.slug}
                   href={`/category/${cat.slug}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`rounded-full border px-3 py-2 text-center text-[12px] font-bold transition-colors ${pathname === `/category/${cat.slug}` ? 'border-[#2A3182] bg-[#2A3182]/5 text-[#2A3182]' : 'border-gray-200 text-gray-600 hover:border-[#2A3182] hover:text-[#2A3182]'}`}
+                  className={`rounded-full border px-3 py-2 text-center text-[12px] font-bold transition-colors ${pathname === `/category/${cat.slug}` ? 'border-brand-blue bg-brand-blue/5 text-brand-blue' : 'hover:border-brand-blue hover:text-brand-blue border-gray-200 text-gray-600'}`}
                 >
                   {cat.name}
                 </Link>
@@ -376,7 +376,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleSearchSubmit}
-                className="flex-shrink-0 rounded-xl bg-[#2A3182] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+                className="bg-brand-blue flex-shrink-0 rounded-xl px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#1e2461]"
               >
                 Search
               </button>

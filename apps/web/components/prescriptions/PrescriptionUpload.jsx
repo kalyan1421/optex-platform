@@ -146,7 +146,7 @@ export default function PrescriptionUpload({ onUploaded, compact = false }) {
         onChange={(e) => pick(e.target.files?.[0] ?? null)}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? `${inputId}-err` : undefined}
-        className="mt-3 block w-full text-[13px] text-gray-600 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[#2A3182] file:px-4 file:py-2 file:text-[13px] file:font-bold file:text-white hover:file:bg-[#1e2461] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A3182]/40"
+        className="file:bg-brand-blue focus-visible:ring-brand-blue/40 mt-3 block w-full text-[13px] text-gray-600 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:px-4 file:py-2 file:text-[13px] file:font-bold file:text-white hover:file:bg-[#1e2461] focus-visible:outline-none focus-visible:ring-2"
       />
 
       {file ? (
@@ -162,7 +162,7 @@ export default function PrescriptionUpload({ onUploaded, compact = false }) {
         type="button"
         onClick={() => setShowMeasurements((v) => !v)}
         aria-expanded={showMeasurements}
-        className="mt-3 text-[12px] font-semibold text-[#2A3182] underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A3182]/40"
+        className="text-brand-blue focus-visible:ring-brand-blue/40 mt-3 text-[12px] font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2"
       >
         {showMeasurements ? 'Hide measurements' : 'Add the measurements too (optional)'}
       </button>
@@ -186,7 +186,7 @@ export default function PrescriptionUpload({ onUploaded, compact = false }) {
                 placeholder={m.placeholder}
                 value={fields[m.key] ?? ''}
                 onChange={(e) => setFields((f) => ({ ...f, [m.key]: e.target.value }))}
-                className="h-9 rounded-[10px] border border-gray-200 px-3 text-[13px] focus:border-[#2A3182] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A3182]/40"
+                className="focus:border-brand-blue focus-visible:ring-brand-blue/40 h-9 rounded-[10px] border border-gray-200 px-3 text-[13px] focus-visible:outline-none focus-visible:ring-2"
               />
             </div>
           ))}
@@ -208,7 +208,7 @@ export default function PrescriptionUpload({ onUploaded, compact = false }) {
       <button
         type="submit"
         disabled={!file || uploading}
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2A3182]/40 disabled:cursor-not-allowed disabled:opacity-50"
+        className="bg-brand-blue focus-visible:ring-brand-blue/40 mt-4 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461] focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {uploading ? 'Uploading…' : 'Upload prescription'}
       </button>

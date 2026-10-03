@@ -30,8 +30,8 @@ export default function CompareToggle({ product, image, className = '' }) {
       // target — was 32×32px.
       className={`flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${
         compared
-          ? 'border-[#2A3182] bg-[#2A3182] text-white'
-          : 'border-[#D4D4D4] bg-white text-[#717182] hover:border-[#2A3182] hover:text-[#2A3182]'
+          ? 'border-brand-blue bg-brand-blue text-white'
+          : 'hover:border-brand-blue hover:text-brand-blue border-[#D4D4D4] bg-white text-[#717182]'
       } ${className}`}
     >
       <svg

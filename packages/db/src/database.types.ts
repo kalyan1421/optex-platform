@@ -417,6 +417,50 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          customer_id: string
+          disabled_at: string | null
+          id: string
+          last_seen_at: string
+          muted_categories: string[]
+          platform: string
+          token: string
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          customer_id: string
+          disabled_at?: string | null
+          id?: string
+          last_seen_at?: string
+          muted_categories?: string[]
+          platform: string
+          token: string
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          customer_id?: string
+          disabled_at?: string | null
+          id?: string
+          last_seen_at?: string
+          muted_categories?: string[]
+          platform?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eye_records: {
         Row: {
           add_od: number | null
@@ -850,6 +894,7 @@ export type Database = {
           promo_code: string | null
           shipping: Json | null
           shipping_kes: number
+          source: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_kes: number
           total_kes: number
@@ -871,6 +916,7 @@ export type Database = {
           promo_code?: string | null
           shipping?: Json | null
           shipping_kes?: number
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_kes: number
           total_kes: number
@@ -892,6 +938,7 @@ export type Database = {
           promo_code?: string | null
           shipping?: Json | null
           shipping_kes?: number
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_kes?: number
           total_kes?: number
@@ -911,6 +958,29 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_attempt_claims: {
+        Row: {
+          claimed_at: string
+          order_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          order_id: string
+        }
+        Update: {
+          claimed_at?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempt_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -1159,8 +1229,11 @@ export type Database = {
           frame_shape: string | null
           gender: string | null
           id: string
+          homepage_sort: number | null
           images: string[]
           is_active: boolean
+          is_featured: boolean
+          is_trending: boolean
           name: string
           price_kes: number
           rating_avg: number | null
@@ -1180,8 +1253,11 @@ export type Database = {
           frame_shape?: string | null
           gender?: string | null
           id?: string
+          homepage_sort?: number | null
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          is_trending?: boolean
           name: string
           price_kes: number
           rating_avg?: number | null
@@ -1201,8 +1277,11 @@ export type Database = {
           frame_shape?: string | null
           gender?: string | null
           id?: string
+          homepage_sort?: number | null
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          is_trending?: boolean
           name?: string
           price_kes?: number
           rating_avg?: number | null
@@ -1861,6 +1940,10 @@ export type Database = {
           status: Database["public"]["Enums"]["appt_status"]
         }[]
       }
+      claim_payment_attempt: {
+        Args: { p_order_id: string; p_window_seconds?: number }
+        Returns: Json
+      }
       current_customer_id: { Args: never; Returns: string }
       deduct_stock_fifo: {
         Args: {
@@ -1949,6 +2032,7 @@ export type Database = {
           promo_code: string | null
           shipping: Json | null
           shipping_kes: number
+          source: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_kes: number
           total_kes: number
@@ -1995,6 +2079,10 @@ export type Database = {
         Args: { p_product_id: string }
         Returns: undefined
       }
+      release_payment_attempt: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       restock_cancelled_order: {
         Args: { p_actor_id: string; p_actor_role: string; p_order_id: string }
         Returns: undefined
@@ -2014,7 +2102,7 @@ export type Database = {
       cancellation_status: "pending" | "approved" | "declined"
       discount_kind: "percent" | "fixed"
       eye_record_status: "submitted" | "reviewed" | "archived"
-      notification_channel: "sms" | "email"
+      notification_channel: "sms" | "email" | "push"
       notification_status: "pending" | "sent" | "failed" | "abandoned"
       order_status:
         | "pending_payment"
@@ -2165,7 +2253,7 @@ export const Constants = {
       cancellation_status: ["pending", "approved", "declined"],
       discount_kind: ["percent", "fixed"],
       eye_record_status: ["submitted", "reviewed", "archived"],
-      notification_channel: ["sms", "email"],
+      notification_channel: ["sms", "email", "push"],
       notification_status: ["pending", "sent", "failed", "abandoned"],
       order_status: [
         "pending_payment",

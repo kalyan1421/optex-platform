@@ -11,7 +11,7 @@ import Link from 'next/link';
  */
 const FinalCTA = () => {
   return (
-    <section className="relative flex w-full flex-col items-center overflow-hidden bg-[#2E3192] px-6 py-16 lg:px-[100px] lg:py-[120px]">
+    <section className="bg-brand-blue relative flex w-full flex-col items-center overflow-hidden px-6 py-16 lg:px-[100px] lg:py-[120px]">
       {/* Decorative gradient overlay (right edge) */}
       <div
         aria-hidden="true"
@@ -62,7 +62,7 @@ const FinalCTA = () => {
         >
           <Link
             href="/shop"
-            className="inline-flex min-h-[67px] items-center justify-center rounded-[48px] bg-[#FFFFFF] px-10 text-[#2E3192] shadow-[0px_8px_10px_-6px_rgba(0,0,0,0.1),0px_20px_25px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2E3192] active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100"
+            className="text-brand-blue focus-visible:ring-offset-brand-blue inline-flex min-h-[67px] items-center justify-center rounded-[48px] bg-[#FFFFFF] px-10 shadow-[0px_8px_10px_-6px_rgba(0,0,0,0.1),0px_20px_25px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80 focus-visible:ring-offset-2 active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100"
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
@@ -75,7 +75,7 @@ const FinalCTA = () => {
 
           <Link
             href="/appointments"
-            className="inline-flex min-h-[67px] items-center justify-center rounded-[48px] border-2 border-[#FFFFFF] bg-transparent px-10 text-[#FFFFFF] transition-all duration-300 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2E3192] active:scale-95 motion-reduce:transition-none"
+            className="focus-visible:ring-offset-brand-blue inline-flex min-h-[67px] items-center justify-center rounded-[48px] border-2 border-[#FFFFFF] bg-transparent px-10 text-[#FFFFFF] transition-all duration-300 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80 focus-visible:ring-offset-2 active:scale-95 motion-reduce:transition-none"
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,

@@ -11,7 +11,7 @@ export default function AboutPage() {
   return (
     <div className="flex w-full flex-col bg-[#F9F9FC]">
       {/* Hero Section */}
-      <section className="relative flex w-full justify-center overflow-hidden bg-[#2E3192] py-12 lg:h-[481px] lg:py-0">
+      <section className="bg-brand-blue relative flex w-full justify-center overflow-hidden py-12 lg:h-[481px] lg:py-0">
         {/* Background Decorative Rings */}
         <div className="pointer-events-none absolute left-1/2 top-0 h-full w-[1440px] -translate-x-1/2 overflow-hidden">
           <div className="absolute left-[957px] top-[-60px] h-[523px] w-[523px] rounded-[261.5px] border border-white/[0.06]"></div>
@@ -202,7 +202,7 @@ export default function AboutPage() {
           <div className="flex h-[170px] w-[322px] shrink-0 items-center justify-center overflow-hidden sm:h-[255px] sm:w-[482px] md:h-[306px] md:w-[579px] lg:h-[340px] lg:w-[643px] lg:overflow-visible">
             <div className="relative flex h-[340px] w-[643px] shrink-0 origin-center scale-50 items-center justify-center sm:scale-75 md:scale-90 lg:scale-100 xl:origin-right">
               {/* Mission Circle */}
-              <div className="peer/mission group/mission absolute left-0 z-10 flex h-[340px] w-[340px] items-center justify-center rounded-[400px] bg-white shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] transition-all delay-[100ms] duration-[800ms] ease-in-out hover:z-30 hover:bg-[#2E3192] hover:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)]">
+              <div className="peer/mission group/mission hover:bg-brand-blue absolute left-0 z-10 flex h-[340px] w-[340px] items-center justify-center rounded-[400px] bg-white shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] transition-all delay-[100ms] duration-[800ms] ease-in-out hover:z-30 hover:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)]">
                 <div className="flex h-[203px] w-[256px] flex-col items-center gap-[8px]">
                   <div className="flex h-[28px] w-[24px] flex-col items-center gap-[4px]">
                     <svg
@@ -239,7 +239,7 @@ export default function AboutPage() {
               <div className="absolute left-[282px] top-[156px] z-40 hidden h-[10px] w-[56px] rounded-[6px] bg-[#E53935] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:left-[305px] sm:block"></div>
 
               {/* Vision Circle */}
-              <div className="absolute right-0 z-30 flex h-[340px] w-[340px] flex-col items-center rounded-[400px] bg-[#2E3192] px-[34px] pb-[76px] pt-[79px] shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:z-10 peer-hover/mission:bg-white peer-hover/mission:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] peer-hover/mission:[&_.v-line]:border-[#212360] peer-hover/mission:[&_p]:font-normal peer-hover/mission:[&_p]:text-[#5B5C72] peer-hover/mission:[&_path]:stroke-[#212360] peer-hover/mission:[&_span]:text-[#000000]">
+              <div className="bg-brand-blue absolute right-0 z-30 flex h-[340px] w-[340px] flex-col items-center rounded-[400px] px-[34px] pb-[76px] pt-[79px] shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.26)] transition-all delay-[100ms] duration-[800ms] ease-in-out peer-hover/mission:z-10 peer-hover/mission:bg-white peer-hover/mission:shadow-[0px_4px_25.6px_0px_rgba(0,0,0,0.07)] peer-hover/mission:[&_.v-line]:border-[#212360] peer-hover/mission:[&_p]:font-normal peer-hover/mission:[&_p]:text-[#5B5C72] peer-hover/mission:[&_path]:stroke-[#212360] peer-hover/mission:[&_span]:text-[#000000]">
                 <div className="flex h-[176px] w-[272px] flex-col items-center gap-[8px]">
                   <div className="flex flex-col items-center gap-[4px]">
                     <svg
@@ -292,7 +292,7 @@ export default function AboutPage() {
           {/* Grid Layout */}
           <div className="flex flex-col gap-6 xl:flex-row">
             {/* Left Large Card */}
-            <div className="group relative flex h-auto min-h-[238px] w-full cursor-pointer flex-col justify-center gap-6 overflow-hidden rounded-[16px] border border-[#EBEBF5] bg-white p-[30px] transition-all duration-500 ease-in-out hover:border-[#2E3192] hover:bg-[#2E3192] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)] xl:w-[415px]">
+            <div className="hover:border-brand-blue hover:bg-brand-blue group relative flex h-auto min-h-[238px] w-full cursor-pointer flex-col justify-center gap-6 overflow-hidden rounded-[16px] border border-[#EBEBF5] bg-white p-[30px] transition-all duration-500 ease-in-out hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)] xl:w-[415px]">
               <div className="z-10 flex items-center gap-[16px]">
                 <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-[16px] bg-[#F0F0FF] transition-all duration-500 ease-in-out group-hover:bg-white">
                   <svg
@@ -326,7 +326,7 @@ export default function AboutPage() {
             {/* Right 2x2 Grid */}
             <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-2">
               {/* Card 1 */}
-              <div className="group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:border-[#2E3192] hover:bg-[#2E3192] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
+              <div className="hover:border-brand-blue hover:bg-brand-blue group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-[#F0F0FF] transition-all duration-500 ease-in-out group-hover:bg-white">
                   <svg
                     width="22"
@@ -354,7 +354,7 @@ export default function AboutPage() {
               </div>
 
               {/* Card 2 */}
-              <div className="group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:border-[#2E3192] hover:bg-[#2E3192] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
+              <div className="hover:border-brand-blue hover:bg-brand-blue group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-[#F0F0FF] transition-all duration-500 ease-in-out group-hover:bg-white">
                   <svg
                     width="22"
@@ -382,7 +382,7 @@ export default function AboutPage() {
               </div>
 
               {/* Card 3 */}
-              <div className="group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:border-[#2E3192] hover:bg-[#2E3192] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
+              <div className="hover:border-brand-blue hover:bg-brand-blue group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-[#F0F0FF] transition-all duration-500 ease-in-out group-hover:bg-white">
                   <svg
                     width="22"
@@ -414,7 +414,7 @@ export default function AboutPage() {
               </div>
 
               {/* Card 4 */}
-              <div className="group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:border-[#2E3192] hover:bg-[#2E3192] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
+              <div className="hover:border-brand-blue hover:bg-brand-blue group flex cursor-pointer items-center gap-4 rounded-[16px] border border-[#EBEBF5] bg-white p-6 transition-all duration-500 ease-in-out hover:shadow-[0px_10px_30px_rgba(0,0,0,0.3)]">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-[#F0F0FF] transition-all duration-500 ease-in-out group-hover:bg-white">
                   <svg
                     width="22"
@@ -455,7 +455,7 @@ export default function AboutPage() {
       </section>
 
       {/* Blue Stat Banner */}
-      <section className="relative flex w-full justify-center overflow-hidden bg-[#2A3182]">
+      <section className="bg-brand-blue relative flex w-full justify-center overflow-hidden">
         {/* Background Decorative Ring */}
         <div className="pointer-events-none absolute left-1/2 top-0 h-full w-[1440px] -translate-x-1/2">
           <div className="absolute left-[1217px] top-[-90px] h-[283px] w-[283px] rounded-full border border-white/10"></div>
@@ -514,7 +514,7 @@ export default function AboutPage() {
           <div className="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-[45px]">
             {/* Step 1 */}
             <div className="group flex cursor-pointer flex-col gap-[10px]">
-              <div className="font-outfit flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] border-[#2E3192] bg-white text-[18px] font-extrabold text-[#2E3192] transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
+              <div className="font-outfit border-brand-blue text-brand-blue flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] bg-white text-[18px] font-extrabold transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
                 01
               </div>
               <h3 className="font-outfit mt-2 text-[20px] font-bold leading-[17px] tracking-[-0.16px] text-[#20225F]">
@@ -527,7 +527,7 @@ export default function AboutPage() {
 
             {/* Step 2 */}
             <div className="group flex cursor-pointer flex-col gap-[10px]">
-              <div className="font-outfit flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] border-[#2E3192] bg-white text-[18px] font-extrabold text-[#2E3192] transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
+              <div className="font-outfit border-brand-blue text-brand-blue flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] bg-white text-[18px] font-extrabold transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
                 02
               </div>
               <h3 className="font-outfit mt-2 text-[20px] font-bold leading-[17px] tracking-[-0.16px] text-[#20225F]">
@@ -540,7 +540,7 @@ export default function AboutPage() {
 
             {/* Step 3 */}
             <div className="group flex cursor-pointer flex-col gap-[10px]">
-              <div className="font-outfit flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] border-[#2E3192] bg-white text-[18px] font-extrabold text-[#2E3192] transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
+              <div className="font-outfit border-brand-blue text-brand-blue flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] bg-white text-[18px] font-extrabold transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
                 03
               </div>
               <h3 className="font-outfit mt-2 text-[20px] font-bold leading-[17px] tracking-[-0.16px] text-[#20225F]">
@@ -554,7 +554,7 @@ export default function AboutPage() {
 
             {/* Step 4 */}
             <div className="group flex cursor-pointer flex-col gap-[10px]">
-              <div className="font-outfit flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] border-[#2E3192] bg-white text-[18px] font-extrabold text-[#2E3192] transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
+              <div className="font-outfit border-brand-blue text-brand-blue flex h-[52px] w-[52px] items-center justify-center rounded-[26px] border-[2px] bg-white text-[18px] font-extrabold transition-all duration-500 ease-in-out group-hover:border-[#E53935] group-hover:bg-[#E53935] group-hover:text-white">
                 04
               </div>
               <h3 className="font-outfit mt-2 text-[20px] font-bold leading-[17px] tracking-[-0.16px] text-[#20225F]">

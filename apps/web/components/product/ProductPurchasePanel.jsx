@@ -124,7 +124,7 @@ export default function ProductPurchasePanel({ product, mainImage }) {
           onClick={handleAddToCart}
           disabled={addingToCart || unavailable}
           aria-busy={addingToCart}
-          className="flex h-[63px] min-w-0 flex-1 items-center justify-center gap-[10px] rounded-[26843500px] bg-[#2E3192] text-[#FFFFFF] transition-all hover:bg-[#1e2361] disabled:cursor-not-allowed disabled:opacity-60"
+          className="bg-brand-blue flex h-[63px] min-w-0 flex-1 items-center justify-center gap-[10px] rounded-[26843500px] text-[#FFFFFF] transition-all hover:bg-[#1e2361] disabled:cursor-not-allowed disabled:opacity-60"
           style={{
             fontFamily: 'Poppins, sans-serif',
             fontWeight: 700,

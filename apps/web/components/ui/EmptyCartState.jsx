@@ -67,7 +67,7 @@ export default function EmptyCartState({
           <div className="flex flex-col items-center gap-[16px] sm:flex-row">
             <Link
               href="/shop"
-              className="flex h-[54px] items-center justify-center rounded-[26843500px] bg-[#141776] px-[36px] text-white transition-colors hover:bg-[#2A3182]"
+              className="hover:bg-brand-blue flex h-[54px] items-center justify-center rounded-[26843500px] bg-[#141776] px-[36px] text-white transition-colors"
               style={{ fontFamily: 'Manrope, sans-serif', fontSize: '16px', fontWeight: 700 }}
             >
               Browse the collection

@@ -11,7 +11,7 @@ import PrescriptionUpload from '@/components/prescriptions/PrescriptionUpload';
 
 // Icons
 const VerifyBadgeIcon = () => (
-  <svg className="h-5 w-5 text-[#2A3182]" viewBox="0 0 24 24" fill="currentColor">
+  <svg className="text-brand-blue h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
   </svg>
 );
@@ -28,7 +28,7 @@ const ShieldCrossIcon = () => (
   </svg>
 );
 
-const BuildingIcon = ({ className = 'h-4 w-4 text-[#2A3182]' }) => (
+const BuildingIcon = ({ className = 'h-4 w-4 text-brand-blue' }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
@@ -60,7 +60,7 @@ const DownloadIcon = () => (
 
 const TableIcon = () => (
   <svg
-    className="h-5 w-5 text-[#2A3182]"
+    className="text-brand-blue h-5 w-5"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -108,7 +108,7 @@ const SecurityIcon = () => (
 
 const HistoryNavIcon = () => (
   <svg
-    className="h-5 w-5 text-[#2A3182]"
+    className="text-brand-blue h-5 w-5"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -152,7 +152,7 @@ const ShieldCheckIcon = () => (
 
 const EyeGlyphIcon = () => (
   <svg
-    className="h-5 w-5 text-[#2A3182]"
+    className="text-brand-blue h-5 w-5"
     fill="none"
     stroke="currentColor"
     strokeWidth="1.8"
@@ -190,7 +190,7 @@ const PinIcon = () => (
 
 const ApptNavIcon = () => (
   <svg
-    className="h-5 w-5 text-[#2A3182]"
+    className="text-brand-blue h-5 w-5"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -216,7 +216,7 @@ const CalendarPlainIcon = () => (
 
 const RxEmptyIcon = () => (
   <svg
-    className="h-7 w-7 text-[#2A3182]"
+    className="text-brand-blue h-7 w-7"
     fill="none"
     stroke="currentColor"
     strokeWidth="1.6"
@@ -621,7 +621,7 @@ export default function Page() {
           >
             <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-100 bg-[#fafbfc] p-6 sm:flex-row sm:items-center sm:p-8">
               <div className="flex items-center gap-3">
-                <div className="text-[#2A3182]">
+                <div className="text-brand-blue">
                   <TableIcon />
                 </div>
                 <h2
@@ -684,7 +684,7 @@ export default function Page() {
                       >
                         <div className="mb-5 flex items-center justify-between">
                           <div>
-                            <p className="text-[13px] font-black uppercase tracking-widest text-[#2A3182]">
+                            <p className="text-brand-blue text-[13px] font-black uppercase tracking-widest">
                               {eye.abbr}
                             </p>
                             <p className="text-[12px] font-medium text-gray-400">{eye.name}</p>
@@ -794,7 +794,7 @@ export default function Page() {
                     re-tested elsewhere needs somewhere to send the newer card,
                     and the newest upload becomes the one this panel shows. */}
                 <details className="mt-6 border-t border-gray-100 pt-6">
-                  <summary className="cursor-pointer text-[13px] font-bold text-[#2A3182] marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A3182]/40">
+                  <summary className="text-brand-blue focus-visible:ring-brand-blue/40 cursor-pointer text-[13px] font-bold marker:content-none focus-visible:outline-none focus-visible:ring-2">
                     Upload a newer prescription
                   </summary>
                   <div className="mt-4">
@@ -827,7 +827,7 @@ export default function Page() {
                   <p className="text-[13px] text-gray-500">Not been tested yet?</p>
                   <Link
                     href="/appointments"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+                    className="bg-brand-blue inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#1e2461]"
                   >
                     <CalendarPlainIcon />
                     Book an eye test
@@ -868,7 +868,7 @@ export default function Page() {
                     href="/profile/security"
                     className="group flex items-center justify-between py-4"
                   >
-                    <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
+                    <span className="group-hover:text-brand-blue text-[14px] font-medium text-gray-700 transition-colors">
                       Security &amp; Password
                     </span>
                     <RightArrowIcon />
@@ -876,7 +876,7 @@ export default function Page() {
                 </li>
                 <li className="border-b border-gray-50">
                   <a href="#order-history" className="group flex items-center justify-between py-4">
-                    <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
+                    <span className="group-hover:text-brand-blue text-[14px] font-medium text-gray-700 transition-colors">
                       Order History
                     </span>
                     <RightArrowIcon />
@@ -887,7 +887,7 @@ export default function Page() {
                     href="/profile/addresses"
                     className="group flex items-center justify-between py-4"
                   >
-                    <span className="text-[14px] font-medium text-gray-700 transition-colors group-hover:text-[#2A3182]">
+                    <span className="group-hover:text-brand-blue text-[14px] font-medium text-gray-700 transition-colors">
                       Delivery Addresses
                     </span>
                     <RightArrowIcon />
@@ -919,7 +919,7 @@ export default function Page() {
               </span>
               <Link
                 href="/appointments"
-                className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-4 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+                className="bg-brand-blue inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[#1e2461]"
               >
                 <CalendarPlainIcon />
                 Book
@@ -937,7 +937,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="rounded-full bg-[#2A3182] px-5 py-2.5 text-[13px] font-bold text-white"
+                className="bg-brand-blue rounded-full px-5 py-2.5 text-[13px] font-bold text-white"
               >
                 Try again
               </button>
@@ -975,7 +975,7 @@ export default function Page() {
                           key={appt.id}
                           className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-[#fafbfc] p-5 sm:flex-row sm:items-center sm:gap-6"
                         >
-                          <div className="flex h-[64px] w-[64px] flex-shrink-0 flex-col items-center justify-center rounded-2xl bg-[#2A3182] text-white">
+                          <div className="bg-brand-blue flex h-[64px] w-[64px] flex-shrink-0 flex-col items-center justify-center rounded-2xl text-white">
                             <span className="text-[22px] font-black leading-none">{day}</span>
                             <span className="mt-1 text-[10px] font-bold tracking-widest">
                               {month}
@@ -1107,7 +1107,7 @@ export default function Page() {
             </h2>
             <Link
               href="/eye-care"
-              className="inline-flex items-center gap-2 rounded-full bg-[#2A3182] px-4 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[#1e2461]"
+              className="bg-brand-blue inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[#1e2461]"
             >
               Submit a new record
             </Link>
@@ -1226,7 +1226,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="rounded-full bg-[#2A3182] px-5 py-2.5 text-[13px] font-bold text-white"
+                className="bg-brand-blue rounded-full px-5 py-2.5 text-[13px] font-bold text-white"
               >
                 Try again
               </button>
@@ -1296,7 +1296,7 @@ export default function Page() {
                         <div className="flex flex-col items-start gap-2">
                           <Link
                             href={`/orders/${order.id}/tracking`}
-                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#2A3182] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#1e2461]"
+                            className="bg-brand-blue inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#1e2461]"
                           >
                             Track
                           </Link>

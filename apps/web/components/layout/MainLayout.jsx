@@ -22,7 +22,7 @@ export default function MainLayout({ children }) {
           who need it. */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-[#2A3182] focus:px-5 focus:py-3 focus:text-[14px] focus:font-semibold focus:text-white"
+        className="focus:bg-brand-blue sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:px-5 focus:py-3 focus:text-[14px] focus:font-semibold focus:text-white"
       >
         Skip to main content
       </a>
