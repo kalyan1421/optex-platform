@@ -12,8 +12,13 @@ import { PERMISSION_KEY } from './decorators';
  * real TOTP challenge with. Same idiom as `AUTH_RATE_LIMIT` (auth.controller.ts)
  * — a production-safe default (enforced unless explicitly turned off), not a
  * feature flag for end users. See `apps/api/test/setup-env.ts`.
+ *
+ * Read per request, not captured at import: `app.module.ts` imports this file
+ * before `ConfigModule.forRoot` has loaded `.env`, so a module-level constant
+ * would only ever see variables already in the real process environment and
+ * silently ignore the same setting in a local `.env` file.
  */
-const MFA_ENFORCEMENT_ENABLED = process.env.MFA_ENFORCEMENT_ENABLED !== 'false';
+const mfaEnforcementEnabled = (): boolean => process.env.MFA_ENFORCEMENT_ENABLED !== 'false';
 
 /**
  * Global authorization guard. Runs after `SupabaseAuthGuard`.
@@ -61,7 +66,7 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Insufficient permissions');
     }
 
-    if (MFA_ENFORCEMENT_ENABLED && user.role === 'super_admin' && user.aal !== 'aal2') {
+    if (mfaEnforcementEnabled() && user.role === 'super_admin' && user.aal !== 'aal2') {
       throw new ForbiddenException(
         'This action requires step-up authentication (2FA) — complete your authenticator app challenge and try again',
       );

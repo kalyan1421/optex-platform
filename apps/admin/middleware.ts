@@ -7,6 +7,16 @@ import { decodeAal } from './lib/aal';
 /** Reachable by a signed-in super_admin regardless of AAL — see the redirect below. */
 const MFA_ROUTES = ['/mfa-setup', '/mfa-challenge'];
 
+/**
+ * Same switch, same name and same default (enforced unless exactly `'false'`)
+ * as `apps/api/src/auth/permissions.guard.ts`, so one setting turns the
+ * super_admin 2FA step-up off across both tiers. Set it in the environment of
+ * BOTH deployments — turning it off here alone leaves the API answering 403
+ * "requires step-up authentication" on every privileged call. Read at request
+ * time, deliberately not a `NEXT_PUBLIC_*` var: it is not for the browser.
+ */
+const MFA_ENFORCEMENT_ENABLED = process.env.MFA_ENFORCEMENT_ENABLED !== 'false';
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
 
@@ -65,7 +75,7 @@ export async function middleware(request: NextRequest) {
     // hits a purpose-built setup/challenge screen instead of a wall of 403s
     // from every page they land on.
     const isMfaRoute = MFA_ROUTES.some((r) => request.nextUrl.pathname.startsWith(r));
-    if (role === 'super_admin' && !isMfaRoute) {
+    if (MFA_ENFORCEMENT_ENABLED && role === 'super_admin' && !isMfaRoute) {
       const {
         data: { session },
       } = await supabase.auth.getSession();

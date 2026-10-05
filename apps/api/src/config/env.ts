@@ -44,6 +44,12 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(4000),
 
+    // Super Admin 2FA step-up (aal2), read by `PermissionsGuard`. Enforced unless
+    // exactly `'false'`. Declared here only so a value in `.env` survives:
+    // `validate()` returns the parsed output, which drops keys the schema does
+    // not name, so an undeclared var only ever worked as a real shell/host env var.
+    MFA_ENFORCEMENT_ENABLED: z.string().optional(),
+
     // --- Supabase (required) ---
     SUPABASE_URL: z.string().url(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
