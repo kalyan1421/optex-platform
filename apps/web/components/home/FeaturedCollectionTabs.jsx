@@ -10,19 +10,19 @@ const UI_CATEGORIES = [
   {
     id: 'glasses',
     name: 'Eye Glasses',
-    image: '/images/eyeglasses-fc.jpg',
+    image: '/images/eyeglasses-fc.webp',
     keywords: ['glass', 'eyeglass', 'optic', 'reading'],
   },
   {
     id: 'shades',
     name: 'Shades',
-    image: '/images/shades-fc.png',
+    image: '/images/shades-fc.webp',
     keywords: ['sun', 'shade', 'sunglass'],
   },
   {
     id: 'lens',
     name: 'Contact Lens',
-    image: '/images/contactlens-fc.png',
+    image: '/images/contactlens-fc.webp',
     keywords: ['contact', 'lens', 'lense'],
   },
 ];
