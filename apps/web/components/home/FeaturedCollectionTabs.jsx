@@ -44,10 +44,11 @@ export default function FeaturedCollectionTabs({ products, categories }) {
         (kw) => c.name.toLowerCase().includes(kw) || (c.slug || '').toLowerCase().includes(kw),
       ),
     );
-    if (dbCat) {
-      return products.filter((p) => p.category_id === dbCat.id).slice(0, 4);
-    }
-    return products.slice(0, 4);
+    // No matching category (the catalogue has no contact lenses yet) shows the
+    // empty state: falling back to "any four products" put eyeglass frames
+    // under the Contact Lens tab.
+    if (!dbCat) return [];
+    return products.filter((p) => p.category_id === dbCat.id).slice(0, 4);
   }
 
   const activeProducts = getProductsForTab(activeCategory);
@@ -218,17 +219,6 @@ export default function FeaturedCollectionTabs({ products, categories }) {
             <path d="M6 11V8a2 2 0 0 1 2-2h1" />
             <path d="M18 11V8a2 2 0 0 0-2-2h-1" />
           </svg>
-          <span
-            className="mb-1 uppercase text-[#717182]"
-            style={{
-              fontFamily: 'Arimo, sans-serif',
-              fontWeight: 600,
-              fontSize: '11px',
-              letterSpacing: '1px',
-            }}
-          >
-            0 OF 12
-          </span>
           <h3
             className="text-[#000000]"
             style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '24px' }}

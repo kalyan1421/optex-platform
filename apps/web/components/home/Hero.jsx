@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { publicApi } from '@/lib/api-server';
+import { publicApi, readForStaticPage } from '@/lib/api-server';
 import BannerCarousel from './BannerCarousel';
 
 /**
@@ -11,15 +11,12 @@ import BannerCarousel from './BannerCarousel';
  * the homepage is never empty.
  */
 export default async function Hero() {
-  let banners = [];
-
-  try {
-    const api = publicApi({ revalidate: 60, tags: ['promo-banners'] });
-    banners = await api.promotions.listActiveBanners();
-  } catch (err) {
-    // If the API is unreachable (e.g. during a cold build), fall back silently.
-    console.error('[Hero] Failed to fetch banners:', err?.message ?? err);
-  }
+  const api = publicApi({ revalidate: 60, tags: ['promo-banners'] });
+  const banners = await readForStaticPage(
+    'home:Hero',
+    () => api.promotions.listActiveBanners(),
+    [],
+  );
 
   // ── Dynamic carousel ──────────────────────────────────────────────────────
   if (banners.length > 0) {
