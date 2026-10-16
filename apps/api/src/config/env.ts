@@ -92,6 +92,12 @@ export const envSchema = z
     // 'production', and the superRefine below still requires real credentials
     // whenever it is — this flag cannot make mock mode reachable in prod.
     MPESA_MOCK_MODE: z.string().optional(),
+    // Pins Daraja to `sandbox` or `production`; unset follows NODE_ENV. Testing
+    // phase only: `sandbox` with Daraja sandbox credentials lets a
+    // NODE_ENV=production deployment take test payments. The production checks
+    // below still apply, and the API logs a warning at start-up while it is set.
+    // Remove before go-live.
+    MPESA_ENV: z.enum(['sandbox', 'production']).optional(),
 
     // --- Pesapal — optional until payments module ships ---
     PESAPAL_CONSUMER_KEY: z.string().optional(),
@@ -104,6 +110,8 @@ export const envSchema = z
     // Browser redirect target after a Pesapal payment completes. Falls back to
     // the storefront origin when unset.
     PESAPAL_CALLBACK_URL: z.string().optional(),
+    // Same as MPESA_ENV, for Pesapal (sandbox host: cybqa.pesapal.com).
+    PESAPAL_ENV: z.enum(['sandbox', 'production']).optional(),
 
     // --- Africa's Talking (SMS) — optional until notifications module ships ---
     AT_USERNAME: z.string().optional(),
