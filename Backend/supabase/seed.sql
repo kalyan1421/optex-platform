@@ -27,27 +27,22 @@ insert into categories (slug, name, sort_order) values
   ('reading-glasses', 'Reading Glasses', 5)
 on conflict (slug) do nothing;
 
--- Three placeholder products to mirror current optex-web/CartContext seed.
--- Image URLs intentionally use a /seed/ path under product-images bucket;
--- swap to real URLs once catalog spreadsheet is delivered.
+-- Placeholder product to mirror the original optex-web/CartContext seed.
+-- Image URL intentionally uses a /seed/ path under product-images bucket;
+-- swap to a real URL once catalog spreadsheet is delivered.
+--
+-- Executive Pro (OPX-EXEC-PRO) and Retro Round (OPX-RTRO-ROUND) were removed
+-- from the catalogue on 2026-10-16. A database seeded before then still has
+-- them; deactivate them there (is_active = false) rather than deleting, since
+-- order lines and the append-only stock ledger reference them.
 
 with c as (select id, slug from categories)
 insert into products (sku, slug, name, category_id, brand, frame_material, frame_shape, gender, description, price_kes, images, is_active) values
-  ('OPX-EXEC-PRO',    'executive-pro',     'Executive Pro',
-     (select id from c where slug = 'eyeglasses'),
-     'Optex',  'Acetate', 'Rectangle', 'unisex',
-     'Premium acetate frame with blue-light filtering option.',
-     32000.00, array['/seed/executive_pro.png'],   true),
   ('OPX-AVT-CLASSIC', 'classic-aviator',   'Classic Aviator',
      (select id from c where slug = 'sunglasses'),
      'Optex',  'Metal',   'Aviator',   'unisex',
      'Timeless aviator silhouette in brushed gold with UV400 lenses.',
-     24000.00, array['/seed/classic_aviator.png'], true),
-  ('OPX-RTRO-ROUND',  'retro-round',       'Retro Round',
-     (select id from c where slug = 'eyeglasses'),
-     'Optex',  'Acetate', 'Round',     'unisex',
-     'Retro round in tortoiseshell with gradient grey lenses.',
-     26000.00, array['/seed/retro_round.png'],     true)
+     24000.00, array['/seed/classic_aviator.png'], true)
 on conflict (sku) do nothing;
 
 -- Per-branch starting stock.
