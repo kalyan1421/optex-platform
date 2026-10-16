@@ -1,6 +1,7 @@
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { publicApi } from '@/lib/api-server';
+import { publicApi, readForStaticPage } from '@/lib/api-server';
 import BannerCarousel from './BannerCarousel';
 
 /**
@@ -11,15 +12,12 @@ import BannerCarousel from './BannerCarousel';
  * the homepage is never empty.
  */
 export default async function Hero() {
-  let banners = [];
-
-  try {
-    const api = publicApi({ revalidate: 60, tags: ['promo-banners'] });
-    banners = await api.promotions.listActiveBanners();
-  } catch (err) {
-    // If the API is unreachable (e.g. during a cold build), fall back silently.
-    console.error('[Hero] Failed to fetch banners:', err?.message ?? err);
-  }
+  const api = publicApi({ revalidate: 60, tags: ['promo-banners'] });
+  const banners = await readForStaticPage(
+    'home:Hero',
+    () => api.promotions.listActiveBanners(),
+    [],
+  );
 
   // ── Dynamic carousel ──────────────────────────────────────────────────────
   if (banners.length > 0) {
@@ -29,11 +27,19 @@ export default async function Hero() {
   // ── Static fallback hero (shown when no banners are configured) ───────────
   return (
     <section className="relative w-full overflow-hidden bg-[#FFFFFF] lg:h-[773px]">
-      {/* Background Image Container */}
-      <div
-        className="pointer-events-none absolute right-0 top-0 z-0 h-full w-full bg-cover bg-center sm:bg-[position:65%_center] lg:left-[300px] lg:top-[11px] lg:h-[762px] lg:w-[1143px] lg:bg-right-top"
-        style={{ backgroundImage: 'url(/images/home-banner.png)' }}
-      >
+      {/* Background Image Container. A real <Image> rather than a CSS
+          background: this is the page's largest paint, and a CSS background is
+          neither preloaded nor resized, so every visitor downloaded the full
+          source before it appeared. */}
+      <div className="pointer-events-none absolute right-0 top-0 z-0 h-full w-full lg:left-[300px] lg:top-[11px] lg:h-[762px] lg:w-[1143px]">
+        <Image
+          src="/images/home-banner.webp"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1024px) 1143px, 100vw"
+          className="object-cover object-center sm:object-[65%_center] lg:object-right-top"
+        />
         <div className="absolute inset-0 z-0 bg-black/20 lg:hidden" />
       </div>
 

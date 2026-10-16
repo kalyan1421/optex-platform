@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import EmptyCartState from '@/components/ui/EmptyCartState';
 import { formatKesNumber } from '@optex/ui';
 import { DELIVERY_FEE_KES } from '@/lib/pricing';
+import { PRODUCT_PLACEHOLDER } from '@/lib/product-image';
 
 const TrashIcon = () => (
   <svg
@@ -220,7 +221,7 @@ const Cart = () => {
                       </div>
                     ) : (
                       <Image
-                        src={item.image || '/images/executive_pro.png'}
+                        src={item.image || PRODUCT_PLACEHOLDER}
                         alt={item.title}
                         fill
                         sizes="(min-width: 640px) 180px, 90vw"

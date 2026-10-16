@@ -29,6 +29,7 @@ import 'server-only';
  */
 
 import { cookies } from 'next/headers';
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import { createApiClient } from '@optex/api-client';
 import { createServerSupabase } from '@optex/db/server';
 
@@ -64,6 +65,81 @@ export function publicApi({ revalidate = 60, tags } = {}) {
         next: { revalidate, ...(tags ? { tags } : {}) },
       }),
   });
+}
+
+/**
+ * Runs a public read for a statically cached (ISR) page without letting an
+ * outage become the cached page.
+ *
+ * Catching a failed fetch and rendering the empty state looks harmless, but on
+ * a static page that empty render IS the cache entry: every visitor sees
+ * "Check back soon" until a later regeneration happens to succeed. Production
+ * hit exactly this — the API sleeps when idle on Render's free tier and takes
+ * longer to wake than the client's 20s timeout, so a regeneration that landed
+ * on a sleeping API cached a homepage with no products.
+ *
+ * So the read is retried once (the first request is what wakes a sleeping
+ * instance; a 4xx is not retried, it would only fail again), and if it still
+ * fails:
+ * - during `next build`, or outside production, it returns `empty` — a deploy
+ *   must not fail because the API was asleep, and a developer without the API
+ *   running still gets a page;
+ * - at runtime in production it throws. Next keeps serving the last page that
+ *   rendered successfully and retries on the next request, so a page that has
+ *   ever had data never regresses to empty.
+ *
+ * Only for static pages: on a dynamic route the throw would reach the visitor
+ * as an error page.
+ *
+ * @template T
+ * @param {string} label Log prefix, e.g. `'home:TrendingNow'`.
+ * @param {() => Promise<T>} read
+ * @param {T} empty What to render when the read cannot succeed at build time.
+ * @returns {Promise<T>}
+ */
+export async function readForStaticPage(label, read, empty) {
+  try {
+    return await read();
+  } catch (firstError) {
+    if (isClientError(firstError)) return giveUp(label, firstError, empty);
+    try {
+      return await read();
+    } catch (error) {
+      return giveUp(label, error, empty);
+    }
+  }
+}
+
+function isClientError(error) {
+  return typeof error?.status === 'number' && error.status >= 400 && error.status < 500;
+}
+
+function giveUp(label, error, empty) {
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD || process.env.NODE_ENV !== 'production') {
+    console.error(`[${label}] read failed, rendering the empty state:`, error);
+    return empty;
+  }
+  throw error;
+}
+
+/**
+ * `GET /products` with a homepage curation flag (`featured` or `trending`),
+ * retried without the flag when the API rejects it.
+ *
+ * The flags arrived with migration 0041. An API deployed before them answers
+ * the unknown property with a 400, which is what blanked Trending Now while
+ * production's API deploys were failing. Newest-first without the flag is what
+ * an up-to-date API returns anyway when nothing is flagged, so the fallback
+ * shows the section the API itself would have shown.
+ */
+export async function listCuratedProducts(api, { featured, trending, ...query }) {
+  const flag = featured ? { featured } : trending ? { trending } : {};
+  try {
+    return await api.catalog.listProducts({ ...query, ...flag });
+  } catch (error) {
+    if (error?.status !== 400 || !(featured || trending)) throw error;
+    return api.catalog.listProducts(query);
+  }
 }
 
 /**

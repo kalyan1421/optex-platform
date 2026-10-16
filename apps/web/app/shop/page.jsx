@@ -1,5 +1,5 @@
 import ShopBrowser from '@/components/shop/ShopBrowser';
-import { publicApi } from '@/lib/api-server';
+import { publicApi, readForStaticPage } from '@/lib/api-server';
 
 /**
  * /shop — Server Component (Wave 4).
@@ -42,24 +42,25 @@ export const metadata = {
  */
 async function loadCatalogue() {
   const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
-  try {
-    const [products, categories] = await Promise.all([
-      api.catalog.listProducts({ limit: 100 }),
-      api.catalog.listCategories(),
-    ]);
-    return {
-      products: products?.items ?? [],
-      categories: [
-        { name: 'All', id: null },
-        ...(categories ?? []).map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
-      ],
-    };
-  } catch (err) {
-    // A catalogue outage should degrade to the empty state, not a 500 on the
-    // storefront's most-linked page.
-    console.error('[shop] catalogue fetch failed:', err);
-    return { products: [], categories: [] };
-  }
+  // A catalogue outage keeps the last good page rather than caching an empty
+  // grid over it; see `readForStaticPage`.
+  return readForStaticPage(
+    'shop',
+    async () => {
+      const [products, categories] = await Promise.all([
+        api.catalog.listProducts({ limit: 100 }),
+        api.catalog.listCategories(),
+      ]);
+      return {
+        products: products?.items ?? [],
+        categories: [
+          { name: 'All', id: null },
+          ...(categories ?? []).map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
+        ],
+      };
+    },
+    { products: [], categories: [] },
+  );
 }
 
 export default async function Page() {

@@ -313,18 +313,21 @@ export default async function Page(props) {
               </span>
             </div>
 
-            <p
-              className="mb-[32px] text-[#4A4A4A]"
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '16px',
-                lineHeight: '26px',
-                fontWeight: 400,
-              }}
-            >
-              {product.description ??
-                'The Executive Pro combines professional aesthetics with high-performance materials. Engineered for all-day comfort, these frames feature a lightweight titanium build and adjustable nose pads for a custom fit.'}
-            </p>
+            {/* No fallback copy: the old one described Executive Pro, and
+                showed on every product that had no description. */}
+            {product.description && (
+              <p
+                className="mb-[32px] text-[#4A4A4A]"
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '16px',
+                  lineHeight: '26px',
+                  fontWeight: 400,
+                }}
+              >
+                {product.description}
+              </p>
+            )}
 
             <ProductPurchasePanel product={product} mainImage={mainImage} />
 

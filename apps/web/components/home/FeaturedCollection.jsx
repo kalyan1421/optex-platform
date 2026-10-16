@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { publicApi } from '@/lib/api-server';
+import { publicApi, readForStaticPage } from '@/lib/api-server';
 import FeaturedCollectionTabs from '@/components/home/FeaturedCollectionTabs';
 
 /**
@@ -11,14 +11,12 @@ import FeaturedCollectionTabs from '@/components/home/FeaturedCollectionTabs';
 export default async function FeaturedCollection() {
   const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
   const [{ items: products }, categories] = await Promise.all([
-    api.catalog.listProducts({ limit: 100, sort: 'featured' }).catch((err) => {
-      console.error('[home] FeaturedCollection products fetch failed:', err);
-      return { items: [] };
-    }),
-    api.catalog.listCategories().catch((err) => {
-      console.error('[home] FeaturedCollection categories fetch failed:', err);
-      return [];
-    }),
+    readForStaticPage(
+      'home:FeaturedCollection',
+      () => api.catalog.listProducts({ limit: 100, sort: 'featured' }),
+      { items: [] },
+    ),
+    readForStaticPage('home:FeaturedCollection', () => api.catalog.listCategories(), []),
   ]);
 
   return (

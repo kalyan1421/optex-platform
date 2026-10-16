@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { publicApi } from '@/lib/api-server';
+import { listCuratedProducts, publicApi, readForStaticPage } from '@/lib/api-server';
 import { getProductImageUrl } from '@/lib/product-image';
 import WishlistToggle from '@/components/wishlist/WishlistToggle';
 
@@ -15,12 +15,11 @@ const BADGES = ['BEST SELLER', 'TRENDING', 'NEW ARRIVAL', 'HOT'];
  */
 export default async function TrendingNow() {
   const api = publicApi({ revalidate: 60, tags: ['catalogue'] });
-  const { items: products } = await api.catalog
-    .listProducts({ trending: true, limit: 4 })
-    .catch((err) => {
-      console.error('[home] TrendingNow fetch failed:', err);
-      return { items: [] };
-    });
+  const { items: products } = await readForStaticPage(
+    'home:TrendingNow',
+    () => listCuratedProducts(api, { trending: true, limit: 4 }),
+    { items: [] },
+  );
 
   return (
     <section className="flex w-full flex-col items-center bg-[#FFFFFF] px-6 lg:px-[100px]">
