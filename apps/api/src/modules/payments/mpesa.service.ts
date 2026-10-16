@@ -1,4 +1,4 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
 import {
@@ -7,6 +7,9 @@ import {
   PROVIDER_SUBMIT_TIMEOUT_MS,
   darajaTimestamp,
   isProd,
+  providerEnvironment,
+  sandboxInProductionWarning,
+  type ProviderEnvironment,
 } from './payments.constants';
 
 /**
@@ -97,7 +100,7 @@ const MOCK_PENDING_MS = 4000;
 const MOCK_ID_PREFIX = 'ws_CO_MOCK';
 
 @Injectable()
-export class MpesaService {
+export class MpesaService implements OnModuleInit {
   private readonly logger = new Logger(MpesaService.name);
   private tokenCache: CachedToken | null = null;
   /** CheckoutRequestID → when the mock push was initiated (epoch ms). Purely
@@ -106,6 +109,12 @@ export class MpesaService {
   private readonly mockPending = new Map<string, number>();
 
   constructor(private readonly config: ConfigService<Env, true>) {}
+
+  onModuleInit(): void {
+    if (isProd(this.config.get('NODE_ENV', { infer: true })) && this.environment() === 'sandbox') {
+      this.logger.warn(sandboxInProductionWarning('M-Pesa', 'MPESA_ENV'));
+    }
+  }
 
   /** True when every credential needed to talk to Daraja is present. */
   isConfigured(): boolean {
@@ -153,9 +162,15 @@ export class MpesaService {
     return { consumerKey, consumerSecret, shortcode, passkey, callbackUrl };
   }
 
+  private environment(): ProviderEnvironment {
+    return providerEnvironment(
+      this.config.get('NODE_ENV', { infer: true }),
+      this.config.get('MPESA_ENV', { infer: true }),
+    );
+  }
+
   private baseUrl(): string {
-    const nodeEnv = this.config.get('NODE_ENV', { infer: true });
-    return isProd(nodeEnv) ? MPESA_BASE_URL.production : MPESA_BASE_URL.sandbox;
+    return MPESA_BASE_URL[this.environment()];
   }
 
   /**

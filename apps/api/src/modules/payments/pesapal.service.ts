@@ -1,4 +1,4 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
 import {
@@ -6,6 +6,9 @@ import {
   PROVIDER_AUTH_TIMEOUT_MS,
   PROVIDER_SUBMIT_TIMEOUT_MS,
   isProd,
+  providerEnvironment,
+  sandboxInProductionWarning,
+  type ProviderEnvironment,
 } from './payments.constants';
 
 /** Cached Pesapal bearer token + absolute expiry (epoch ms). */
@@ -65,11 +68,17 @@ export interface PesapalTransactionStatus {
  * Pesapal directly.
  */
 @Injectable()
-export class PesapalService {
+export class PesapalService implements OnModuleInit {
   private readonly logger = new Logger(PesapalService.name);
   private tokenCache: CachedToken | null = null;
 
   constructor(private readonly config: ConfigService<Env, true>) {}
+
+  onModuleInit(): void {
+    if (isProd(this.config.get('NODE_ENV', { infer: true })) && this.environment() === 'sandbox') {
+      this.logger.warn(sandboxInProductionWarning('Pesapal', 'PESAPAL_ENV'));
+    }
+  }
 
   isConfigured(): boolean {
     return Boolean(
@@ -89,9 +98,15 @@ export class PesapalService {
     return { consumerKey, consumerSecret };
   }
 
+  private environment(): ProviderEnvironment {
+    return providerEnvironment(
+      this.config.get('NODE_ENV', { infer: true }),
+      this.config.get('PESAPAL_ENV', { infer: true }),
+    );
+  }
+
   private baseUrl(): string {
-    const nodeEnv = this.config.get('NODE_ENV', { infer: true });
-    return isProd(nodeEnv) ? PESAPAL_BASE_URL.production : PESAPAL_BASE_URL.sandbox;
+    return PESAPAL_BASE_URL[this.environment()];
   }
 
   /** Returns a cached/fresh Pesapal auth token. */

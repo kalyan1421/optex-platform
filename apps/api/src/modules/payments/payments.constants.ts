@@ -1,8 +1,9 @@
 /**
  * Shared constants + small helpers for the PAYMENTS module.
  *
- * Base URLs are picked by `NODE_ENV`: anything other than `production` uses the
- * providers' sandbox hosts so dev/test never hit live money rails.
+ * Base URLs are picked by `providerEnvironment()`: by default anything other
+ * than `NODE_ENV=production` uses the providers' sandbox hosts so dev/test never
+ * hit live money rails, and `MPESA_ENV` / `PESAPAL_ENV` can pin either one.
  */
 
 /** Daraja (M-Pesa) base URLs. */
@@ -20,6 +21,33 @@ export const PESAPAL_BASE_URL = {
 /** Resolve the provider host for the current environment. */
 export function isProd(nodeEnv: string | undefined): boolean {
   return nodeEnv === 'production';
+}
+
+/** Which of a provider's two hosts to call. */
+export type ProviderEnvironment = 'sandbox' | 'production';
+
+/**
+ * Picks a payment provider's host. An explicit `MPESA_ENV` / `PESAPAL_ENV`
+ * wins; unset, it follows `NODE_ENV` as it always has.
+ *
+ * The override is for the testing phase: a deployment has to run with
+ * `NODE_ENV=production` (structured logs, Swagger off, the production env
+ * checks) but should only ever take sandbox payments. It must be removed before
+ * go-live — in sandbox mode an order the provider confirms has not been paid.
+ */
+export function providerEnvironment(
+  nodeEnv: string | undefined,
+  override: ProviderEnvironment | undefined,
+): ProviderEnvironment {
+  return override ?? (isProd(nodeEnv) ? 'production' : 'sandbox');
+}
+
+/** Logged at start-up when a production deployment is pinned to a sandbox. */
+export function sandboxInProductionWarning(provider: 'M-Pesa' | 'Pesapal', envVar: string): string {
+  return (
+    `${provider} is using its SANDBOX in production (${envVar}=sandbox): no real money moves, ` +
+    `yet orders it confirms are marked paid. Remove ${envVar} before go-live.`
+  );
 }
 
 /**

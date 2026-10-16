@@ -4,6 +4,7 @@ import {
   darajaTimestamp,
   isProd,
   normalizeKenyanMsisdn,
+  providerEnvironment,
 } from '../../src/modules/payments/payments.constants';
 
 /**
@@ -93,6 +94,23 @@ describe('isProd', () => {
     expect(isProd('prod')).toBe(false);
     expect(isProd('development')).toBe(false);
     expect(isProd(undefined)).toBe(false);
+  });
+});
+
+describe('providerEnvironment', () => {
+  it('follows NODE_ENV when no override is set — the behaviour before MPESA_ENV existed', () => {
+    expect(providerEnvironment('production', undefined)).toBe('production');
+    expect(providerEnvironment('development', undefined)).toBe('sandbox');
+    expect(providerEnvironment('test', undefined)).toBe('sandbox');
+    expect(providerEnvironment(undefined, undefined)).toBe('sandbox');
+  });
+
+  it('lets a production deployment pin the sandbox for the testing phase', () => {
+    expect(providerEnvironment('production', 'sandbox')).toBe('sandbox');
+  });
+
+  it('honours an explicit production override outside production too', () => {
+    expect(providerEnvironment('development', 'production')).toBe('production');
   });
 });
 
