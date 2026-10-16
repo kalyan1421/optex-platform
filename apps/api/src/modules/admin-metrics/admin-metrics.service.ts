@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { DASHBOARD_RANGE_DAYS, DashboardQueryDto, DashboardRange } from './dto/dashboard-query.dto';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
@@ -170,7 +171,7 @@ export class AdminMetricsService {
       .order('created_at', { ascending: true })
       .limit(ROW_CAP);
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return (data ?? []) as OrderRevenueRow[];
   }
 
@@ -222,7 +223,7 @@ export class AdminMetricsService {
       .from('customers')
       .select('id', { count: 'exact', head: true });
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return count ?? 0;
   }
 
@@ -236,7 +237,7 @@ export class AdminMetricsService {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return (data ?? []).map((o) => {
       const row = o as {
@@ -296,7 +297,7 @@ export class AdminMetricsService {
       .eq('order.payment_status', PAID_PAYMENT_STATUS)
       .limit(ROW_CAP);
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return (data ?? []) as unknown as OrderItemRow[];
   }
 
@@ -486,7 +487,7 @@ export class AdminMetricsService {
       .select('id, name')
       .in('id', unique);
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     const map = new Map<string, string>();
     for (const row of (data ?? []) as { id: string; name: string }[]) {

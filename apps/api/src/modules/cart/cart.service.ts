@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 /**
@@ -114,7 +115,7 @@ export class CartService {
       .eq('id', productId)
       .eq('is_active', true)
       .maybeSingle();
-    if (productError) throw new BadRequestException(productError.message);
+    if (productError) throw toHttpException(productError);
     if (!product) {
       throw new NotFoundException(`Product "${productId}" is not available`);
     }
@@ -129,7 +130,7 @@ export class CartService {
       .eq('cart_id', cartId)
       .eq('product_id', productId)
       .order('id', { ascending: true });
-    if (selectError) throw new BadRequestException(selectError.message);
+    if (selectError) throw toHttpException(selectError);
 
     const existingRow = ((existing ?? []) as { id: string; lens_option: unknown }[]).find(
       (row) => JSON.stringify(row.lens_option ?? null) === JSON.stringify(requestedLensOption),
@@ -158,7 +159,7 @@ export class CartService {
           .eq('cart_id', cartId)
           .eq('product_id', productId)
           .order('id', { ascending: true });
-        if (raceError) throw new BadRequestException(raceError.message);
+        if (raceError) throw toHttpException(raceError);
         const winnerRow = ((winner ?? []) as { id: string; lens_option: unknown }[]).find(
           (row) => JSON.stringify(row.lens_option ?? null) === JSON.stringify(requestedLensOption),
         );
@@ -167,7 +168,7 @@ export class CartService {
           return this.buildCartView(cartId);
         }
       }
-      throw new BadRequestException(insertError.message);
+      throw toHttpException(insertError);
     }
 
     return this.buildCartView(cartId);
@@ -184,7 +185,7 @@ export class CartService {
         .delete()
         .eq('id', itemId)
         .eq('cart_id', cartId);
-      if (error) throw new BadRequestException(error.message);
+      if (error) throw toHttpException(error);
       return this.buildCartView(cartId);
     }
 
@@ -193,7 +194,7 @@ export class CartService {
       .update({ quantity: Math.min(100, Math.trunc(quantity)) })
       .eq('id', itemId)
       .eq('cart_id', cartId);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return this.buildCartView(cartId);
   }
@@ -208,7 +209,7 @@ export class CartService {
       .delete()
       .eq('id', itemId)
       .eq('cart_id', cartId);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return this.buildCartView(cartId);
   }
@@ -255,7 +256,7 @@ export class CartService {
       .from('carts')
       .update({ promo_code: promo.code })
       .eq('id', cartId);
-    if (saveError) throw new BadRequestException(saveError.message);
+    if (saveError) throw toHttpException(saveError);
     return this.buildCartView(cartId);
   }
 
@@ -266,7 +267,7 @@ export class CartService {
       .from('carts')
       .update({ promo_code: null })
       .eq('id', cartId);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return this.buildCartView(cartId);
   }
 
@@ -284,7 +285,7 @@ export class CartService {
       .select('id')
       .eq('auth_user_id', authUserId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) {
       throw new NotFoundException('No customer profile for the current user');
     }
@@ -305,14 +306,14 @@ export class CartService {
     const { error: upsertError } = await this.supabase.client
       .from('carts')
       .upsert({ customer_id: customerId }, { onConflict: 'customer_id', ignoreDuplicates: true });
-    if (upsertError) throw new BadRequestException(upsertError.message);
+    if (upsertError) throw toHttpException(upsertError);
 
     const { data: cart, error } = await this.supabase.client
       .from('carts')
       .select('id')
       .eq('customer_id', customerId)
       .single();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return (cart as { id: string }).id;
   }
 
@@ -323,7 +324,7 @@ export class CartService {
       .select('id, cart_id')
       .eq('id', itemId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) {
       throw new NotFoundException(`Cart item "${itemId}" not found`);
     }
@@ -342,7 +343,7 @@ export class CartService {
       item_id: itemId,
       delta,
     });
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data || (Array.isArray(data) && data.length === 0)) {
       throw new BadRequestException('Cart quantity cannot exceed 100 items.');
     }
@@ -371,7 +372,7 @@ export class CartService {
       )
       .eq('cart_id', cartId)
       .order('id', { ascending: true });
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     type RawJoin = {
       id: string;
@@ -453,7 +454,7 @@ export class CartService {
       .select('promo_code')
       .eq('id', cartId)
       .maybeSingle();
-    if (cartError) throw new BadRequestException(cartError.message);
+    if (cartError) throw toHttpException(cartError);
     const code = (cart as { promo_code?: string | null } | null)?.promo_code ?? null;
     if (!code) return { promo: null, discountKes: 0 };
 

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
 import type { ClientChannel } from '../../common/client-info';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
@@ -316,7 +317,7 @@ export class OrdersService {
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false })
       .range(from, to);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     const rows = (data ?? []) as unknown as Array<
       OrderRow & { order_items: { quantity: number }[] | null }
@@ -344,7 +345,7 @@ export class OrdersService {
       )
       .eq('id', orderId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException('Order not found.');
 
     const row = data as unknown as OrderDetailRow;
@@ -369,7 +370,7 @@ export class OrdersService {
       .select('id, order_number, status, payment_status, customer_id')
       .eq('id', orderId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException('Order not found.');
 
     const row = data as {
@@ -448,7 +449,7 @@ export class OrdersService {
     }
 
     const { data, error, count } = await builder;
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     const rows = (data ?? []) as unknown as Array<
       OrderRow & {
@@ -497,7 +498,7 @@ export class OrdersService {
       .select('id, status, notes, customer_id, branch_id')
       .eq('id', orderId)
       .maybeSingle();
-    if (readError) throw new BadRequestException(readError.message);
+    if (readError) throw toHttpException(readError);
     if (!current) throw new NotFoundException('Order not found.');
     if (user.branchId && (current as { branch_id: string | null }).branch_id !== user.branchId) {
       throw new NotFoundException('Order not found.');
@@ -524,7 +525,7 @@ export class OrdersService {
       .from('orders')
       .update({ status: nextStatus, notes: mergedNotes })
       .eq('id', orderId);
-    if (updateError) throw new BadRequestException(updateError.message);
+    if (updateError) throw toHttpException(updateError);
 
     // Re-read the full detail via the admin path (no ownership requirement).
     // H-2 FIX: use the variant that returns contact details explicitly rather
@@ -647,7 +648,7 @@ export class OrdersService {
       .select('id, email, full_name, phone')
       .eq('auth_user_id', authUserId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) {
       throw new NotFoundException('No customer profile for the current user.');
     }
@@ -694,7 +695,7 @@ export class OrdersService {
       )
       .eq('id', orderId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException('Order not found.');
 
     const row = data as unknown as OrderDetailRow & {

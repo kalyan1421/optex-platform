@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { escapeForPostgrestFilter } from '../../common/postgrest';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
@@ -72,7 +73,7 @@ export class ProductsService {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return {
       items: await this.withAvailability((data ?? []) as ProductRow[]),
@@ -144,7 +145,7 @@ export class ProductsService {
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      if (error) throw new BadRequestException(error.message);
+      if (error) throw toHttpException(error);
 
       // `count` is the number of pinned products across EVERY page (PostgREST
       // reports it even when the requested page is empty), so it — not this
@@ -184,7 +185,7 @@ export class ProductsService {
             : builder.order('created_at', { ascending: false });
 
     const { data, error, count } = await sorted.range(from, to);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return {
       items: await this.withAvailability((data ?? []) as ProductRow[]),
@@ -222,7 +223,7 @@ export class ProductsService {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (tsError) throw new BadRequestException(tsError.message);
+    if (tsError) throw toHttpException(tsError);
 
     if ((tsCount ?? 0) > 0) {
       return {
@@ -251,7 +252,7 @@ export class ProductsService {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (ilError) throw new BadRequestException(ilError.message);
+    if (ilError) throw toHttpException(ilError);
 
     return {
       items: await this.withAvailability((ilData ?? []) as ProductRow[]),
@@ -273,7 +274,7 @@ export class ProductsService {
       .eq('is_active', true)
       .maybeSingle();
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException(`Product "${slug}" not found`);
     const [product] = await this.withAvailability([data as ProductRow]);
     return product;
@@ -287,7 +288,7 @@ export class ProductsService {
       .from('inventory')
       .select('product_id, stock')
       .in('product_id', ids);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     const totals = new Map<string, number>();
     for (const row of data ?? []) {
@@ -317,7 +318,7 @@ export class ProductsService {
       .eq('id', id)
       .maybeSingle();
 
-    if (selfError) throw new BadRequestException(selfError.message);
+    if (selfError) throw toHttpException(selfError);
     if (!self) throw new NotFoundException(`Product "${id}" not found`);
 
     const categoryId = (self as { category_id: string | null }).category_id;
@@ -332,7 +333,7 @@ export class ProductsService {
       .order('created_at', { ascending: false })
       .limit(8);
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return (data ?? []) as ProductRow[];
   }
 
@@ -344,7 +345,7 @@ export class ProductsService {
       .select('*')
       .single();
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     const created = data as ProductRow;
     await this.auditLog.record({
       actor: actorUser,
@@ -365,7 +366,7 @@ export class ProductsService {
       .select('*')
       .maybeSingle();
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException(`Product "${id}" not found`);
     const updated = data as ProductRow;
     await this.auditLog.record({
@@ -390,7 +391,7 @@ export class ProductsService {
       .select('id, is_active')
       .maybeSingle();
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException(`Product "${id}" not found`);
     await this.auditLog.record({
       actor: actorUser,
@@ -421,7 +422,7 @@ export class ProductsService {
       .eq('id', id)
       .maybeSingle();
 
-    if (fetchError) throw new BadRequestException(fetchError.message);
+    if (fetchError) throw toHttpException(fetchError);
     if (!existing) throw new NotFoundException(`Product "${id}" not found`);
 
     const ext = this.extensionFor(file.originalname, file.mimetype);
@@ -434,7 +435,7 @@ export class ProductsService {
         upsert: false,
       });
 
-    if (uploadError) throw new BadRequestException(uploadError.message);
+    if (uploadError) throw toHttpException(uploadError);
 
     const {
       data: { publicUrl },
@@ -450,7 +451,7 @@ export class ProductsService {
       .select('*')
       .single();
 
-    if (updateError) throw new BadRequestException(updateError.message);
+    if (updateError) throw toHttpException(updateError);
 
     await this.auditLog.record({
       actor: actorUser,
@@ -472,7 +473,7 @@ export class ProductsService {
       .eq('slug', ref)
       .maybeSingle();
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return data ? (data as { id: string }).id : null;
   }
 

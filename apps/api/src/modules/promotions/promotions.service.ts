@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { CustomerNotificationsService } from '../customer-notifications/customer-notifications.service';
@@ -369,7 +370,7 @@ export class PromotionsService {
         contentType: file.mimetype,
       });
 
-    if (uploadError) throw new BadRequestException(uploadError.message);
+    if (uploadError) throw toHttpException(uploadError);
 
     const { data } = this.supabase.client.storage
       .from(PROMO_BANNERS_BUCKET)

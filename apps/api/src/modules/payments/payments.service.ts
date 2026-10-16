@@ -8,6 +8,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../../auth/auth-user';
@@ -736,7 +737,7 @@ export class PaymentsService {
       if (query.status) q = q.eq('status', query.status);
       if (query.orderId) q = q.eq('order_id', query.orderId);
       const { data, error } = await q.order('received_at', { ascending: false }).limit(500);
-      if (error) throw new BadRequestException(error.message);
+      if (error) throw toHttpException(error);
       for (const r of (data ?? []) as unknown as (MpesaTxRow & {
         order: { order_number: string } | null;
       })[]) {
@@ -764,7 +765,7 @@ export class PaymentsService {
       if (query.status) q = q.eq('status', query.status);
       if (query.orderId) q = q.eq('order_id', query.orderId);
       const { data, error } = await q.order('received_at', { ascending: false }).limit(500);
-      if (error) throw new BadRequestException(error.message);
+      if (error) throw toHttpException(error);
       for (const r of (data ?? []) as unknown as (PesapalTxRow & {
         order: { order_number: string } | null;
       })[]) {
@@ -829,7 +830,7 @@ export class PaymentsService {
         .select('id, mpesa_ref, amount_kes, customer_phone, order_id, raw, status, received_at')
         .eq('id', transactionId)
         .maybeSingle();
-      if (error) throw new BadRequestException(error.message);
+      if (error) throw toHttpException(error);
       if (!data) throw new NotFoundException('M-Pesa transaction not found.');
       const tx = data as MpesaTxRow;
       const previousStatus = tx.status;
@@ -898,7 +899,7 @@ export class PaymentsService {
       .select('id, pesapal_order_id, amount_kes, method, order_id, raw, status, received_at')
       .eq('id', transactionId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException('Pesapal transaction not found.');
     const tx = data as PesapalTxRow;
     const previousStatus = tx.status ?? TX_STATUS.PENDING;
@@ -950,7 +951,7 @@ export class PaymentsService {
       .select('id, order_number, total_kes, status, payment_status, payment_method')
       .eq('order_number', orderNumber.trim())
       .maybeSingle();
-    if (orderErr) throw new BadRequestException(orderErr.message);
+    if (orderErr) throw toHttpException(orderErr);
     if (!orderRow) {
       throw new NotFoundException(`Order "${orderNumber}" not found.`);
     }
@@ -980,7 +981,7 @@ export class PaymentsService {
         .select('id, mpesa_ref, amount_kes, order_id, status')
         .eq('id', transactionId)
         .maybeSingle();
-      if (tx.error) throw new BadRequestException(tx.error.message);
+      if (tx.error) throw toHttpException(tx.error);
       if (!tx.data) throw new NotFoundException('M-Pesa transaction not found.');
       const row = tx.data as {
         id: string;
@@ -1011,7 +1012,7 @@ export class PaymentsService {
         .from('mpesa_transactions')
         .update({ order_id: orderId, status: TX_STATUS.MATCHED })
         .eq('id', transactionId);
-      if (upErr) throw new BadRequestException(upErr.message);
+      if (upErr) throw toHttpException(upErr);
 
       await this.creditOrder(orderId, 'mpesa', row.mpesa_ref);
 
@@ -1033,7 +1034,7 @@ export class PaymentsService {
       .select('id, pesapal_order_id, amount_kes, order_id, status')
       .eq('id', transactionId)
       .maybeSingle();
-    if (tx.error) throw new BadRequestException(tx.error.message);
+    if (tx.error) throw toHttpException(tx.error);
     if (!tx.data) throw new NotFoundException('Pesapal transaction not found.');
     const row = tx.data as {
       id: string;
@@ -1064,7 +1065,7 @@ export class PaymentsService {
       .from('pesapal_transactions')
       .update({ order_id: orderId, status: TX_STATUS.MATCHED })
       .eq('id', transactionId);
-    if (upErr) throw new BadRequestException(upErr.message);
+    if (upErr) throw toHttpException(upErr);
 
     await this.creditOrder(orderId, 'pesapal', row.pesapal_order_id);
 
@@ -1238,7 +1239,7 @@ export class PaymentsService {
       .select('id, email, full_name, phone')
       .eq('auth_user_id', authUserId)
       .maybeSingle();
-    if (custErr) throw new BadRequestException(custErr.message);
+    if (custErr) throw toHttpException(custErr);
     if (!customer) {
       throw new NotFoundException('No customer profile for the current user.');
     }
@@ -1248,7 +1249,7 @@ export class PaymentsService {
       .select('id, order_number, customer_id, total_kes, status, payment_status, payment_method')
       .eq('id', orderId)
       .maybeSingle();
-    if (orderErr) throw new BadRequestException(orderErr.message);
+    if (orderErr) throw toHttpException(orderErr);
     if (!order) throw new NotFoundException('Order not found.');
 
     if ((order as OrderRow).customer_id !== (customer as CustomerContact).id) {

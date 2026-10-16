@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { PushService } from '../push/push.service';
 import type { NotificationCategory, NotificationQueryDto } from './dto/notification-query.dto';
@@ -142,7 +143,7 @@ export class CustomerNotificationsService {
     if (query.unreadOnly) builder = builder.is('read_at', null);
 
     const { data, error, count } = await builder;
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     const total = count ?? 0;
     return {
@@ -161,7 +162,7 @@ export class CustomerNotificationsService {
       .select('id', { count: 'exact', head: true })
       .eq('customer_id', customerId)
       .is('read_at', null);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return { count: count ?? 0 };
   }
 
@@ -176,7 +177,7 @@ export class CustomerNotificationsService {
       .eq('customer_id', customerId)
       .select('id, category, title, body, link, read_at, created_at')
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException('Notification not found');
 
     return toView(data as NotificationRow);
@@ -192,7 +193,7 @@ export class CustomerNotificationsService {
       .eq('customer_id', customerId)
       .is('read_at', null)
       .select('id');
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return { count: (data ?? []).length };
   }
@@ -204,7 +205,7 @@ export class CustomerNotificationsService {
       .select('id')
       .eq('auth_user_id', authUserId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) {
       throw new NotFoundException('No customer profile for the current user');
     }

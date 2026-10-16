@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthUser } from '../../auth/auth-user';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { PrescriptionQueryDto } from './dto/prescription-query.dto';
@@ -172,7 +173,7 @@ export class PrescriptionsService {
       });
 
     if (uploadError) {
-      throw new BadRequestException(uploadError.message);
+      throw toHttpException(uploadError);
     }
 
     const insert: Record<string, unknown> = {
