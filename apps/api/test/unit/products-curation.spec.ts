@@ -16,7 +16,11 @@ import type { AuditLogService } from '../../src/modules/audit-log/audit-log.serv
  * suite, which needs a live Supabase stack.
  */
 
-type Result = { data: unknown[] | null; error: { message: string } | null; count: number | null };
+type Result = {
+  data: unknown[] | null;
+  error: { message: string; code?: string } | null;
+  count: number | null;
+};
 type Call = [method: string, args: unknown[]];
 
 /**
@@ -142,7 +146,9 @@ describe('ProductsService.list homepage curation', () => {
   });
 
   it('surfaces a query error instead of falling back', async () => {
-    const { service } = harness([{ data: null, error: { message: 'boom' }, count: null }]);
+    const { service } = harness([
+      { data: null, error: { message: 'boom', code: '22P02' }, count: null },
+    ]);
 
     await expect(list(service, { featured: true })).rejects.toThrow('boom');
   });

@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 /** A saved product, with enough product data to render the wishlist page in one call. */
@@ -47,7 +48,7 @@ export class WishlistService {
       )
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     type RawJoin = {
       product_id: string;
@@ -95,7 +96,7 @@ export class WishlistService {
       .select('id')
       .eq('id', productId)
       .maybeSingle();
-    if (productError) throw new BadRequestException(productError.message);
+    if (productError) throw toHttpException(productError);
     if (!product) {
       throw new NotFoundException(`Product "${productId}" not found`);
     }
@@ -106,7 +107,7 @@ export class WishlistService {
         { customer_id: customerId, product_id: productId },
         { onConflict: 'customer_id,product_id', ignoreDuplicates: true },
       );
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return { productId };
   }
@@ -120,7 +121,7 @@ export class WishlistService {
       .delete()
       .eq('customer_id', customerId)
       .eq('product_id', productId);
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
 
     return { productId };
   }
@@ -132,7 +133,7 @@ export class WishlistService {
       .select('id')
       .eq('auth_user_id', authUserId)
       .maybeSingle();
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) {
       throw new NotFoundException('No customer profile for the current user');
     }

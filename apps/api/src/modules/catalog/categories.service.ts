@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { toHttpException } from '../../common/supabase-error';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 /** A single category row as returned by Supabase (`select('*')`). */
@@ -23,7 +24,7 @@ export class CategoriesService {
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     return (data ?? []) as CategoryRow[];
   }
 
@@ -39,7 +40,7 @@ export class CategoriesService {
       .eq('slug', slug)
       .maybeSingle();
 
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw toHttpException(error);
     if (!data) throw new NotFoundException(`Category "${slug}" not found`);
     return data as CategoryRow;
   }

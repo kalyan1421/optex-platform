@@ -52,7 +52,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `${request.method} ${request.url} -> ${statusCode}`,
+        `${request.method} ${request.url} -> ${statusCode}${this.describeCause(exception)}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     } else {
@@ -105,6 +105,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error: 'Internal Server Error',
       message: 'An unexpected error occurred',
     };
+  }
+
+  /**
+   * The underlying error behind a 5xx, for the log only. A 503 from
+   * `toHttpException` carries a fixed client message; this is where the actual
+   * `TypeError: fetch failed` or `PGRST001` shows up. `details` is skipped: for
+   * a fetch failure it is just the stack of the rejected `fetch`.
+   */
+  private describeCause(exception: unknown): string {
+    const cause = exception instanceof Error ? exception.cause : undefined;
+    if (cause === undefined || cause === null) return '';
+    if (typeof cause !== 'object') return ` (cause: ${String(cause)})`;
+    const { code, message } = cause as { code?: unknown; message?: unknown };
+    const prefix = typeof code === 'string' && code !== '' ? `[${code}] ` : '';
+    return ` (cause: ${prefix}${String(message)})`;
   }
 
   private codeFromStatus(status: number): string {
